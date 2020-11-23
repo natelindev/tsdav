@@ -1,0 +1,15 @@
+{
+  "name": "ts-dav",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "private": false,
+  "dependencies": {
+    "cross-fetch": "^3.0.6",
+    "xml-js": "^1.6.11"
+  },
+  "devDependencies": {
+    "prettier": "^2.2.0",
+    "typescript": "^4.1.2"
+  }
+}
