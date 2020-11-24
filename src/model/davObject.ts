@@ -1,6 +1,8 @@
 export class DAVObject {
   data: string;
+
   etag: string;
+
   url: string;
 
   constructor(options?: DAVObject) {

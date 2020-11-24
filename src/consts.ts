@@ -1,4 +1,4 @@
-export const enum DAVNamespace {
+export enum DAVNamespace {
   CALENDAR_SERVER = 'http://calendarserver.org/ns/',
   CALDAV_APPLE = 'http://apple.com/ns/ical/',
   CALDAV = 'urn:ietf:params:xml:ns:caldav',
@@ -6,7 +6,7 @@ export const enum DAVNamespace {
   DAV = 'DAV:',
 }
 
-export const enum DAVMethod {
+export enum DAVMethod {
   COPY = 'COPY',
   LOCK = 'LOCK',
   MKCOL = 'MKCOL',

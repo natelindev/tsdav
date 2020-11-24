@@ -1,13 +1,24 @@
+import { DAVObject } from './davObject';
+
 export class DAVCollection {
   data: any;
-  objects: any[];
+
+  objects: DAVObject[];
+
   account: string;
+
   ctag: string;
+
   description: string;
+
   displayName: string;
+
   reports: string;
+
   resourcetype: any;
+
   syncToken: string;
+
   url: string;
 
   constructor(options: DAVCollection) {
