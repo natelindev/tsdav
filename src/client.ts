@@ -1,38 +1,48 @@
-import getLogger from 'debug';
 import { encode } from 'base-64';
-import { DAVCredential } from './model/davCredential';
-import { fetchOauthTokens, refreshAccessToken } from './util/oauth';
+import getLogger from 'debug';
+
+import { DAVCredentials } from './model/davCredentials';
+import { DAVRequest, davRequest, DAVResponse } from './request';
+import { fetchOauthTokens, refreshAccessToken, Tokens } from './util/oauth';
 
 const debug = getLogger('tsdav:client');
 export class DAVClient {
-  serverUrl: string;
+  url: string;
 
   authHeaders: Headers;
 
-  credential: DAVCredential;
+  credentials: DAVCredentials;
 
   constructor(options: DAVClient) {
     this.authHeaders = new Headers();
     if (options) {
-      this.serverUrl = options.serverUrl;
-      this.credential = options.credential;
+      this.url = options.url;
+      this.credentials = options.credentials;
     }
   }
 
-  async basicAuth(credential: DAVCredential): Promise<void> {
+  async basicAuth(credentials: DAVCredentials): Promise<void> {
     this.authHeaders.append(
       'Authorization',
-      `Basic ${encode(`${credential.username}:${credential.password}`)}`
+      `Basic ${encode(`${credentials.username}:${credentials.password}`)}`
     );
   }
 
-  async Oauth(credential: DAVCredential): Promise<void> {
-    if (credential.expiration) this.credential.accessToken = tokens.access_token;
-    if (tokens.refresh_token) {
-      this.credential.refreshToken = tokens.refresh_token;
+  async Oauth(credentials: DAVCredentials): Promise<void> {
+    if (!credentials.refreshToken) {
+      // No refresh token, fetch new tokens
+      this.credentials = { ...credentials, ...(await fetchOauthTokens(credentials)) };
+    } else if (credentials.refreshToken && !credentials.accessToken) {
+      // have refresh token, but no accessToken, fetch access token only
+      this.credentials = { ...credentials, ...(await refreshAccessToken(credentials)) };
+    } else if (Date.now() > (credentials.expiration ?? 0)) {
+      // have both, but accessToken was expired
+      this.credentials = { ...credentials, ...(await refreshAccessToken(credentials)) };
     }
-    if (tokens.expires_in) {
-      this.credential.expiration = Date.now() + tokens.expires_in;
-    }
+    // now we should have valid access token
+  }
+
+  async raw(options: DAVRequest): Promise<DAVResponse> {
+    return davRequest(this.url, options);
   }
 }

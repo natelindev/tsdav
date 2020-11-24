@@ -1,8 +1,10 @@
-import convert from 'xml-js';
 import { fetch } from 'cross-fetch';
 import getLogger from 'debug';
-import type { DAVNamespace, DAVMethod } from './consts';
+import convert from 'xml-js';
+
 import { nativeType } from './util/nativeType';
+
+import type { DAVNamespace, DAVMethod } from './consts';
 
 const debug = getLogger('tsdav:request');
 
@@ -15,7 +17,7 @@ type RawResponse = {
   propstat: { prop: { [key: string]: any }; status: string }[];
 };
 
-type DAVResponse = {
+export type DAVResponse = {
   href?: string;
   status: number;
   statusText: string;
@@ -25,16 +27,15 @@ type DAVResponse = {
   propstat?: { [key: string]: { status: number; statusText: string; ok: boolean } };
 };
 
-export async function davRequest(
-  url: string,
-  options: {
-    headers?: { [key: string]: any };
-    method: DAVMethod;
-    body: any;
-    namespace?: DAVNamespace;
-    attributes?: { [key: string]: any };
-  }
-): Promise<DAVResponse> {
+export type DAVRequest = {
+  headers?: { [key: string]: any };
+  method: DAVMethod;
+  body: any;
+  namespace?: DAVNamespace;
+  attributes?: { [key: string]: any };
+};
+
+export async function davRequest(url: string, options: DAVRequest): Promise<DAVResponse> {
   const { headers, body, namespace, method, attributes } = options;
   const xmlBody = convert.js2xml(
     { ...body, _attributes: attributes },

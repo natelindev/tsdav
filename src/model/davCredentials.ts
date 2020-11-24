@@ -1,4 +1,4 @@
-export class DAVCredential {
+export class DAVCredentials {
   username?: string;
 
   password?: string;
@@ -23,7 +23,7 @@ export class DAVCredential {
 
   appSpecificPassword?: string;
 
-  constructor(options: DAVCredential) {
+  constructor(options: DAVCredentials) {
     if (options) {
       this.username = options.username;
       this.password = options.password;
