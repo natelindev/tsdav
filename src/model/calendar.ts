@@ -1,4 +1,7 @@
+import getLogger from 'debug';
 import { DAVCollection } from './davCollection';
+
+const debug = getLogger('tsdav:calendar');
 
 export class Calendar extends DAVCollection {
   components: any;

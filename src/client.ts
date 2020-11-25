@@ -3,7 +3,7 @@ import getLogger from 'debug';
 
 import { DAVCredentials } from './model/davCredentials';
 import { DAVRequest, davRequest, DAVResponse } from './request';
-import { fetchOauthTokens, refreshAccessToken, Tokens } from './util/oauth';
+import { fetchOauthTokens, refreshAccessToken } from './util/oauthHelper';
 
 const debug = getLogger('tsdav:client');
 export class DAVClient {
@@ -21,14 +21,14 @@ export class DAVClient {
     }
   }
 
-  async basicAuth(credentials: DAVCredentials): Promise<void> {
+  async basicAuth(credentials: DAVCredentials = this.credentials): Promise<void> {
     this.authHeaders.append(
       'Authorization',
       `Basic ${encode(`${credentials.username}:${credentials.password}`)}`
     );
   }
 
-  async Oauth(credentials: DAVCredentials): Promise<void> {
+  async Oauth(credentials: DAVCredentials = this.credentials): Promise<void> {
     if (!credentials.refreshToken) {
       // No refresh token, fetch new tokens
       this.credentials = { ...credentials, ...(await fetchOauthTokens(credentials)) };
@@ -42,7 +42,7 @@ export class DAVClient {
     // now we should have valid access token
   }
 
-  async raw(options: DAVRequest): Promise<DAVResponse> {
-    return davRequest(this.url, options);
+  async raw(options: DAVRequest): Promise<DAVResponse[]> {
+    return davRequest(this.url, { headers: this.authHeaders, ...options });
   }
 }

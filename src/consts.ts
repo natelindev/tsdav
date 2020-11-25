@@ -6,12 +6,40 @@ export enum DAVNamespace {
   DAV = 'DAV:',
 }
 
-export enum DAVMethod {
-  COPY = 'COPY',
-  LOCK = 'LOCK',
-  MKCOL = 'MKCOL',
-  MOVE = 'MOVE',
-  PROPFIND = 'PROPFIND',
-  PROPPATCH = 'PROPPATCH',
-  UNLOCK = 'UNLOCK',
-}
+export const DAVAttributeMap = {
+  [DAVNamespace.CALDAV]: 'xmlns:c',
+  [DAVNamespace.CARDDAV]: 'xmlns:card',
+  [DAVNamespace.CALENDAR_SERVER]: 'xmlns:cs',
+  [DAVNamespace.CALDAV_APPLE]: 'xmlns:ca',
+  [DAVNamespace.DAV]: 'xmlns:d',
+};
+
+export const DAVNamespaceShorthandMap = {
+  [DAVNamespace.CALDAV]: 'c',
+  [DAVNamespace.CARDDAV]: 'card',
+  [DAVNamespace.CALENDAR_SERVER]: 'cs',
+  [DAVNamespace.CALDAV_APPLE]: 'ca',
+  [DAVNamespace.DAV]: 'd',
+};
+
+export type DAVMethods =
+  | 'COPY'
+  | 'LOCK'
+  | 'MKCOL'
+  | 'MOVE'
+  | 'PROPFIND'
+  | 'PROPPATCH'
+  | 'UNLOCK'
+  | 'REPORT'
+  | 'SEARCH';
+
+export type HTTPMethods =
+  | 'GET'
+  | 'HEAD'
+  | 'POST'
+  | 'PUT'
+  | 'DELETE'
+  | 'CONNECT'
+  | 'OPTIONS'
+  | 'TRACE'
+  | 'PATCH';
