@@ -21,6 +21,7 @@
   },
   "rules": {
     "no-plusplus": ["error", { "allowForLoopAfterthoughts": true }],
-    "import/prefer-default-export": "off"
+    "import/prefer-default-export": "off",
+    "no-restricted-syntax": ["error", "WithStatement", "BinaryExpression[operator='in']"]
   }
 }

@@ -1,5 +1,5 @@
 export class DAVObject {
-  data: string;
+  data: any;
 
   etag: string;
 

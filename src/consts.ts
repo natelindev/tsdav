@@ -43,3 +43,12 @@ export type HTTPMethods =
   | 'OPTIONS'
   | 'TRACE'
   | 'PATCH';
+
+export enum ICALObjects {
+  VEVENT = 'VEVENT',
+  VTODO = 'VTODO',
+  VJOURNAL = 'VJOURNAL',
+  VFREEBUSY = 'VFREEBUSY',
+  VTIMEZONE = 'VTIMEZONE',
+  VALARM = 'VALARM',
+}

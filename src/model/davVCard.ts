@@ -1,11 +1,12 @@
+import { DAVAddressBook } from './davAddressBook';
 import { DAVObject } from './davObject';
 
-export class VCard extends DAVObject {
-  addressBook: string;
+export class DAVVCard extends DAVObject {
+  addressBook: DAVAddressBook;
 
-  addressData: string;
+  addressData: any;
 
-  constructor(options: VCard) {
+  constructor(options?: DAVVCard) {
     super(options);
     if (options) {
       this.addressBook = options.addressBook;

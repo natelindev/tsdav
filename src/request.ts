@@ -27,7 +27,7 @@ export type DAVResponse = {
   ok: boolean;
   error?: { [key: string]: any };
   responsedescription?: string;
-  props?: { [key: string]: { status: number; statusText: string; ok: boolean; value: any } };
+  props?: { [key: string]: { status: number; statusText: string; ok: boolean; value: any } | any };
 };
 
 export type DAVRequest = {
@@ -38,22 +38,29 @@ export type DAVRequest = {
   attributes?: { [key: string]: any };
 };
 
-export async function davRequest(url: string, options: DAVRequest): Promise<DAVResponse[]> {
-  const { headers, body, namespace, method, attributes } = options;
-  const xmlBody = convert.js2xml(
-    { ...body, _attributes: attributes },
-    {
-      compact: true,
-      spaces: 2,
-      elementNameFn: (name) => {
-        // add namespace to all keys without namespace
-        if (namespace && !/^.+:.+/.test(name)) {
-          return `${namespace}:${name}`;
+export async function davRequest(
+  url: string,
+  init: DAVRequest,
+  options?: { propDetail?: boolean; convertIncoming?: boolean; parseOutgoing?: boolean }
+): Promise<DAVResponse[]> {
+  const { headers, body, namespace, method, attributes } = init;
+  const { propDetail = false, convertIncoming = true, parseOutgoing = true } = options;
+  const xmlBody = convertIncoming
+    ? convert.js2xml(
+        { ...body, _attributes: attributes },
+        {
+          compact: true,
+          spaces: 2,
+          elementNameFn: (name) => {
+            // add namespace to all keys without namespace
+            if (namespace && !/^.+:.+/.test(name)) {
+              return `${namespace}:${name}`;
+            }
+            return name;
+          },
         }
-        return name;
-      },
-    }
-  );
+      )
+    : body;
 
   const davResponse = await fetch(url, {
     headers: { 'Content-Type': 'text/xml;charset=UTF-8', ...headers },
@@ -65,7 +72,11 @@ export async function davRequest(url: string, options: DAVRequest): Promise<DAVR
 
   // filter out invalid responses
   debug(resText);
-  if (!davResponse.ok || !davResponse.headers.get('content-type').includes('xml')) {
+  if (
+    !davResponse.ok ||
+    !davResponse.headers.get('content-type').includes('xml') ||
+    !parseOutgoing
+  ) {
     return [
       {
         href: davResponse.url,
@@ -130,13 +141,15 @@ export async function davRequest(url: string, options: DAVRequest): Promise<DAVR
         const statusCode = Number.parseInt(innerMatchArr?.groups.status, 10);
         return {
           ...prev,
-          [Object.keys(curr.prop)[0]]: {
-            value: curr.prop,
-            status: statusCode,
-            ok: statusCode >= 200 && statusCode < 400,
-            statusText: innerMatchArr && innerMatchArr.groups.statusText,
-            responsedescription: curr.responsedescription,
-          },
+          [Object.keys(curr.prop)[0]]: propDetail
+            ? {
+                value: curr.prop,
+                status: statusCode,
+                ok: statusCode >= 200 && statusCode < 400,
+                statusText: innerMatchArr && innerMatchArr.groups.statusText,
+                responsedescription: curr.responsedescription,
+              }
+            : curr.prop,
         };
       }, {}),
     };
@@ -146,11 +159,11 @@ export async function davRequest(url: string, options: DAVRequest): Promise<DAVR
 export async function propfind(
   url: string,
   props: DAVProp[],
-  options: { depth: DAVDepth }
+  options?: { depth?: DAVDepth; headers?: { [key: string]: any } }
 ): Promise<DAVResponse[]> {
   return davRequest(url, {
     method: 'PROPFIND',
-    headers: { Depth: options.depth },
+    headers: { ...options.headers, Depth: options.depth },
     namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
     body: {
       propfind: {
@@ -171,6 +184,7 @@ export async function syncCollection(
   url: string,
   props: DAVProp[],
   options: {
+    headers: { [key: string]: any };
     depth: DAVDepth;
     syncLevel: number;
     syncToken: string;
@@ -179,7 +193,7 @@ export async function syncCollection(
   return davRequest(url, {
     method: 'REPORT',
     namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
-    headers: { Depth: options.depth },
+    headers: { ...options.headers, Depth: options.depth },
     body: {
       'sync-collection': {
         _attributes: getDAVAttribute([DAVNamespace.CALDAV, DAVNamespace.CARDDAV, DAVNamespace.DAV]),
@@ -194,11 +208,11 @@ export async function syncCollection(
 export async function collectionQuery(
   url: string,
   body: any,
-  options: { depth: DAVDepth }
+  options: { depth?: DAVDepth; headers?: { [key: string]: any } }
 ): Promise<DAVResponse[]> {
   return davRequest(url, {
     method: 'REPORT',
-    headers: { Depth: options.depth },
+    headers: { ...options.headers, Depth: options.depth },
     body,
   });
 }
@@ -206,7 +220,7 @@ export async function collectionQuery(
 export async function addressBookQuery(
   url: string,
   props: DAVProp[],
-  depth: DAVDepth
+  options: { depth?: DAVDepth; headers?: { [key: string]: any } }
 ): Promise<DAVResponse[]> {
   return collectionQuery(
     url,
@@ -223,16 +237,19 @@ export async function addressBookQuery(
         },
       },
     },
-    { depth }
+    { depth: options.depth, headers: options.headers }
   );
 }
 
 export async function calendarQuery(
   url: string,
   props: DAVProp[],
-  filters: DAVFilter[],
-  timezone: string,
-  depth: DAVDepth
+  options?: {
+    filters?: DAVFilter[];
+    timezone?: string;
+    depth?: DAVDepth;
+    headers?: { [key: string]: any };
+  }
 ): Promise<DAVResponse[]> {
   return collectionQuery(
     url,
@@ -245,17 +262,17 @@ export async function calendarQuery(
           DAVNamespace.DAV,
         ]),
         prop: formatProps(props),
-        filter: formatFilters(filters),
-        timezone,
+        filter: formatFilters(options.filters),
+        timezone: options.timezone,
       },
     },
-    { depth }
+    { depth: options.depth }
   );
 }
 
 export async function createObject(
   url: string,
-  data: string,
+  data: any,
   headers: { [key: string]: any }
 ): Promise<Response> {
   return fetch(url, { method: 'PUT', body: data, headers });
@@ -263,7 +280,7 @@ export async function createObject(
 
 export async function updateObject(
   url: string,
-  data: string,
+  data: any,
   etag: string,
   headers: { [key: string]: any }
 ): Promise<Response> {
@@ -272,9 +289,8 @@ export async function updateObject(
 
 export async function deleteObject(
   url: string,
-  data: string,
   etag: string,
   headers: { [key: string]: any }
 ): Promise<Response> {
-  return fetch(url, { method: 'DELETE', body: data, headers: { ...headers, 'If-Match': etag } });
+  return fetch(url, { method: 'DELETE', headers: { ...headers, 'If-Match': etag } });
 }

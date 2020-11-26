@@ -1,4 +1,4 @@
-export const urlIncludes = (urlA: string, urlB: string): boolean => {
+export const urlEquals = (urlA: string, urlB: string): boolean => {
   if (!urlA || !urlB) {
     return false;
   }
