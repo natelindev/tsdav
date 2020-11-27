@@ -1,22 +1,24 @@
 import { encode } from 'base-64';
+import { fetch, Headers } from 'cross-fetch';
 import getLogger from 'debug';
 import { DAVDepth, DAVFilter, DAVProp } from 'requestTypes';
 import url from 'url';
-import * as request from './request';
+
 import { DAVNamespace, ICALObjects } from './consts';
 import {
-  DAVCollection,
   DAVAccount,
-  DAVCalendar,
-  DAVCredentials,
   DAVAddressBook,
+  DAVCalendar,
   DAVCalendarObject,
+  DAVCollection,
+  DAVCredentials,
   DAVVCard,
 } from './model';
-
-import { DAVRequest, davRequest, DAVResponse } from './request';
-import { fetchOauthTokens, refreshAccessToken } from './util/oauthHelper';
+import * as request from './request';
+import { fetchOauthTokens, refreshAccessToken, Tokens } from './util/oauthHelper';
 import { urlEquals } from './util/urlEquals';
+
+import type { DAVRequest, DAVResponse } from './request';
 
 const debug = getLogger('tsdav:client');
 export class DAVClient {
@@ -26,7 +28,7 @@ export class DAVClient {
 
   credentials?: DAVCredentials;
 
-  constructor(options: DAVClient) {
+  constructor(options: { url: string; credentials: DAVCredentials }) {
     this.authHeaders = new Headers();
     if (options) {
       this.url = options.url;
@@ -36,6 +38,9 @@ export class DAVClient {
 
   // Authentication
   async basicAuth(credentials: DAVCredentials = this.credentials): Promise<void> {
+    debug(
+      `Basic auth token generated: ${encode(`${credentials.username}:${credentials.password}`)}`
+    );
     this.authHeaders.append(
       'Authorization',
       `Basic ${encode(`${credentials.username}:${credentials.password}`)}`
@@ -43,17 +48,21 @@ export class DAVClient {
   }
 
   async oauth(credentials: DAVCredentials = this.credentials): Promise<void> {
+    let tokens: Tokens;
     if (!credentials.refreshToken) {
       // No refresh token, fetch new tokens
-      this.credentials = { ...credentials, ...(await fetchOauthTokens(credentials)) };
-    } else if (credentials.refreshToken && !credentials.accessToken) {
+      tokens = await fetchOauthTokens(credentials);
+    } else if (
+      (credentials.refreshToken && !credentials.accessToken) ||
+      Date.now() > (credentials.expiration ?? 0)
+    ) {
       // have refresh token, but no accessToken, fetch access token only
-      this.credentials = { ...credentials, ...(await refreshAccessToken(credentials)) };
-    } else if (Date.now() > (credentials.expiration ?? 0)) {
-      // have both, but accessToken was expired
-      this.credentials = { ...credentials, ...(await refreshAccessToken(credentials)) };
+      // or have both, but accessToken was expired
+      tokens = await refreshAccessToken(credentials);
     }
     // now we should have valid access token
+    debug(`Oauth tokens fetched: ${tokens}`);
+    this.credentials = { ...credentials, ...(await refreshAccessToken(credentials)) };
   }
 
   logout(): void {
@@ -65,14 +74,14 @@ export class DAVClient {
     init: DAVRequest,
     options: { propDetail?: boolean; convertIncoming?: boolean; parseOutgoing?: boolean }
   ): Promise<DAVResponse[]> {
-    return davRequest(this.url, { headers: this.authHeaders, ...init }, options);
+    return request.davRequest(this.url, { headers: this.authHeaders, ...init }, options);
   }
 
   async rawXML(
     init: DAVRequest,
     options: { propDetail?: boolean; parseOutgoing?: boolean }
   ): Promise<DAVResponse[]> {
-    return davRequest(
+    return request.davRequest(
       this.url,
       { headers: this.authHeaders, ...init },
       { ...options, convertIncoming: false }
@@ -108,10 +117,10 @@ export class DAVClient {
   async propfind(
     propFindUrl: string,
     props: DAVProp[],
-    options?: { depth: DAVDepth }
+    options?: { depth?: DAVDepth }
   ): Promise<DAVResponse[]> {
     return request.propfind(propFindUrl, props, {
-      depth: options.depth,
+      depth: options?.depth,
       headers: this.authHeaders,
     });
   }
@@ -218,10 +227,9 @@ export class DAVClient {
   async serviceDiscovery(account: DAVAccount): Promise<string> {
     debug('Service discovery...');
     const endpoint = url.parse(account.server);
-    endpoint.protocol = endpoint.protocol || 'http';
 
     const uri = url.format({
-      protocol: endpoint.protocol,
+      protocol: endpoint.protocol ?? 'http',
       host: endpoint.host,
       pathname: `/.well-known/${account.accountType}`,
     });
@@ -246,22 +254,21 @@ export class DAVClient {
         }
       }
     } catch (err) {
-      debug('Service discovery failed');
+      debug(`Service discovery failed: ${err.stack}`);
     }
 
     return endpoint.href;
   }
 
   async fetchPrincipalUrl(account: DAVAccount): Promise<string> {
-    debug(`Fetch principal url from path ${account.rootUrl}`);
+    debug(`Fetching principal url from path ${account.rootUrl}`);
     const responses = await this.propfind(
       account.rootUrl,
       [{ name: 'current-user-principal', namespace: DAVNamespace.DAV }],
       { depth: '0' }
     );
-
-    // TODO: figure out the type
-    return url.resolve(account.rootUrl, responses[0]?.props.currentUserPrincipal);
+    debug(`Fetched principal url ${responses[0]?.props.currentUserPrincipal.href}`);
+    return url.resolve(account.rootUrl, responses[0]?.props.currentUserPrincipal.href);
   }
 
   async fetchHomeUrl(account: DAVAccount): Promise<string> {
@@ -287,8 +294,8 @@ export class DAVClient {
     loadObjects = false
   ): Promise<DAVAccount> {
     const rootUrl = await this.serviceDiscovery(account);
-    const principalUrl = await this.fetchPrincipalUrl(account);
-    const homeUrl = await this.fetchHomeUrl(account);
+    const principalUrl = await this.fetchPrincipalUrl({ ...account, rootUrl });
+    const homeUrl = await this.fetchHomeUrl({ ...account, rootUrl, principalUrl });
     let calendars: DAVCalendar[];
     let addressBooks: DAVAddressBook[];
     // to load objects you must first load collections

@@ -1,5 +1,5 @@
-import { DAVCalendar } from './davCalendar';
 import { DAVAddressBook } from './davAddressBook';
+import { DAVCalendar } from './davCalendar';
 import { DAVCredentials } from './davCredentials';
 
 export class DAVAccount {
@@ -7,7 +7,7 @@ export class DAVAccount {
 
   credentials?: DAVCredentials;
 
-  rootUrl?: string;
+  rootUrl: string;
 
   principalUrl?: string;
 

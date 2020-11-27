@@ -1,12 +1,17 @@
 import { fetch } from 'cross-fetch';
 import getLogger from 'debug';
+import { DAVDepth, DAVFilter, DAVProp } from 'requestTypes';
 import convert from 'xml-js';
 
-import { DAVDepth, DAVFilter, DAVProp } from 'requestTypes';
+import { DAVMethods, DAVNamespace, DAVNamespaceShorthandMap, HTTPMethods } from './consts';
+import { camelCase } from './util/camelCase';
 import { nativeType } from './util/nativeType';
-
-import { DAVNamespace, DAVMethods, HTTPMethods, DAVNamespaceShorthandMap } from './consts';
-import { getDAVAttribute, formatProps, formatFilters } from './util/requestHelper';
+import {
+  formatFilters,
+  formatProps,
+  formatResponseProp,
+  getDAVAttribute,
+} from './util/requestHelper';
 
 const debug = getLogger('tsdav:request');
 
@@ -44,7 +49,7 @@ export async function davRequest(
   options?: { propDetail?: boolean; convertIncoming?: boolean; parseOutgoing?: boolean }
 ): Promise<DAVResponse[]> {
   const { headers, body, namespace, method, attributes } = init;
-  const { propDetail = false, convertIncoming = true, parseOutgoing = true } = options;
+  const { propDetail = false, convertIncoming = true, parseOutgoing = true } = options ?? {};
   const xmlBody = convertIncoming
     ? convert.js2xml(
         { ...body, _attributes: attributes },
@@ -62,6 +67,8 @@ export async function davRequest(
       )
     : body;
 
+  debug('outgoing xml:');
+  debug(xmlBody);
   const davResponse = await fetch(url, {
     headers: { 'Content-Type': 'text/xml;charset=UTF-8', ...headers },
     body: xmlBody,
@@ -71,6 +78,7 @@ export async function davRequest(
   const resText = await davResponse.text();
 
   // filter out invalid responses
+  debug('response xml:');
   debug(resText);
   if (
     !davResponse.ok ||
@@ -141,15 +149,15 @@ export async function davRequest(
         const statusCode = Number.parseInt(innerMatchArr?.groups.status, 10);
         return {
           ...prev,
-          [Object.keys(curr.prop)[0]]: propDetail
+          [camelCase(Object.keys(curr.prop)[0])]: propDetail
             ? {
-                value: curr.prop,
+                value: curr.prop[Object.keys(curr.prop)[0]],
                 status: statusCode,
                 ok: statusCode >= 200 && statusCode < 400,
                 statusText: innerMatchArr && innerMatchArr.groups.statusText,
                 responsedescription: curr.responsedescription,
               }
-            : curr.prop,
+            : formatResponseProp(curr.prop[Object.keys(curr.prop)[0]]),
         };
       }, {}),
     };
