@@ -16,7 +16,7 @@ export class DAVCollection {
 
   reports?: any;
 
-  resourceType?: any;
+  resourcetype?: any;
 
   syncToken?: string;
 
@@ -31,7 +31,7 @@ export class DAVCollection {
       this.description = options.description;
       this.displayName = options.displayName;
       this.reports = options.reports;
-      this.resourceType = options.resourceType;
+      this.resourcetype = options.resourcetype;
       this.syncToken = options.syncToken;
       this.url = options.url;
     }

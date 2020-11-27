@@ -7,7 +7,7 @@ export class DAVAccount {
 
   credentials?: DAVCredentials;
 
-  rootUrl: string;
+  rootUrl?: string;
 
   principalUrl?: string;
 

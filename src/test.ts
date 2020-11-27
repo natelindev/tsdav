@@ -6,13 +6,22 @@ import { DAVCredentials } from './model';
 const debug = getLogger('tsdav:test');
 
 (async () => {
-  const credentials = new DAVCredentials({ username: 'test', password: 'test' });
-  const client = new DAVClient({ url: 'http://localhost:5232', credentials });
-  await client.basicAuth();
-  const result = await client.createAccount({
-    accountType: 'caldav',
-    server: client.url,
-    rootUrl: 'http://sadf:adsf@localhost:5232/',
+  const credentials = new DAVCredentials({
+    clientId: '',
+    clientSecret: '',
+    tokenUrl: '',
+    authorizationCode: '',
   });
-  debug(result);
+  const client = new DAVClient({
+    url: '',
+    credentials,
+  });
+  await client.oauth();
+  const account = await client.createAccount({
+    accountType: 'caldav',
+    credentials,
+    server: client.url,
+  });
+  const calendars = await client.fetchCalendars(account);
+  debug(calendars);
 })();

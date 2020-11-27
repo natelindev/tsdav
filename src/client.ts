@@ -1,5 +1,5 @@
 import { encode } from 'base-64';
-import { fetch, Headers } from 'cross-fetch';
+import { fetch } from 'cross-fetch';
 import getLogger from 'debug';
 import { DAVDepth, DAVFilter, DAVProp } from 'requestTypes';
 import url from 'url';
@@ -24,12 +24,11 @@ const debug = getLogger('tsdav:client');
 export class DAVClient {
   url: string;
 
-  authHeaders?: Headers;
+  authHeaders?: { [key: string]: any };
 
   credentials?: DAVCredentials;
 
   constructor(options: { url: string; credentials: DAVCredentials }) {
-    this.authHeaders = new Headers();
     if (options) {
       this.url = options.url;
       this.credentials = options.credentials;
@@ -41,10 +40,9 @@ export class DAVClient {
     debug(
       `Basic auth token generated: ${encode(`${credentials.username}:${credentials.password}`)}`
     );
-    this.authHeaders.append(
-      'Authorization',
-      `Basic ${encode(`${credentials.username}:${credentials.password}`)}`
-    );
+    this.authHeaders = {
+      Authorization: `Basic ${encode(`${credentials.username}:${credentials.password}`)}`,
+    };
   }
 
   async oauth(credentials: DAVCredentials = this.credentials): Promise<void> {
@@ -62,7 +60,10 @@ export class DAVClient {
     }
     // now we should have valid access token
     debug(`Oauth tokens fetched: ${tokens}`);
-    this.credentials = { ...credentials, ...(await refreshAccessToken(credentials)) };
+    this.credentials = { ...credentials, ...tokens };
+    this.authHeaders = {
+      Authorization: tokens.access_token,
+    };
   }
 
   logout(): void {
@@ -262,13 +263,13 @@ export class DAVClient {
 
   async fetchPrincipalUrl(account: DAVAccount): Promise<string> {
     debug(`Fetching principal url from path ${account.rootUrl}`);
-    const responses = await this.propfind(
+    const [response] = await this.propfind(
       account.rootUrl,
       [{ name: 'current-user-principal', namespace: DAVNamespace.DAV }],
       { depth: '0' }
     );
-    debug(`Fetched principal url ${responses[0]?.props.currentUserPrincipal.href}`);
-    return url.resolve(account.rootUrl, responses[0]?.props.currentUserPrincipal.href);
+    debug(`Fetched principal url ${response.props?.currentUserPrincipal.href}`);
+    return url.resolve(account.rootUrl, response.props?.currentUserPrincipal.href ?? '');
   }
 
   async fetchHomeUrl(account: DAVAccount): Promise<string> {
@@ -280,12 +281,14 @@ export class DAVClient {
     ]);
 
     const matched = responses.find((r) => urlEquals(account.principalUrl, r.href));
-    return url.resolve(
+    const result = url.resolve(
       account.rootUrl,
       account.accountType === 'caldav'
-        ? matched.props.calendarHomeSet
-        : matched.props.addressbookHomeSet
+        ? matched.props.calendarHomeSet.href
+        : matched.props.addressbookHomeSet.href
     );
+    debug(`Fetched home url ${result}`);
+    return result;
   }
 
   async createAccount(
@@ -293,30 +296,29 @@ export class DAVClient {
     loadCollections = true,
     loadObjects = false
   ): Promise<DAVAccount> {
-    const rootUrl = await this.serviceDiscovery(account);
-    const principalUrl = await this.fetchPrincipalUrl({ ...account, rootUrl });
-    const homeUrl = await this.fetchHomeUrl({ ...account, rootUrl, principalUrl });
-    let calendars: DAVCalendar[];
-    let addressBooks: DAVAddressBook[];
+    const newAccount = new DAVAccount(account);
+    newAccount.rootUrl = await this.serviceDiscovery(account);
+    newAccount.principalUrl = await this.fetchPrincipalUrl(newAccount);
+    newAccount.homeUrl = await this.fetchHomeUrl(newAccount);
     // to load objects you must first load collections
     if (loadCollections || loadObjects) {
       if (account.accountType === 'caldav') {
-        calendars = await this.fetchCalendars(account);
+        newAccount.calendars = await this.fetchCalendars(newAccount);
       } else if (account.accountType === 'carddav') {
-        addressBooks = await this.fetchAddressBooks(account);
+        newAccount.addressBooks = await this.fetchAddressBooks(newAccount);
       }
     }
     if (loadObjects) {
       if (account.accountType === 'caldav') {
-        calendars = await Promise.all(
-          calendars.map(async (cal) => ({
+        newAccount.calendars = await Promise.all(
+          newAccount.calendars.map(async (cal) => ({
             ...cal,
             objects: await this.fetchCalendarObjects(cal),
           }))
         );
       } else if (account.accountType === 'carddav') {
-        addressBooks = await Promise.all(
-          addressBooks.map(async (addr) => ({
+        newAccount.addressBooks = await Promise.all(
+          newAccount.addressBooks.map(async (addr) => ({
             ...addr,
             objects: await this.fetchVCards(addr),
           }))
@@ -324,14 +326,7 @@ export class DAVClient {
       }
     }
 
-    return new DAVAccount({
-      ...account,
-      rootUrl,
-      principalUrl,
-      homeUrl,
-      calendars,
-      addressBooks,
-    });
+    return newAccount;
   }
 
   /**
@@ -354,15 +349,14 @@ export class DAVClient {
       ],
       { depth: '1' }
     );
+
     return Promise.all(
       res
-        .filter((r) => r.props.resourcetype.includes('calendar'))
+        .filter((r) => Object.keys(r.props.resourcetype ?? {}).includes('calendar'))
         .filter((rc) => {
-          // filter out iCal format calendars.
-          const components: any[] = rc.props.supportedCalendarComponentSet || [];
-          return components.reduce((prev, curr) => {
-            return prev || Object.values(ICALObjects).includes(curr);
-          }, false);
+          // filter out none iCal format calendars.
+          const components: any[] = rc.props.supportedCalendarComponentSet.comp || [];
+          return true; // components.some((c) => Object.values(ICALObjects).includes(c));
         })
         .map((rs) => {
           debug(`Found calendar ${rs.props.displayname},
@@ -376,7 +370,7 @@ export class DAVClient {
             ctag: rs.props.getctag,
             displayName: rs.props.displayname,
             components: rs.props.supportedCalendarComponentSet,
-            resourceType: rs.props.resourcetype,
+            resourcetype: Object.keys(rs.props.resourcetype),
             syncToken: rs.props.syncToken,
           });
         })
@@ -480,7 +474,7 @@ export class DAVClient {
             url: url.resolve(account.rootUrl, rs.href),
             ctag: rs.props.getctag,
             displayName: rs.props.displayname,
-            resourceType: rs.props.resourcetype,
+            resourcetype: rs.props.resourcetype,
             syncToken: rs.props.syncToken,
           });
         })

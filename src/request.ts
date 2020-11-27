@@ -6,12 +6,7 @@ import convert from 'xml-js';
 import { DAVMethods, DAVNamespace, DAVNamespaceShorthandMap, HTTPMethods } from './consts';
 import { camelCase } from './util/camelCase';
 import { nativeType } from './util/nativeType';
-import {
-  formatFilters,
-  formatProps,
-  formatResponseProp,
-  getDAVAttribute,
-} from './util/requestHelper';
+import { formatFilters, formatProps, getDAVAttribute } from './util/requestHelper';
 
 const debug = getLogger('tsdav:request');
 
@@ -46,10 +41,10 @@ export type DAVRequest = {
 export async function davRequest(
   url: string,
   init: DAVRequest,
-  options?: { propDetail?: boolean; convertIncoming?: boolean; parseOutgoing?: boolean }
+  options?: { convertIncoming?: boolean; parseOutgoing?: boolean }
 ): Promise<DAVResponse[]> {
   const { headers, body, namespace, method, attributes } = init;
-  const { propDetail = false, convertIncoming = true, parseOutgoing = true } = options ?? {};
+  const { convertIncoming = true, parseOutgoing = true } = options ?? {};
   const xmlBody = convertIncoming
     ? convert.js2xml(
         { ...body, _attributes: attributes },
@@ -67,8 +62,8 @@ export async function davRequest(
       )
     : body;
 
-  debug('outgoing xml:');
-  debug(xmlBody);
+  // debug('outgoing xml:');
+  // debug(xmlBody);
   const davResponse = await fetch(url, {
     headers: { 'Content-Type': 'text/xml;charset=UTF-8', ...headers },
     body: xmlBody,
@@ -78,8 +73,8 @@ export async function davRequest(
   const resText = await davResponse.text();
 
   // filter out invalid responses
-  debug('response xml:');
-  debug(resText);
+  // debug('response xml:');
+  // debug(resText);
   if (
     !davResponse.ok ||
     !davResponse.headers.get('content-type').includes('xml') ||
@@ -120,8 +115,8 @@ export async function davRequest(
         debug(e.stack);
       }
     },
-    // remove namespace
-    elementNameFn: (attributeName) => attributeName.replace(/^.+:/, ''),
+    // remove namespace & camelCase
+    elementNameFn: (attributeName) => camelCase(attributeName.replace(/^.+:/, '')),
     ignoreAttributes: true,
     ignoreDeclaration: true,
   });
@@ -145,19 +140,9 @@ export async function davRequest(
         ? responseBody.propstat
         : [responseBody.propstat]
       ).reduce((prev, curr) => {
-        const innerMatchArr = statusRegex.exec(curr.status);
-        const statusCode = Number.parseInt(innerMatchArr?.groups.status, 10);
         return {
           ...prev,
-          [camelCase(Object.keys(curr.prop)[0])]: propDetail
-            ? {
-                value: curr.prop[Object.keys(curr.prop)[0]],
-                status: statusCode,
-                ok: statusCode >= 200 && statusCode < 400,
-                statusText: innerMatchArr && innerMatchArr.groups.statusText,
-                responsedescription: curr.responsedescription,
-              }
-            : formatResponseProp(curr.prop[Object.keys(curr.prop)[0]]),
+          ...curr.prop,
         };
       }, {}),
     };
