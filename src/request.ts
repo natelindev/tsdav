@@ -1,12 +1,12 @@
 import { fetch } from 'cross-fetch';
 import getLogger from 'debug';
-import { DAVDepth, DAVFilter, DAVProp } from 'requestTypes';
+import { DAVDepth, DAVProp, DAVRequest, DAVResponse } from 'DAVTypes';
 import convert from 'xml-js';
 
-import { DAVMethods, DAVNamespace, DAVNamespaceShorthandMap, HTTPMethods } from './consts';
+import { DAVNamespace, DAVNamespaceShorthandMap } from './consts';
 import { camelCase } from './util/camelCase';
 import { nativeType } from './util/nativeType';
-import { formatFilters, formatProps, getDAVAttribute } from './util/requestHelper';
+import { formatProps, getDAVAttribute } from './util/requestHelpers';
 
 const debug = getLogger('tsdav:request');
 
@@ -18,24 +18,6 @@ type RawResponse = {
   error: { [key: string]: any };
   responsedescription: string;
   propstat: RawProp | RawProp[];
-};
-
-export type DAVResponse = {
-  href?: string;
-  status: number;
-  statusText: string;
-  ok: boolean;
-  error?: { [key: string]: any };
-  responsedescription?: string;
-  props?: { [key: string]: { status: number; statusText: string; ok: boolean; value: any } | any };
-};
-
-export type DAVRequest = {
-  headers?: { [key: string]: any };
-  method: DAVMethods | HTTPMethods;
-  body: any;
-  namespace?: string;
-  attributes?: { [key: string]: any };
 };
 
 export async function davRequest(
@@ -173,117 +155,31 @@ export async function propfind(
   });
 }
 
-export async function syncCollection(
-  url: string,
-  props: DAVProp[],
-  options: {
-    headers: { [key: string]: any };
-    depth: DAVDepth;
-    syncLevel: number;
-    syncToken: string;
-  }
-): Promise<DAVResponse[]> {
-  return davRequest(url, {
-    method: 'REPORT',
-    namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
-    headers: { ...options.headers, Depth: options.depth },
-    body: {
-      'sync-collection': {
-        _attributes: getDAVAttribute([DAVNamespace.CALDAV, DAVNamespace.CARDDAV, DAVNamespace.DAV]),
-        'sync-level': options.syncLevel,
-        'sync-token': options.syncToken,
-        prop: formatProps(props),
-      },
-    },
-  });
-}
-
-export async function collectionQuery(
-  url: string,
-  body: any,
-  options: { depth?: DAVDepth; headers?: { [key: string]: any } }
-): Promise<DAVResponse[]> {
-  return davRequest(url, {
-    method: 'REPORT',
-    headers: { ...options.headers, Depth: options.depth },
-    body,
-  });
-}
-
-export async function addressBookQuery(
-  url: string,
-  props: DAVProp[],
-  options: { depth?: DAVDepth; headers?: { [key: string]: any } }
-): Promise<DAVResponse[]> {
-  return collectionQuery(
-    url,
-    {
-      'addressbook-query': {
-        _attributes: getDAVAttribute([DAVNamespace.CARDDAV, DAVNamespace.DAV]),
-        prop: formatProps(props),
-        filter: {
-          'prop-filter': {
-            _attributes: {
-              name: 'FN',
-            },
-          },
-        },
-      },
-    },
-    { depth: options.depth, headers: options.headers }
-  );
-}
-
-export async function calendarQuery(
-  url: string,
-  props: DAVProp[],
-  options?: {
-    filters?: DAVFilter[];
-    timezone?: string;
-    depth?: DAVDepth;
-    headers?: { [key: string]: any };
-  }
-): Promise<DAVResponse[]> {
-  return collectionQuery(
-    url,
-    {
-      'calendar-query': {
-        _attributes: getDAVAttribute([
-          DAVNamespace.CALDAV,
-          DAVNamespace.CALENDAR_SERVER,
-          DAVNamespace.CALDAV_APPLE,
-          DAVNamespace.DAV,
-        ]),
-        prop: formatProps(props),
-        filter: formatFilters(options.filters),
-        timezone: options.timezone,
-      },
-    },
-    { depth: options.depth }
-  );
-}
-
 export async function createObject(
   url: string,
   data: any,
-  headers: { [key: string]: any }
+  options?: { headers?: { [key: string]: any } }
 ): Promise<Response> {
-  return fetch(url, { method: 'PUT', body: data, headers });
+  return fetch(url, { method: 'PUT', body: data, headers: options.headers });
 }
 
 export async function updateObject(
   url: string,
   data: any,
   etag: string,
-  headers: { [key: string]: any }
+  options?: { headers?: { [key: string]: any } }
 ): Promise<Response> {
-  return fetch(url, { method: 'PUT', body: data, headers: { ...headers, 'If-Match': etag } });
+  return fetch(url, {
+    method: 'PUT',
+    body: data,
+    headers: { ...options.headers, 'If-Match': etag },
+  });
 }
 
 export async function deleteObject(
   url: string,
   etag: string,
-  headers: { [key: string]: any }
+  options?: { headers?: { [key: string]: any } }
 ): Promise<Response> {
-  return fetch(url, { method: 'DELETE', headers: { ...headers, 'If-Match': etag } });
+  return fetch(url, { method: 'DELETE', headers: { ...options.headers, 'If-Match': etag } });
 }

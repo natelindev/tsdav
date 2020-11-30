@@ -1,10 +1,6 @@
-import { encode } from 'base-64';
-import { fetch } from 'cross-fetch';
 import getLogger from 'debug';
-import { DAVDepth, DAVFilter, DAVProp } from 'requestTypes';
-import url from 'url';
+import { DAVDepth, DAVFilter, DAVProp, DAVRequest, DAVResponse } from 'DAVTypes';
 
-import { DAVNamespace, ICALObjects } from './consts';
 import {
   DAVAccount,
   DAVAddressBook,
@@ -13,522 +9,344 @@ import {
   DAVCollection,
   DAVCredentials,
   DAVVCard,
-} from './model';
-import * as request from './request';
-import { fetchOauthTokens, refreshAccessToken, Tokens } from './util/oauthHelper';
-import { urlEquals } from './util/urlEquals';
+} from './types/models';
+import {
+  davRequest,
+  createObject as rawCreateObject,
+  updateObject as rawUpdateObject,
+  deleteObject as rawDeleteObject,
+  propfind as rawPropfind,
+} from './request';
 
-import type { DAVRequest, DAVResponse } from './request';
+import {
+  calendarQuery as rawCalendarQuery,
+  fetchCalendars as rawFetchCalendars,
+  fetchCalendarObjects as rawFetchCalendarObjects,
+  createCalendarObject as rawCreateCalendarObject,
+  updateCalendarObject as rawUpdateCalendarObject,
+  deleteCalendarObject as rawDeleteCalendarObject,
+  syncCalDAVAccount as rawSyncCalDAVAccount,
+} from './calendar';
+import {
+  addressBookQuery as rawAddressBookQuery,
+  fetchAddressBooks as rawFetchAddressBooks,
+  fetchVCards as rawFetchVCards,
+  createVCard as rawCreateVCard,
+  updateVCard as rawUpdateVCard,
+  deleteVCard as rawDeleteVCard,
+  syncCardDAVAccount as rawSyncCardDAVAccount,
+} from './addressBook';
+import {
+  syncCollection as rawSyncCollection,
+  collectionQuery as rawcollectionQuery,
+  supportedReportSet as rawSupportedReportSet,
+  isCollectionDirty as rawIsCollectionDirty,
+  smartCollectionSync as rawSmartCollectionSync,
+} from './collection';
+import { getBasicAuthHeaders, getOauthHeaders } from './util/authHelper';
 
 const debug = getLogger('tsdav:client');
-export class DAVClient {
-  url: string;
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+export const CreateDAVClient = async (
+  serverUrl: string,
+  credentials: DAVCredentials,
+  authMethod?: 'Basic' | 'Oauth'
+) => {
+  const authHeaders: { [key: string]: any } =
+    // eslint-disable-next-line no-nested-ternary
+    authMethod === 'Basic'
+      ? getBasicAuthHeaders(credentials)
+      : authMethod === 'Oauth'
+      ? await getOauthHeaders(credentials)
+      : {};
 
-  authHeaders?: { [key: string]: any };
-
-  credentials?: DAVCredentials;
-
-  constructor(options: { url: string; credentials: DAVCredentials }) {
-    if (options) {
-      this.url = options.url;
-      this.credentials = options.credentials;
-    }
-  }
-
-  // Authentication
-  async basicAuth(credentials: DAVCredentials = this.credentials): Promise<void> {
-    debug(
-      `Basic auth token generated: ${encode(`${credentials.username}:${credentials.password}`)}`
+  // request
+  const raw = async (
+    url: string,
+    init: DAVRequest,
+    options?: { convertIncoming?: boolean; parseOutgoing?: boolean }
+  ): Promise<DAVResponse[]> =>
+    davRequest(
+      url ?? serverUrl,
+      { ...init, headers: { ...authHeaders, ...init.headers } },
+      options
     );
-    this.authHeaders = {
-      Authorization: `Basic ${encode(`${credentials.username}:${credentials.password}`)}`,
-    };
-  }
 
-  async oauth(credentials: DAVCredentials = this.credentials): Promise<void> {
-    let tokens: Tokens;
-    if (!credentials.refreshToken) {
-      // No refresh token, fetch new tokens
-      tokens = await fetchOauthTokens(credentials);
-    } else if (
-      (credentials.refreshToken && !credentials.accessToken) ||
-      Date.now() > (credentials.expiration ?? 0)
-    ) {
-      // have refresh token, but no accessToken, fetch access token only
-      // or have both, but accessToken was expired
-      tokens = await refreshAccessToken(credentials);
-    }
-    // now we should have valid access token
-    debug(`Oauth tokens fetched: ${tokens}`);
-    this.credentials = { ...credentials, ...tokens };
-    this.authHeaders = {
-      Authorization: tokens.access_token,
-    };
-  }
-
-  logout(): void {
-    this.authHeaders = undefined;
-  }
-
-  // Raw request
-  async raw(
+  const rawXML = async (
+    url: string,
     init: DAVRequest,
-    options: { propDetail?: boolean; convertIncoming?: boolean; parseOutgoing?: boolean }
-  ): Promise<DAVResponse[]> {
-    return request.davRequest(this.url, { headers: this.authHeaders, ...init }, options);
-  }
-
-  async rawXML(
-    init: DAVRequest,
-    options: { propDetail?: boolean; parseOutgoing?: boolean }
-  ): Promise<DAVResponse[]> {
-    return request.davRequest(
-      this.url,
-      { headers: this.authHeaders, ...init },
+    options?: { parseOutgoing?: boolean }
+  ): Promise<DAVResponse[]> =>
+    davRequest(
+      url ?? serverUrl,
+      { ...init, headers: { ...authHeaders, ...init.headers } },
       { ...options, convertIncoming: false }
     );
-  }
 
-  async createObject(
-    targetUrl: string,
+  const createObject = async (
+    url: string,
     data: any,
-    headers?: { [key: string]: any }
-  ): Promise<Response> {
-    return request.createObject(targetUrl, data, { ...this.authHeaders, ...headers });
-  }
-
-  async updateObject(
-    targetUrl: string,
-    data: any,
-    etag: string,
-    headers?: { [key: string]: any }
-  ): Promise<Response> {
-    return request.updateObject(targetUrl, data, etag, { ...this.authHeaders, ...headers });
-  }
-
-  async deleteObject(
-    targetUrl: string,
-    etag: string,
-    headers?: { [key: string]: any }
-  ): Promise<Response> {
-    return request.deleteObject(targetUrl, etag, { ...this.authHeaders, ...headers });
-  }
-
-  // Basic operations
-  async propfind(
-    propFindUrl: string,
-    props: DAVProp[],
-    options?: { depth?: DAVDepth }
-  ): Promise<DAVResponse[]> {
-    return request.propfind(propFindUrl, props, {
-      depth: options?.depth,
-      headers: this.authHeaders,
+    options?: { headers?: { [key: string]: any } }
+  ): Promise<Response> =>
+    rawCreateObject(url ?? serverUrl, data, {
+      ...options,
+      headers: { ...authHeaders, ...options.headers },
     });
-  }
 
-  // query
-  async calendarQuery(
-    targetUrl: string,
-    props?: DAVProp[],
-    options?: { filters?: DAVFilter[]; timezone?: string; depth?: DAVDepth }
-  ): Promise<DAVResponse[]> {
-    return request.calendarQuery(targetUrl, props, { ...options, headers: this.authHeaders });
-  }
+  const updateObject = async (
+    url: string,
+    data: any,
+    etag: string,
+    options?: { headers?: { [key: string]: any } }
+  ): Promise<Response> =>
+    rawUpdateObject(url ?? serverUrl, data, etag, {
+      ...options,
+      headers: { ...authHeaders, ...options.headers },
+    });
 
-  async addressBookQuery(
-    targetUrl: string,
-    props?: DAVProp[],
-    options?: { filters?: DAVFilter[]; timezone?: string; depth?: DAVDepth }
-  ): Promise<DAVResponse[]> {
-    return request.addressBookQuery(targetUrl, props, { ...options, headers: this.authHeaders });
-  }
+  const deleteObject = async (
+    url: string,
+    etag: string,
+    options?: { headers?: { [key: string]: any } }
+  ): Promise<Response> =>
+    rawDeleteObject(url ?? serverUrl, etag, {
+      ...options,
+      headers: { ...authHeaders, ...options.headers },
+    });
 
-  // Collection operations
-  async supportedReportSet(collection: DAVCollection): Promise<any> {
-    const res = await this.propfind(
-      collection.url,
-      [{ name: 'supported-report-set', namespace: DAVNamespace.DAV }],
-      { depth: '1' }
-    );
-    return res[0]?.props?.supportedReportSet;
-  }
+  const propfind = async (
+    url: string,
+    props: DAVProp[],
+    options?: { depth?: DAVDepth; headers?: { [key: string]: any } }
+  ): Promise<DAVResponse[]> =>
+    rawPropfind(url ?? serverUrl, props, {
+      ...options,
+      headers: { ...authHeaders, ...options.headers },
+    });
 
-  async isCollectionDirty(collection: DAVCollection): Promise<boolean> {
-    if (!collection.ctag) {
-      return false;
-    }
-    const responses = await this.propfind(
-      collection.url,
-      [{ name: 'getctag', namespace: DAVNamespace.CALENDAR_SERVER }],
-      {
-        depth: '0',
-      }
-    );
+  // collection
+  const collectionQuery = async (
+    url: string,
+    body: any,
+    options?: { depth?: DAVDepth; headers?: { [key: string]: any } }
+  ) =>
+    rawcollectionQuery(url, body, {
+      ...options,
+      headers: { ...authHeaders, ...options.headers },
+    });
 
-    const res = responses.filter((r) => urlEquals(collection.url, r.href))[0];
-    if (!res) {
-      throw new Error('Collection does not exist on server');
-    }
-
-    return collection.ctag !== res.props.getctag;
-  }
-
-  // Collection sync
-  async sync<T extends DAVCollection>(collection: T, method: 'basic' | 'webdav'): Promise<T> {
-    const syncMethod =
-      method ?? collection.reports?.includes('syncCollection') ? 'webdav' : 'basic';
-    if (syncMethod === 'webdav') {
-      const result = await this.syncCollection(
-        collection.url,
-        [
-          { name: 'getetag', namespace: DAVNamespace.DAV },
-          { name: 'calendar-data', namespace: DAVNamespace.CALDAV },
-        ],
-        { syncLevel: 1, syncToken: collection.syncToken }
-      );
-
-      return {
-        ...collection,
-        objects: collection.objects.map((c) => {
-          const found = result.find((r) => urlEquals(r.href, c.url));
-          if (found) {
-            return { etag: found.props.getetag };
-          }
-          return c;
-        }),
-      };
-    }
-    if (syncMethod === 'basic') {
-      const isDirty = await this.isCollectionDirty(collection);
-      if (isDirty) {
-        return { ...collection, objects: {} };
-      }
-    }
-    return collection;
-  }
-
-  async syncCollection(
-    syncUrl: string,
+  const syncCollection = async (
+    url: string,
     props: DAVProp[],
     options?: {
       depth?: DAVDepth;
       syncLevel?: number;
       syncToken?: string;
+      headers?: { [key: string]: any };
     }
-  ): Promise<DAVResponse[]> {
-    return request.syncCollection(syncUrl, props, {
-      headers: this.authHeaders,
-      depth: options.depth,
-      syncLevel: options.syncLevel,
-      syncToken: options.syncToken,
-    });
-  }
-
-  // Account operations
-  async serviceDiscovery(account: DAVAccount): Promise<string> {
-    debug('Service discovery...');
-    const endpoint = url.parse(account.server);
-
-    const uri = url.format({
-      protocol: endpoint.protocol ?? 'http',
-      host: endpoint.host,
-      pathname: `/.well-known/${account.accountType}`,
+  ): Promise<DAVResponse[]> =>
+    rawSyncCollection(url, props, {
+      ...options,
+      headers: { ...authHeaders, ...options.headers },
     });
 
-    try {
-      const response = await fetch(uri, {
-        headers: this.authHeaders,
-        method: 'GET',
-        redirect: 'manual',
-      });
+  const supportedReportSet = async (
+    collection: DAVCollection,
+    options?: { headers?: { [key: string]: any } }
+  ): Promise<DAVResponse> =>
+    rawSupportedReportSet(collection, {
+      ...options,
+      headers: { ...authHeaders, ...options.headers },
+    });
 
-      if (response.status >= 300 && response.status < 400) {
-        // http redirect.
-        const location = response.headers.get('Location');
-        if (typeof location === 'string' && location.length) {
-          debug(`Service discovery redirected to ${location}`);
-          return url.format({
-            protocol: endpoint.protocol,
-            host: endpoint.host,
-            pathname: location,
-          });
-        }
-      }
-    } catch (err) {
-      debug(`Service discovery failed: ${err.stack}`);
+  const isCollectionDirty = async (
+    collection: DAVCollection,
+    options?: { headers?: { [key: string]: any } }
+  ): Promise<boolean> =>
+    rawIsCollectionDirty(collection, {
+      ...options,
+      headers: { ...authHeaders, ...options.headers },
+    });
+
+  const smartCollectionSync = async <T extends DAVCollection>(
+    collection: T,
+    method: 'basic' | 'webdav',
+    options?: { headers?: { [key: string]: any } }
+  ): Promise<T> =>
+    rawSmartCollectionSync<T>(collection, method, {
+      ...options,
+      headers: { ...authHeaders, ...options.headers },
+    });
+
+  // calendar
+  const calendarQuery = async (
+    url: string,
+    props?: DAVProp[],
+    options?: {
+      filters?: DAVFilter[];
+      timezone?: string;
+      depth?: DAVDepth;
+      headers?: { [key: string]: any };
     }
+  ): Promise<DAVResponse[]> =>
+    rawCalendarQuery(url, props, {
+      ...options,
+      headers: { ...authHeaders, ...options.headers },
+    });
 
-    return endpoint.href;
-  }
-
-  async fetchPrincipalUrl(account: DAVAccount): Promise<string> {
-    debug(`Fetching principal url from path ${account.rootUrl}`);
-    const [response] = await this.propfind(
-      account.rootUrl,
-      [{ name: 'current-user-principal', namespace: DAVNamespace.DAV }],
-      { depth: '0' }
-    );
-    debug(`Fetched principal url ${response.props?.currentUserPrincipal.href}`);
-    return url.resolve(account.rootUrl, response.props?.currentUserPrincipal.href ?? '');
-  }
-
-  async fetchHomeUrl(account: DAVAccount): Promise<string> {
-    debug(`Fetch home url from ${account.principalUrl}`);
-    const responses = await this.propfind(account.principalUrl, [
-      account.accountType === 'caldav'
-        ? { name: 'calendar-home-set', namespace: DAVNamespace.CALDAV }
-        : { name: 'addressbook-home-set', namespace: DAVNamespace.CARDDAV },
-    ]);
-
-    const matched = responses.find((r) => urlEquals(account.principalUrl, r.href));
-    const result = url.resolve(
-      account.rootUrl,
-      account.accountType === 'caldav'
-        ? matched.props.calendarHomeSet.href
-        : matched.props.addressbookHomeSet.href
-    );
-    debug(`Fetched home url ${result}`);
-    return result;
-  }
-
-  async createAccount(
+  const fetchCalendars = async (
     account: DAVAccount,
-    loadCollections = true,
-    loadObjects = false
-  ): Promise<DAVAccount> {
-    const newAccount = new DAVAccount(account);
-    newAccount.rootUrl = await this.serviceDiscovery(account);
-    newAccount.principalUrl = await this.fetchPrincipalUrl(newAccount);
-    newAccount.homeUrl = await this.fetchHomeUrl(newAccount);
-    // to load objects you must first load collections
-    if (loadCollections || loadObjects) {
-      if (account.accountType === 'caldav') {
-        newAccount.calendars = await this.fetchCalendars(newAccount);
-      } else if (account.accountType === 'carddav') {
-        newAccount.addressBooks = await this.fetchAddressBooks(newAccount);
-      }
-    }
-    if (loadObjects) {
-      if (account.accountType === 'caldav') {
-        newAccount.calendars = await Promise.all(
-          newAccount.calendars.map(async (cal) => ({
-            ...cal,
-            objects: await this.fetchCalendarObjects(cal),
-          }))
-        );
-      } else if (account.accountType === 'carddav') {
-        newAccount.addressBooks = await Promise.all(
-          newAccount.addressBooks.map(async (addr) => ({
-            ...addr,
-            objects: await this.fetchVCards(addr),
-          }))
-        );
-      }
-    }
+    options?: { headers?: { [key: string]: any } }
+  ): Promise<DAVCalendar[]> =>
+    rawFetchCalendars(account, {
+      ...options,
+      headers: { ...authHeaders, ...options.headers },
+    });
 
-    return newAccount;
-  }
-
-  /**
-   *
-   * Calendar operations
-   *
-   */
-
-  async fetchCalendars(account: DAVAccount): Promise<DAVCalendar[]> {
-    const res = await this.propfind(
-      account.homeUrl,
-      [
-        { name: 'calendar-description', namespace: DAVNamespace.CALDAV },
-        { name: 'calendar-timezone', namespace: DAVNamespace.CALDAV },
-        { name: 'displayname', namespace: DAVNamespace.DAV },
-        { name: 'getctag', namespace: DAVNamespace.CALENDAR_SERVER },
-        { name: 'resourcetype', namespace: DAVNamespace.DAV },
-        { name: 'supported-calendar-component-set', namespace: DAVNamespace.CALDAV },
-        { name: 'sync-token', namespace: DAVNamespace.DAV },
-      ],
-      { depth: '1' }
-    );
-
-    return Promise.all(
-      res
-        .filter((r) => Object.keys(r.props.resourcetype ?? {}).includes('calendar'))
-        .filter((rc) => {
-          // filter out none iCal format calendars.
-          const components: any[] = rc.props.supportedCalendarComponentSet.comp || [];
-          return true; // components.some((c) => Object.values(ICALObjects).includes(c));
-        })
-        .map((rs) => {
-          debug(`Found calendar ${rs.props.displayname},
-               props: ${JSON.stringify(rs.props)}`);
-          return new DAVCalendar({
-            data: res,
-            account,
-            description: rs.props.calendarDescription,
-            timezone: rs.props.calendarTimezone,
-            url: url.resolve(account.rootUrl, rs.href),
-            ctag: rs.props.getctag,
-            displayName: rs.props.displayname,
-            components: rs.props.supportedCalendarComponentSet,
-            resourcetype: Object.keys(rs.props.resourcetype),
-            syncToken: rs.props.syncToken,
-          });
-        })
-        .map(async (cal) => ({ ...cal, reports: await this.supportedReportSet(cal) }))
-    );
-  }
-
-  async fetchCalendarObjects(
+  const fetchCalendarObjects = async (
     calendar: DAVCalendar,
-    options?: { filters?: DAVFilter[] }
-  ): Promise<DAVCalendarObject[]> {
-    debug(`Fetching calendar objects from ${calendar?.url} 
-         ${calendar?.account?.credentials?.username}`);
-    const filters: DAVFilter[] = options.filters || [
-      {
-        type: 'comp-filter',
-        attributes: { name: 'VCALENDAR' },
-        children: [
-          {
-            type: 'comp-filter',
-            attributes: { name: 'VEVENT' },
-          },
-        ],
-      },
-    ];
+    options?: { filters?: DAVFilter[]; headers?: { [key: string]: any } }
+  ): Promise<DAVCalendarObject[]> =>
+    rawFetchCalendarObjects(calendar, {
+      ...options,
+      headers: { ...authHeaders, ...options.headers },
+    });
 
-    return (
-      await this.calendarQuery(
-        calendar.url,
-        [
-          { name: 'getetag', namespace: DAVNamespace.DAV },
-          { name: 'calendar-data', namespace: DAVNamespace.CALDAV },
-        ],
-        { filters }
-      )
-    ).map(
-      (res) =>
-        new DAVCalendarObject({
-          data: res,
-          calendar,
-          url: url.resolve(calendar.account.rootUrl, res.href),
-          etag: res.props.getetag,
-          calendarData: res.props.calendarData,
-        })
-    );
-  }
-
-  async createCalendarObject(
+  const createCalendarObject = async (
     calendar: DAVCalendar,
     iCalString: string,
-    filename: string
-  ): Promise<Response> {
-    return this.createObject(url.resolve(calendar.url, filename), iCalString, {
-      'content-type': 'text/calendar; charset=utf-8',
+    filename: string,
+    options?: { headers?: { [key: string]: any } }
+  ): Promise<Response> =>
+    rawCreateCalendarObject(calendar, iCalString, filename, {
+      ...options,
+      headers: { ...authHeaders, ...options.headers },
     });
-  }
 
-  async updateCalendarObject(calendarObject: DAVCalendarObject): Promise<Response> {
-    return this.updateObject(calendarObject.url, calendarObject.calendarData, calendarObject.etag, {
-      'content-type': 'text/calendar; charset=utf-8',
+  const updateCalendarObject = async (
+    calendarObject: DAVCalendarObject,
+    options?: { headers?: { [key: string]: any } }
+  ): Promise<Response> =>
+    rawUpdateCalendarObject(calendarObject, {
+      ...options,
+      headers: { ...authHeaders, ...options.headers },
     });
-  }
 
-  async deleteCalendarObject(calendarObject: DAVCalendarObject): Promise<Response> {
-    return this.deleteObject(calendarObject.url, calendarObject.etag);
-  }
-
-  async syncCaldavAccount(account: DAVAccount): Promise<DAVAccount> {
-    const newCalendars = (await this.fetchCalendars(account)).filter((cal) => {
-      return account.calendars.every((c) => !urlEquals(c.url, cal.url));
+  const deleteCalendarObject = async (
+    calendarObject: DAVCalendarObject,
+    options?: { headers?: { [key: string]: any } }
+  ): Promise<Response> =>
+    rawDeleteCalendarObject(calendarObject, {
+      ...options,
+      headers: { ...authHeaders, ...options.headers },
     });
-    return new DAVAccount();
-  }
 
-  /**
-   *
-   * AddressBook operations
-   *
-   */
-
-  async fetchAddressBooks(account: DAVAccount): Promise<DAVAddressBook[]> {
-    const res = await this.propfind(
-      account.homeUrl,
-      [
-        { name: 'displayname', namespace: DAVNamespace.DAV },
-        { name: 'getctag', namespace: DAVNamespace.CALENDAR_SERVER },
-        { name: 'resourcetype', namespace: DAVNamespace.DAV },
-        { name: 'sync-token', namespace: DAVNamespace.DAV },
-      ],
-      { depth: '1' }
-    );
-    return Promise.all(
-      res
-        .filter((r) => r.props.displayname && r.props.displayname.length)
-        .map((rs) => {
-          debug(`Found address book named ${rs.props.displayname},
-             props: ${JSON.stringify(rs.props)}`);
-          return new DAVAddressBook({
-            data: rs,
-            account,
-            url: url.resolve(account.rootUrl, rs.href),
-            ctag: rs.props.getctag,
-            displayName: rs.props.displayname,
-            resourcetype: rs.props.resourcetype,
-            syncToken: rs.props.syncToken,
-          });
-        })
-        .map(async (addr) => ({ ...addr, reports: await this.supportedReportSet(addr) }))
-    );
-  }
-
-  async fetchVCards(addressBook: DAVAddressBook): Promise<DAVVCard[]> {
-    return (
-      await this.addressBookQuery(
-        addressBook.url,
-        [
-          { name: 'getetag', namespace: DAVNamespace.DAV },
-          { name: 'address-data', namespace: DAVNamespace.CARDDAV },
-        ],
-        { depth: '1' }
-      )
-    ).map((res) => {
-      return new DAVVCard({
-        data: res,
-        addressBook,
-        url: url.resolve(addressBook.account.rootUrl, res.href),
-        etag: res.props.getetag,
-        addressData: res.props.addressData,
-      });
+  const syncCalDAVAccount = async (
+    account: DAVAccount,
+    options?: { headers?: { [key: string]: any } }
+  ): Promise<DAVAccount> =>
+    rawSyncCalDAVAccount(account, {
+      ...options,
+      headers: { ...authHeaders, ...options.headers },
     });
-  }
 
-  async createVCard(
+  // addressBook
+  const addressBookQuery = async (
+    url: string,
+    props?: DAVProp[],
+    options?: {
+      filters?: DAVFilter[];
+      timezone?: string;
+      depth?: DAVDepth;
+      headers?: { [key: string]: any };
+    }
+  ): Promise<DAVResponse[]> =>
+    rawAddressBookQuery(url, props, {
+      ...options,
+      headers: { ...authHeaders, ...options.headers },
+    });
+
+  const fetchAddressBooks = async (
+    account: DAVAccount,
+    options?: { headers?: { [key: string]: any } }
+  ): Promise<DAVAddressBook[]> =>
+    rawFetchAddressBooks(account, {
+      ...options,
+      headers: { ...authHeaders, ...options.headers },
+    });
+
+  const fetchVCards = async (
+    addressBook: DAVAddressBook,
+    options?: { headers?: { [key: string]: any } }
+  ): Promise<DAVVCard[]> =>
+    rawFetchVCards(addressBook, {
+      ...options,
+      headers: { ...authHeaders, ...options.headers },
+    });
+
+  const createVCard = async (
     addressBook: DAVAddressBook,
     vCardString: string,
-    filename: string
-  ): Promise<Response> {
-    return this.createObject(url.resolve(addressBook.url, filename), vCardString, {
-      'content-type': 'text/x-vcard;charset=utf-8',
+    filename: string,
+    options?: { headers?: { [key: string]: any } }
+  ): Promise<Response> =>
+    rawCreateVCard(addressBook, vCardString, filename, {
+      ...options,
+      headers: { ...authHeaders, ...options.headers },
     });
-  }
 
-  async updateVCard(vCard: DAVVCard): Promise<Response> {
-    return this.updateObject(vCard.url, vCard.addressData, vCard.etag, {
-      'content-type': 'text/calendar; charset=utf-8',
+  const updateVCard = async (
+    vCard: DAVVCard,
+    options?: { headers?: { [key: string]: any } }
+  ): Promise<Response> =>
+    rawUpdateVCard(vCard, {
+      ...options,
+      headers: { ...authHeaders, ...options.headers },
     });
-  }
 
-  async deleteVCard(vCard: DAVVCard): Promise<Response> {
-    return this.deleteObject(vCard.url, vCard.etag);
-  }
+  const deleteVCard = async (
+    vCard: DAVVCard,
+    options?: { headers?: { [key: string]: any } }
+  ): Promise<Response> =>
+    rawDeleteVCard(vCard, {
+      ...options,
+      headers: { ...authHeaders, ...options.headers },
+    });
 
-  // remote change -> local
-  async syncCarddavAccount(account: DAVAccount): Promise<DAVAccount> {
-    // find new Address books
-    const newAddressBooks = (await this.fetchAddressBooks(account)).filter((addr) =>
-      account.addressBooks?.some((a) => urlEquals(a.url, addr.url))
-    );
-    return new DAVAccount();
-  }
-}
+  const syncCardDAVAccount = async (
+    account: DAVAccount,
+    options?: { headers?: { [key: string]: any } }
+  ): Promise<DAVAccount> =>
+    rawSyncCardDAVAccount(account, {
+      ...options,
+      headers: { ...authHeaders, ...options.headers },
+    });
+
+  return {
+    raw,
+    rawXML,
+    propfind,
+    createObject,
+    updateObject,
+    deleteObject,
+    calendarQuery,
+    addressBookQuery,
+    collectionQuery,
+    syncCollection,
+    supportedReportSet,
+    isCollectionDirty,
+    smartCollectionSync,
+    fetchCalendars,
+    fetchCalendarObjects,
+    createCalendarObject,
+    updateCalendarObject,
+    deleteCalendarObject,
+    syncCalDAVAccount,
+    fetchAddressBooks,
+    fetchVCards,
+    createVCard,
+    updateVCard,
+    deleteVCard,
+    syncCardDAVAccount,
+  };
+};

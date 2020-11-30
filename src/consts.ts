@@ -22,28 +22,6 @@ export const DAVNamespaceShorthandMap = {
   [DAVNamespace.DAV]: 'd',
 };
 
-export type DAVMethods =
-  | 'COPY'
-  | 'LOCK'
-  | 'MKCOL'
-  | 'MOVE'
-  | 'PROPFIND'
-  | 'PROPPATCH'
-  | 'UNLOCK'
-  | 'REPORT'
-  | 'SEARCH';
-
-export type HTTPMethods =
-  | 'GET'
-  | 'HEAD'
-  | 'POST'
-  | 'PUT'
-  | 'DELETE'
-  | 'CONNECT'
-  | 'OPTIONS'
-  | 'TRACE'
-  | 'PATCH';
-
 export enum ICALObjects {
   VEVENT = 'VEVENT',
   VTODO = 'VTODO',
