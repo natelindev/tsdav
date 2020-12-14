@@ -18,6 +18,7 @@ import {
   propfind as rawPropfind,
 } from './request';
 
+import { createAccount as rawCreateAccount } from './account';
 import {
   calendarQuery as rawCalendarQuery,
   fetchCalendars as rawFetchCalendars,
@@ -38,14 +39,15 @@ import {
 } from './addressBook';
 import {
   syncCollection as rawSyncCollection,
-  collectionQuery as rawcollectionQuery,
+  collectionQuery as rawCollectionQuery,
   supportedReportSet as rawSupportedReportSet,
   isCollectionDirty as rawIsCollectionDirty,
   smartCollectionSync as rawSmartCollectionSync,
 } from './collection';
-import { getBasicAuthHeaders, getOauthHeaders } from './util/authHelper';
+import { appendHeaders, getBasicAuthHeaders, getOauthHeaders } from './util/authHelper';
 
 const debug = getLogger('tsdav:client');
+
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export const CreateDAVClient = async (
   serverUrl: string,
@@ -90,7 +92,7 @@ export const CreateDAVClient = async (
   ): Promise<Response> =>
     rawCreateObject(url ?? serverUrl, data, {
       ...options,
-      headers: { ...authHeaders, ...options.headers },
+      headers: { ...authHeaders, ...options?.headers },
     });
 
   const updateObject = async (
@@ -101,7 +103,7 @@ export const CreateDAVClient = async (
   ): Promise<Response> =>
     rawUpdateObject(url ?? serverUrl, data, etag, {
       ...options,
-      headers: { ...authHeaders, ...options.headers },
+      headers: { ...authHeaders, ...options?.headers },
     });
 
   const deleteObject = async (
@@ -111,7 +113,7 @@ export const CreateDAVClient = async (
   ): Promise<Response> =>
     rawDeleteObject(url ?? serverUrl, etag, {
       ...options,
-      headers: { ...authHeaders, ...options.headers },
+      headers: { ...authHeaders, ...options?.headers },
     });
 
   const propfind = async (
@@ -121,19 +123,20 @@ export const CreateDAVClient = async (
   ): Promise<DAVResponse[]> =>
     rawPropfind(url ?? serverUrl, props, {
       ...options,
-      headers: { ...authHeaders, ...options.headers },
+      headers: { ...authHeaders, ...options?.headers },
     });
 
-  // collection
-  const collectionQuery = async (
-    url: string,
-    body: any,
-    options?: { depth?: DAVDepth; headers?: { [key: string]: any } }
-  ) =>
-    rawcollectionQuery(url, body, {
+  // account
+  const createAccount = async (
+    account: DAVAccount,
+    options?: { headers?: { [key: string]: any }; loadCollections: boolean; loadObjects: boolean }
+  ): Promise<DAVAccount> =>
+    rawCreateAccount(account, {
       ...options,
-      headers: { ...authHeaders, ...options.headers },
+      headers: { ...authHeaders, ...options?.headers },
     });
+  // collection
+  const collectionQuery = appendHeaders(authHeaders, rawCollectionQuery);
 
   const syncCollection = async (
     url: string,
@@ -147,7 +150,7 @@ export const CreateDAVClient = async (
   ): Promise<DAVResponse[]> =>
     rawSyncCollection(url, props, {
       ...options,
-      headers: { ...authHeaders, ...options.headers },
+      headers: { ...authHeaders, ...options?.headers },
     });
 
   const supportedReportSet = async (
@@ -156,7 +159,7 @@ export const CreateDAVClient = async (
   ): Promise<DAVResponse> =>
     rawSupportedReportSet(collection, {
       ...options,
-      headers: { ...authHeaders, ...options.headers },
+      headers: { ...authHeaders, ...options?.headers },
     });
 
   const isCollectionDirty = async (
@@ -165,7 +168,7 @@ export const CreateDAVClient = async (
   ): Promise<boolean> =>
     rawIsCollectionDirty(collection, {
       ...options,
-      headers: { ...authHeaders, ...options.headers },
+      headers: { ...authHeaders, ...options?.headers },
     });
 
   const smartCollectionSync = async <T extends DAVCollection>(
@@ -175,13 +178,13 @@ export const CreateDAVClient = async (
   ): Promise<T> =>
     rawSmartCollectionSync<T>(collection, method, {
       ...options,
-      headers: { ...authHeaders, ...options.headers },
+      headers: { ...authHeaders, ...options?.headers },
     });
 
   // calendar
   const calendarQuery = async (
     url: string,
-    props?: DAVProp[],
+    props: DAVProp[],
     options?: {
       filters?: DAVFilter[];
       timezone?: string;
@@ -191,7 +194,7 @@ export const CreateDAVClient = async (
   ): Promise<DAVResponse[]> =>
     rawCalendarQuery(url, props, {
       ...options,
-      headers: { ...authHeaders, ...options.headers },
+      headers: { ...authHeaders, ...options?.headers },
     });
 
   const fetchCalendars = async (
@@ -200,7 +203,7 @@ export const CreateDAVClient = async (
   ): Promise<DAVCalendar[]> =>
     rawFetchCalendars(account, {
       ...options,
-      headers: { ...authHeaders, ...options.headers },
+      headers: { ...authHeaders, ...options?.headers },
     });
 
   const fetchCalendarObjects = async (
@@ -209,7 +212,7 @@ export const CreateDAVClient = async (
   ): Promise<DAVCalendarObject[]> =>
     rawFetchCalendarObjects(calendar, {
       ...options,
-      headers: { ...authHeaders, ...options.headers },
+      headers: { ...authHeaders, ...options?.headers },
     });
 
   const createCalendarObject = async (
@@ -220,7 +223,7 @@ export const CreateDAVClient = async (
   ): Promise<Response> =>
     rawCreateCalendarObject(calendar, iCalString, filename, {
       ...options,
-      headers: { ...authHeaders, ...options.headers },
+      headers: { ...authHeaders, ...options?.headers },
     });
 
   const updateCalendarObject = async (
@@ -229,7 +232,7 @@ export const CreateDAVClient = async (
   ): Promise<Response> =>
     rawUpdateCalendarObject(calendarObject, {
       ...options,
-      headers: { ...authHeaders, ...options.headers },
+      headers: { ...authHeaders, ...options?.headers },
     });
 
   const deleteCalendarObject = async (
@@ -238,7 +241,7 @@ export const CreateDAVClient = async (
   ): Promise<Response> =>
     rawDeleteCalendarObject(calendarObject, {
       ...options,
-      headers: { ...authHeaders, ...options.headers },
+      headers: { ...authHeaders, ...options?.headers },
     });
 
   const syncCalDAVAccount = async (
@@ -247,13 +250,13 @@ export const CreateDAVClient = async (
   ): Promise<DAVAccount> =>
     rawSyncCalDAVAccount(account, {
       ...options,
-      headers: { ...authHeaders, ...options.headers },
+      headers: { ...authHeaders, ...options?.headers },
     });
 
   // addressBook
   const addressBookQuery = async (
     url: string,
-    props?: DAVProp[],
+    props: DAVProp[],
     options?: {
       filters?: DAVFilter[];
       timezone?: string;
@@ -263,7 +266,7 @@ export const CreateDAVClient = async (
   ): Promise<DAVResponse[]> =>
     rawAddressBookQuery(url, props, {
       ...options,
-      headers: { ...authHeaders, ...options.headers },
+      headers: { ...authHeaders, ...options?.headers },
     });
 
   const fetchAddressBooks = async (
@@ -272,7 +275,7 @@ export const CreateDAVClient = async (
   ): Promise<DAVAddressBook[]> =>
     rawFetchAddressBooks(account, {
       ...options,
-      headers: { ...authHeaders, ...options.headers },
+      headers: { ...authHeaders, ...options?.headers },
     });
 
   const fetchVCards = async (
@@ -281,7 +284,7 @@ export const CreateDAVClient = async (
   ): Promise<DAVVCard[]> =>
     rawFetchVCards(addressBook, {
       ...options,
-      headers: { ...authHeaders, ...options.headers },
+      headers: { ...authHeaders, ...options?.headers },
     });
 
   const createVCard = async (
@@ -292,7 +295,7 @@ export const CreateDAVClient = async (
   ): Promise<Response> =>
     rawCreateVCard(addressBook, vCardString, filename, {
       ...options,
-      headers: { ...authHeaders, ...options.headers },
+      headers: { ...authHeaders, ...options?.headers },
     });
 
   const updateVCard = async (
@@ -301,7 +304,7 @@ export const CreateDAVClient = async (
   ): Promise<Response> =>
     rawUpdateVCard(vCard, {
       ...options,
-      headers: { ...authHeaders, ...options.headers },
+      headers: { ...authHeaders, ...options?.headers },
     });
 
   const deleteVCard = async (
@@ -310,7 +313,7 @@ export const CreateDAVClient = async (
   ): Promise<Response> =>
     rawDeleteVCard(vCard, {
       ...options,
-      headers: { ...authHeaders, ...options.headers },
+      headers: { ...authHeaders, ...options?.headers },
     });
 
   const syncCardDAVAccount = async (
@@ -319,13 +322,14 @@ export const CreateDAVClient = async (
   ): Promise<DAVAccount> =>
     rawSyncCardDAVAccount(account, {
       ...options,
-      headers: { ...authHeaders, ...options.headers },
+      headers: { ...authHeaders, ...options?.headers },
     });
 
   return {
     raw,
     rawXML,
     propfind,
+    createAccount,
     createObject,
     updateObject,
     deleteObject,

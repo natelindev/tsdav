@@ -59,7 +59,7 @@ export async function davRequest(
   // debug(resText);
   if (
     !davResponse.ok ||
-    !davResponse.headers.get('content-type').includes('xml') ||
+    !davResponse.headers.get('content-type')?.includes('xml') ||
     !parseOutgoing
   ) {
     return [
@@ -113,8 +113,8 @@ export async function davRequest(
 
     return {
       href: responseBody.href,
-      status: matchArr ? Number.parseInt(matchArr?.groups.status, 10) : davResponse.status,
-      statusText: matchArr?.groups.statusText ?? davResponse.statusText,
+      status: matchArr?.groups ? Number.parseInt(matchArr?.groups.status, 10) : davResponse.status,
+      statusText: matchArr?.groups?.statusText ?? davResponse.statusText,
       ok: !responseBody.error,
       error: responseBody.error,
       responsedescription: responseBody.responsedescription,
@@ -138,7 +138,7 @@ export async function propfind(
 ): Promise<DAVResponse[]> {
   return davRequest(url, {
     method: 'PROPFIND',
-    headers: { ...options.headers, Depth: options.depth },
+    headers: { ...options?.headers, Depth: options?.depth },
     namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
     body: {
       propfind: {
@@ -160,7 +160,7 @@ export async function createObject(
   data: any,
   options?: { headers?: { [key: string]: any } }
 ): Promise<Response> {
-  return fetch(url, { method: 'PUT', body: data, headers: options.headers });
+  return fetch(url, { method: 'PUT', body: data, headers: options?.headers });
 }
 
 export async function updateObject(
@@ -172,7 +172,7 @@ export async function updateObject(
   return fetch(url, {
     method: 'PUT',
     body: data,
-    headers: { ...options.headers, 'If-Match': etag },
+    headers: { ...options?.headers, 'If-Match': etag },
   });
 }
 
@@ -181,5 +181,5 @@ export async function deleteObject(
   etag: string,
   options?: { headers?: { [key: string]: any } }
 ): Promise<Response> {
-  return fetch(url, { method: 'DELETE', headers: { ...options.headers, 'If-Match': etag } });
+  return fetch(url, { method: 'DELETE', headers: { ...options?.headers, 'If-Match': etag } });
 }

@@ -25,7 +25,7 @@ export const serviceDiscovery = async (
 
   try {
     const response = await fetch(uri, {
-      headers: options.headers,
+      headers: options?.headers,
       method: 'GET',
       redirect: 'manual',
     });
@@ -53,12 +53,18 @@ export const fetchPrincipalUrl = async (
   account: DAVAccount,
   options?: { headers?: { [key: string]: any } }
 ): Promise<string> => {
+  if (!account.rootUrl) {
+    throw new Error('account must have rootUrl before fetchPrincipalUrl');
+  }
   debug(`Fetching principal url from path ${account.rootUrl}`);
   const [response] = await propfind(
     account.rootUrl,
     [{ name: 'current-user-principal', namespace: DAVNamespace.DAV }],
-    { depth: '0', headers: options.headers }
+    { depth: '0', headers: options?.headers }
   );
+  if (!response.ok) {
+    debug(`Fetch principal url failed: ${response.statusText}`);
+  }
   debug(`Fetched principal url ${response.props?.currentUserPrincipal.href}`);
   return URL.resolve(account.rootUrl, response.props?.currentUserPrincipal.href ?? '');
 };
@@ -67,6 +73,9 @@ export const fetchHomeUrl = async (
   account: DAVAccount,
   options?: { headers?: { [key: string]: any } }
 ): Promise<string> => {
+  if (!account.principalUrl || !account.rootUrl) {
+    throw new Error('account must have rootUrl & principalUrl before fetchHomeUrl');
+  }
   debug(`Fetch home url from ${account.principalUrl}`);
   const responses = await propfind(
     account.principalUrl,
@@ -82,8 +91,8 @@ export const fetchHomeUrl = async (
   const result = URL.resolve(
     account.rootUrl,
     account.accountType === 'caldav'
-      ? matched.props.calendarHomeSet.href
-      : matched.props.addressbookHomeSet.href
+      ? matched?.props?.calendarHomeSet.href
+      : matched?.props?.addressbookHomeSet.href
   );
   debug(`Fetched home url ${result}`);
   return result;
@@ -91,13 +100,13 @@ export const fetchHomeUrl = async (
 
 export const createAccount = async (
   account: DAVAccount,
-  loadCollections = true,
-  loadObjects = false
+  options?: { headers?: { [key: string]: any }; loadCollections?: boolean; loadObjects?: boolean }
 ): Promise<DAVAccount> => {
+  const { headers, loadCollections = true, loadObjects = false } = options ?? {};
   const newAccount: DAVAccount = { accountType: account.accountType, server: account.server };
-  newAccount.rootUrl = await serviceDiscovery(account);
-  newAccount.principalUrl = await fetchPrincipalUrl(newAccount);
-  newAccount.homeUrl = await fetchHomeUrl(newAccount);
+  newAccount.rootUrl = await serviceDiscovery(account, { headers });
+  newAccount.principalUrl = await fetchPrincipalUrl(newAccount, { headers });
+  newAccount.homeUrl = await fetchHomeUrl(newAccount, { headers });
   // to load objects you must first load collections
   if (loadCollections || loadObjects) {
     if (account.accountType === 'caldav') {
@@ -107,14 +116,14 @@ export const createAccount = async (
     }
   }
   if (loadObjects) {
-    if (account.accountType === 'caldav') {
+    if (account.accountType === 'caldav' && newAccount.calendars) {
       newAccount.calendars = await Promise.all(
         newAccount.calendars.map(async (cal) => ({
           ...cal,
           objects: await fetchCalendarObjects(cal),
         }))
       );
-    } else if (account.accountType === 'carddav') {
+    } else if (account.accountType === 'carddav' && newAccount.addressBooks) {
       newAccount.addressBooks = await Promise.all(
         newAccount.addressBooks.map(async (addr) => ({
           ...addr,

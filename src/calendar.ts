@@ -31,11 +31,11 @@ export const calendarQuery = async (
           DAVNamespace.DAV,
         ]),
         prop: formatProps(props),
-        filter: formatFilters(options.filters),
-        timezone: options.timezone,
+        filter: formatFilters(options?.filters),
+        timezone: options?.timezone,
       },
     },
-    { depth: options.depth }
+    { depth: options?.depth }
   );
 };
 
@@ -43,6 +43,9 @@ export const fetchCalendars = async (
   account: DAVAccount,
   options?: { headers?: { [key: string]: any } }
 ): Promise<DAVCalendar[]> => {
+  if (!account.homeUrl || !account.rootUrl) {
+    throw new Error('account must have homeUrl & rootUrl before fetchCalendars');
+  }
   const res = await propfind(
     account.homeUrl,
     [
@@ -54,32 +57,32 @@ export const fetchCalendars = async (
       { name: 'supported-calendar-component-set', namespace: DAVNamespace.CALDAV },
       { name: 'sync-token', namespace: DAVNamespace.DAV },
     ],
-    { depth: '1', headers: options.headers }
+    { depth: '1', headers: options?.headers }
   );
 
   return Promise.all(
     res
-      .filter((r) => Object.keys(r.props.resourcetype ?? {}).includes('calendar'))
+      .filter((r) => Object.keys(r.props?.resourcetype ?? {}).includes('calendar'))
       .filter((rc) => {
         // filter out none iCal format calendars.
         // TODO: fix use components
-        const components: any[] = rc.props.supportedCalendarComponentSet.comp || [];
+        const components: any[] = rc.props?.supportedCalendarComponentSet.comp || [];
         return true; // components.some((c) => Object.values(ICALObjects).includes(c));
       })
       .map((rs) => {
-        debug(`Found calendar ${rs.props.displayname},
+        debug(`Found calendar ${rs.props?.displayname},
                props: ${JSON.stringify(rs.props)}`);
         return {
           data: res,
           account,
-          description: rs.props.calendarDescription,
-          timezone: rs.props.calendarTimezone,
-          url: URL.resolve(account.rootUrl, rs.href),
-          ctag: rs.props.getctag,
-          displayName: rs.props.displayname,
-          components: rs.props.supportedCalendarComponentSet,
-          resourcetype: Object.keys(rs.props.resourcetype),
-          syncToken: rs.props.syncToken,
+          description: rs.props?.calendarDescription,
+          timezone: rs.props?.calendarTimezone,
+          url: URL.resolve(account.rootUrl ?? '', rs.href ?? ''),
+          ctag: rs.props?.getctag,
+          displayName: rs.props?.displayname,
+          components: rs.props?.supportedCalendarComponentSet,
+          resourcetype: Object.keys(rs.props?.resourcetype),
+          syncToken: rs.props?.syncToken,
         };
       })
       .map(async (cal) => ({ ...cal, reports: await supportedReportSet(cal, options) }))
@@ -92,7 +95,10 @@ export const fetchCalendarObjects = async (
 ): Promise<DAVCalendarObject[]> => {
   debug(`Fetching calendar objects from ${calendar?.url}
          ${calendar?.account?.credentials?.username}`);
-  const filters: DAVFilter[] = options.filters ?? [
+  if (!calendar.account?.rootUrl) {
+    throw new Error('account must have rootUrl before fetchCalendarObjects');
+  }
+  const filters: DAVFilter[] = options?.filters ?? [
     {
       type: 'comp-filter',
       attributes: { name: 'VCALENDAR' },
@@ -112,14 +118,14 @@ export const fetchCalendarObjects = async (
         { name: 'getetag', namespace: DAVNamespace.DAV },
         { name: 'calendar-data', namespace: DAVNamespace.CALDAV },
       ],
-      { filters, headers: options.headers }
+      { filters, headers: options?.headers }
     )
   ).map((res) => ({
     data: res,
     calendar,
-    url: URL.resolve(calendar.account.rootUrl, res.href),
-    etag: res.props.getetag,
-    calendarData: res.props.calendarData,
+    url: URL.resolve(calendar.account?.rootUrl ?? '', res.href ?? ''),
+    etag: res.props?.getetag,
+    calendarData: res.props?.calendarData,
   }));
 };
 
@@ -132,7 +138,7 @@ export const createCalendarObject = async (
   return createObject(URL.resolve(calendar.url, filename), iCalString, {
     headers: {
       'content-type': 'text/calendar; charset=utf-8',
-      ...options.headers,
+      ...options?.headers,
     },
   });
 };
@@ -144,7 +150,7 @@ export const updateCalendarObject = async (
   return updateObject(calendarObject.url, calendarObject.calendarData, calendarObject.etag, {
     headers: {
       'content-type': 'text/calendar; charset=utf-8',
-      ...options.headers,
+      ...options?.headers,
     },
   });
 };
@@ -162,7 +168,7 @@ export const syncCalDAVAccount = async (
 ): Promise<DAVAccount> => {
   // TODO: implement syncCalDAVAccount
   const newCalendars = (await fetchCalendars(account, options)).filter((cal) => {
-    return account.calendars.every((c) => !urlEquals(c.url, cal.url));
+    return account.calendars?.every((c) => !urlEquals(c.url, cal.url));
   });
-  return { accountType: 'caldav' };
+  return { accountType: 'caldav', server: '' };
 };

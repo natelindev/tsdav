@@ -8,7 +8,7 @@ export type DAVCollection = {
   reports?: any;
   resourcetype?: any;
   syncToken?: string;
-  url?: string;
+  url: string;
 };
 
 export type DAVObject = {
@@ -28,12 +28,10 @@ export type DAVCredentials = {
   accessToken?: string;
   refreshToken?: string;
   expiration?: number;
-  appleId?: string;
-  appSpecificPassword?: string;
 };
 
 export type DAVAccount = {
-  server?: string;
+  server: string;
   credentials?: DAVCredentials;
   rootUrl?: string;
   principalUrl?: string;

@@ -61,5 +61,5 @@ export type DAVTokens = {
 };
 
 export type DAVAuthHeaders = {
-  Authorization: string;
+  authorization?: string;
 };

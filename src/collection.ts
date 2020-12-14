@@ -15,7 +15,7 @@ export async function collectionQuery(
 ): Promise<DAVResponse[]> {
   return davRequest(url, {
     method: 'REPORT',
-    headers: { ...options.headers, Depth: options.depth },
+    headers: { ...options?.headers, Depth: options?.depth },
     body,
   });
 }
@@ -27,7 +27,7 @@ export const supportedReportSet = async (
   const res = await propfind(
     collection.url,
     [{ name: 'supported-report-set', namespace: DAVNamespace.DAV }],
-    { depth: '1', headers: options.headers }
+    { depth: '1', headers: options?.headers }
   );
   return res[0]?.props?.supportedReportSet;
 };
@@ -44,7 +44,7 @@ export const isCollectionDirty = async (
     [{ name: 'getctag', namespace: DAVNamespace.CALENDAR_SERVER }],
     {
       depth: '0',
-      headers: options.headers,
+      headers: options?.headers,
     }
   );
   const res = responses.filter((r) => urlEquals(collection.url, r.href))[0];
@@ -52,7 +52,7 @@ export const isCollectionDirty = async (
     throw new Error('Collection does not exist on server');
   }
 
-  return collection.ctag !== res.props.getctag;
+  return collection.ctag !== res.props?.getctag;
 };
 
 export const syncCollection = (
@@ -68,12 +68,12 @@ export const syncCollection = (
   return davRequest(url, {
     method: 'REPORT',
     namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
-    headers: { ...options.headers, Depth: options.depth },
+    headers: { ...options?.headers, Depth: options?.depth },
     body: {
       'sync-collection': {
         _attributes: getDAVAttribute([DAVNamespace.CALDAV, DAVNamespace.CARDDAV, DAVNamespace.DAV]),
-        'sync-level': options.syncLevel,
-        'sync-token': options.syncToken,
+        'sync-level': options?.syncLevel,
+        'sync-token': options?.syncToken,
         prop: formatProps(props),
       },
     },
@@ -96,16 +96,16 @@ export const smartCollectionSync = async <T extends DAVCollection>(
       {
         syncLevel: 1,
         syncToken: collection.syncToken,
-        headers: options.headers,
+        headers: options?.headers,
       }
     );
 
     return {
       ...collection,
-      objects: collection.objects.map((c) => {
+      objects: collection.objects?.map((c) => {
         const found = result.find((r) => urlEquals(r.href, c.url));
         if (found) {
-          return { etag: found.props.getetag };
+          return { etag: found.props?.getetag };
         }
         return c;
       }),
@@ -113,7 +113,7 @@ export const smartCollectionSync = async <T extends DAVCollection>(
   }
   if (syncMethod === 'basic') {
     const isDirty = await isCollectionDirty(collection, {
-      headers: options.headers,
+      headers: options?.headers,
     });
     if (isDirty) {
       return { ...collection, objects: {} };

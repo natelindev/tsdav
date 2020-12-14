@@ -1,4 +1,4 @@
-export const nativeType = (value: any): any => {
+export const nativeType = (value: string): unknown => {
   const nValue = Number(value);
   if (!Number.isNaN(nValue)) {
     return nValue;

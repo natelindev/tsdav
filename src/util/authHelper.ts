@@ -7,14 +7,44 @@ import { DAVCredentials } from '../types/models';
 
 const debug = getLogger('tsdav:authHelper');
 
+/**
+ * Caveat: Do not use this function where you could have object parameters before options
+ * i.e.
+ * Y: function (a: string, b: number, options?: { headers?: {[key:string]: any}})
+ * N: function (a: string, b: {test: string}, options?: { headers?: {[key:string]: any}})
+ */
+export const appendHeaders = <
+  T extends unknown[],
+  U extends (...args: [...T, { headers?: { [key: string]: any } }]) => any
+>(
+  headers: { [key: string]: any },
+  fn: U
+) => (...args: Parameters<U>): ReturnType<U> => {
+  const prev = args.slice(0, -1) as T;
+  const [last] = args.slice(-1) as { headers?: { [key: string]: any } }[];
+  if ((last && last.headers) || typeof last === 'object') {
+    return fn(...prev, { ...last, headers: { ...headers, ...last.headers } });
+  }
+  return fn(...([...prev, last] as T), { headers });
+};
+
 export const getBasicAuthHeaders = (credentials: DAVCredentials): DAVAuthHeaders => {
   debug(`Basic auth token generated: ${encode(`${credentials.username}:${credentials.password}`)}`);
   return {
-    Authorization: `Basic ${encode(`${credentials.username}:${credentials.password}`)}`,
+    authorization: `Basic ${encode(`${credentials.username}:${credentials.password}`)}`,
   };
 };
 
 export const fetchOauthTokens = async (credentials: DAVCredentials): Promise<DAVTokens> => {
+  if (
+    !credentials.authorizationCode ||
+    !credentials.redirectUrl ||
+    !credentials.clientId ||
+    !credentials.clientSecret ||
+    !credentials.tokenUrl
+  ) {
+    throw new Error('Oauth credentials missing');
+  }
   const param = new URLSearchParams({
     grant_type: 'authorization_code',
     code: credentials.authorizationCode,
@@ -49,6 +79,14 @@ export const refreshAccessToken = async (
   access_token?: string;
   expires_in?: number;
 }> => {
+  if (
+    !credentials.refreshToken ||
+    !credentials.clientId ||
+    !credentials.clientSecret ||
+    !credentials.tokenUrl
+  ) {
+    throw new Error('Oauth credentials missing');
+  }
   const param = new URLSearchParams({
     client_id: credentials.clientId,
     client_secret: credentials.clientSecret,
@@ -77,7 +115,7 @@ export const refreshAccessToken = async (
 export const getOauthHeaders = async (
   credentials: DAVCredentials
 ): Promise<{ tokens: DAVTokens; headers: DAVAuthHeaders }> => {
-  let tokens: DAVTokens;
+  let tokens: DAVTokens = {};
   if (!credentials.refreshToken) {
     // No refresh token, fetch new tokens
     tokens = await fetchOauthTokens(credentials);
@@ -95,7 +133,7 @@ export const getOauthHeaders = async (
   return {
     tokens,
     headers: {
-      Authorization: tokens.access_token,
+      authorization: tokens.access_token,
     },
   };
 };

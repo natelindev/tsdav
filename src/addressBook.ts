@@ -29,7 +29,7 @@ export const addressBookQuery = async (
         },
       },
     },
-    { depth: options.depth, headers: options.headers }
+    { depth: options?.depth, headers: options?.headers }
   );
 };
 
@@ -37,6 +37,9 @@ export const fetchAddressBooks = async (
   account: DAVAccount,
   options?: { headers?: { [key: string]: any } }
 ): Promise<DAVAddressBook[]> => {
+  if (!account.homeUrl || !account.rootUrl) {
+    throw new Error('account must have homeUrl & rootUrl before fetchAddressBooks');
+  }
   const res = await propfind(
     account.homeUrl,
     [
@@ -45,22 +48,22 @@ export const fetchAddressBooks = async (
       { name: 'resourcetype', namespace: DAVNamespace.DAV },
       { name: 'sync-token', namespace: DAVNamespace.DAV },
     ],
-    { depth: '1', headers: options.headers }
+    { depth: '1', headers: options?.headers }
   );
   return Promise.all(
     res
-      .filter((r) => r.props.displayname && r.props.displayname.length)
+      .filter((r) => r.props?.displayname && r.props.displayname.length)
       .map((rs) => {
-        debug(`Found address book named ${rs.props.displayname},
+        debug(`Found address book named ${rs.props?.displayname},
              props: ${JSON.stringify(rs.props)}`);
         return {
           data: rs,
           account,
-          url: URL.resolve(account.rootUrl, rs.href),
-          ctag: rs.props.getctag,
-          displayName: rs.props.displayname,
-          resourcetype: rs.props.resourcetype,
-          syncToken: rs.props.syncToken,
+          url: URL.resolve(account.rootUrl ?? '', rs.href ?? ''),
+          ctag: rs.props?.getctag,
+          displayName: rs.props?.displayname,
+          resourcetype: rs.props?.resourcetype,
+          syncToken: rs.props?.syncToken,
         };
       })
       .map(async (addr) => ({ ...addr, reports: await supportedReportSet(addr, options) }))
@@ -71,6 +74,11 @@ export const fetchVCards = async (
   addressBook: DAVAddressBook,
   options?: { headers?: { [key: string]: any } }
 ): Promise<DAVVCard[]> => {
+  debug(`Fetching vcards from ${addressBook?.url}
+  ${addressBook?.account?.credentials?.username}`);
+  if (!addressBook.account?.rootUrl) {
+    throw new Error('account must have rootUrl before fetchVCards');
+  }
   return (
     await addressBookQuery(
       addressBook.url,
@@ -78,15 +86,15 @@ export const fetchVCards = async (
         { name: 'getetag', namespace: DAVNamespace.DAV },
         { name: 'address-data', namespace: DAVNamespace.CARDDAV },
       ],
-      { depth: '1', headers: options.headers }
+      { depth: '1', headers: options?.headers }
     )
   ).map((res) => {
     return {
       data: res,
       addressBook,
-      url: URL.resolve(addressBook.account.rootUrl, res.href),
-      etag: res.props.getetag,
-      addressData: res.props.addressData,
+      url: URL.resolve(addressBook.account?.rootUrl ?? '', res.href ?? ''),
+      etag: res.props?.getetag,
+      addressData: res.props?.addressData,
     };
   });
 };
@@ -100,7 +108,7 @@ export const createVCard = async (
   return createObject(URL.resolve(addressBook.url, filename), vCardString, {
     headers: {
       'content-type': 'text/calendar; charset=utf-8',
-      ...options.headers,
+      ...options?.headers,
     },
   });
 };
@@ -112,7 +120,7 @@ export const updateVCard = async (
   return updateObject(vCard.url, vCard.addressData, vCard.etag, {
     headers: {
       'content-type': 'text/calendar; charset=utf-8',
-      ...options.headers,
+      ...options?.headers,
     },
   });
 };
@@ -134,5 +142,5 @@ export const syncCardDAVAccount = async (
   const newAddressBooks = (await fetchAddressBooks(account, options)).filter((addr) =>
     account.addressBooks?.some((a) => urlEquals(a.url, addr.url))
   );
-  return { accountType: 'carddav' };
+  return { accountType: 'carddav', server: '' };
 };
