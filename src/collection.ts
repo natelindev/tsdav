@@ -29,7 +29,9 @@ export const supportedReportSet = async (
     [{ name: 'supported-report-set', namespace: DAVNamespace.DAV }],
     { depth: '1', headers: options?.headers }
   );
-  return res[0]?.props?.supportedReportSet;
+  return res[0]?.props?.supportedReportSet.supportedReport.map(
+    (sr: { report: any }) => Object.keys(sr.report)[0]
+  );
 };
 
 export const isCollectionDirty = async (

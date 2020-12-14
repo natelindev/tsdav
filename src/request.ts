@@ -99,7 +99,11 @@ export async function davRequest(
     },
     // remove namespace & camelCase
     elementNameFn: (attributeName) => camelCase(attributeName.replace(/^.+:/, '')),
-    ignoreAttributes: true,
+    attributesFn: (value: any) => {
+      const newVal = { ...value };
+      delete newVal.xmlns;
+      return newVal;
+    },
     ignoreDeclaration: true,
   });
 

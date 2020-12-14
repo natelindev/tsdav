@@ -1,8 +1,9 @@
+/* eslint-disable no-underscore-dangle */
 import getLogger from 'debug';
 import URL from 'url';
 import { DAVAccount, DAVCalendar, DAVCalendarObject } from 'models';
 import { DAVDepth, DAVFilter, DAVProp, DAVResponse } from 'DAVTypes';
-import { DAVNamespace } from './consts';
+import { DAVNamespace, ICALObjects } from './consts';
 import { collectionQuery, supportedReportSet } from './collection';
 import { propfind, createObject, updateObject, deleteObject } from './request';
 
@@ -65,9 +66,12 @@ export const fetchCalendars = async (
       .filter((r) => Object.keys(r.props?.resourcetype ?? {}).includes('calendar'))
       .filter((rc) => {
         // filter out none iCal format calendars.
-        // TODO: fix use components
-        const components: any[] = rc.props?.supportedCalendarComponentSet.comp || [];
-        return true; // components.some((c) => Object.values(ICALObjects).includes(c));
+        const components: ICALObjects[] = Array.isArray(
+          rc.props?.supportedCalendarComponentSet.comp
+        )
+          ? rc.props?.supportedCalendarComponentSet.comp.map((sc: any) => sc._attributes.name)
+          : [rc.props?.supportedCalendarComponentSet.comp._attributes.name] || [];
+        return components.some((c) => Object.values(ICALObjects).includes(c));
       })
       .map((rs) => {
         debug(`Found calendar ${rs.props?.displayname},
@@ -80,7 +84,9 @@ export const fetchCalendars = async (
           url: URL.resolve(account.rootUrl ?? '', rs.href ?? ''),
           ctag: rs.props?.getctag,
           displayName: rs.props?.displayname,
-          components: rs.props?.supportedCalendarComponentSet,
+          components: Array.isArray(rs.props?.supportedCalendarComponentSet.comp)
+            ? rs.props?.supportedCalendarComponentSet.comp.map((sc: any) => sc._attributes.name)
+            : [rs.props?.supportedCalendarComponentSet.comp._attributes.name],
           resourcetype: Object.keys(rs.props?.resourcetype),
           syncToken: rs.props?.syncToken,
         };
