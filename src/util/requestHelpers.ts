@@ -16,7 +16,7 @@ export const urlEquals = (urlA?: string, urlB?: string): boolean => {
 export const getDAVAttribute = (nsArr: DAVNamespace[]): { [key: string]: DAVNamespace } =>
   nsArr.reduce((prev, curr) => ({ ...prev, [DAVAttributeMap[curr]]: curr }), {});
 
-export const formatProps = (props: DAVProp[]): { [key: string]: any } =>
+export const formatProps = (props?: DAVProp[]): { [key: string]: any } | undefined =>
   props?.reduce((prev, curr) => {
     if (curr.namespace) {
       return { ...prev, [`${DAVNamespaceShorthandMap[curr.namespace]}:${curr.name}`]: {} };
@@ -24,8 +24,11 @@ export const formatProps = (props: DAVProp[]): { [key: string]: any } =>
     return { ...prev, [`${curr.name}`]: {} };
   }, {});
 
+// TODO: Fix formatFilters
 export const formatFilters = (filters?: DAVFilter[]): { [key: string]: any } | undefined =>
   filters?.map((f) => ({
-    _attributes: f.attributes,
-    [f.type]: f.children ? formatFilters(f.children) : f.value,
+    [f.type]: {
+      _attributes: f.attributes,
+      ...(f.children ? formatFilters(f.children) : { _text: f.value }),
+    },
   }));

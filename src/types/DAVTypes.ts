@@ -6,7 +6,7 @@ export type DAVProp = {
 };
 
 export type DAVFilter = {
-  type: 'comp-filter' | 'prop-filter' | 'param-filter';
+  type: string;
   attributes: { [key: string]: string };
   value?: string | number;
   children?: DAVFilter[];

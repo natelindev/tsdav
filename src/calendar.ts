@@ -3,7 +3,7 @@ import getLogger from 'debug';
 import URL from 'url';
 import { DAVAccount, DAVCalendar, DAVCalendarObject } from 'models';
 import { DAVDepth, DAVFilter, DAVProp, DAVResponse } from 'DAVTypes';
-import { DAVNamespace, ICALObjects } from './consts';
+import { DAVNamespace, DAVNamespaceShorthandMap, ICALObjects } from './consts';
 import { collectionQuery, supportedReportSet } from './collection';
 import { propfind, createObject, updateObject, deleteObject } from './request';
 
@@ -31,12 +31,12 @@ export const calendarQuery = async (
           DAVNamespace.CALDAV_APPLE,
           DAVNamespace.DAV,
         ]),
-        prop: formatProps(props),
+        [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
         filter: formatFilters(options?.filters),
         timezone: options?.timezone,
       },
     },
-    { depth: options?.depth }
+    { depth: options?.depth, headers: options?.headers }
   );
 };
 
@@ -77,7 +77,7 @@ export const fetchCalendars = async (
         debug(`Found calendar ${rs.props?.displayname},
                props: ${JSON.stringify(rs.props)}`);
         return {
-          data: res,
+          data: rs,
           account,
           description: rs.props?.calendarDescription,
           timezone: rs.props?.calendarTimezone,

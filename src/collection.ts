@@ -16,6 +16,7 @@ export async function collectionQuery(
   return davRequest(url, {
     method: 'REPORT',
     headers: { ...options?.headers, Depth: options?.depth },
+    namespace: DAVNamespaceShorthandMap[DAVNamespace.CALDAV],
     body,
   });
 }
