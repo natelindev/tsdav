@@ -6,7 +6,7 @@ import convert from 'xml-js';
 import { DAVNamespace, DAVNamespaceShorthandMap } from './consts';
 import { camelCase } from './util/camelCase';
 import { nativeType } from './util/nativeType';
-import { formatProps, getDAVAttribute } from './util/requestHelpers';
+import { cleanupUndefined, formatProps, getDAVAttribute } from './util/requestHelpers';
 
 const debug = getLogger('tsdav:request');
 
@@ -47,7 +47,10 @@ export async function davRequest(
   // debug('outgoing xml:');
   // debug(xmlBody);
   const davResponse = await fetch(url, {
-    headers: { 'Content-Type': 'text/xml;charset=UTF-8', ...headers },
+    headers: {
+      'Content-Type': 'text/xml;charset=UTF-8',
+      ...cleanupUndefined(headers),
+    },
     body: xmlBody,
     method,
   });
@@ -57,6 +60,7 @@ export async function davRequest(
   // filter out invalid responses
   // debug('response xml:');
   // debug(resText);
+  // debug(davResponse);
   if (
     !davResponse.ok ||
     !davResponse.headers.get('content-type')?.includes('xml') ||
@@ -113,6 +117,14 @@ export async function davRequest(
 
   return responseBodies.map((responseBody) => {
     const statusRegex = /^\S+\s(?<status>\d+)\s(?<statusText>.+)$/;
+    if (!responseBody) {
+      return {
+        status: davResponse.status,
+        statusText: davResponse.statusText,
+        ok: davResponse.ok,
+      };
+    }
+
     const matchArr = statusRegex.exec(responseBody.status);
 
     return {
@@ -142,7 +154,7 @@ export async function propfind(
 ): Promise<DAVResponse[]> {
   return davRequest(url, {
     method: 'PROPFIND',
-    headers: { ...options?.headers, Depth: options?.depth },
+    headers: { ...options?.headers, depth: options?.depth },
     namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
     body: {
       propfind: {

@@ -12,7 +12,7 @@ export type DAVFilter = {
   children?: DAVFilter[];
 };
 
-export type DAVDepth = '0' | '1' | 'infinity';
+export type DAVDepth = '0' | '1' | 'infinity' | '';
 
 export type DAVMethods =
   | 'COPY'

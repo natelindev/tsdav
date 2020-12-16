@@ -13,6 +13,25 @@ export const urlEquals = (urlA?: string, urlB?: string): boolean => {
   return urlA.includes(strippedUrlB) || urlB.includes(strippedUrlA);
 };
 
+// merge two objects, same key property become array
+export const mergeObject = <T, U>(objA: T, ObjB: U): { [key in keyof T & keyof U]: any } =>
+  (Object.entries(objA) as Array<[keyof T, any]>).reduce((merged: T & U, [currKey, currValue]): T &
+    U => {
+    if (merged[currKey] && Array.isArray(merged[currKey])) {
+      // is array
+      return {
+        ...merged,
+        [currKey]: [...((merged[currKey] as unknown) as unknown[]), currValue],
+      };
+    }
+    if (merged[currKey] && !Array.isArray(merged[currKey])) {
+      // not array
+      return { ...merged, [currKey]: [merged[currKey], currValue] };
+    }
+    // not exist
+    return { ...merged, [currKey]: currValue };
+  }, ObjB);
+
 export const getDAVAttribute = (nsArr: DAVNamespace[]): { [key: string]: DAVNamespace } =>
   nsArr.reduce((prev, curr) => ({ ...prev, [DAVAttributeMap[curr]]: curr }), {});
 
@@ -24,11 +43,20 @@ export const formatProps = (props?: DAVProp[]): { [key: string]: any } | undefin
     return { ...prev, [`${curr.name}`]: {} };
   }, {});
 
-// TODO: Fix formatFilters
 export const formatFilters = (filters?: DAVFilter[]): { [key: string]: any } | undefined =>
   filters?.map((f) => ({
     [f.type]: {
       _attributes: f.attributes,
-      ...(f.children ? formatFilters(f.children) : { _text: f.value }),
+      ...(f.children ? formatFilters(f.children) : [])?.reduce(
+        (prev: any, curr: any) => mergeObject(prev, curr),
+        {} as any
+      ),
+      _text: f.value ?? '',
     },
   }));
+
+export const cleanupUndefined = <T = unknown>(obj: T): T =>
+  Object.entries(obj).reduce((prev, [key, value]) => {
+    if (value) return { ...prev, [key]: value };
+    return prev;
+  }, {} as T);

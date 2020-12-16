@@ -103,7 +103,11 @@ export const createAccount = async (
   options?: { headers?: { [key: string]: any }; loadCollections?: boolean; loadObjects?: boolean }
 ): Promise<DAVAccount> => {
   const { headers, loadCollections = true, loadObjects = false } = options ?? {};
-  const newAccount: DAVAccount = { accountType: account.accountType, server: account.server };
+  const newAccount: DAVAccount = {
+    ...account,
+    accountType: account.accountType,
+    server: account.server,
+  };
   newAccount.rootUrl = await serviceDiscovery(account, { headers });
   newAccount.principalUrl = await fetchPrincipalUrl(newAccount, { headers });
   newAccount.homeUrl = await fetchHomeUrl(newAccount, { headers });

@@ -15,7 +15,7 @@ export async function collectionQuery(
 ): Promise<DAVResponse[]> {
   return davRequest(url, {
     method: 'REPORT',
-    headers: { ...options?.headers, Depth: options?.depth },
+    headers: { ...options?.headers, depth: options?.depth },
     namespace: DAVNamespaceShorthandMap[DAVNamespace.CALDAV],
     body,
   });
@@ -71,13 +71,13 @@ export const syncCollection = (
   return davRequest(url, {
     method: 'REPORT',
     namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
-    headers: { ...options?.headers, Depth: options?.depth },
+    headers: { ...options?.headers, depth: options?.depth },
     body: {
       'sync-collection': {
         _attributes: getDAVAttribute([DAVNamespace.CALDAV, DAVNamespace.CARDDAV, DAVNamespace.DAV]),
         'sync-level': options?.syncLevel,
         'sync-token': options?.syncToken,
-        prop: formatProps(props),
+        [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
       },
     },
   });

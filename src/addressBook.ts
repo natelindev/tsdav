@@ -2,7 +2,7 @@ import URL from 'url';
 import { DAVAccount, DAVAddressBook, DAVVCard } from 'models';
 import getLogger from 'debug';
 import { DAVProp, DAVDepth, DAVResponse } from 'DAVTypes';
-import { DAVNamespace } from './consts';
+import { DAVNamespace, DAVNamespaceShorthandMap } from './consts';
 import { collectionQuery, supportedReportSet } from './collection';
 import { createObject, deleteObject, propfind, updateObject } from './request';
 import { getDAVAttribute, formatProps, urlEquals } from './util/requestHelpers';
@@ -19,7 +19,7 @@ export const addressBookQuery = async (
     {
       'addressbook-query': {
         _attributes: getDAVAttribute([DAVNamespace.CARDDAV, DAVNamespace.DAV]),
-        prop: formatProps(props),
+        [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
         filter: {
           'prop-filter': {
             _attributes: {
