@@ -117,7 +117,6 @@ export const fetchCalendarObjects = async (
       ],
     },
   ];
-  debug(calendar.url);
   return (
     await calendarQuery(
       calendar.url,
@@ -125,14 +124,14 @@ export const fetchCalendarObjects = async (
         { name: 'getetag', namespace: DAVNamespace.DAV },
         { name: 'calendar-data', namespace: DAVNamespace.CALDAV },
       ],
-      { filters, headers: options?.headers }
+      { filters, depth: '1', headers: options?.headers }
     )
   ).map((res) => ({
     data: res,
     calendar,
     url: URL.resolve(calendar.account?.rootUrl ?? '', res.href ?? ''),
     etag: res.props?.getetag,
-    calendarData: res.props?.calendarData,
+    calendarData: res.props?.calendarData?._cdata,
   }));
 };
 

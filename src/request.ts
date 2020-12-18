@@ -20,11 +20,11 @@ type RawResponse = {
   propstat: RawProp | RawProp[];
 };
 
-export async function davRequest(
+export const davRequest = async (
   url: string,
   init: DAVRequest,
   options?: { convertIncoming?: boolean; parseOutgoing?: boolean }
-): Promise<DAVResponse[]> {
+): Promise<DAVResponse[]> => {
   const { headers, body, namespace, method, attributes } = init;
   const { convertIncoming = true, parseOutgoing = true } = options ?? {};
   const xmlBody = convertIncoming
@@ -145,13 +145,13 @@ export async function davRequest(
       }, {}),
     };
   });
-}
+};
 
-export async function propfind(
+export const propfind = async (
   url: string,
   props: DAVProp[],
   options?: { depth?: DAVDepth; headers?: { [key: string]: any } }
-): Promise<DAVResponse[]> {
+): Promise<DAVResponse[]> => {
   return davRequest(url, {
     method: 'PROPFIND',
     headers: { ...options?.headers, depth: options?.depth },
@@ -169,33 +169,33 @@ export async function propfind(
       },
     },
   });
-}
+};
 
-export async function createObject(
+export const createObject = async (
   url: string,
   data: any,
   options?: { headers?: { [key: string]: any } }
-): Promise<Response> {
+): Promise<Response> => {
   return fetch(url, { method: 'PUT', body: data, headers: options?.headers });
-}
+};
 
-export async function updateObject(
+export const updateObject = async (
   url: string,
   data: any,
   etag: string,
   options?: { headers?: { [key: string]: any } }
-): Promise<Response> {
+): Promise<Response> => {
   return fetch(url, {
     method: 'PUT',
     body: data,
     headers: { ...options?.headers, 'If-Match': etag },
   });
-}
+};
 
-export async function deleteObject(
+export const deleteObject = async (
   url: string,
   etag: string,
   options?: { headers?: { [key: string]: any } }
-): Promise<Response> {
+): Promise<Response> => {
   return fetch(url, { method: 'DELETE', headers: { ...options?.headers, 'If-Match': etag } });
-}
+};

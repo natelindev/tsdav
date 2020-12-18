@@ -1,12 +1,17 @@
 {
   "name": "ts-dav",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
   "license": "MIT",
   "private": false,
   "scripts": {
     "dev": "cross-env DEBUG=* ts-node-dev --respawn --transpile-only src/test.ts",
-    "build": "tsc && babel src --out-dir built --extensions \".ts\" --source-maps inline"
+    "build": "rimraf dist && tsc --emitDeclarationOnly --outDir ./dist && babel src --out-dir dist --extensions .ts && copyfiles package.json LICENSE.md README.md ./dist",
+    "watch:ts": "tsc --watch --emitDeclarationOnly --outDir ./dist",
+    "watch:babel": "babel src --out-dir dist --extensions .ts --watch",
+    "watch": "concurrently \"yarn watch:ts\" \"yarn watch:babel\" "
   },
   "dependencies": {
     "base-64": "^1.0.0",
@@ -18,6 +23,7 @@
     "@babel/cli": "^7.12.8",
     "@babel/core": "^7.12.9",
     "@babel/plugin-proposal-class-properties": "^7.12.1",
+    "@babel/plugin-transform-runtime": "^7.12.10",
     "@babel/preset-env": "^7.12.7",
     "@babel/preset-typescript": "^7.12.7",
     "@types/base-64": "^0.1.3",
@@ -25,6 +31,8 @@
     "@types/node": "^14.14.9",
     "@typescript-eslint/eslint-plugin": "^4.8.2",
     "@typescript-eslint/parser": "^4.8.2",
+    "concurrently": "^5.3.0",
+    "copyfiles": "^2.4.1",
     "cross-env": "^7.0.2",
     "eslint": "^7.14.0",
     "eslint-config-airbnb-typescript": "^12.0.0",
@@ -32,6 +40,7 @@
     "eslint-plugin-import": "^2.22.1",
     "eslint-plugin-prettier": "^3.1.4",
     "prettier": "^2.2.0",
+    "rimraf": "^3.0.2",
     "ts-node-dev": "^1.0.0",
     "typescript": "^4.1.2"
   }

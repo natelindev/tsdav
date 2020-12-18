@@ -19,7 +19,6 @@
     "paths": {
       "*": ["node_modules/*", "src/types/*"]
     },
-    "typeRoots": ["node_modules/@types", "src/types"],
     "outDir": "./built"
   },
   "include": ["src/**/*"],

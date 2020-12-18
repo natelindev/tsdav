@@ -45,11 +45,12 @@ import {
   smartCollectionSync as rawSmartCollectionSync,
 } from './collection';
 import { appendHeaders, getBasicAuthHeaders, getOauthHeaders } from './util/authHelper';
+import { Optional } from './util/typeHelper';
 
 const debug = getLogger('tsdav:client');
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export const CreateDAVClient = async (
+export const createDAVClient = async (
   serverUrl: string,
   credentials: DAVCredentials,
   authMethod?: 'Basic' | 'Oauth'
@@ -128,13 +129,16 @@ export const CreateDAVClient = async (
 
   // account
   const createAccount = async (
-    account: DAVAccount,
+    account: Optional<DAVAccount, 'server'>,
     options?: { headers?: { [key: string]: any }; loadCollections: boolean; loadObjects: boolean }
   ): Promise<DAVAccount> =>
-    rawCreateAccount(account, {
-      ...options,
-      headers: { ...authHeaders, ...options?.headers },
-    });
+    rawCreateAccount(
+      { server: serverUrl, ...account },
+      {
+        ...options,
+        headers: { ...authHeaders, ...options?.headers },
+      }
+    );
   // collection
   const collectionQuery = appendHeaders(authHeaders, rawCollectionQuery);
 

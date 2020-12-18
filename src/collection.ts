@@ -8,18 +8,18 @@ import { getDAVAttribute, formatProps, urlEquals } from './util/requestHelpers';
 
 const debug = getLogger('tsdav:collection');
 
-export async function collectionQuery(
+export const collectionQuery = async (
   url: string,
   body: any,
   options?: { depth?: DAVDepth; headers?: { [key: string]: any } }
-): Promise<DAVResponse[]> {
+): Promise<DAVResponse[]> => {
   return davRequest(url, {
     method: 'REPORT',
     headers: { ...options?.headers, depth: options?.depth },
     namespace: DAVNamespaceShorthandMap[DAVNamespace.CALDAV],
     body,
   });
-}
+};
 
 export const supportedReportSet = async (
   collection: DAVCollection,

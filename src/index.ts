@@ -28,6 +28,37 @@ export type {
   DAVVCard,
 } from './types/models';
 
+export { createDAVClient } from './client';
+export { createAccount } from './account';
+export { davRequest, propfind, createObject, updateObject, deleteObject } from './request';
+export {
+  collectionQuery,
+  supportedReportSet,
+  isCollectionDirty,
+  syncCollection,
+  smartCollectionSync,
+} from './collection';
+
+export {
+  calendarQuery,
+  fetchCalendars,
+  fetchCalendarObjects,
+  createCalendarObject,
+  updateCalendarObject,
+  deleteCalendarObject,
+  syncCalDAVAccount,
+} from './calendar';
+
+export {
+  addressBookQuery,
+  fetchAddressBooks,
+  fetchVCards,
+  createVCard,
+  updateVCard,
+  deleteVCard,
+  syncCardDAVAccount,
+} from './addressBook';
+
 export default {
   DAVNamespace,
   ...client,
