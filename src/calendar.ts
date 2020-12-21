@@ -4,7 +4,7 @@ import URL from 'url';
 import { DAVAccount, DAVCalendar, DAVCalendarObject } from 'models';
 import { DAVDepth, DAVFilter, DAVProp, DAVResponse } from 'DAVTypes';
 import { DAVNamespace, DAVNamespaceShorthandMap, ICALObjects } from './consts';
-import { collectionQuery, supportedReportSet } from './collection';
+import { collectionQuery, smartCollectionSync, supportedReportSet } from './collection';
 import { propfind, createObject, updateObject, deleteObject } from './request';
 
 import { formatFilters, formatProps, getDAVAttribute, urlEquals } from './util/requestHelpers';
@@ -168,13 +168,42 @@ export const deleteCalendarObject = async (
   return deleteObject(calendarObject.url, calendarObject.etag, options);
 };
 
+// remote change -> local
 export const syncCalDAVAccount = async (
   account: DAVAccount,
   options?: { headers?: { [key: string]: any } }
 ): Promise<DAVAccount> => {
-  // TODO: implement syncCalDAVAccount
-  const newCalendars = (await fetchCalendars(account, options)).filter((cal) => {
-    return account.calendars?.every((c) => !urlEquals(c.url, cal.url));
-  });
-  return { accountType: 'caldav', server: '' };
+  // find changed calendar collections
+  const changedCalendars = (await fetchCalendars(account, options)).filter(
+    (cal) => !account.calendars?.some((a) => urlEquals(a.url, cal.url))
+  );
+  debug(`found changed calendars:`);
+  debug(changedCalendars);
+  return {
+    ...account,
+    accountType: 'caldav',
+    calendars: [
+      ...(account.calendars ?? []),
+      ...(
+        await Promise.all(
+          changedCalendars.map(async (c) => {
+            try {
+              debug(`syncing ${c.displayName}`);
+              return smartCollectionSync(
+                {
+                  ...c,
+                  fetchObjects: fetchCalendarObjects,
+                } as DAVCalendar,
+                'webdav',
+                { headers: options?.headers }
+              );
+            } catch (err) {
+              debug(`carddav account sync: Calendar ${c.displayName} sync error: ${err}`);
+              return undefined;
+            }
+          })
+        )
+      ).filter((a): a is DAVCalendar => a !== undefined),
+    ],
+  };
 };

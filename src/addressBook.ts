@@ -3,7 +3,7 @@ import { DAVAccount, DAVAddressBook, DAVVCard } from 'models';
 import getLogger from 'debug';
 import { DAVProp, DAVDepth, DAVResponse } from 'DAVTypes';
 import { DAVNamespace, DAVNamespaceShorthandMap } from './consts';
-import { collectionQuery, supportedReportSet, syncCollection } from './collection';
+import { collectionQuery, smartCollectionSync, supportedReportSet } from './collection';
 import { createObject, deleteObject, propfind, updateObject } from './request';
 import { getDAVAttribute, formatProps, urlEquals } from './util/requestHelpers';
 
@@ -148,29 +148,23 @@ export const syncCardDAVAccount = async (
       ...(account.addressBooks ?? []),
       ...(
         await Promise.all(
-          newAddressBooks
-            .map(async (ab) => {
-              try {
-                return syncCollection(
-                  ab.url,
-                  [
-                    { name: 'getetag', namespace: DAVNamespace.DAV },
-                    { name: 'address-data', namespace: DAVNamespace.CARDDAV },
-                  ],
-                  {
-                    syncLevel: 1,
-                    syncToken: ab.syncToken,
-                    headers: options?.headers,
-                  }
-                );
-              } catch (err) {
-                debug(`carddav account sync: AddressBook ${ab.displayName} sync error: ${err}`);
-                return undefined;
-              }
-            })
-            .filter((a) => a)
+          newAddressBooks.map(async (ab) => {
+            try {
+              return smartCollectionSync(
+                {
+                  ...ab,
+                  fetchObjects: fetchVCards,
+                } as DAVAddressBook,
+                'webdav',
+                { headers: options?.headers }
+              );
+            } catch (err) {
+              debug(`carddav account sync: AddressBook ${ab.displayName} sync error: ${err}`);
+              return undefined;
+            }
+          })
         )
-      ).reduce<DAVAddressBook[]>((flatten_arr, to_flat) => flatten_arr.concat(to_flat as any), []),
+      ).filter((a): a is DAVAddressBook => a !== undefined),
     ],
   };
 };

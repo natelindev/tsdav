@@ -14,7 +14,10 @@ export const urlEquals = (urlA?: string, urlB?: string): boolean => {
 };
 
 // merge two objects, same key property become array
-export const mergeObject = <T, U>(objA: T, ObjB: U): { [key in keyof T & keyof U]: any } =>
+export const mergeObjectDupKeyArray = <T, U>(
+  objA: T,
+  ObjB: U
+): { [key in keyof T & keyof U]: any } =>
   (Object.entries(objA) as Array<[keyof T, any]>).reduce((merged: T & U, [currKey, currValue]): T &
     U => {
     if (merged[currKey] && Array.isArray(merged[currKey])) {
@@ -48,7 +51,7 @@ export const formatFilters = (filters?: DAVFilter[]): { [key: string]: any } | u
     [f.type]: {
       _attributes: f.attributes,
       ...(f.children ? formatFilters(f.children) : [])?.reduce(
-        (prev: any, curr: any) => mergeObject(prev, curr),
+        (prev: any, curr: any) => mergeObjectDupKeyArray(prev, curr),
         {} as any
       ),
       _text: f.value ?? '',

@@ -72,7 +72,7 @@ export const davRequest = async (
         ok: davResponse.ok,
         status: davResponse.status,
         statusText: davResponse.statusText,
-        responsedescription: resText,
+        raw: resText,
       },
     ];
   }
@@ -128,6 +128,7 @@ export const davRequest = async (
     const matchArr = statusRegex.exec(responseBody.status);
 
     return {
+      raw: result,
       href: responseBody.href,
       status: matchArr?.groups ? Number.parseInt(matchArr?.groups.status, 10) : davResponse.status,
       statusText: matchArr?.groups?.statusText ?? davResponse.statusText,

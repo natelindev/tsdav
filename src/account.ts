@@ -114,9 +114,9 @@ export const createAccount = async (
   // to load objects you must first load collections
   if (loadCollections || loadObjects) {
     if (account.accountType === 'caldav') {
-      newAccount.calendars = await fetchCalendars(newAccount);
+      newAccount.calendars = await fetchCalendars(newAccount, { headers });
     } else if (account.accountType === 'carddav') {
-      newAccount.addressBooks = await fetchAddressBooks(newAccount);
+      newAccount.addressBooks = await fetchAddressBooks(newAccount, { headers });
     }
   }
   if (loadObjects) {
@@ -124,14 +124,14 @@ export const createAccount = async (
       newAccount.calendars = await Promise.all(
         newAccount.calendars.map(async (cal) => ({
           ...cal,
-          objects: await fetchCalendarObjects(cal),
+          objects: await fetchCalendarObjects(cal, { headers }),
         }))
       );
     } else if (account.accountType === 'carddav' && newAccount.addressBooks) {
       newAccount.addressBooks = await Promise.all(
         newAccount.addressBooks.map(async (addr) => ({
           ...addr,
-          objects: await fetchVCards(addr),
+          objects: await fetchVCards(addr, { headers }),
         }))
       );
     }

@@ -1,7 +1,7 @@
 import { DAVDepth, DAVProp, DAVResponse } from 'DAVTypes';
 import getLogger from 'debug';
 
-import { DAVCollection } from 'models';
+import { DAVCollection, DAVObject } from 'models';
 import { DAVNamespace, DAVNamespaceShorthandMap } from './consts';
 import { davRequest, propfind } from './request';
 import { getDAVAttribute, formatProps, urlEquals } from './util/requestHelpers';
@@ -63,7 +63,6 @@ export const syncCollection = (
   props: DAVProp[],
   options?: {
     headers?: { [key: string]: any };
-    depth?: DAVDepth;
     syncLevel?: number;
     syncToken?: string;
   }
@@ -71,7 +70,7 @@ export const syncCollection = (
   return davRequest(url, {
     method: 'REPORT',
     namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
-    headers: { ...options?.headers, depth: options?.depth },
+    headers: { ...options?.headers },
     body: {
       'sync-collection': {
         _attributes: getDAVAttribute([DAVNamespace.CALDAV, DAVNamespace.CARDDAV, DAVNamespace.DAV]),
@@ -85,16 +84,32 @@ export const syncCollection = (
 
 export const smartCollectionSync = async <T extends DAVCollection>(
   collection: T,
-  method: 'basic' | 'webdav',
+  method?: 'basic' | 'webdav',
   options?: { headers?: { [key: string]: any } }
 ): Promise<T> => {
+  if (!collection.account?.accountType) {
+    throw new Error('unable to sync collection with no account or no proper accountType');
+  }
   const syncMethod = method ?? collection.reports?.includes('syncCollection') ? 'webdav' : 'basic';
+  debug(
+    `smart collection sync with type ${collection.account.accountType} and method ${syncMethod}`
+  );
   if (syncMethod === 'webdav') {
     const result = await syncCollection(
       collection.url,
       [
         { name: 'getetag', namespace: DAVNamespace.DAV },
-        { name: 'calendar-data', namespace: DAVNamespace.CALDAV },
+        {
+          name: collection.account?.accountType === 'caldav' ? 'calendar-data' : 'address-data',
+          namespace:
+            collection.account?.accountType === 'caldav'
+              ? DAVNamespace.CALDAV
+              : DAVNamespace.CARDDAV,
+        },
+        {
+          name: 'displayname',
+          namespace: DAVNamespace.DAV,
+        },
       ],
       {
         syncLevel: 1,
@@ -103,15 +118,18 @@ export const smartCollectionSync = async <T extends DAVCollection>(
       }
     );
 
+    debug(result);
+
     return {
       ...collection,
       objects: collection.objects?.map((c) => {
         const found = result.find((r) => urlEquals(r.href, c.url));
         if (found) {
-          return { etag: found.props?.getetag };
+          return { ...c, etag: found.props?.getetag, objects: found.props?.calendarData };
         }
         return c;
       }),
+      syncToken: '',
     };
   }
   if (syncMethod === 'basic') {
@@ -119,7 +137,10 @@ export const smartCollectionSync = async <T extends DAVCollection>(
       headers: options?.headers,
     });
     if (isDirty) {
-      return { ...collection, objects: {} };
+      return {
+        ...collection,
+        objects: await collection.fetchObjects?.(collection, { headers: options?.headers }),
+      };
     }
   }
   return collection;

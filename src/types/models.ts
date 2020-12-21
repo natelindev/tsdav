@@ -9,6 +9,32 @@ export type DAVCollection = {
   resourcetype?: any;
   syncToken?: string;
   url: string;
+  // should only be used for smartCollectionSync
+  fetchObjects?:
+    | ((
+        collection: DAVCalendar,
+        options?:
+          | {
+              headers?:
+                | {
+                    [key: string]: any;
+                  }
+                | undefined;
+            }
+          | undefined
+      ) => Promise<DAVCalendarObject[]>)
+    | ((
+        collection: DAVAddressBook,
+        options?:
+          | {
+              headers?:
+                | {
+                    [key: string]: any;
+                  }
+                | undefined;
+            }
+          | undefined
+      ) => Promise<DAVVCard[]>);
 };
 
 export type DAVObject = {
