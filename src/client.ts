@@ -60,7 +60,7 @@ export const createDAVClient = async (
     authMethod === 'Basic'
       ? getBasicAuthHeaders(credentials)
       : authMethod === 'Oauth'
-      ? await getOauthHeaders(credentials)
+      ? await (await getOauthHeaders(credentials)).headers
       : {};
 
   // request

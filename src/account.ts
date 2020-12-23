@@ -88,6 +88,11 @@ export const fetchHomeUrl = async (
   );
 
   const matched = responses.find((r) => urlEquals(account.principalUrl, r.href));
+
+  if (!matched || !matched.ok) {
+    throw new Error('cannot find homeUrl');
+  }
+
   const result = URL.resolve(
     account.rootUrl,
     account.accountType === 'caldav'

@@ -45,6 +45,7 @@ export const fetchOauthTokens = async (credentials: DAVCredentials): Promise<DAV
   ) {
     throw new Error('Oauth credentials missing');
   }
+
   const param = new URLSearchParams({
     grant_type: 'authorization_code',
     code: credentials.authorizationCode,
@@ -53,11 +54,15 @@ export const fetchOauthTokens = async (credentials: DAVCredentials): Promise<DAV
     client_secret: credentials.clientSecret,
   });
 
+  debug(credentials.tokenUrl);
+  debug(param.toString());
+
   const response = await fetch(credentials.tokenUrl, {
     method: 'POST',
     body: param.toString(),
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
+      'content-length': `${param.toString().length}`,
+      'content-type': 'application/x-www-form-urlencoded',
     },
   });
 
@@ -115,6 +120,7 @@ export const refreshAccessToken = async (
 export const getOauthHeaders = async (
   credentials: DAVCredentials
 ): Promise<{ tokens: DAVTokens; headers: DAVAuthHeaders }> => {
+  debug('Fetching oauth headers');
   let tokens: DAVTokens = {};
   if (!credentials.refreshToken) {
     // No refresh token, fetch new tokens
@@ -128,12 +134,12 @@ export const getOauthHeaders = async (
     tokens = await refreshAccessToken(credentials);
   }
   // now we should have valid access token
-  debug(`Oauth tokens fetched: ${tokens}`);
+  debug(`Oauth tokens fetched: ${tokens.access_token}`);
 
   return {
     tokens,
     headers: {
-      authorization: tokens.access_token,
+      authorization: `Bearer ${tokens.access_token}`,
     },
   };
 };
