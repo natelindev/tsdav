@@ -4,6 +4,7 @@ import * as collection from './collection';
 import * as account from './account';
 import * as addressBook from './addressBook';
 import * as calendar from './calendar';
+import * as authHelper from './util/authHelper';
 
 import { DAVNamespace } from './consts';
 
@@ -59,6 +60,8 @@ export {
   syncCardDAVAccount,
 } from './addressBook';
 
+export { fetchOauthTokens, refreshAccessToken } from './util/authHelper';
+
 export default {
   DAVNamespace,
   ...client,
@@ -67,4 +70,6 @@ export default {
   ...account,
   ...addressBook,
   ...calendar,
+  fetchOauthTokens: authHelper.fetchOauthTokens,
+  refreshAccessToken: authHelper.refreshAccessToken,
 };
