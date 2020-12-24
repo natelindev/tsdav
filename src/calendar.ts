@@ -1,6 +1,7 @@
 /* eslint-disable no-underscore-dangle */
 import getLogger from 'debug';
 import URL from 'url';
+import fetch from 'cross-fetch';
 import { DAVAccount, DAVCalendar, DAVCalendarObject } from 'models';
 import { DAVDepth, DAVFilter, DAVProp, DAVResponse } from 'DAVTypes';
 import { DAVNamespace, DAVNamespaceShorthandMap, ICALObjects } from './consts';
@@ -117,22 +118,26 @@ export const fetchCalendarObjects = async (
       ],
     },
   ];
-  return (
-    await calendarQuery(
-      calendar.url,
-      [
-        { name: 'getetag', namespace: DAVNamespace.DAV },
-        { name: 'calendar-data', namespace: DAVNamespace.CALDAV },
-      ],
-      { filters, depth: '1', headers: options?.headers }
-    )
-  ).map((res) => ({
-    data: res,
-    calendar,
-    url: URL.resolve(calendar.account?.rootUrl ?? '', res.href ?? ''),
-    etag: res.props?.getetag,
-    calendarData: res.props?.calendarData?._cdata,
-  }));
+  const results = await calendarQuery(
+    calendar.url,
+    [
+      { name: 'getetag', namespace: DAVNamespace.DAV },
+      { name: 'calendar-data', namespace: DAVNamespace.CALDAV },
+    ],
+    { filters, depth: '1', headers: options?.headers }
+  );
+  return Promise.all(
+    results.map(async (res) => {
+      const url = URL.resolve(calendar.account?.rootUrl ?? '', res.href ?? '');
+      return {
+        url,
+        etag: res.props?.getetag,
+        calendarData:
+          res.props?.calendarData?._cdata ??
+          (await (await fetch(url, { headers: options?.headers })).text()),
+      };
+    })
+  );
 };
 
 export const createCalendarObject = async (

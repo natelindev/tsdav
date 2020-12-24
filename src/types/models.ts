@@ -38,7 +38,7 @@ export type DAVCollection = {
 };
 
 export type DAVObject = {
-  data: any;
+  data?: any;
   etag: string;
   url: string;
 };

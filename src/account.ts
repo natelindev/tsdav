@@ -84,11 +84,10 @@ export const fetchHomeUrl = async (
         ? { name: 'calendar-home-set', namespace: DAVNamespace.CALDAV }
         : { name: 'addressbook-home-set', namespace: DAVNamespace.CARDDAV },
     ],
-    options
+    { depth: '0', headers: options?.headers }
   );
 
   const matched = responses.find((r) => urlEquals(account.principalUrl, r.href));
-
   if (!matched || !matched.ok) {
     throw new Error('cannot find homeUrl');
   }
