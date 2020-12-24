@@ -100,9 +100,7 @@ export const fetchCalendarObjects = async (
   calendar: DAVCalendar,
   options?: { filters?: DAVFilter[]; headers?: { [key: string]: any } }
 ): Promise<DAVCalendarObject[]> => {
-  debug(
-    `Fetching calendar objects from ${calendar?.url} ${calendar?.account?.credentials?.username}`
-  );
+  debug(`Fetching calendar objects from ${calendar?.url}`);
   if (!calendar.account?.rootUrl) {
     throw new Error('account must have rootUrl before fetchCalendarObjects');
   }

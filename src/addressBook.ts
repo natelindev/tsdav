@@ -137,8 +137,8 @@ export const syncCardDAVAccount = async (
   account: DAVAccount,
   options?: { headers?: { [key: string]: any } }
 ): Promise<DAVAccount> => {
-  // find new AddressBook collections
-  const newAddressBooks = (await fetchAddressBooks(account, options)).filter((addr) =>
+  // find changed AddressBook collections
+  const changedAddressBooks = (await fetchAddressBooks(account, options)).filter((addr) =>
     account.addressBooks?.some((a) => urlEquals(a.url, addr.url))
   );
   return {
@@ -148,7 +148,7 @@ export const syncCardDAVAccount = async (
       ...(account.addressBooks ?? []),
       ...(
         await Promise.all(
-          newAddressBooks.map(async (ab) => {
+          changedAddressBooks.map(async (ab) => {
             try {
               return smartCollectionSync(
                 {
