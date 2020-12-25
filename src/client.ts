@@ -109,7 +109,7 @@ export const createDAVClient = async (
 
   const deleteObject = async (
     url: string,
-    etag: string,
+    etag?: string,
     options?: { headers?: { [key: string]: any } }
   ): Promise<Response> =>
     rawDeleteObject(url ?? serverUrl, etag, {

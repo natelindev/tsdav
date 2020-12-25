@@ -195,8 +195,11 @@ export const updateObject = async (
 
 export const deleteObject = async (
   url: string,
-  etag: string,
+  etag?: string,
   options?: { headers?: { [key: string]: any } }
 ): Promise<Response> => {
-  return fetch(url, { method: 'DELETE', headers: { ...options?.headers, 'If-Match': etag } });
+  return fetch(url, {
+    method: 'DELETE',
+    headers: cleanupUndefined({ ...options?.headers, 'If-Match': etag }),
+  });
 };
