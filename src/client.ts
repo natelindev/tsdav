@@ -133,7 +133,7 @@ export const createDAVClient = async (
     options?: { headers?: { [key: string]: any }; loadCollections: boolean; loadObjects: boolean }
   ): Promise<DAVAccount> =>
     rawCreateAccount(
-      { server: serverUrl, ...account },
+      { server: serverUrl, credentials, ...account },
       {
         ...options,
         headers: { ...authHeaders, ...options?.headers },

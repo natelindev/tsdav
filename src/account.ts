@@ -106,7 +106,7 @@ export const createAccount = async (
   account: DAVAccount,
   options?: { headers?: { [key: string]: any }; loadCollections?: boolean; loadObjects?: boolean }
 ): Promise<DAVAccount> => {
-  const { headers, loadCollections = true, loadObjects = false } = options ?? {};
+  const { headers, loadCollections = false, loadObjects = false } = options ?? {};
   const newAccount: DAVAccount = {
     ...account,
     accountType: account.accountType,
