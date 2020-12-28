@@ -127,12 +127,15 @@ export const fetchCalendarObjects = async (
   return Promise.all(
     results.map(async (res) => {
       const url = URL.resolve(calendar.account?.rootUrl ?? '', res.href ?? '');
+      let response;
+      if (res.props?.calendarData?._cdata) {
+        response = await fetch(url, { headers: options?.headers });
+      }
       return {
         url,
         etag: res.props?.getetag,
         calendarData:
-          res.props?.calendarData?._cdata ??
-          (await (await fetch(url, { headers: options?.headers })).text()),
+          res.props?.calendarData?._cdata ?? response?.ok ? await response?.text() : undefined,
       };
     })
   );
