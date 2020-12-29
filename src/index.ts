@@ -42,6 +42,7 @@ export {
 
 export {
   calendarQuery,
+  calendarMultiGet,
   fetchCalendars,
   fetchCalendarObjects,
   createCalendarObject,

@@ -141,7 +141,7 @@ export const davRequest = async (
       ).reduce((prev, curr) => {
         return {
           ...prev,
-          ...curr.prop,
+          ...curr?.prop,
         };
       }, {}),
     };

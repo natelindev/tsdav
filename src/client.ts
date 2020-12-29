@@ -23,6 +23,7 @@ import {
   calendarQuery as rawCalendarQuery,
   fetchCalendars as rawFetchCalendars,
   fetchCalendarObjects as rawFetchCalendarObjects,
+  calendarMultiGet as rawCalendarMultiGet,
   createCalendarObject as rawCreateCalendarObject,
   updateCalendarObject as rawUpdateCalendarObject,
   deleteCalendarObject as rawDeleteCalendarObject,
@@ -142,20 +143,7 @@ export const createDAVClient = async (
   // collection
   const collectionQuery = appendHeaders(authHeaders, rawCollectionQuery);
 
-  const syncCollection = async (
-    url: string,
-    props: DAVProp[],
-    options?: {
-      depth?: DAVDepth;
-      syncLevel?: number;
-      syncToken?: string;
-      headers?: { [key: string]: any };
-    }
-  ): Promise<DAVResponse[]> =>
-    rawSyncCollection(url, props, {
-      ...options,
-      headers: { ...authHeaders, ...options?.headers },
-    });
+  const syncCollection = appendHeaders(authHeaders, rawSyncCollection);
 
   const supportedReportSet = async (
     collection: DAVCollection,
@@ -186,20 +174,9 @@ export const createDAVClient = async (
     });
 
   // calendar
-  const calendarQuery = async (
-    url: string,
-    props: DAVProp[],
-    options?: {
-      filters?: DAVFilter[];
-      timezone?: string;
-      depth?: DAVDepth;
-      headers?: { [key: string]: any };
-    }
-  ): Promise<DAVResponse[]> =>
-    rawCalendarQuery(url, props, {
-      ...options,
-      headers: { ...authHeaders, ...options?.headers },
-    });
+  const calendarQuery = appendHeaders(authHeaders, rawCalendarQuery);
+
+  const calendarMultiGet = appendHeaders(authHeaders, rawCalendarMultiGet);
 
   const fetchCalendars = async (
     account: DAVAccount,
@@ -219,16 +196,7 @@ export const createDAVClient = async (
       headers: { ...authHeaders, ...options?.headers },
     });
 
-  const createCalendarObject = async (
-    calendar: DAVCalendar,
-    iCalString: string,
-    filename: string,
-    options?: { headers?: { [key: string]: any } }
-  ): Promise<Response> =>
-    rawCreateCalendarObject(calendar, iCalString, filename, {
-      ...options,
-      headers: { ...authHeaders, ...options?.headers },
-    });
+  const createCalendarObject = appendHeaders(authHeaders, rawCreateCalendarObject);
 
   const updateCalendarObject = async (
     calendarObject: DAVCalendarObject,
@@ -258,20 +226,7 @@ export const createDAVClient = async (
     });
 
   // addressBook
-  const addressBookQuery = async (
-    url: string,
-    props: DAVProp[],
-    options?: {
-      filters?: DAVFilter[];
-      timezone?: string;
-      depth?: DAVDepth;
-      headers?: { [key: string]: any };
-    }
-  ): Promise<DAVResponse[]> =>
-    rawAddressBookQuery(url, props, {
-      ...options,
-      headers: { ...authHeaders, ...options?.headers },
-    });
+  const addressBookQuery = appendHeaders(authHeaders, rawAddressBookQuery);
 
   const fetchAddressBooks = async (
     account: DAVAccount,
@@ -291,16 +246,7 @@ export const createDAVClient = async (
       headers: { ...authHeaders, ...options?.headers },
     });
 
-  const createVCard = async (
-    addressBook: DAVAddressBook,
-    vCardString: string,
-    filename: string,
-    options?: { headers?: { [key: string]: any } }
-  ): Promise<Response> =>
-    rawCreateVCard(addressBook, vCardString, filename, {
-      ...options,
-      headers: { ...authHeaders, ...options?.headers },
-    });
+  const createVCard = appendHeaders(authHeaders, rawCreateVCard);
 
   const updateVCard = async (
     vCard: DAVVCard,
@@ -340,6 +286,7 @@ export const createDAVClient = async (
     calendarQuery,
     addressBookQuery,
     collectionQuery,
+    calendarMultiGet,
     syncCollection,
     supportedReportSet,
     isCollectionDirty,

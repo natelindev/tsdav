@@ -1,7 +1,6 @@
 /* eslint-disable no-underscore-dangle */
 import getLogger from 'debug';
 import URL from 'url';
-import fetch from 'cross-fetch';
 import { DAVAccount, DAVCalendar, DAVCalendarObject } from 'models';
 import { DAVDepth, DAVFilter, DAVProp, DAVResponse } from 'DAVTypes';
 import { DAVNamespace, DAVNamespaceShorthandMap, ICALObjects } from './consts';
@@ -21,8 +20,8 @@ export const calendarQuery = async (
     depth?: DAVDepth;
     headers?: { [key: string]: any };
   }
-): Promise<DAVResponse[]> => {
-  return collectionQuery(
+): Promise<DAVResponse[]> =>
+  collectionQuery(
     url,
     {
       'calendar-query': {
@@ -39,7 +38,31 @@ export const calendarQuery = async (
     },
     { depth: options?.depth, headers: options?.headers }
   );
-};
+
+export const calendarMultiGet = async (
+  url: string,
+  props: DAVProp[],
+  ObjectUrls: string[],
+  options?: {
+    filters?: DAVFilter[];
+    timezone?: string;
+    depth: DAVDepth;
+    headers?: { [key: string]: any };
+  }
+): Promise<DAVResponse[]> =>
+  collectionQuery(
+    url,
+    {
+      'calendar-multiget': {
+        _attributes: getDAVAttribute([DAVNamespace.DAV, DAVNamespace.CALDAV]),
+        [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
+        [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:href`]: ObjectUrls,
+        filter: formatFilters(options?.filters),
+        timezone: options?.timezone,
+      },
+    },
+    { depth: options?.depth, headers: options?.headers }
+  );
 
 export const fetchCalendars = async (
   account: DAVAccount,
@@ -124,21 +147,36 @@ export const fetchCalendarObjects = async (
     ],
     { filters, depth: '1', headers: options?.headers }
   );
-  return Promise.all(
-    results.map(async (res) => {
-      const url = URL.resolve(calendar.account?.rootUrl ?? '', res.href ?? '');
-      let response;
-      if (res.props?.calendarData?._cdata) {
-        response = await fetch(url, { headers: options?.headers });
-      }
-      return {
-        url,
-        etag: res.props?.getetag,
-        calendarData:
-          res.props?.calendarData?._cdata ?? response?.ok ? await response?.text() : undefined,
-      };
-    })
+
+  // if data is already present, return
+  if (results.some((res) => res.props?.calendarData?._cdata)) {
+    return results.map((r) => ({
+      url: URL.resolve(calendar.account?.rootUrl ?? '', r.href ?? '') ?? '',
+      etag: r.props?.getetag,
+      data: r.props?.calendarData?._cdata,
+    }));
+  }
+
+  // process to use calendar-multiget to fetch data
+  const calendarObjectUrls = results.map((res) =>
+    URL.resolve(calendar.account?.rootUrl ?? '', res.href ?? '')
   );
+
+  const calendarObjectResults = await calendarMultiGet(
+    calendar.url,
+    [
+      { name: 'getetag', namespace: DAVNamespace.DAV },
+      { name: 'calendar-data', namespace: DAVNamespace.CALDAV },
+    ],
+    calendarObjectUrls,
+    { depth: '1', headers: options?.headers }
+  );
+
+  return calendarObjectResults.map((res) => ({
+    url: res.href ?? '',
+    etag: res.props?.getetag,
+    data: res.props?.calendarData,
+  }));
 };
 
 export const createCalendarObject = async (

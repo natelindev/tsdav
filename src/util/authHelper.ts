@@ -9,9 +9,10 @@ const debug = getLogger('tsdav:authHelper');
 
 /**
  * Caveat: Do not use this function where you could have object parameters before options
+ * since appendHeaders cannot determine if its the options parameter
  * i.e.
- * Y: function (a: string, b: number, options?: { headers?: {[key:string]: any}})
- * N: function (a: string, b: {test: string}, options?: { headers?: {[key:string]: any}})
+ * Ok to use appendHeaders: function (a: string, b: number, options?: { headers?: {[key:string]: any}})
+ * Not ok to use appendHeaders: function (a: string, b: {test: string}, options?: { headers?: {[key:string]: any}})
  */
 export const appendHeaders = <
   T extends unknown[],
@@ -22,7 +23,10 @@ export const appendHeaders = <
 ) => (...args: Parameters<U>): ReturnType<U> => {
   const prev = args.slice(0, -1) as T;
   const [last] = args.slice(-1) as { headers?: { [key: string]: any } }[];
-  if ((last && last.headers) || typeof last === 'object') {
+  if (
+    (last && last.headers) ||
+    (!Array.isArray(last) && typeof last === 'object' && last !== null)
+  ) {
     return fn(...prev, { ...last, headers: { ...headers, ...last.headers } });
   }
   return fn(...([...prev, last] as T), { headers });
