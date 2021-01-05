@@ -21,6 +21,25 @@ export const collectionQuery = async (
   });
 };
 
+export const makeCollection = async (
+  url: string,
+  name: string,
+  options?: { depth?: DAVDepth; headers?: { [key: string]: any } }
+): Promise<DAVResponse[]> => {
+  return davRequest(url, {
+    method: 'MKCOL',
+    headers: { ...options?.headers, depth: options?.depth },
+    namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
+    body: {
+      mkcol: {
+        set: {
+          prop: formatProps([{ name: 'display-name', value: name }]),
+        },
+      },
+    },
+  });
+};
+
 export const supportedReportSet = async (
   collection: DAVCollection,
   options?: { headers?: { [key: string]: any } }

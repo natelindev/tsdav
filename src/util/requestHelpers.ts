@@ -42,9 +42,12 @@ export const getDAVAttribute = (nsArr: DAVNamespace[]): { [key: string]: DAVName
 export const formatProps = (props?: DAVProp[]): { [key: string]: any } | undefined =>
   props?.reduce((prev, curr) => {
     if (curr.namespace) {
-      return { ...prev, [`${DAVNamespaceShorthandMap[curr.namespace]}:${curr.name}`]: {} };
+      return {
+        ...prev,
+        [`${DAVNamespaceShorthandMap[curr.namespace]}:${curr.name}`]: curr.value ?? {},
+      };
     }
-    return { ...prev, [`${curr.name}`]: {} };
+    return { ...prev, [`${curr.name}`]: curr.value ?? {} };
   }, {});
 
 export const formatFilters = (filters?: DAVFilter[]): { [key: string]: any } | undefined =>

@@ -3,6 +3,7 @@ import { DAVNamespace } from '../consts';
 export type DAVProp = {
   name: string;
   namespace?: DAVNamespace;
+  value?: any;
 };
 
 export type DAVFilter = {
@@ -23,7 +24,8 @@ export type DAVMethods =
   | 'PROPPATCH'
   | 'UNLOCK'
   | 'REPORT'
-  | 'SEARCH';
+  | 'SEARCH'
+  | 'MKCALENDAR';
 
 export type HTTPMethods =
   | 'GET'
