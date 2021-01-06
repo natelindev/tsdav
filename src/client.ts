@@ -24,6 +24,7 @@ import {
   fetchCalendars as rawFetchCalendars,
   fetchCalendarObjects as rawFetchCalendarObjects,
   calendarMultiGet as rawCalendarMultiGet,
+  makeCalendar as rawMakeCalendar,
   createCalendarObject as rawCreateCalendarObject,
   updateCalendarObject as rawUpdateCalendarObject,
   deleteCalendarObject as rawDeleteCalendarObject,
@@ -41,6 +42,7 @@ import {
 import {
   syncCollection as rawSyncCollection,
   collectionQuery as rawCollectionQuery,
+  makeCollection as rawMakeCollection,
   supportedReportSet as rawSupportedReportSet,
   isCollectionDirty as rawIsCollectionDirty,
   smartCollectionSync as rawSmartCollectionSync,
@@ -142,7 +144,7 @@ export const createDAVClient = async (
     );
   // collection
   const collectionQuery = appendHeaders(authHeaders, rawCollectionQuery);
-
+  const makeCollection = appendHeaders(authHeaders, rawMakeCollection);
   const syncCollection = appendHeaders(authHeaders, rawSyncCollection);
 
   const supportedReportSet = async (
@@ -177,6 +179,7 @@ export const createDAVClient = async (
   const calendarQuery = appendHeaders(authHeaders, rawCalendarQuery);
 
   const calendarMultiGet = appendHeaders(authHeaders, rawCalendarMultiGet);
+  const makeCalendar = appendHeaders(authHeaders, rawMakeCalendar);
 
   const fetchCalendars = async (
     account: DAVAccount,
@@ -286,7 +289,9 @@ export const createDAVClient = async (
     calendarQuery,
     addressBookQuery,
     collectionQuery,
+    makeCollection,
     calendarMultiGet,
+    makeCalendar,
     syncCollection,
     supportedReportSet,
     isCollectionDirty,

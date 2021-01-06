@@ -5,7 +5,7 @@ import { DAVAccount, DAVCalendar, DAVCalendarObject } from 'models';
 import { DAVDepth, DAVFilter, DAVProp, DAVResponse } from 'DAVTypes';
 import { DAVNamespace, DAVNamespaceShorthandMap, ICALObjects } from './consts';
 import { collectionQuery, smartCollectionSync, supportedReportSet } from './collection';
-import { propfind, createObject, updateObject, deleteObject } from './request';
+import { propfind, createObject, updateObject, deleteObject, davRequest } from './request';
 
 import { formatFilters, formatProps, getDAVAttribute, urlEquals } from './util/requestHelpers';
 
@@ -63,6 +63,28 @@ export const calendarMultiGet = async (
     },
     { depth: options?.depth, headers: options?.headers }
   );
+
+export const makeCalendar = async (
+  url: string,
+  props: DAVProp[],
+  options?: {
+    depth: DAVDepth;
+    headers?: { [key: string]: any };
+  }
+): Promise<DAVResponse[]> =>
+  davRequest(url, {
+    method: 'MKCALENDAR',
+    headers: { ...options?.headers, depth: options?.depth },
+    namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
+    body: {
+      mkcalendar: {
+        _attributes: getDAVAttribute([DAVNamespace.DAV, DAVNamespace.CALDAV]),
+        set: {
+          prop: formatProps(props),
+        },
+      },
+    },
+  });
 
 export const fetchCalendars = async (
   account: DAVAccount,

@@ -23,20 +23,22 @@ export const collectionQuery = async (
 
 export const makeCollection = async (
   url: string,
-  name: string,
+  props?: DAVProp[],
   options?: { depth?: DAVDepth; headers?: { [key: string]: any } }
 ): Promise<DAVResponse[]> => {
   return davRequest(url, {
     method: 'MKCOL',
     headers: { ...options?.headers, depth: options?.depth },
     namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
-    body: {
-      mkcol: {
-        set: {
-          prop: formatProps([{ name: 'display-name', value: name }]),
-        },
-      },
-    },
+    body: props
+      ? {
+          mkcol: {
+            set: {
+              prop: formatProps(props),
+            },
+          },
+        }
+      : undefined,
   });
 };
 
