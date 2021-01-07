@@ -63,7 +63,7 @@ export {
 } from './addressBook';
 
 export { fetchOauthTokens, refreshAccessToken } from './util/authHelper';
-
+export { DAVNamespace } from './consts';
 export default {
   DAVNamespace,
   ...client,

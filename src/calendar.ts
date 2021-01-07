@@ -77,7 +77,7 @@ export const makeCalendar = async (
     headers: { ...options?.headers, depth: options?.depth },
     namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
     body: {
-      mkcalendar: {
+      [`${DAVNamespaceShorthandMap[DAVNamespace.CALDAV]}:mkcalendar`]: {
         _attributes: getDAVAttribute([DAVNamespace.DAV, DAVNamespace.CALDAV]),
         set: {
           prop: formatProps(props),
