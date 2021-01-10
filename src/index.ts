@@ -1,17 +1,15 @@
-import * as client from './client';
-import * as request from './request';
-import * as collection from './collection';
 import * as account from './account';
 import * as addressBook from './addressBook';
 import * as calendar from './calendar';
-import * as authHelper from './util/authHelper';
-
+import * as client from './client';
+import * as collection from './collection';
 import { DAVNamespace } from './consts';
+import * as request from './request';
+import * as authHelper from './util/authHelper';
 
 export type {
   DAVProp,
   DAVFilter,
-  DAVAuthHeaders,
   DAVDepth,
   DAVMethods,
   DAVRequest,
@@ -28,6 +26,8 @@ export type {
   DAVObject,
   DAVVCard,
 } from './types/models';
+
+export type { DAVClient } from './client';
 
 export { createDAVClient } from './client';
 export { createAccount } from './account';

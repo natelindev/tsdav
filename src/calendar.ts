@@ -1,13 +1,14 @@
+import { DAVDepth, DAVFilter, DAVProp, DAVResponse } from 'DAVTypes';
 /* eslint-disable no-underscore-dangle */
 import getLogger from 'debug';
-import URL from 'url';
 import { DAVAccount, DAVCalendar, DAVCalendarObject } from 'models';
-import { DAVDepth, DAVFilter, DAVProp, DAVResponse } from 'DAVTypes';
-import { DAVNamespace, DAVNamespaceShorthandMap, ICALObjects } from './consts';
-import { collectionQuery, smartCollectionSync, supportedReportSet } from './collection';
-import { propfind, createObject, updateObject, deleteObject, davRequest } from './request';
+import URL from 'url';
 
+import { collectionQuery, smartCollectionSync, supportedReportSet } from './collection';
+import { DAVNamespace, DAVNamespaceShorthandMap, ICALObjects } from './consts';
+import { createObject, davRequest, deleteObject, propfind, updateObject } from './request';
 import { formatFilters, formatProps, getDAVAttribute, urlEquals } from './util/requestHelpers';
+import { findMissingFieldNames, hasFields } from './util/typeHelper';
 
 const debug = getLogger('tsdav:calendar');
 
@@ -86,15 +87,26 @@ export const makeCalendar = async (
     },
   });
 
-export const fetchCalendars = async (
-  account: DAVAccount,
-  options?: { headers?: { [key: string]: any } }
-): Promise<DAVCalendar[]> => {
-  if (!account.homeUrl || !account.rootUrl) {
-    throw new Error('account must have homeUrl & rootUrl before fetchCalendars');
+export const fetchCalendars = async (options?: {
+  headers?: { [key: string]: any };
+  account?: DAVAccount;
+}): Promise<DAVCalendar[]> => {
+  const requiredFields: Array<keyof DAVAccount> = ['homeUrl', 'rootUrl'];
+  if (!options?.account || !hasFields(options?.account, requiredFields)) {
+    if (!options?.account) {
+      throw new Error('no account for fetchCalendars');
+    }
+    throw new Error(
+      `account must have ${findMissingFieldNames(
+        options.account,
+        requiredFields
+      )} before fetchCalendars`
+    );
   }
+
+  const { account } = options;
   const res = await propfind(
-    account.homeUrl,
+    options.account.homeUrl,
     [
       { name: 'calendar-description', namespace: DAVNamespace.CALDAV },
       { name: 'calendar-timezone', namespace: DAVNamespace.CALDAV },
@@ -104,7 +116,7 @@ export const fetchCalendars = async (
       { name: 'supported-calendar-component-set', namespace: DAVNamespace.CALDAV },
       { name: 'sync-token', namespace: DAVNamespace.DAV },
     ],
-    { depth: '1', headers: options?.headers }
+    { depth: 1, headers: options?.headers }
   );
 
   return Promise.all(
@@ -123,8 +135,6 @@ export const fetchCalendars = async (
         debug(`Found calendar ${rs.props?.displayname},
                props: ${JSON.stringify(rs.props)}`);
         return {
-          data: rs,
-          account,
           description: rs.props?.calendarDescription,
           timezone: rs.props?.calendarTimezone,
           url: URL.resolve(account.rootUrl ?? '', rs.href ?? ''),
@@ -143,12 +153,22 @@ export const fetchCalendars = async (
 
 export const fetchCalendarObjects = async (
   calendar: DAVCalendar,
-  options?: { filters?: DAVFilter[]; headers?: { [key: string]: any } }
+  options?: { filters?: DAVFilter[]; headers?: { [key: string]: any }; account?: DAVAccount }
 ): Promise<DAVCalendarObject[]> => {
   debug(`Fetching calendar objects from ${calendar?.url}`);
-  if (!calendar.account?.rootUrl) {
-    throw new Error('account must have rootUrl before fetchCalendarObjects');
+  const requiredFields: Array<keyof DAVAccount> = ['rootUrl'];
+  if (!options?.account || !hasFields(options?.account, requiredFields)) {
+    if (!options?.account) {
+      throw new Error('no account for fetchCalendarObjects');
+    }
+    throw new Error(
+      `account must have ${findMissingFieldNames(
+        options.account,
+        requiredFields
+      )} before fetchCalendarObjects`
+    );
   }
+
   const filters: DAVFilter[] = options?.filters ?? [
     {
       type: 'comp-filter',
@@ -167,13 +187,13 @@ export const fetchCalendarObjects = async (
       { name: 'getetag', namespace: DAVNamespace.DAV },
       { name: 'calendar-data', namespace: DAVNamespace.CALDAV },
     ],
-    { filters, depth: '1', headers: options?.headers }
+    { filters, depth: 1, headers: options?.headers }
   );
 
   // if data is already present, return
   if (results.some((res) => res.props?.calendarData?._cdata)) {
     return results.map((r) => ({
-      url: URL.resolve(calendar.account?.rootUrl ?? '', r.href ?? '') ?? '',
+      url: URL.resolve(options?.account?.rootUrl ?? '', r.href ?? '') ?? '',
       etag: r.props?.getetag,
       data: r.props?.calendarData?._cdata,
     }));
@@ -181,7 +201,7 @@ export const fetchCalendarObjects = async (
 
   // process to use calendar-multiget to fetch data
   const calendarObjectUrls = results.map((res) =>
-    URL.resolve(calendar.account?.rootUrl ?? '', res.href ?? '')
+    URL.resolve(options.account?.rootUrl ?? '', res.href ?? '')
   );
 
   const calendarObjectResults = await calendarMultiGet(
@@ -191,7 +211,7 @@ export const fetchCalendarObjects = async (
       { name: 'calendar-data', namespace: DAVNamespace.CALDAV },
     ],
     calendarObjectUrls,
-    { depth: '1', headers: options?.headers }
+    { depth: 1, headers: options?.headers }
   );
 
   return calendarObjectResults.map((res) => ({
@@ -219,7 +239,7 @@ export const updateCalendarObject = async (
   calendarObject: DAVCalendarObject,
   options?: { headers?: { [key: string]: any } }
 ): Promise<Response> => {
-  return updateObject(calendarObject.url, calendarObject.calendarData, calendarObject.etag, {
+  return updateObject(calendarObject.url, calendarObject.data, calendarObject.etag, {
     headers: {
       'content-type': 'text/calendar; charset=utf-8',
       ...options?.headers,
@@ -240,7 +260,7 @@ export const syncCalDAVAccount = async (
   options?: { headers?: { [key: string]: any } }
 ): Promise<DAVAccount> => {
   // find changed calendar collections
-  const changedCalendars = (await fetchCalendars(account, options)).filter(
+  const changedCalendars = (await fetchCalendars({ ...options, account })).filter(
     (cal) => !account.calendars?.some((a) => urlEquals(a.url, cal.url))
   );
   debug(`found changed calendars:`);

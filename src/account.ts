@@ -1,12 +1,13 @@
-import { DAVAccount } from 'models';
-import getLogger from 'debug';
-import URL from 'url';
 import { fetch } from 'cross-fetch';
-import { DAVNamespace } from './consts';
-import { urlEquals } from './util/requestHelpers';
-import { fetchCalendarObjects, fetchCalendars } from './calendar';
+import getLogger from 'debug';
+import { DAVAccount } from 'models';
+import URL from 'url';
+
 import { fetchAddressBooks, fetchVCards } from './addressBook';
+import { fetchCalendarObjects, fetchCalendars } from './calendar';
+import { DAVNamespace } from './consts';
 import { propfind } from './request';
+import { urlEquals } from './util/requestHelpers';
 
 const debug = getLogger('tsdav:account');
 
@@ -15,7 +16,7 @@ export const serviceDiscovery = async (
   options?: { headers?: { [key: string]: any } }
 ): Promise<string> => {
   debug('Service discovery...');
-  const endpoint = URL.parse(account.server);
+  const endpoint = URL.parse(account.serverUrl);
 
   const uri = URL.format({
     protocol: endpoint.protocol ?? 'http',
@@ -60,7 +61,7 @@ export const fetchPrincipalUrl = async (
   const [response] = await propfind(
     account.rootUrl,
     [{ name: 'current-user-principal', namespace: DAVNamespace.DAV }],
-    { depth: '0', headers: options?.headers }
+    { depth: 0, headers: options?.headers }
   );
   if (!response.ok) {
     debug(`Fetch principal url failed: ${response.statusText}`);
@@ -84,7 +85,7 @@ export const fetchHomeUrl = async (
         ? { name: 'calendar-home-set', namespace: DAVNamespace.CALDAV }
         : { name: 'addressbook-home-set', namespace: DAVNamespace.CARDDAV },
     ],
-    { depth: '0', headers: options?.headers }
+    { depth: 0, headers: options?.headers }
   );
 
   const matched = responses.find((r) => urlEquals(account.principalUrl, r.href));
@@ -107,20 +108,16 @@ export const createAccount = async (
   options?: { headers?: { [key: string]: any }; loadCollections?: boolean; loadObjects?: boolean }
 ): Promise<DAVAccount> => {
   const { headers, loadCollections = false, loadObjects = false } = options ?? {};
-  const newAccount: DAVAccount = {
-    ...account,
-    accountType: account.accountType,
-    server: account.server,
-  };
+  const newAccount: DAVAccount = { ...account };
   newAccount.rootUrl = await serviceDiscovery(account, { headers });
   newAccount.principalUrl = await fetchPrincipalUrl(newAccount, { headers });
   newAccount.homeUrl = await fetchHomeUrl(newAccount, { headers });
   // to load objects you must first load collections
   if (loadCollections || loadObjects) {
     if (account.accountType === 'caldav') {
-      newAccount.calendars = await fetchCalendars(newAccount, { headers });
+      newAccount.calendars = await fetchCalendars({ headers, account: newAccount });
     } else if (account.accountType === 'carddav') {
-      newAccount.addressBooks = await fetchAddressBooks(newAccount, { headers });
+      newAccount.addressBooks = await fetchAddressBooks({ headers, account: newAccount });
     }
   }
   if (loadObjects) {
@@ -128,14 +125,14 @@ export const createAccount = async (
       newAccount.calendars = await Promise.all(
         newAccount.calendars.map(async (cal) => ({
           ...cal,
-          objects: await fetchCalendarObjects(cal, { headers }),
+          objects: await fetchCalendarObjects(cal, { headers, account: newAccount }),
         }))
       );
     } else if (account.accountType === 'carddav' && newAccount.addressBooks) {
       newAccount.addressBooks = await Promise.all(
         newAccount.addressBooks.map(async (addr) => ({
           ...addr,
-          objects: await fetchVCards(addr, { headers }),
+          objects: await fetchVCards(addr, { headers, account: newAccount }),
         }))
       );
     }

@@ -1,18 +1,23 @@
 import { encode } from 'base-64';
 import fetch from 'cross-fetch';
+import { DAVTokens } from 'DAVTypes';
 import getLogger from 'debug';
-import { DAVAuthHeaders, DAVTokens } from 'DAVTypes';
 
 import { DAVCredentials } from '../types/models';
+import { findMissingFieldNames, hasFields } from './typeHelper';
 
 const debug = getLogger('tsdav:authHelper');
 
 /**
+ * Internal function to attach header to function
+ *
  * Caveat: Do not use this function where you could have object parameters before options
  * since appendHeaders cannot determine if its the options parameter
- * i.e.
- * Ok to use appendHeaders: function (a: string, b: number, options?: { headers?: {[key:string]: any}})
- * Not ok to use appendHeaders: function (a: string, b: {test: string}, options?: { headers?: {[key:string]: any}})
+ *
+ * Ok:
+ * function (a: string, b: number, options?: { headers?: {[key:string]: any}})
+ * Not ok:
+ * function (a: string, b: {test: string}, options?: { headers?: {[key:string]: any}})
  */
 export const appendHeaders = <
   T extends unknown[],
@@ -32,7 +37,7 @@ export const appendHeaders = <
   return fn(...([...prev, last] as T), { headers });
 };
 
-export const getBasicAuthHeaders = (credentials: DAVCredentials): DAVAuthHeaders => {
+export const getBasicAuthHeaders = (credentials: DAVCredentials): { authorization?: string } => {
   debug(`Basic auth token generated: ${encode(`${credentials.username}:${credentials.password}`)}`);
   return {
     authorization: `Basic ${encode(`${credentials.username}:${credentials.password}`)}`,
@@ -40,14 +45,17 @@ export const getBasicAuthHeaders = (credentials: DAVCredentials): DAVAuthHeaders
 };
 
 export const fetchOauthTokens = async (credentials: DAVCredentials): Promise<DAVTokens> => {
-  if (
-    !credentials.authorizationCode ||
-    !credentials.redirectUrl ||
-    !credentials.clientId ||
-    !credentials.clientSecret ||
-    !credentials.tokenUrl
-  ) {
-    throw new Error('Oauth credentials missing');
+  const requireFields: Array<keyof DAVCredentials> = [
+    'authorizationCode',
+    'redirectUrl',
+    'clientId',
+    'clientSecret',
+    'tokenUrl',
+  ];
+  if (!hasFields(credentials, requireFields)) {
+    throw new Error(
+      `Oauth credentials missing: ${findMissingFieldNames(credentials, requireFields)}`
+    );
   }
 
   const param = new URLSearchParams({
@@ -88,13 +96,16 @@ export const refreshAccessToken = async (
   access_token?: string;
   expires_in?: number;
 }> => {
-  if (
-    !credentials.refreshToken ||
-    !credentials.clientId ||
-    !credentials.clientSecret ||
-    !credentials.tokenUrl
-  ) {
-    throw new Error('Oauth credentials missing');
+  const requireFields: Array<keyof DAVCredentials> = [
+    'refreshToken',
+    'clientId',
+    'clientSecret',
+    'tokenUrl',
+  ];
+  if (!hasFields(credentials, requireFields)) {
+    throw new Error(
+      `Oauth credentials missing: ${findMissingFieldNames(credentials, requireFields)}`
+    );
   }
   const param = new URLSearchParams({
     client_id: credentials.clientId,
@@ -123,7 +134,7 @@ export const refreshAccessToken = async (
 
 export const getOauthHeaders = async (
   credentials: DAVCredentials
-): Promise<{ tokens: DAVTokens; headers: DAVAuthHeaders }> => {
+): Promise<{ tokens: DAVTokens; headers: { authorization?: string } }> => {
   debug('Fetching oauth headers');
   let tokens: DAVTokens = {};
   if (!credentials.refreshToken) {

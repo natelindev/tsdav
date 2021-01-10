@@ -3,7 +3,7 @@ import { DAVNamespace } from '../consts';
 export type DAVProp = {
   name: string;
   namespace?: DAVNamespace;
-  value?: any;
+  value?: string | number;
 };
 
 export type DAVFilter = {
@@ -13,7 +13,7 @@ export type DAVFilter = {
   children?: DAVFilter[];
 };
 
-export type DAVDepth = '0' | '1' | 'infinity';
+export type DAVDepth = 0 | 1 | 'infinity';
 
 export type DAVMethods =
   | 'COPY'
@@ -64,8 +64,4 @@ export type DAVTokens = {
   id_token?: string;
   token_type?: string;
   scope?: string;
-};
-
-export type DAVAuthHeaders = {
-  authorization?: string;
 };

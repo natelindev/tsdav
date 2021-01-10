@@ -1,6 +1,7 @@
 import { DAVFilter, DAVProp } from 'DAVTypes';
 
 import { DAVAttributeMap, DAVNamespace, DAVNamespaceShorthandMap } from '../consts';
+
 import type { NoUndefinedField } from './typeHelper';
 
 export const urlEquals = (urlA?: string, urlB?: string): boolean => {
@@ -66,4 +67,4 @@ export const cleanupUndefined = <T = unknown>(obj: T): NoUndefinedField<T> =>
   Object.entries(obj).reduce((prev, [key, value]) => {
     if (value) return { ...prev, [key]: value };
     return prev;
-  }, {} as any);
+  }, {} as NoUndefinedField<T>);

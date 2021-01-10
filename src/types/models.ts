@@ -1,7 +1,5 @@
 export type DAVCollection = {
-  data?: any;
   objects?: DAVObject[];
-  account?: DAVAccount;
   ctag?: string;
   description?: string;
   displayName?: string;
@@ -57,29 +55,20 @@ export type DAVCredentials = {
 };
 
 export type DAVAccount = {
-  server: string;
+  accountType: 'caldav' | 'carddav';
+  serverUrl: string;
   credentials?: DAVCredentials;
   rootUrl?: string;
   principalUrl?: string;
   homeUrl?: string;
   calendars?: DAVCalendar[];
   addressBooks?: DAVAddressBook[];
-  accountType: 'caldav' | 'carddav';
 };
 
+export type DAVVCard = DAVObject;
+export type DAVCalendarObject = DAVObject;
+
 export type DAVAddressBook = DAVCollection;
-
-export type DAVVCard = {
-  addressBook: DAVAddressBook;
-  addressData: any;
-} & DAVObject;
-
 export type DAVCalendar = {
-  components?: any;
   timezone?: string;
 } & DAVCollection;
-
-export type DAVCalendarObject = {
-  calendar?: DAVCalendar;
-  calendarData?: any;
-} & DAVObject;

@@ -1,11 +1,13 @@
-import URL from 'url';
-import { DAVAccount, DAVAddressBook, DAVVCard } from 'models';
+import { DAVDepth, DAVProp, DAVResponse } from 'DAVTypes';
 import getLogger from 'debug';
-import { DAVProp, DAVDepth, DAVResponse } from 'DAVTypes';
-import { DAVNamespace, DAVNamespaceShorthandMap } from './consts';
+import { DAVAccount, DAVAddressBook, DAVVCard } from 'models';
+import URL from 'url';
+
 import { collectionQuery, smartCollectionSync, supportedReportSet } from './collection';
+import { DAVNamespace, DAVNamespaceShorthandMap } from './consts';
 import { createObject, deleteObject, propfind, updateObject } from './request';
-import { getDAVAttribute, formatProps, urlEquals } from './util/requestHelpers';
+import { formatProps, getDAVAttribute, urlEquals } from './util/requestHelpers';
+import { findMissingFieldNames, hasFields } from './util/typeHelper';
 
 const debug = getLogger('tsdav:addressBook');
 
@@ -33,13 +35,23 @@ export const addressBookQuery = async (
   );
 };
 
-export const fetchAddressBooks = async (
-  account: DAVAccount,
-  options?: { headers?: { [key: string]: any } }
-): Promise<DAVAddressBook[]> => {
-  if (!account.homeUrl || !account.rootUrl) {
-    throw new Error('account must have homeUrl & rootUrl before fetchAddressBooks');
+export const fetchAddressBooks = async (options?: {
+  headers?: { [key: string]: any };
+  account?: DAVAccount;
+}): Promise<DAVAddressBook[]> => {
+  const requiredFields: Array<keyof DAVAccount> = ['homeUrl', 'rootUrl'];
+  if (!options?.account || !hasFields(options?.account, requiredFields)) {
+    if (!options?.account) {
+      throw new Error('no account for fetchAddressBooks');
+    }
+    throw new Error(
+      `account must have ${findMissingFieldNames(
+        options.account,
+        requiredFields
+      )} before fetchAddressBooks`
+    );
   }
+  const { account } = options;
   const res = await propfind(
     account.homeUrl,
     [
@@ -48,7 +60,7 @@ export const fetchAddressBooks = async (
       { name: 'resourcetype', namespace: DAVNamespace.DAV },
       { name: 'sync-token', namespace: DAVNamespace.DAV },
     ],
-    { depth: '1', headers: options?.headers }
+    { depth: 1, headers: options?.headers }
   );
   return Promise.all(
     res
@@ -72,12 +84,21 @@ export const fetchAddressBooks = async (
 
 export const fetchVCards = async (
   addressBook: DAVAddressBook,
-  options?: { headers?: { [key: string]: any } }
+  options?: { headers?: { [key: string]: any }; account?: DAVAccount }
 ): Promise<DAVVCard[]> => {
   debug(`Fetching vcards from ${addressBook?.url}
-  ${addressBook?.account?.credentials?.username}`);
-  if (!addressBook.account?.rootUrl) {
-    throw new Error('account must have rootUrl before fetchVCards');
+  ${options?.account?.credentials?.username}`);
+  const requiredFields: Array<keyof DAVAccount> = ['rootUrl'];
+  if (!options?.account || !hasFields(options?.account, requiredFields)) {
+    if (!options?.account) {
+      throw new Error('no account for fetchVCards');
+    }
+    throw new Error(
+      `account must have ${findMissingFieldNames(
+        options.account,
+        requiredFields
+      )} before fetchVCards`
+    );
   }
   return (
     await addressBookQuery(
@@ -86,13 +107,13 @@ export const fetchVCards = async (
         { name: 'getetag', namespace: DAVNamespace.DAV },
         { name: 'address-data', namespace: DAVNamespace.CARDDAV },
       ],
-      { depth: '1', headers: options?.headers }
+      { depth: 1, headers: options?.headers }
     )
   ).map((res) => {
     return {
       data: res,
       addressBook,
-      url: URL.resolve(addressBook.account?.rootUrl ?? '', res.href ?? ''),
+      url: URL.resolve(options.account?.rootUrl ?? '', res.href ?? ''),
       etag: res.props?.getetag,
       addressData: res.props?.addressData,
     };
@@ -117,7 +138,7 @@ export const updateVCard = async (
   vCard: DAVVCard,
   options?: { headers?: { [key: string]: any } }
 ): Promise<Response> => {
-  return updateObject(vCard.url, vCard.addressData, vCard.etag, {
+  return updateObject(vCard.url, vCard.data, vCard.etag, {
     headers: {
       'content-type': 'text/vcard; charset=utf-8',
       ...options?.headers,
@@ -138,7 +159,7 @@ export const syncCardDAVAccount = async (
   options?: { headers?: { [key: string]: any } }
 ): Promise<DAVAccount> => {
   // find changed AddressBook collections
-  const changedAddressBooks = (await fetchAddressBooks(account, options)).filter((addr) =>
+  const changedAddressBooks = (await fetchAddressBooks({ ...options, account })).filter((addr) =>
     account.addressBooks?.some((a) => urlEquals(a.url, addr.url))
   );
   return {
@@ -156,7 +177,7 @@ export const syncCardDAVAccount = async (
                   fetchObjects: fetchVCards,
                 } as DAVAddressBook,
                 'webdav',
-                { headers: options?.headers }
+                { headers: options?.headers, account }
               );
             } catch (err) {
               debug(`carddav account sync: AddressBook ${ab.displayName} sync error: ${err}`);

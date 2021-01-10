@@ -1,10 +1,10 @@
 import { DAVDepth, DAVProp, DAVResponse } from 'DAVTypes';
 import getLogger from 'debug';
+import { DAVAccount, DAVCollection } from 'models';
 
-import { DAVCollection, DAVObject } from 'models';
 import { DAVNamespace, DAVNamespaceShorthandMap } from './consts';
 import { davRequest, propfind } from './request';
-import { getDAVAttribute, formatProps, urlEquals } from './util/requestHelpers';
+import { formatProps, getDAVAttribute, urlEquals } from './util/requestHelpers';
 
 const debug = getLogger('tsdav:collection');
 
@@ -49,7 +49,7 @@ export const supportedReportSet = async (
   const res = await propfind(
     collection.url,
     [{ name: 'supported-report-set', namespace: DAVNamespace.DAV }],
-    { depth: '1', headers: options?.headers }
+    { depth: 1, headers: options?.headers }
   );
   return res[0]?.props?.supportedReportSet.supportedReport.map(
     (sr: { report: any }) => Object.keys(sr.report)[0]
@@ -59,15 +59,15 @@ export const supportedReportSet = async (
 export const isCollectionDirty = async (
   collection: DAVCollection,
   options?: { headers?: { [key: string]: any } }
-): Promise<boolean> => {
-  if (!collection.ctag) {
-    return false;
-  }
+): Promise<{
+  isDirty: boolean;
+  newCtag: string;
+}> => {
   const responses = await propfind(
     collection.url,
     [{ name: 'getctag', namespace: DAVNamespace.CALENDAR_SERVER }],
     {
-      depth: '0',
+      depth: 0,
       headers: options?.headers,
     }
   );
@@ -75,8 +75,7 @@ export const isCollectionDirty = async (
   if (!res) {
     throw new Error('Collection does not exist on server');
   }
-
-  return collection.ctag !== res.props?.getctag;
+  return { isDirty: collection.ctag !== res.props?.getctag, newCtag: res.props?.getctag };
 };
 
 export const syncCollection = (
@@ -106,26 +105,25 @@ export const syncCollection = (
 export const smartCollectionSync = async <T extends DAVCollection>(
   collection: T,
   method?: 'basic' | 'webdav',
-  options?: { headers?: { [key: string]: any } }
+  options?: { headers?: { [key: string]: any }; account?: DAVAccount }
 ): Promise<T> => {
-  if (!collection.account?.accountType) {
-    throw new Error('unable to sync collection with no account or no proper accountType');
+  if (!options?.account?.accountType || !options?.account?.homeUrl) {
+    throw new Error(
+      'unable to sync collection with no account or no proper accountType or no homeUrl'
+    );
   }
-  const syncMethod = method ?? collection.reports?.includes('syncCollection') ? 'webdav' : 'basic';
-  debug(
-    `smart collection sync with type ${collection.account.accountType} and method ${syncMethod}`
-  );
+  const syncMethod =
+    method ?? (collection.reports?.includes('syncCollection') ? 'webdav' : 'basic');
+  debug(`smart collection sync with type ${options?.account.accountType} and method ${syncMethod}`);
   if (syncMethod === 'webdav') {
     const result = await syncCollection(
       collection.url,
       [
         { name: 'getetag', namespace: DAVNamespace.DAV },
         {
-          name: collection.account?.accountType === 'caldav' ? 'calendar-data' : 'address-data',
+          name: options?.account?.accountType === 'caldav' ? 'calendar-data' : 'address-data',
           namespace:
-            collection.account?.accountType === 'caldav'
-              ? DAVNamespace.CALDAV
-              : DAVNamespace.CARDDAV,
+            options?.account?.accountType === 'caldav' ? DAVNamespace.CALDAV : DAVNamespace.CARDDAV,
         },
         {
           name: 'displayname',
@@ -139,8 +137,6 @@ export const smartCollectionSync = async <T extends DAVCollection>(
       }
     );
 
-    debug(result);
-
     return {
       ...collection,
       objects: collection.objects?.map((c) => {
@@ -150,17 +146,19 @@ export const smartCollectionSync = async <T extends DAVCollection>(
         }
         return c;
       }),
-      syncToken: '',
+      // all syncToken in the results are the same so we use the first one here
+      syncToken: result[0]?.raw?.multistatus?.syncToken,
     };
   }
   if (syncMethod === 'basic') {
-    const isDirty = await isCollectionDirty(collection, {
+    const { isDirty, newCtag } = await isCollectionDirty(collection, {
       headers: options?.headers,
     });
     if (isDirty) {
       return {
         ...collection,
         objects: await collection.fetchObjects?.(collection, { headers: options?.headers }),
+        ctag: newCtag,
       };
     }
   }
