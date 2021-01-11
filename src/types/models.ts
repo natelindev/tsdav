@@ -70,5 +70,6 @@ export type DAVCalendarObject = DAVObject;
 
 export type DAVAddressBook = DAVCollection;
 export type DAVCalendar = {
+  components?: string[];
   timezone?: string;
 } & DAVCollection;

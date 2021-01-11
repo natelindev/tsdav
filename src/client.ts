@@ -19,7 +19,7 @@ import {
   fetchCalendarObjects as rawFetchCalendarObjects,
   fetchCalendars as rawFetchCalendars,
   makeCalendar as rawMakeCalendar,
-  syncCalDAVAccount as rawSyncCalDAVAccount,
+  syncCalendars as rawSyncCalendars,
   updateCalendarObject as rawUpdateCalendarObject,
 } from './calendar';
 import {
@@ -235,13 +235,62 @@ export const createDAVClient = async (
       headers: { ...authHeaders, ...options?.headers },
     });
 
-  const syncCalDAVAccount = async (
-    account: DAVAccount,
-    options?: { headers?: { [key: string]: any } }
-  ): Promise<DAVAccount> =>
-    rawSyncCalDAVAccount(account, {
+  const syncCalendars: {
+    <
+      T extends
+        | {
+            headers?: { [key: string]: any };
+            account?: DAVAccount;
+            detailResult?: T;
+          }
+        | undefined
+    >(
+      oldCalendars: DAVCalendar[],
+      options?: T
+    ): Promise<T extends undefined ? DAVCalendar[] : never>;
+    <T extends boolean>(
+      oldCalendars: DAVCalendar[],
+      options?: {
+        headers?: { [key: string]: any };
+        account?: DAVAccount;
+        detailResult?: T;
+      }
+    ): Promise<
+      T extends true
+        ? {
+            created: DAVCalendar[];
+            updated: DAVCalendar[];
+            deleted: DAVCalendar[];
+          }
+        : DAVCalendar[]
+    >;
+    (
+      oldCalendars: DAVCalendar[],
+      options?: {
+        headers?: { [key: string]: any };
+        account?: DAVAccount;
+        detailResult?: boolean;
+      }
+    ): Promise<
+      | {
+          created: DAVCalendar[];
+          updated: DAVCalendar[];
+          deleted: DAVCalendar[];
+        }
+      | DAVCalendar[]
+    >;
+  } = async (
+    oldCalendars: DAVCalendar[],
+    options?: {
+      headers?: { [key: string]: any };
+      account?: DAVAccount;
+      detailResult?: boolean;
+    }
+  ): Promise<any> =>
+    rawSyncCalendars(oldCalendars, {
       ...options,
       headers: { ...authHeaders, ...options?.headers },
+      account: options?.account ?? defaultAccount,
     });
 
   // addressBook
@@ -319,7 +368,7 @@ export const createDAVClient = async (
     createCalendarObject,
     updateCalendarObject,
     deleteCalendarObject,
-    syncCalDAVAccount,
+    syncCalendars,
     fetchAddressBooks,
     fetchVCards,
     createVCard,

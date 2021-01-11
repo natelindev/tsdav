@@ -132,8 +132,7 @@ export const fetchCalendars = async (options?: {
         return components.some((c) => Object.values(ICALObjects).includes(c));
       })
       .map((rs) => {
-        debug(`Found calendar ${rs.props?.displayname},
-               props: ${JSON.stringify(rs.props)}`);
+        debug(`Found calendar ${rs.props?.displayname}`);
         return {
           description: rs.props?.calendarDescription,
           timezone: rs.props?.calendarTimezone,
@@ -254,12 +253,66 @@ export const deleteCalendarObject = async (
   return deleteObject(calendarObject.url, calendarObject.etag, options);
 };
 
-// remote change -> local
-export const syncCalDAVAccount = async (
-  account: DAVAccount,
-  options?: { headers?: { [key: string]: any } }
-): Promise<DAVAccount> => {
-  const localCalendars = account.calendars ?? [];
+/**
+ * Sync remote calendars to local
+ */
+export const syncCalendars: {
+  <
+    T extends
+      | {
+          headers?: { [key: string]: any };
+          account?: DAVAccount;
+          detailResult?: T;
+        }
+      | undefined
+  >(
+    oldCalendars: DAVCalendar[],
+    options?: T
+  ): Promise<T extends undefined ? DAVCalendar[] : never>;
+  <T extends boolean>(
+    oldCalendars: DAVCalendar[],
+    options?: {
+      headers?: { [key: string]: any };
+      account?: DAVAccount;
+      detailResult?: T;
+    }
+  ): Promise<
+    T extends true
+      ? {
+          created: DAVCalendar[];
+          updated: DAVCalendar[];
+          deleted: DAVCalendar[];
+        }
+      : DAVCalendar[]
+  >;
+  (
+    oldCalendars: DAVCalendar[],
+    options?: {
+      headers?: { [key: string]: any };
+      account?: DAVAccount;
+      detailResult?: boolean;
+    }
+  ): Promise<
+    | {
+        created: DAVCalendar[];
+        updated: DAVCalendar[];
+        deleted: DAVCalendar[];
+      }
+    | DAVCalendar[]
+  >;
+} = async (
+  oldCalendars: DAVCalendar[],
+  options?: {
+    headers?: { [key: string]: any };
+    account?: DAVAccount;
+    detailResult?: boolean;
+  }
+): Promise<any> => {
+  if (!options?.account) {
+    throw new Error('Must have account before syncCalendars');
+  }
+  const { account } = options;
+  const localCalendars = oldCalendars ?? account.calendars ?? [];
   const remoteCalendars = await fetchCalendars({ ...options, account });
 
   // no existing url
@@ -268,45 +321,31 @@ export const syncCalDAVAccount = async (
   );
   debug(`new calendars: ${created.map((cc) => cc.displayName)}`);
 
-  // have existing url, but syncToken/ctag different
-  // const updated = remoteCalendars.filter((cal) =>
-  //   localCalendars.reduce((prev, curr) => {
-  //     if(curr.url){
+  // have same url, but syncToken/ctag different
+  const updated = localCalendars.reduce((prev, curr) => {
+    const found = remoteCalendars.find((rc) => urlEquals(rc.url, curr.url));
+    if (
+      found &&
+      ((found.syncToken && found.syncToken !== curr.syncToken) ||
+        (found.ctag && found.ctag !== curr.ctag))
+    ) {
+      return [...prev, found];
+    }
+    return prev;
+  }, []);
+  debug(`updated calendars: ${updated.map((cc) => cc.displayName)}`);
 
-  //     }
-  //   }, false)
-  // );
-  // debug(`updated calendars: ${updated.map((cc) => cc.displayName)}`);
   // does not present in remote
   const deleted = localCalendars.filter((cal) =>
-    localCalendars.some((a) => urlEquals(a.url, cal.url))
+    remoteCalendars.every((a) => !urlEquals(a.url, cal.url))
   );
   debug(`deleted calendars: ${deleted.map((cc) => cc.displayName)}`);
-  return {
-    ...account,
-    accountType: 'caldav',
-    calendars: [
-      ...(account.calendars ?? []),
-      ...(
-        await Promise.all(
-          changedCalendars.map(async (c) => {
-            try {
-              debug(`syncing ${c.displayName}`);
-              return smartCollectionSync(
-                {
-                  ...c,
-                  fetchObjects: fetchCalendarObjects,
-                } as DAVCalendar,
-                'webdav',
-                { headers: options?.headers }
-              );
-            } catch (err) {
-              debug(`carddav account sync: Calendar ${c.displayName} sync error: ${err}`);
-              return undefined;
-            }
-          })
-        )
-      ).filter((a): a is DAVCalendar => a !== undefined),
-    ],
-  };
+
+  return options?.detailResult
+    ? {
+        created,
+        updated,
+        deleted,
+      }
+    : [...created, ...updated];
 };

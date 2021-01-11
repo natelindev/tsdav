@@ -49,7 +49,7 @@ export {
   createCalendarObject,
   updateCalendarObject,
   deleteCalendarObject,
-  syncCalDAVAccount,
+  syncCalendars,
 } from './calendar';
 
 export {
