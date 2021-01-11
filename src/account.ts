@@ -8,6 +8,7 @@ import { fetchCalendarObjects, fetchCalendars } from './calendar';
 import { DAVNamespace } from './consts';
 import { propfind } from './request';
 import { urlEquals } from './util/requestHelpers';
+import { findMissingFieldNames, hasFields } from './util/typeHelper';
 
 const debug = getLogger('tsdav:account');
 
@@ -54,8 +55,11 @@ export const fetchPrincipalUrl = async (
   account: DAVAccount,
   options?: { headers?: { [key: string]: any } }
 ): Promise<string> => {
-  if (!account.rootUrl) {
-    throw new Error('account must have rootUrl before fetchPrincipalUrl');
+  const requiredFields: Array<'rootUrl'> = ['rootUrl'];
+  if (!hasFields(account, requiredFields)) {
+    throw new Error(
+      `account must have ${findMissingFieldNames(account, requiredFields)} before fetchPrincipalUrl`
+    );
   }
   debug(`Fetching principal url from path ${account.rootUrl}`);
   const [response] = await propfind(
@@ -74,9 +78,13 @@ export const fetchHomeUrl = async (
   account: DAVAccount,
   options?: { headers?: { [key: string]: any } }
 ): Promise<string> => {
-  if (!account.principalUrl || !account.rootUrl) {
-    throw new Error('account must have rootUrl & principalUrl before fetchHomeUrl');
+  const requiredFields: Array<'principalUrl' | 'rootUrl'> = ['principalUrl', 'rootUrl'];
+  if (!hasFields(account, requiredFields)) {
+    throw new Error(
+      `account must have ${findMissingFieldNames(account, requiredFields)} before fetchHomeUrl`
+    );
   }
+
   debug(`Fetch home url from ${account.principalUrl}`);
   const responses = await propfind(
     account.principalUrl,

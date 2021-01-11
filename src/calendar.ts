@@ -91,7 +91,7 @@ export const fetchCalendars = async (options?: {
   headers?: { [key: string]: any };
   account?: DAVAccount;
 }): Promise<DAVCalendar[]> => {
-  const requiredFields: Array<keyof DAVAccount> = ['homeUrl', 'rootUrl'];
+  const requiredFields: Array<'homeUrl' | 'rootUrl'> = ['homeUrl', 'rootUrl'];
   if (!options?.account || !hasFields(options?.account, requiredFields)) {
     if (!options?.account) {
       throw new Error('no account for fetchCalendars');
@@ -156,7 +156,7 @@ export const fetchCalendarObjects = async (
   options?: { filters?: DAVFilter[]; headers?: { [key: string]: any }; account?: DAVAccount }
 ): Promise<DAVCalendarObject[]> => {
   debug(`Fetching calendar objects from ${calendar?.url}`);
-  const requiredFields: Array<keyof DAVAccount> = ['rootUrl'];
+  const requiredFields: Array<'rootUrl'> = ['rootUrl'];
   if (!options?.account || !hasFields(options?.account, requiredFields)) {
     if (!options?.account) {
       throw new Error('no account for fetchCalendarObjects');
@@ -259,12 +259,29 @@ export const syncCalDAVAccount = async (
   account: DAVAccount,
   options?: { headers?: { [key: string]: any } }
 ): Promise<DAVAccount> => {
-  // find changed calendar collections
-  const changedCalendars = (await fetchCalendars({ ...options, account })).filter(
-    (cal) => !account.calendars?.some((a) => urlEquals(a.url, cal.url))
+  const localCalendars = account.calendars ?? [];
+  const remoteCalendars = await fetchCalendars({ ...options, account });
+
+  // no existing url
+  const created = remoteCalendars.filter((rc) =>
+    localCalendars.every((lc) => !urlEquals(lc.url, rc.url))
   );
-  debug(`found changed calendars:`);
-  debug(changedCalendars);
+  debug(`new calendars: ${created.map((cc) => cc.displayName)}`);
+
+  // have existing url, but syncToken/ctag different
+  // const updated = remoteCalendars.filter((cal) =>
+  //   localCalendars.reduce((prev, curr) => {
+  //     if(curr.url){
+
+  //     }
+  //   }, false)
+  // );
+  // debug(`updated calendars: ${updated.map((cc) => cc.displayName)}`);
+  // does not present in remote
+  const deleted = localCalendars.filter((cal) =>
+    localCalendars.some((a) => urlEquals(a.url, cal.url))
+  );
+  debug(`deleted calendars: ${deleted.map((cc) => cc.displayName)}`);
   return {
     ...account,
     accountType: 'caldav',
