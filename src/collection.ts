@@ -1,10 +1,13 @@
-import { DAVDepth, DAVProp, DAVResponse } from 'DAVTypes';
 import getLogger from 'debug';
-import { DAVAccount, DAVCollection } from 'models';
+import URL from 'url';
+import { DAVDepth, DAVProp, DAVResponse } from './types/DAVTypes';
+import { DAVAccount, DAVCollection, DAVObject } from './types/models';
 
 import { DAVNamespace, DAVNamespaceShorthandMap } from './consts';
 import { davRequest, propfind } from './request';
+import { SmartCollectionSync } from './types/functionsOverloads';
 import { formatProps, getDAVAttribute, urlEquals } from './util/requestHelpers';
+import { findMissingFieldNames, hasFields, RequireAndNotNullSome } from './util/typeHelper';
 
 const debug = getLogger('tsdav:collection');
 
@@ -49,7 +52,7 @@ export const supportedReportSet = async (
   const res = await propfind(
     collection.url,
     [{ name: 'supported-report-set', namespace: DAVNamespace.DAV }],
-    { depth: 1, headers: options?.headers }
+    { depth: '1', headers: options?.headers }
   );
   return res[0]?.props?.supportedReportSet.supportedReport.map(
     (sr: { report: any }) => Object.keys(sr.report)[0]
@@ -67,7 +70,7 @@ export const isCollectionDirty = async (
     collection.url,
     [{ name: 'getctag', namespace: DAVNamespace.CALENDAR_SERVER }],
     {
-      depth: 0,
+      depth: '0',
       headers: options?.headers,
     }
   );
@@ -78,6 +81,9 @@ export const isCollectionDirty = async (
   return { isDirty: collection.ctag !== res.props?.getctag, newCtag: res.props?.getctag };
 };
 
+/**
+ * This is for webdav sync-collection only
+ */
 export const syncCollection = (
   url: string,
   props: DAVProp[],
@@ -102,28 +108,38 @@ export const syncCollection = (
   });
 };
 
-export const smartCollectionSync = async <T extends DAVCollection>(
+/** remote collection to local */
+export const smartCollectionSync: SmartCollectionSync = async <T extends DAVCollection>(
   collection: T,
   method?: 'basic' | 'webdav',
-  options?: { headers?: { [key: string]: any }; account?: DAVAccount }
-): Promise<T> => {
-  if (!options?.account?.accountType || !options?.account?.homeUrl) {
+  options?: { headers?: { [key: string]: any }; account?: DAVAccount; detailedResult?: boolean }
+): Promise<any> => {
+  const requiredFields: Array<'accountType' | 'homeUrl'> = ['accountType', 'homeUrl'];
+  if (!options?.account || !hasFields(options?.account, requiredFields)) {
+    if (!options?.account) {
+      throw new Error('no account for smartCollectionSync');
+    }
     throw new Error(
-      'unable to sync collection with no account or no proper accountType or no homeUrl'
+      `account must have ${findMissingFieldNames(
+        options.account,
+        requiredFields
+      )} before smartCollectionSync`
     );
   }
+
   const syncMethod =
     method ?? (collection.reports?.includes('syncCollection') ? 'webdav' : 'basic');
   debug(`smart collection sync with type ${options?.account.accountType} and method ${syncMethod}`);
+
   if (syncMethod === 'webdav') {
     const result = await syncCollection(
       collection.url,
       [
         { name: 'getetag', namespace: DAVNamespace.DAV },
         {
-          name: options?.account?.accountType === 'caldav' ? 'calendar-data' : 'address-data',
+          name: options.account.accountType === 'caldav' ? 'calendar-data' : 'address-data',
           namespace:
-            options?.account?.accountType === 'caldav' ? DAVNamespace.CALDAV : DAVNamespace.CARDDAV,
+            options.account.accountType === 'caldav' ? DAVNamespace.CALDAV : DAVNamespace.CARDDAV,
         },
         {
           name: 'displayname',
@@ -137,30 +153,134 @@ export const smartCollectionSync = async <T extends DAVCollection>(
       }
     );
 
+    const objectResponses = result.filter(
+      (r): r is RequireAndNotNullSome<DAVResponse, 'href'> => r.href?.slice(-4) === '.ics'
+    );
+
+    const changedObjectUrls = objectResponses.filter((o) => o.status !== 404).map((r) => r.href);
+
+    const deletedObjectUrls = objectResponses.filter((o) => o.status === 404).map((r) => r.href);
+
+    const multiGetObjectResponse = changedObjectUrls.length
+      ? (await collection?.objectMultiGet?.(
+          collection.url,
+          [
+            { name: 'getetag', namespace: DAVNamespace.DAV },
+            {
+              name: options.account.accountType === 'caldav' ? 'calendar-data' : 'address-data',
+              namespace:
+                options.account.accountType === 'caldav'
+                  ? DAVNamespace.CALDAV
+                  : DAVNamespace.CARDDAV,
+            },
+          ],
+          changedObjectUrls,
+          { depth: '1', headers: options?.headers }
+        )) ?? []
+      : [];
+
+    const remoteObjects = multiGetObjectResponse.map((res) => {
+      return {
+        url: res.href ?? '',
+        etag: res.props?.getetag,
+        data:
+          options.account?.accountType === 'caldav'
+            ? // eslint-disable-next-line no-underscore-dangle
+              res.props?.calendarData._cdata ?? res.props?.calendarData
+            : res.props?.addressData,
+      };
+    });
+
+    const localObjects = collection.objects ?? [];
+
+    // no existing url
+    const created: DAVObject[] = remoteObjects.filter((o) =>
+      localObjects.every((lo) => !urlEquals(lo.url, o.url))
+    );
+    // debug(`created objects: ${created.map((o) => o.url).join('\n')}`);
+
+    // have same url, but etag different
+    const updated = localObjects.reduce((prev, curr) => {
+      const found = remoteObjects.find((ro) => urlEquals(ro.url, curr.url));
+      if (found && found.etag && found.etag !== curr.etag) {
+        return [...prev, found];
+      }
+      return prev;
+    }, []);
+    // debug(`updated objects: ${updated.map((o) => o.url).join('\n')}`);
+
+    const deleted: DAVObject[] = deletedObjectUrls.map((o) => ({
+      url: o,
+      etag: '',
+    }));
+    // debug(`deleted objects: ${deleted.map((o) => o.url).join('\n')}`);
+    const unchanged = localObjects.filter((lo) =>
+      remoteObjects.some((ro) => urlEquals(lo.url, ro.url) && ro.etag === lo.etag)
+    );
+
     return {
       ...collection,
-      objects: collection.objects?.map((c) => {
-        const found = result.find((r) => urlEquals(r.href, c.url));
-        if (found) {
-          return { ...c, etag: found.props?.getetag, objects: found.props?.calendarData };
-        }
-        return c;
-      }),
+      objects: options.detailedResult
+        ? { created, updated, deleted }
+        : [...unchanged, ...created, ...updated],
       // all syncToken in the results are the same so we use the first one here
-      syncToken: result[0]?.raw?.multistatus?.syncToken,
+      syncToken: result[0]?.raw?.multistatus?.syncToken ?? collection.syncToken,
     };
   }
+
   if (syncMethod === 'basic') {
     const { isDirty, newCtag } = await isCollectionDirty(collection, {
       headers: options?.headers,
     });
+    const localObjects = collection.objects ?? [];
+    const remoteObjects =
+      (await collection.fetchObjects?.(collection, { headers: options?.headers })) ?? [];
+
+    // no existing url
+    const created = remoteObjects.filter((ro) =>
+      localObjects.every((lo) => !urlEquals(lo.url, ro.url))
+    );
+    // debug(`created objects: ${created.map((o) => o.url).join('\n')}`);
+
+    // have same url, but etag different
+    const updated = localObjects.reduce((prev, curr) => {
+      const found = remoteObjects.find((ro) => urlEquals(ro.url, curr.url));
+      if (found && found.etag && found.etag !== curr.etag) {
+        return [...prev, found];
+      }
+      return prev;
+    }, []);
+    // debug(`updated objects: ${updated.map((o) => o.url).join('\n')}`);
+
+    // does not present in remote
+    const deleted = localObjects.filter((cal) =>
+      remoteObjects.every((ro) => !urlEquals(ro.url, cal.url))
+    );
+    // debug(`deleted objects: ${deleted.map((o) => o.url).join('\n')}`);
+
+    const unchanged = localObjects.filter((lo) =>
+      remoteObjects.some((ro) => urlEquals(lo.url, ro.url) && ro.etag === lo.etag)
+    );
+
     if (isDirty) {
       return {
         ...collection,
-        objects: await collection.fetchObjects?.(collection, { headers: options?.headers }),
+        objects: options.detailedResult
+          ? { created, updated, deleted }
+          : [...unchanged, ...created, ...updated],
         ctag: newCtag,
       };
     }
   }
-  return collection;
+
+  return options.detailedResult
+    ? {
+        ...collection,
+        objects: {
+          created: [],
+          updated: [],
+          deleted: [],
+        },
+      }
+    : collection;
 };

@@ -1,7 +1,7 @@
 import { encode } from 'base-64';
 import fetch from 'cross-fetch';
-import { DAVTokens } from 'DAVTypes';
 import getLogger from 'debug';
+import { DAVTokens } from '../types/DAVTypes';
 
 import { DAVCredentials } from '../types/models';
 import { findMissingFieldNames, hasFields } from './typeHelper';

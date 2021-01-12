@@ -17,7 +17,7 @@
     "isolatedModules": true,
     "baseUrl": ".",
     "paths": {
-      "*": ["node_modules/*", "src/types/*"]
+      "*": ["node_modules/*"]
     },
     "outDir": "./built"
   },

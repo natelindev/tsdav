@@ -1,14 +1,14 @@
-import { DAVDepth, DAVFilter, DAVProp, DAVRequest, DAVResponse } from 'DAVTypes';
 import getLogger from 'debug';
+import { DAVDepth, DAVFilter, DAVProp, DAVRequest, DAVResponse } from './types/DAVTypes';
 
 import { createAccount as rawCreateAccount } from './account';
 import {
   addressBookQuery as rawAddressBookQuery,
+  addressBookMultiGet as rawAddressBookMultiGet,
   createVCard as rawCreateVCard,
   deleteVCard as rawDeleteVCard,
   fetchAddressBooks as rawFetchAddressBooks,
   fetchVCards as rawFetchVCards,
-  syncCardDAVAccount as rawSyncCardDAVAccount,
   updateVCard as rawUpdateVCard,
 } from './addressBook';
 import {
@@ -37,6 +37,7 @@ import {
   propfind as rawPropfind,
   updateObject as rawUpdateObject,
 } from './request';
+import { SmartCollectionSync, SyncCalendars } from './types/functionsOverloads';
 import {
   DAVAccount,
   DAVAddressBook,
@@ -44,6 +45,7 @@ import {
   DAVCalendarObject,
   DAVCollection,
   DAVCredentials,
+  DAVObject,
   DAVVCard,
 } from './types/models';
 import { appendHeaders, getBasicAuthHeaders, getOauthHeaders } from './util/authHelper';
@@ -177,11 +179,11 @@ export const createDAVClient = async (
       headers: { ...authHeaders, ...options?.headers },
     });
 
-  const smartCollectionSync = async <T extends DAVCollection>(
+  const smartCollectionSync: SmartCollectionSync = async <T extends DAVCollection>(
     collection: T,
-    method: 'basic' | 'webdav',
-    options?: { headers?: { [key: string]: any }; account?: DAVAccount }
-  ): Promise<T> =>
+    method?: 'basic' | 'webdav',
+    options?: { headers?: { [key: string]: any }; account?: DAVAccount; detailedResult?: boolean }
+  ): Promise<any> =>
     rawSmartCollectionSync<T>(collection, method, {
       ...options,
       headers: { ...authHeaders, ...options?.headers },
@@ -235,56 +237,12 @@ export const createDAVClient = async (
       headers: { ...authHeaders, ...options?.headers },
     });
 
-  const syncCalendars: {
-    <
-      T extends
-        | {
-            headers?: { [key: string]: any };
-            account?: DAVAccount;
-            detailResult?: T;
-          }
-        | undefined
-    >(
-      oldCalendars: DAVCalendar[],
-      options?: T
-    ): Promise<T extends undefined ? DAVCalendar[] : never>;
-    <T extends boolean>(
-      oldCalendars: DAVCalendar[],
-      options?: {
-        headers?: { [key: string]: any };
-        account?: DAVAccount;
-        detailResult?: T;
-      }
-    ): Promise<
-      T extends true
-        ? {
-            created: DAVCalendar[];
-            updated: DAVCalendar[];
-            deleted: DAVCalendar[];
-          }
-        : DAVCalendar[]
-    >;
-    (
-      oldCalendars: DAVCalendar[],
-      options?: {
-        headers?: { [key: string]: any };
-        account?: DAVAccount;
-        detailResult?: boolean;
-      }
-    ): Promise<
-      | {
-          created: DAVCalendar[];
-          updated: DAVCalendar[];
-          deleted: DAVCalendar[];
-        }
-      | DAVCalendar[]
-    >;
-  } = async (
+  const syncCalendars: SyncCalendars = async (
     oldCalendars: DAVCalendar[],
     options?: {
       headers?: { [key: string]: any };
       account?: DAVAccount;
-      detailResult?: boolean;
+      detailedResult?: boolean;
     }
   ): Promise<any> =>
     rawSyncCalendars(oldCalendars, {
@@ -295,6 +253,8 @@ export const createDAVClient = async (
 
   // addressBook
   const addressBookQuery = appendHeaders(authHeaders, rawAddressBookQuery);
+
+  const addressBookMultiGet = appendHeaders(authHeaders, rawAddressBookMultiGet);
 
   const fetchAddressBooks = async (options?: {
     headers?: { [key: string]: any };
@@ -336,15 +296,6 @@ export const createDAVClient = async (
       headers: { ...authHeaders, ...options?.headers },
     });
 
-  const syncCardDAVAccount = async (
-    account: DAVAccount,
-    options?: { headers?: { [key: string]: any } }
-  ): Promise<DAVAccount> =>
-    rawSyncCardDAVAccount(account, {
-      ...options,
-      headers: { ...authHeaders, ...options?.headers },
-    });
-
   return {
     raw,
     rawXML,
@@ -370,11 +321,11 @@ export const createDAVClient = async (
     deleteCalendarObject,
     syncCalendars,
     fetchAddressBooks,
+    addressBookMultiGet,
     fetchVCards,
     createVCard,
     updateVCard,
     deleteVCard,
-    syncCardDAVAccount,
   };
 };
 

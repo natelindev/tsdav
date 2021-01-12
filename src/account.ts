@@ -1,7 +1,7 @@
 import { fetch } from 'cross-fetch';
 import getLogger from 'debug';
-import { DAVAccount } from 'models';
 import URL from 'url';
+import { DAVAccount } from './types/models';
 
 import { fetchAddressBooks, fetchVCards } from './addressBook';
 import { fetchCalendarObjects, fetchCalendars } from './calendar';
@@ -65,7 +65,7 @@ export const fetchPrincipalUrl = async (
   const [response] = await propfind(
     account.rootUrl,
     [{ name: 'current-user-principal', namespace: DAVNamespace.DAV }],
-    { depth: 0, headers: options?.headers }
+    { depth: '0', headers: options?.headers }
   );
   if (!response.ok) {
     debug(`Fetch principal url failed: ${response.statusText}`);
@@ -93,7 +93,7 @@ export const fetchHomeUrl = async (
         ? { name: 'calendar-home-set', namespace: DAVNamespace.CALDAV }
         : { name: 'addressbook-home-set', namespace: DAVNamespace.CARDDAV },
     ],
-    { depth: 0, headers: options?.headers }
+    { depth: '0', headers: options?.headers }
   );
 
   const matched = responses.find((r) => urlEquals(account.principalUrl, r.href));

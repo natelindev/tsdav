@@ -1,14 +1,15 @@
-import { DAVDepth, DAVFilter, DAVProp, DAVResponse } from 'DAVTypes';
 /* eslint-disable no-underscore-dangle */
 import getLogger from 'debug';
-import { DAVAccount, DAVCalendar, DAVCalendarObject } from 'models';
 import URL from 'url';
+import { DAVDepth, DAVFilter, DAVProp, DAVResponse } from './types/DAVTypes';
+import { DAVAccount, DAVCalendar, DAVCalendarObject, DAVCollection } from './types/models';
 
 import { collectionQuery, smartCollectionSync, supportedReportSet } from './collection';
 import { DAVNamespace, DAVNamespaceShorthandMap, ICALObjects } from './consts';
 import { createObject, davRequest, deleteObject, propfind, updateObject } from './request';
 import { formatFilters, formatProps, getDAVAttribute, urlEquals } from './util/requestHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelper';
+import { SyncCalendars } from './types/functionsOverloads';
 
 const debug = getLogger('tsdav:calendar');
 
@@ -43,7 +44,7 @@ export const calendarQuery = async (
 export const calendarMultiGet = async (
   url: string,
   props: DAVProp[],
-  ObjectUrls: string[],
+  objectUrls: string[],
   options?: {
     filters?: DAVFilter[];
     timezone?: string;
@@ -57,7 +58,7 @@ export const calendarMultiGet = async (
       'calendar-multiget': {
         _attributes: getDAVAttribute([DAVNamespace.DAV, DAVNamespace.CALDAV]),
         [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
-        [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:href`]: ObjectUrls,
+        [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:href`]: objectUrls,
         filter: formatFilters(options?.filters),
         timezone: options?.timezone,
       },
@@ -116,7 +117,7 @@ export const fetchCalendars = async (options?: {
       { name: 'supported-calendar-component-set', namespace: DAVNamespace.CALDAV },
       { name: 'sync-token', namespace: DAVNamespace.DAV },
     ],
-    { depth: 1, headers: options?.headers }
+    { depth: '1', headers: options?.headers }
   );
 
   return Promise.all(
@@ -133,9 +134,11 @@ export const fetchCalendars = async (options?: {
       })
       .map((rs) => {
         debug(`Found calendar ${rs.props?.displayname}`);
+        const description = rs.props?.calendarDescription;
+        const timezone = rs.props?.calendarTimezon;
         return {
-          description: rs.props?.calendarDescription,
-          timezone: rs.props?.calendarTimezone,
+          description: typeof description === 'string' ? description : '',
+          timezone: typeof timezone === 'string' ? timezone : '',
           url: URL.resolve(account.rootUrl ?? '', rs.href ?? ''),
           ctag: rs.props?.getctag,
           displayName: rs.props?.displayname,
@@ -186,7 +189,7 @@ export const fetchCalendarObjects = async (
       { name: 'getetag', namespace: DAVNamespace.DAV },
       { name: 'calendar-data', namespace: DAVNamespace.CALDAV },
     ],
-    { filters, depth: 1, headers: options?.headers }
+    { filters, depth: '1', headers: options?.headers }
   );
 
   // if data is already present, return
@@ -210,7 +213,7 @@ export const fetchCalendarObjects = async (
       { name: 'calendar-data', namespace: DAVNamespace.CALDAV },
     ],
     calendarObjectUrls,
-    { depth: 1, headers: options?.headers }
+    { depth: '1', headers: options?.headers }
   );
 
   return calendarObjectResults.map((res) => ({
@@ -256,56 +259,12 @@ export const deleteCalendarObject = async (
 /**
  * Sync remote calendars to local
  */
-export const syncCalendars: {
-  <
-    T extends
-      | {
-          headers?: { [key: string]: any };
-          account?: DAVAccount;
-          detailResult?: T;
-        }
-      | undefined
-  >(
-    oldCalendars: DAVCalendar[],
-    options?: T
-  ): Promise<T extends undefined ? DAVCalendar[] : never>;
-  <T extends boolean>(
-    oldCalendars: DAVCalendar[],
-    options?: {
-      headers?: { [key: string]: any };
-      account?: DAVAccount;
-      detailResult?: T;
-    }
-  ): Promise<
-    T extends true
-      ? {
-          created: DAVCalendar[];
-          updated: DAVCalendar[];
-          deleted: DAVCalendar[];
-        }
-      : DAVCalendar[]
-  >;
-  (
-    oldCalendars: DAVCalendar[],
-    options?: {
-      headers?: { [key: string]: any };
-      account?: DAVAccount;
-      detailResult?: boolean;
-    }
-  ): Promise<
-    | {
-        created: DAVCalendar[];
-        updated: DAVCalendar[];
-        deleted: DAVCalendar[];
-      }
-    | DAVCalendar[]
-  >;
-} = async (
+export const syncCalendars: SyncCalendars = async (
   oldCalendars: DAVCalendar[],
   options?: {
     headers?: { [key: string]: any };
     account?: DAVAccount;
-    detailResult?: boolean;
+    detailedResult?: boolean;
   }
 ): Promise<any> => {
   if (!options?.account) {
@@ -335,17 +294,39 @@ export const syncCalendars: {
   }, []);
   debug(`updated calendars: ${updated.map((cc) => cc.displayName)}`);
 
+  const updatedWithObjects: DAVCalendar[] = await Promise.all(
+    updated.map(async (u) => {
+      const result = (await smartCollectionSync(
+        { ...u, objectMultiGet: calendarMultiGet },
+        'webdav',
+        {
+          headers: options.headers,
+          account,
+        }
+      )) as DAVCalendar;
+      return result;
+    })
+  );
   // does not present in remote
   const deleted = localCalendars.filter((cal) =>
-    remoteCalendars.every((a) => !urlEquals(a.url, cal.url))
+    remoteCalendars.every((rc) => !urlEquals(rc.url, cal.url))
   );
   debug(`deleted calendars: ${deleted.map((cc) => cc.displayName)}`);
 
-  return options?.detailResult
+  const unchanged = localCalendars.filter((cal) =>
+    remoteCalendars.some(
+      (rc) =>
+        urlEquals(rc.url, cal.url) &&
+        ((rc.syncToken && rc.syncToken !== cal.syncToken) || (rc.ctag && rc.ctag !== cal.ctag))
+    )
+  );
+  // debug(`unchanged calendars: ${unchanged.map((cc) => cc.displayName)}`);
+
+  return options?.detailedResult
     ? {
         created,
         updated,
         deleted,
       }
-    : [...created, ...updated];
+    : [...unchanged, ...created, ...updatedWithObjects];
 };

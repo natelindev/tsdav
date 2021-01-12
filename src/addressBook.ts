@@ -1,12 +1,12 @@
-import { DAVDepth, DAVProp, DAVResponse } from 'DAVTypes';
 import getLogger from 'debug';
-import { DAVAccount, DAVAddressBook, DAVVCard } from 'models';
 import URL from 'url';
+import { DAVDepth, DAVFilter, DAVProp, DAVResponse } from './types/DAVTypes';
+import { DAVAccount, DAVAddressBook, DAVVCard } from './types/models';
 
-import { collectionQuery, smartCollectionSync, supportedReportSet } from './collection';
+import { collectionQuery, supportedReportSet } from './collection';
 import { DAVNamespace, DAVNamespaceShorthandMap } from './consts';
 import { createObject, deleteObject, propfind, updateObject } from './request';
-import { formatProps, getDAVAttribute, urlEquals } from './util/requestHelpers';
+import { formatFilters, formatProps, getDAVAttribute, urlEquals } from './util/requestHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelper';
 
 const debug = getLogger('tsdav:addressBook');
@@ -35,6 +35,29 @@ export const addressBookQuery = async (
   );
 };
 
+export const addressBookMultiGet = async (
+  url: string,
+  props: DAVProp[],
+  ObjectUrls: string[],
+  options?: {
+    filters?: DAVFilter[];
+    depth: DAVDepth;
+    headers?: { [key: string]: any };
+  }
+): Promise<DAVResponse[]> =>
+  collectionQuery(
+    url,
+    {
+      'addressbook-multiget': {
+        _attributes: getDAVAttribute([DAVNamespace.DAV, DAVNamespace.CALDAV]),
+        [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
+        [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:href`]: ObjectUrls,
+        filter: formatFilters(options?.filters),
+      },
+    },
+    { depth: options?.depth, headers: options?.headers }
+  );
+
 export const fetchAddressBooks = async (options?: {
   headers?: { [key: string]: any };
   account?: DAVAccount;
@@ -60,7 +83,7 @@ export const fetchAddressBooks = async (options?: {
       { name: 'resourcetype', namespace: DAVNamespace.DAV },
       { name: 'sync-token', namespace: DAVNamespace.DAV },
     ],
-    { depth: 1, headers: options?.headers }
+    { depth: '1', headers: options?.headers }
   );
   return Promise.all(
     res
@@ -107,7 +130,7 @@ export const fetchVCards = async (
         { name: 'getetag', namespace: DAVNamespace.DAV },
         { name: 'address-data', namespace: DAVNamespace.CARDDAV },
       ],
-      { depth: 1, headers: options?.headers }
+      { depth: '1', headers: options?.headers }
     )
   ).map((res) => {
     return {
@@ -151,41 +174,4 @@ export const deleteVCard = async (
   options?: { headers?: { [key: string]: any } }
 ): Promise<Response> => {
   return deleteObject(vCard.url, vCard.etag, options);
-};
-
-// remote change -> local
-export const syncCardDAVAccount = async (
-  account: DAVAccount,
-  options?: { headers?: { [key: string]: any } }
-): Promise<DAVAccount> => {
-  // find changed AddressBook collections
-  const changedAddressBooks = (await fetchAddressBooks({ ...options, account })).filter((addr) =>
-    account.addressBooks?.some((a) => urlEquals(a.url, addr.url))
-  );
-  return {
-    ...account,
-    accountType: 'carddav',
-    addressBooks: [
-      ...(account.addressBooks ?? []),
-      ...(
-        await Promise.all(
-          changedAddressBooks.map(async (ab) => {
-            try {
-              return smartCollectionSync(
-                {
-                  ...ab,
-                  fetchObjects: fetchVCards,
-                } as DAVAddressBook,
-                'webdav',
-                { headers: options?.headers, account }
-              );
-            } catch (err) {
-              debug(`carddav account sync: AddressBook ${ab.displayName} sync error: ${err}`);
-              return undefined;
-            }
-          })
-        )
-      ).filter((a): a is DAVAddressBook => a !== undefined),
-    ],
-  };
 };

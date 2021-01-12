@@ -7,6 +7,11 @@ export type RequiredAndNotNull<T> = {
 export type RequireAndNotNullSome<T, K extends keyof T> = RequiredAndNotNull<Pick<T, K>> &
   Omit<T, K>;
 
+export type RequireAtLeastOne<T, Keys extends keyof T = keyof T> = Pick<T, Exclude<keyof T, Keys>> &
+  {
+    [K in Keys]-?: Required<Pick<T, K>> & Partial<Pick<T, Exclude<Keys, K>>>;
+  }[Keys];
+
 export function hasFields<T, K extends keyof T>(
   obj: Array<T | RequireAndNotNullSome<T, K>>,
   fields: K[]

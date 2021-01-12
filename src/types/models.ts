@@ -1,3 +1,5 @@
+import { DAVProp, DAVFilter, DAVDepth, DAVResponse } from './DAVTypes';
+
 export type DAVCollection = {
   objects?: DAVObject[];
   ctag?: string;
@@ -33,6 +35,17 @@ export type DAVCollection = {
             }
           | undefined
       ) => Promise<DAVVCard[]>);
+  objectMultiGet?: (
+    url: string,
+    props: DAVProp[],
+    objectUrls: string[],
+    options?: {
+      filters?: DAVFilter[];
+      timezone?: string;
+      depth: DAVDepth;
+      headers?: { [key: string]: any };
+    }
+  ) => Promise<DAVResponse[]>;
 };
 
 export type DAVObject = {

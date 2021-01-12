@@ -59,7 +59,6 @@ export {
   createVCard,
   updateVCard,
   deleteVCard,
-  syncCardDAVAccount,
 } from './addressBook';
 
 export { fetchOauthTokens, refreshAccessToken } from './util/authHelper';

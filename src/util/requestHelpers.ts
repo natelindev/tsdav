@@ -1,4 +1,4 @@
-import { DAVFilter, DAVProp } from 'DAVTypes';
+import { DAVFilter, DAVProp } from '../types/DAVTypes';
 
 import { DAVAttributeMap, DAVNamespace, DAVNamespaceShorthandMap } from '../consts';
 
