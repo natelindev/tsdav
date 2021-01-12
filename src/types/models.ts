@@ -1,4 +1,4 @@
-import { DAVProp, DAVFilter, DAVDepth, DAVResponse } from './DAVTypes';
+import { DAVDepth, DAVFilter, DAVProp, DAVResponse } from './DAVTypes';
 
 export type DAVCollection = {
   objects?: DAVObject[];

@@ -1,11 +1,11 @@
 import getLogger from 'debug';
 import URL from 'url';
-import { DAVDepth, DAVProp, DAVResponse } from './types/DAVTypes';
-import { DAVAccount, DAVCollection, DAVObject } from './types/models';
 
 import { DAVNamespace, DAVNamespaceShorthandMap } from './consts';
 import { davRequest, propfind } from './request';
+import { DAVDepth, DAVProp, DAVResponse } from './types/DAVTypes';
 import { SmartCollectionSync } from './types/functionsOverloads';
+import { DAVAccount, DAVCollection, DAVObject } from './types/models';
 import { formatProps, getDAVAttribute, urlEquals } from './util/requestHelpers';
 import { findMissingFieldNames, hasFields, RequireAndNotNullSome } from './util/typeHelper';
 

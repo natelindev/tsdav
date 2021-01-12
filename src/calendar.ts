@@ -1,15 +1,15 @@
 /* eslint-disable no-underscore-dangle */
 import getLogger from 'debug';
 import URL from 'url';
-import { DAVDepth, DAVFilter, DAVProp, DAVResponse } from './types/DAVTypes';
-import { DAVAccount, DAVCalendar, DAVCalendarObject, DAVCollection } from './types/models';
 
 import { collectionQuery, smartCollectionSync, supportedReportSet } from './collection';
 import { DAVNamespace, DAVNamespaceShorthandMap, ICALObjects } from './consts';
 import { createObject, davRequest, deleteObject, propfind, updateObject } from './request';
+import { DAVDepth, DAVFilter, DAVProp, DAVResponse } from './types/DAVTypes';
+import { SyncCalendars } from './types/functionsOverloads';
+import { DAVAccount, DAVCalendar, DAVCalendarObject, DAVCollection } from './types/models';
 import { formatFilters, formatProps, getDAVAttribute, urlEquals } from './util/requestHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelper';
-import { SyncCalendars } from './types/functionsOverloads';
 
 const debug = getLogger('tsdav:calendar');
 

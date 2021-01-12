@@ -1,12 +1,12 @@
 import { fetch } from 'cross-fetch';
 import getLogger from 'debug';
 import URL from 'url';
-import { DAVAccount } from './types/models';
 
 import { fetchAddressBooks, fetchVCards } from './addressBook';
 import { fetchCalendarObjects, fetchCalendars } from './calendar';
 import { DAVNamespace } from './consts';
 import { propfind } from './request';
+import { DAVAccount } from './types/models';
 import { urlEquals } from './util/requestHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelper';
 

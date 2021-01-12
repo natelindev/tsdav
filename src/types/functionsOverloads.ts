@@ -1,4 +1,4 @@
-import { DAVCollection, DAVAccount, DAVObject, DAVCalendar } from './models';
+import { DAVAccount, DAVCalendar, DAVCollection, DAVObject } from './models';
 
 export interface SmartCollectionSync {
   <T extends DAVCollection>(

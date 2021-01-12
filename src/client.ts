@@ -1,10 +1,9 @@
 import getLogger from 'debug';
-import { DAVDepth, DAVFilter, DAVProp, DAVRequest, DAVResponse } from './types/DAVTypes';
 
 import { createAccount as rawCreateAccount } from './account';
 import {
-  addressBookQuery as rawAddressBookQuery,
   addressBookMultiGet as rawAddressBookMultiGet,
+  addressBookQuery as rawAddressBookQuery,
   createVCard as rawCreateVCard,
   deleteVCard as rawDeleteVCard,
   fetchAddressBooks as rawFetchAddressBooks,
@@ -37,6 +36,7 @@ import {
   propfind as rawPropfind,
   updateObject as rawUpdateObject,
 } from './request';
+import { DAVDepth, DAVFilter, DAVProp, DAVRequest, DAVResponse } from './types/DAVTypes';
 import { SmartCollectionSync, SyncCalendars } from './types/functionsOverloads';
 import {
   DAVAccount,

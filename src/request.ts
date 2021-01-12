@@ -1,9 +1,9 @@
 import { fetch } from 'cross-fetch';
 import getLogger from 'debug';
 import convert from 'xml-js';
-import { DAVDepth, DAVProp, DAVRequest, DAVResponse } from './types/DAVTypes';
 
 import { DAVNamespace, DAVNamespaceShorthandMap } from './consts';
+import { DAVDepth, DAVProp, DAVRequest, DAVResponse } from './types/DAVTypes';
 import { camelCase } from './util/camelCase';
 import { nativeType } from './util/nativeType';
 import { cleanupUndefined, formatProps, getDAVAttribute } from './util/requestHelpers';
