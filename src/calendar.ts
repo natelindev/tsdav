@@ -7,7 +7,7 @@ import { DAVNamespace, DAVNamespaceShorthandMap, ICALObjects } from './consts';
 import { createObject, davRequest, deleteObject, propfind, updateObject } from './request';
 import { DAVDepth, DAVFilter, DAVProp, DAVResponse } from './types/DAVTypes';
 import { SyncCalendars } from './types/functionsOverloads';
-import { DAVAccount, DAVCalendar, DAVCalendarObject, DAVCollection } from './types/models';
+import { DAVAccount, DAVCalendar, DAVCalendarObject } from './types/models';
 import { formatFilters, formatProps, getDAVAttribute, urlEquals } from './util/requestHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelper';
 
@@ -133,7 +133,7 @@ export const fetchCalendars = async (options?: {
         return components.some((c) => Object.values(ICALObjects).includes(c));
       })
       .map((rs) => {
-        debug(`Found calendar ${rs.props?.displayname}`);
+        // debug(`Found calendar ${rs.props?.displayname}`);
         const description = rs.props?.calendarDescription;
         const timezone = rs.props?.calendarTimezon;
         return {

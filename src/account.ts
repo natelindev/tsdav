@@ -69,6 +69,9 @@ export const fetchPrincipalUrl = async (
   );
   if (!response.ok) {
     debug(`Fetch principal url failed: ${response.statusText}`);
+    if (response.status === 401) {
+      throw new Error('Invalid credentials');
+    }
   }
   debug(`Fetched principal url ${response.props?.currentUserPrincipal.href}`);
   return URL.resolve(account.rootUrl, response.props?.currentUserPrincipal.href ?? '');
