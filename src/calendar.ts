@@ -155,7 +155,12 @@ export const fetchCalendars = async (options?: {
 
 export const fetchCalendarObjects = async (
   calendar: DAVCalendar,
-  options?: { filters?: DAVFilter[]; headers?: { [key: string]: any }; account?: DAVAccount }
+  options?: {
+    objectUrls?: string[];
+    filters?: DAVFilter[];
+    headers?: { [key: string]: any };
+    account?: DAVAccount;
+  }
 ): Promise<DAVCalendarObject[]> => {
   debug(`Fetching calendar objects from ${calendar?.url}`);
   const requiredFields: Array<'rootUrl'> = ['rootUrl'];
@@ -171,6 +176,29 @@ export const fetchCalendarObjects = async (
     );
   }
 
+  // selected fetch mode
+  if (options.objectUrls) {
+    const calendarObjectUrls = options.objectUrls.map((url) =>
+      url.includes('http') ? url : URL.resolve(calendar.url, url)
+    );
+    const calendarObjectResults = await calendarMultiGet(
+      calendar.url,
+      [
+        { name: 'getetag', namespace: DAVNamespace.DAV },
+        { name: 'calendar-data', namespace: DAVNamespace.CALDAV },
+      ],
+      calendarObjectUrls,
+      { depth: '1', headers: options?.headers }
+    );
+
+    return calendarObjectResults.map((res) => ({
+      url: res.href ?? '',
+      etag: res.props?.getetag,
+      data: res.props?.calendarData,
+    }));
+  }
+
+  // default to fetch all
   const filters: DAVFilter[] = options?.filters ?? [
     {
       type: 'comp-filter',

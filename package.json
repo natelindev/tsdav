@@ -8,11 +8,12 @@
   "private": false,
   "scripts": {
     "dev": "cross-env DEBUG=* ts-node-dev --respawn --transpile-only src/test.ts",
-    "build": "rimraf dist && tsc --emitDeclarationOnly --outDir ./dist && babel src --out-dir dist --extensions .ts && copyfiles package.json LICENSE.md README.md ./dist",
+    "build": "rimraf dist && tsc --emitDeclarationOnly --outDir ./dist && babel src --out-dir dist --extensions .ts",
     "watch:ts": "tsc --watch --emitDeclarationOnly --outDir ./dist",
     "watch:babel": "babel src --out-dir dist --extensions .ts --watch",
     "watch": "concurrently \"yarn watch:ts\" \"yarn watch:babel\" "
   },
+  "files":["dist", "package.json"],
   "dependencies": {
     "base-64": "^1.0.0",
     "cross-fetch": "^3.0.6",
@@ -32,7 +33,6 @@
     "@typescript-eslint/eslint-plugin": "^4.8.2",
     "@typescript-eslint/parser": "^4.8.2",
     "concurrently": "^5.3.0",
-    "copyfiles": "^2.4.1",
     "cross-env": "^7.0.2",
     "eslint": "^7.14.0",
     "eslint-config-airbnb-typescript": "^12.0.0",
