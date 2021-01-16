@@ -31,4 +31,4 @@ export function hasFields<T, K extends keyof T>(obj: T | Array<T>, fields: K[]):
 }
 
 export const findMissingFieldNames = <T>(obj: T, fields: Array<keyof T>): string =>
-  fields.reduce((prev, curr) => (obj[curr] ? prev : `${prev},${curr}`), '');
+  fields.reduce((prev, curr) => (obj[curr] ? prev : `${prev.length ? `${prev},` : ''}${curr}`), '');

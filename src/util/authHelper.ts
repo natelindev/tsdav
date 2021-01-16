@@ -1,8 +1,8 @@
 import { encode } from 'base-64';
 import fetch from 'cross-fetch';
 import getLogger from 'debug';
-import { DAVTokens } from '../types/DAVTypes';
 
+import { DAVTokens } from '../types/DAVTypes';
 import { DAVCredentials } from '../types/models';
 import { findMissingFieldNames, hasFields } from './typeHelper';
 
@@ -61,6 +61,7 @@ export const fetchOauthTokens = async (credentials: DAVCredentials): Promise<DAV
   const param = new URLSearchParams({
     grant_type: 'authorization_code',
     code: credentials.authorizationCode,
+    access_type: 'offline',
     redirect_uri: credentials.redirectUrl,
     client_id: credentials.clientId,
     client_secret: credentials.clientSecret,
