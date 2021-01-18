@@ -176,28 +176,6 @@ export const fetchCalendarObjects = async (
     );
   }
 
-  // selected fetch mode
-  if (options.objectUrls) {
-    const calendarObjectUrls = options.objectUrls.map((url) =>
-      url.includes('http') ? url : URL.resolve(calendar.url, url)
-    );
-    const calendarObjectResults = await calendarMultiGet(
-      calendar.url,
-      [
-        { name: 'getetag', namespace: DAVNamespace.DAV },
-        { name: 'calendar-data', namespace: DAVNamespace.CALDAV },
-      ],
-      calendarObjectUrls,
-      { depth: '1', headers: options?.headers }
-    );
-
-    return calendarObjectResults.map((res) => ({
-      url: res.href ?? '',
-      etag: res.props?.getetag,
-      data: res.props?.calendarData,
-    }));
-  }
-
   // default to fetch all
   const filters: DAVFilter[] = options?.filters ?? [
     {
@@ -211,28 +189,21 @@ export const fetchCalendarObjects = async (
       ],
     },
   ];
-  const results = await calendarQuery(
-    calendar.url,
-    [
-      { name: 'getetag', namespace: DAVNamespace.DAV },
-      { name: 'calendar-data', namespace: DAVNamespace.CALDAV },
-    ],
-    { filters, depth: '1', headers: options?.headers }
-  );
 
-  // if data is already present, return
-  if (results.some((res) => res.props?.calendarData?._cdata)) {
-    return results.map((r) => ({
-      url: URL.resolve(options?.account?.rootUrl ?? '', r.href ?? '') ?? '',
-      etag: r.props?.getetag,
-      data: r.props?.calendarData?._cdata,
-    }));
-  }
-
-  // process to use calendar-multiget to fetch data
-  const calendarObjectUrls = results.map((res) =>
-    URL.resolve(options.account?.rootUrl ?? '', res.href ?? '')
-  );
+  const calendarObjectUrls = (
+    options.objectUrls ??
+    // fetch all objects of the calendar
+    (
+      await calendarQuery(calendar.url, [{ name: 'getetag', namespace: DAVNamespace.DAV }], {
+        filters,
+        depth: '1',
+        headers: options?.headers,
+      })
+    ).map((res) => res.href ?? '')
+  )
+    .map((url) => (url.includes('http') ? url : URL.resolve(calendar.url, url)))
+    .map((url) => URL.parse(url).pathname)
+    .filter((url): url is string => Boolean(url?.includes('.ics')));
 
   const calendarObjectResults = await calendarMultiGet(
     calendar.url,
@@ -247,7 +218,7 @@ export const fetchCalendarObjects = async (
   return calendarObjectResults.map((res) => ({
     url: res.href ?? '',
     etag: res.props?.getetag,
-    data: res.props?.calendarData,
+    data: res.props?.calendarData._cdata ?? res.props?.calendarData,
   }));
 };
 
