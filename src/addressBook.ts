@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 import getLogger from 'debug';
 import URL from 'url';
 
@@ -107,40 +108,51 @@ export const fetchAddressBooks = async (options?: {
 
 export const fetchVCards = async (
   addressBook: DAVAddressBook,
-  options?: { headers?: { [key: string]: any }; account?: DAVAccount }
+  options?: { headers?: { [key: string]: any }; account?: DAVAccount; objectUrls?: string[] }
 ): Promise<DAVVCard[]> => {
-  debug(`Fetching vcards from ${addressBook?.url}
-  ${options?.account?.credentials?.username}`);
-  const requiredFields: Array<keyof DAVAccount> = ['rootUrl'];
-  if (!options?.account || !hasFields(options?.account, requiredFields)) {
-    if (!options?.account) {
-      throw new Error('no account for fetchVCards');
+  debug(`Fetching vcards from ${addressBook?.url}`);
+  const requiredFields: Array<'url'> = ['url'];
+  if (!addressBook || !hasFields(addressBook, requiredFields)) {
+    if (!addressBook) {
+      throw new Error('cannot fetchVCards for undefined addressBook');
     }
     throw new Error(
-      `account must have ${findMissingFieldNames(
-        options.account,
+      `addressBook must have ${findMissingFieldNames(
+        addressBook,
         requiredFields
       )} before fetchVCards`
     );
   }
-  return (
-    await addressBookQuery(
-      addressBook.url,
-      [
-        { name: 'getetag', namespace: DAVNamespace.DAV },
-        { name: 'address-data', namespace: DAVNamespace.CARDDAV },
-      ],
-      { depth: '1', headers: options?.headers }
-    )
-  ).map((res) => {
-    return {
-      data: res,
-      addressBook,
-      url: URL.resolve(options.account?.rootUrl ?? '', res.href ?? ''),
-      etag: res.props?.getetag,
-      addressData: res.props?.addressData,
-    };
-  });
+
+  const vcardUrls = (
+    options?.objectUrls ??
+    // fetch all objects of the calendar
+    (
+      await addressBookQuery(addressBook.url, [{ name: 'getetag', namespace: DAVNamespace.DAV }], {
+        depth: '1',
+        headers: options?.headers,
+      })
+    ).map((res) => res.href ?? '')
+  )
+    .map((url) => (url.includes('http') ? url : URL.resolve(addressBook.url, url)))
+    .map((url) => URL.parse(url).pathname)
+    .filter((url): url is string => Boolean(url?.includes('.ics')));
+
+  const vCardResults = await addressBookMultiGet(
+    addressBook.url,
+    [
+      { name: 'getetag', namespace: DAVNamespace.DAV },
+      { name: 'address-data', namespace: DAVNamespace.CARDDAV },
+    ],
+    vcardUrls,
+    { depth: '1', headers: options?.headers }
+  );
+
+  return vCardResults.map((res) => ({
+    url: URL.resolve(addressBook.url, res.href ?? ''),
+    etag: res.props?.getetag,
+    data: res.props?.addressData._cdata ?? res.props?.addressData,
+  }));
 };
 
 export const createVCard = async (

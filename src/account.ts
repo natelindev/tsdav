@@ -136,7 +136,7 @@ export const createAccount = async (
       newAccount.calendars = await Promise.all(
         newAccount.calendars.map(async (cal) => ({
           ...cal,
-          objects: await fetchCalendarObjects(cal, { headers, account: newAccount }),
+          objects: await fetchCalendarObjects(cal, { headers }),
         }))
       );
     } else if (account.accountType === 'carddav' && newAccount.addressBooks) {

@@ -209,7 +209,7 @@ export const createDAVClient = async (
 
   const fetchCalendarObjects = async (
     calendar: DAVCalendar,
-    options?: { filters?: DAVFilter[]; headers?: { [key: string]: any } }
+    options?: { filters?: DAVFilter[]; headers?: { [key: string]: any }; objectUrls?: string[] }
   ): Promise<DAVCalendarObject[]> =>
     rawFetchCalendarObjects(calendar, {
       ...options,
@@ -267,12 +267,11 @@ export const createDAVClient = async (
 
   const fetchVCards = async (
     addressBook: DAVAddressBook,
-    options?: { headers?: { [key: string]: any }; account?: DAVAccount }
+    options?: { headers?: { [key: string]: any }; objectUrls?: string[] }
   ): Promise<DAVVCard[]> =>
     rawFetchVCards(addressBook, {
       ...options,
       headers: { ...authHeaders, ...options?.headers },
-      account: options?.account ?? defaultAccount,
     });
 
   const createVCard = appendHeaders(authHeaders, rawCreateVCard);
