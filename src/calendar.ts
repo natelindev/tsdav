@@ -159,18 +159,17 @@ export const fetchCalendarObjects = async (
     objectUrls?: string[];
     filters?: DAVFilter[];
     headers?: { [key: string]: any };
-    account?: DAVAccount;
   }
 ): Promise<DAVCalendarObject[]> => {
   debug(`Fetching calendar objects from ${calendar?.url}`);
-  const requiredFields: Array<'rootUrl'> = ['rootUrl'];
-  if (!options?.account || !hasFields(options?.account, requiredFields)) {
-    if (!options?.account) {
-      throw new Error('no account for fetchCalendarObjects');
+  const requiredFields: Array<'url'> = ['url'];
+  if (!calendar || !hasFields(calendar, requiredFields)) {
+    if (!calendar) {
+      throw new Error('cannot fetchCalendarObjects for undefined calendar');
     }
     throw new Error(
-      `account must have ${findMissingFieldNames(
-        options.account,
+      `calendar must have ${findMissingFieldNames(
+        calendar,
         requiredFields
       )} before fetchCalendarObjects`
     );
@@ -191,7 +190,7 @@ export const fetchCalendarObjects = async (
   ];
 
   const calendarObjectUrls = (
-    options.objectUrls ??
+    options?.objectUrls ??
     // fetch all objects of the calendar
     (
       await calendarQuery(calendar.url, [{ name: 'getetag', namespace: DAVNamespace.DAV }], {
@@ -216,7 +215,7 @@ export const fetchCalendarObjects = async (
   );
 
   return calendarObjectResults.map((res) => ({
-    url: res.href ?? '',
+    url: URL.resolve(calendar.url, res.href ?? ''),
     etag: res.props?.getetag,
     data: res.props?.calendarData._cdata ?? res.props?.calendarData,
   }));
