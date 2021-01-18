@@ -143,7 +143,7 @@ export const createAccount = async (
       newAccount.addressBooks = await Promise.all(
         newAccount.addressBooks.map(async (addr) => ({
           ...addr,
-          objects: await fetchVCards(addr, { headers, account: newAccount }),
+          objects: await fetchVCards(addr, { headers }),
         }))
       );
     }

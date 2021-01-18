@@ -108,7 +108,7 @@ export const fetchAddressBooks = async (options?: {
 
 export const fetchVCards = async (
   addressBook: DAVAddressBook,
-  options?: { headers?: { [key: string]: any }; account?: DAVAccount; objectUrls?: string[] }
+  options?: { headers?: { [key: string]: any }; objectUrls?: string[] }
 ): Promise<DAVVCard[]> => {
   debug(`Fetching vcards from ${addressBook?.url}`);
   const requiredFields: Array<'url'> = ['url'];
