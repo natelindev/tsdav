@@ -61,7 +61,6 @@ export const fetchOauthTokens = async (credentials: DAVCredentials): Promise<DAV
   const param = new URLSearchParams({
     grant_type: 'authorization_code',
     code: credentials.authorizationCode,
-    access_type: 'offline',
     redirect_uri: credentials.redirectUrl,
     client_id: credentials.clientId,
     client_secret: credentials.clientSecret,
