@@ -217,7 +217,7 @@ export const fetchCalendarObjects = async (
   return calendarObjectResults.map((res) => ({
     url: URL.resolve(calendar.url, res.href ?? ''),
     etag: res.props?.getetag,
-    data: res.props?.calendarData._cdata ?? res.props?.calendarData,
+    data: res.props?.calendarData?._cdata ?? res.props?.calendarData,
   }));
 };
 
