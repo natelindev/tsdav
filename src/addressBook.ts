@@ -151,7 +151,7 @@ export const fetchVCards = async (
   return vCardResults.map((res) => ({
     url: URL.resolve(addressBook.url, res.href ?? ''),
     etag: res.props?.getetag,
-    data: res.props?.addressData._cdata ?? res.props?.addressData,
+    data: res.props?.addressData?._cdata ?? res.props?.addressData,
   }));
 };
 

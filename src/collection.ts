@@ -1,5 +1,5 @@
+/* eslint-disable no-underscore-dangle */
 import getLogger from 'debug';
-import URL from 'url';
 
 import { DAVNamespace, DAVNamespaceShorthandMap } from './consts';
 import { davRequest, propfind } from './request';
@@ -185,9 +185,8 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
         etag: res.props?.getetag,
         data:
           options.account?.accountType === 'caldav'
-            ? // eslint-disable-next-line no-underscore-dangle
-              res.props?.calendarData._cdata ?? res.props?.calendarData
-            : res.props?.addressData,
+            ? res.props?.calendarData?._cdata ?? res.props?.calendarData
+            : res.props?.addressData?._cdata ?? res.props?.addressData,
       };
     });
 
