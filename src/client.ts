@@ -209,7 +209,12 @@ export const createDAVClient = async (
 
   const fetchCalendarObjects = async (
     calendar: DAVCalendar,
-    options?: { filters?: DAVFilter[]; headers?: { [key: string]: any }; objectUrls?: string[] }
+    options?: {
+      filters?: DAVFilter[];
+      headers?: { [key: string]: any };
+      objectUrls?: string[];
+      timeRange?: { startTime: Date; endTime: Date };
+    }
   ): Promise<DAVCalendarObject[]> =>
     rawFetchCalendarObjects(calendar, {
       ...options,

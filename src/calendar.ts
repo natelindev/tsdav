@@ -158,6 +158,7 @@ export const fetchCalendarObjects = async (
   options?: {
     objectUrls?: string[];
     filters?: DAVFilter[];
+    timeRange?: { startTime: Date; endTime: Date };
     headers?: { [key: string]: any };
   }
 ): Promise<DAVCalendarObject[]> => {
@@ -184,6 +185,17 @@ export const fetchCalendarObjects = async (
         {
           type: 'comp-filter',
           attributes: { name: 'VEVENT' },
+          children: options?.timeRange
+            ? [
+                {
+                  type: 'time-range',
+                  attributes: {
+                    start: `${options.timeRange.startTime.toISOString().slice(0, -5)}Z`,
+                    end: `${options.timeRange.endTime.toISOString().slice(0, -5)}Z`,
+                  },
+                },
+              ]
+            : undefined,
         },
       ],
     },
