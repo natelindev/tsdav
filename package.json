@@ -13,11 +13,15 @@
     "watch:babel": "babel src --out-dir dist --extensions .ts --watch",
     "watch": "concurrently \"yarn watch:ts\" \"yarn watch:babel\" "
   },
-  "files":["dist", "package.json"],
+  "files": [
+    "dist",
+    "package.json"
+  ],
   "dependencies": {
     "base-64": "^1.0.0",
     "cross-fetch": "^3.0.6",
     "debug": "^4.3.1",
+    "url": "^0.11.0",
     "xml-js": "^1.6.11"
   },
   "devDependencies": {
