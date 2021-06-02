@@ -20,9 +20,7 @@
     "project": "./tsconfig.json"
   },
   "rules": {
-    "no-plusplus": ["error", { "allowForLoopAfterthoughts": true }],
     "import/prefer-default-export": "off",
-    "no-restricted-syntax": ["error", "WithStatement", "BinaryExpression[operator='in']"],
     "@typescript-eslint/no-explicit-any": "off"
   }
 }

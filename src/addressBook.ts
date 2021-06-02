@@ -1,13 +1,12 @@
 /* eslint-disable no-underscore-dangle */
 import getLogger from 'debug';
-import URL from 'url';
 
 import { collectionQuery, supportedReportSet } from './collection';
 import { DAVNamespace, DAVNamespaceShorthandMap } from './consts';
 import { createObject, deleteObject, propfind, updateObject } from './request';
 import { DAVDepth, DAVFilter, DAVProp, DAVResponse } from './types/DAVTypes';
 import { DAVAccount, DAVAddressBook, DAVVCard } from './types/models';
-import { formatFilters, formatProps, getDAVAttribute, urlEquals } from './util/requestHelpers';
+import { formatFilters, formatProps, getDAVAttribute } from './util/requestHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelper';
 
 const debug = getLogger('tsdav:addressBook');
@@ -95,7 +94,7 @@ export const fetchAddressBooks = async (options?: {
         return {
           data: rs,
           account,
-          url: URL.resolve(account.rootUrl ?? '', rs.href ?? ''),
+          url: new URL(rs.href ?? '', account.rootUrl ?? '').href,
           ctag: rs.props?.getctag,
           displayName: rs.props?.displayname,
           resourcetype: rs.props?.resourcetype,
@@ -134,8 +133,8 @@ export const fetchVCards = async (
       })
     ).map((res) => res.href ?? '')
   )
-    .map((url) => (url.includes('http') ? url : URL.resolve(addressBook.url, url)))
-    .map((url) => URL.parse(url).pathname)
+    .map((url) => (url.includes('http') ? url : new URL(url, addressBook.url).href))
+    .map((url) => new URL(url).pathname)
     .filter((url): url is string => Boolean(url?.includes('.ics')));
 
   const vCardResults = await addressBookMultiGet(
@@ -149,7 +148,7 @@ export const fetchVCards = async (
   );
 
   return vCardResults.map((res) => ({
-    url: URL.resolve(addressBook.url, res.href ?? ''),
+    url: new URL(res.href ?? '', addressBook.url).href,
     etag: res.props?.getetag,
     data: res.props?.addressData?._cdata ?? res.props?.addressData,
   }));
@@ -161,7 +160,7 @@ export const createVCard = async (
   filename: string,
   options?: { headers?: { [key: string]: any } }
 ): Promise<Response> => {
-  return createObject(URL.resolve(addressBook.url, filename), vCardString, {
+  return createObject(new URL(filename, addressBook.url).href, vCardString, {
     headers: {
       'content-type': 'text/vcard; charset=utf-8',
       ...options?.headers,

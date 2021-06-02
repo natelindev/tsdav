@@ -1,6 +1,5 @@
 /* eslint-disable no-underscore-dangle */
 import getLogger from 'debug';
-import URL from 'url';
 
 import { collectionQuery, smartCollectionSync, supportedReportSet } from './collection';
 import { DAVNamespace, DAVNamespaceShorthandMap, ICALObjects } from './consts';
@@ -139,7 +138,7 @@ export const fetchCalendars = async (options?: {
         return {
           description: typeof description === 'string' ? description : '',
           timezone: typeof timezone === 'string' ? timezone : '',
-          url: URL.resolve(account.rootUrl ?? '', rs.href ?? ''),
+          url: new URL(rs.href ?? '', account.rootUrl ?? '').href,
           ctag: rs.props?.getctag,
           displayName: rs.props?.displayname,
           components: Array.isArray(rs.props?.supportedCalendarComponentSet.comp)
@@ -212,8 +211,8 @@ export const fetchCalendarObjects = async (
       })
     ).map((res) => res.href ?? '')
   )
-    .map((url) => (url.includes('http') ? url : URL.resolve(calendar.url, url)))
-    .map((url) => URL.parse(url).pathname)
+    .map((url) => (url.includes('http') ? url : new URL(url, calendar.url).href))
+    .map((url) => new URL(url).pathname)
     .filter((url): url is string => Boolean(url?.includes('.ics')));
 
   const calendarObjectResults = await calendarMultiGet(
@@ -227,7 +226,7 @@ export const fetchCalendarObjects = async (
   );
 
   return calendarObjectResults.map((res) => ({
-    url: URL.resolve(calendar.url, res.href ?? ''),
+    url: new URL(res.href ?? '', calendar.url).href,
     etag: res.props?.getetag,
     data: res.props?.calendarData?._cdata ?? res.props?.calendarData,
   }));
@@ -239,7 +238,7 @@ export const createCalendarObject = async (
   filename: string,
   options?: { headers?: { [key: string]: any } }
 ): Promise<Response> => {
-  return createObject(URL.resolve(calendar.url, filename), iCalString, {
+  return createObject(new URL(filename, calendar.url).href, iCalString, {
     headers: {
       'content-type': 'text/calendar; charset=utf-8',
       ...options?.headers,

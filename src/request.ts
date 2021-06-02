@@ -174,7 +174,7 @@ export const propfind = async (
 
 export const createObject = async (
   url: string,
-  data: any,
+  data: BodyInit,
   options?: { headers?: { [key: string]: any } }
 ): Promise<Response> => {
   return fetch(url, { method: 'PUT', body: data, headers: options?.headers });
@@ -182,7 +182,7 @@ export const createObject = async (
 
 export const updateObject = async (
   url: string,
-  data: any,
+  data: BodyInit,
   etag: string,
   options?: { headers?: { [key: string]: any } }
 ): Promise<Response> => {

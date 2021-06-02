@@ -1,0 +1,41 @@
+{
+    "version": "0.1",
+    "language": "en",
+    "words": [
+        "addressbook",
+        "caldav",
+        "CARDDAV",
+        "consts",
+        "ctag",
+        "DAVV",
+        "displayname",
+        "etag",
+        "getctag",
+        "getetag",
+        "ICAL",
+        "MKCALENDAR",
+        "MKCOL",
+        "multiget",
+        "multistatus",
+        "propfind",
+        "propstat",
+        "readonly",
+        "resourcetype",
+        "respawn",
+        "responsedescription",
+        "tsdav",
+        "VALARM",
+        "VCALENDAR",
+        "vcard",
+        "vcards",
+        "VEVENT",
+        "VFREEBUSY",
+        "VJOURNAL",
+        "VTIMEZONE",
+        "VTODO",
+        "webdav"
+    ],
+    "ignorePaths": [
+        "node_modules/**"
+    ]
+}

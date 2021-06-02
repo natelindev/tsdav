@@ -45,7 +45,6 @@ import {
   DAVCalendarObject,
   DAVCollection,
   DAVCredentials,
-  DAVObject,
   DAVVCard,
 } from './types/models';
 import { appendHeaders, getBasicAuthHeaders, getOauthHeaders } from './util/authHelper';
@@ -65,7 +64,7 @@ export const createDAVClient = async (
     authMethod === 'Basic'
       ? getBasicAuthHeaders(credentials)
       : authMethod === 'Oauth'
-      ? await (await getOauthHeaders(credentials)).headers
+      ? (await getOauthHeaders(credentials)).headers
       : {};
 
   const defaultAccount = defaultAccountType

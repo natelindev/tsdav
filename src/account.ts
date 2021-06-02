@@ -1,6 +1,5 @@
 import { fetch } from 'cross-fetch';
 import getLogger from 'debug';
-import URL from 'url';
 
 import { fetchAddressBooks, fetchVCards } from './addressBook';
 import { fetchCalendarObjects, fetchCalendars } from './calendar';
@@ -17,16 +16,13 @@ export const serviceDiscovery = async (
   options?: { headers?: { [key: string]: any } }
 ): Promise<string> => {
   debug('Service discovery...');
-  const endpoint = URL.parse(account.serverUrl);
+  const endpoint = new URL(account.serverUrl);
 
-  const uri = URL.format({
-    protocol: endpoint.protocol ?? 'http',
-    host: endpoint.host,
-    pathname: `/.well-known/${account.accountType}`,
-  });
+  const uri = new URL(`/.well-known/${account.accountType}`, endpoint);
+  uri.protocol = endpoint.protocol ?? 'http';
 
   try {
-    const response = await fetch(uri, {
+    const response = await fetch(uri.href, {
       headers: options?.headers,
       method: 'GET',
       redirect: 'manual',
@@ -37,11 +33,9 @@ export const serviceDiscovery = async (
       const location = response.headers.get('Location');
       if (typeof location === 'string' && location.length) {
         debug(`Service discovery redirected to ${location}`);
-        return URL.format({
-          protocol: endpoint.protocol,
-          host: endpoint.host,
-          pathname: location,
-        });
+        const serviceURL = new URL(location, endpoint);
+        serviceURL.protocol = endpoint.protocol ?? 'http';
+        return serviceURL.href;
       }
     }
   } catch (err) {
@@ -74,7 +68,7 @@ export const fetchPrincipalUrl = async (
     }
   }
   debug(`Fetched principal url ${response.props?.currentUserPrincipal.href}`);
-  return URL.resolve(account.rootUrl, response.props?.currentUserPrincipal.href ?? '');
+  return new URL(response.props?.currentUserPrincipal.href ?? '', account.rootUrl).href;
 };
 
 export const fetchHomeUrl = async (
@@ -104,12 +98,12 @@ export const fetchHomeUrl = async (
     throw new Error('cannot find homeUrl');
   }
 
-  const result = URL.resolve(
-    account.rootUrl,
+  const result = new URL(
     account.accountType === 'caldav'
       ? matched?.props?.calendarHomeSet.href
-      : matched?.props?.addressbookHomeSet.href
-  );
+      : matched?.props?.addressbookHomeSet.href,
+    account.rootUrl
+  ).href;
   debug(`Fetched home url ${result}`);
   return result;
 };
