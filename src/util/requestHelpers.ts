@@ -1,6 +1,5 @@
-import { DAVFilter, DAVProp } from '../types/DAVTypes';
-
 import { DAVAttributeMap, DAVNamespace, DAVNamespaceShorthandMap } from '../consts';
+import { DAVFilter, DAVProp } from '../types/DAVTypes';
 
 import type { NoUndefinedField } from './typeHelper';
 
@@ -26,7 +25,7 @@ export const mergeObjectDupKeyArray = <T, U>(
       // is array
       return {
         ...merged,
-        [currKey]: [...((merged[currKey] as unknown) as unknown[]), currValue],
+        [currKey]: [...(merged[currKey] as unknown as unknown[]), currValue],
       };
     }
     if (merged[currKey] && !Array.isArray(merged[currKey])) {

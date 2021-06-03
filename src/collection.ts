@@ -6,74 +6,85 @@ import { davRequest, propfind } from './request';
 import { DAVDepth, DAVProp, DAVResponse } from './types/DAVTypes';
 import { SmartCollectionSync } from './types/functionsOverloads';
 import { DAVAccount, DAVCollection, DAVObject } from './types/models';
-import { formatProps, getDAVAttribute, urlEquals } from './util/requestHelpers';
+import { cleanupUndefined, formatProps, getDAVAttribute, urlEquals } from './util/requestHelpers';
 import { findMissingFieldNames, hasFields, RequireAndNotNullSome } from './util/typeHelper';
 
 const debug = getLogger('tsdav:collection');
 
-export const collectionQuery = async (
-  url: string,
-  body: any,
-  options?: { depth?: DAVDepth; headers?: { [key: string]: any } }
-): Promise<DAVResponse[]> => {
-  return davRequest(url, {
-    method: 'REPORT',
-    headers: { ...options?.headers, depth: options?.depth },
-    namespace: DAVNamespaceShorthandMap[DAVNamespace.CALDAV],
-    body,
+export const collectionQuery = async (params: {
+  url: string;
+  body: any;
+  depth?: DAVDepth;
+  headers?: Record<string, string>;
+}): Promise<DAVResponse[]> => {
+  const { url, body, depth, headers } = params;
+  return davRequest({
+    url,
+    init: {
+      method: 'REPORT',
+      headers: cleanupUndefined({ ...headers, depth }),
+      namespace: DAVNamespaceShorthandMap[DAVNamespace.CALDAV],
+      body,
+    },
   });
 };
 
-export const makeCollection = async (
-  url: string,
-  props?: DAVProp[],
-  options?: { depth?: DAVDepth; headers?: { [key: string]: any } }
-): Promise<DAVResponse[]> => {
-  return davRequest(url, {
-    method: 'MKCOL',
-    headers: { ...options?.headers, depth: options?.depth },
-    namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
-    body: props
-      ? {
-          mkcol: {
-            set: {
-              prop: formatProps(props),
+export const makeCollection = async (params: {
+  url: string;
+  props?: DAVProp[];
+  depth?: DAVDepth;
+  headers?: Record<string, string>;
+}): Promise<DAVResponse[]> => {
+  const { url, props, depth, headers } = params;
+  return davRequest({
+    url,
+    init: {
+      method: 'MKCOL',
+      headers: cleanupUndefined({ ...headers, depth }),
+      namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
+      body: props
+        ? {
+            mkcol: {
+              set: {
+                prop: formatProps(props),
+              },
             },
-          },
-        }
-      : undefined,
+          }
+        : undefined,
+    },
   });
 };
 
-export const supportedReportSet = async (
-  collection: DAVCollection,
-  options?: { headers?: { [key: string]: any } }
-): Promise<DAVResponse> => {
-  const res = await propfind(
-    collection.url,
-    [{ name: 'supported-report-set', namespace: DAVNamespace.DAV }],
-    { depth: '1', headers: options?.headers }
-  );
+export const supportedReportSet = async (params: {
+  collection: DAVCollection;
+  headers?: Record<string, string>;
+}): Promise<DAVResponse> => {
+  const { collection, headers } = params;
+  const res = await propfind({
+    url: collection.url,
+    props: [{ name: 'supported-report-set', namespace: DAVNamespace.DAV }],
+    depth: '1',
+    headers,
+  });
   return res[0]?.props?.supportedReportSet.supportedReport.map(
     (sr: { report: any }) => Object.keys(sr.report)[0]
   );
 };
 
-export const isCollectionDirty = async (
-  collection: DAVCollection,
-  options?: { headers?: { [key: string]: any } }
-): Promise<{
+export const isCollectionDirty = async (params: {
+  collection: DAVCollection;
+  headers?: Record<string, string>;
+}): Promise<{
   isDirty: boolean;
   newCtag: string;
 }> => {
-  const responses = await propfind(
-    collection.url,
-    [{ name: 'getctag', namespace: DAVNamespace.CALENDAR_SERVER }],
-    {
-      depth: '0',
-      headers: options?.headers,
-    }
-  );
+  const { collection, headers } = params;
+  const responses = await propfind({
+    url: collection.url,
+    props: [{ name: 'getctag', namespace: DAVNamespace.CALENDAR_SERVER }],
+    depth: '0',
+    headers,
+  });
   const res = responses.filter((r) => urlEquals(collection.url, r.href))[0];
   if (!res) {
     throw new Error('Collection does not exist on server');
@@ -84,44 +95,53 @@ export const isCollectionDirty = async (
 /**
  * This is for webdav sync-collection only
  */
-export const syncCollection = (
-  url: string,
-  props: DAVProp[],
-  options?: {
-    headers?: { [key: string]: any };
-    syncLevel?: number;
-    syncToken?: string;
-  }
-): Promise<DAVResponse[]> => {
-  return davRequest(url, {
-    method: 'REPORT',
-    namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
-    headers: { ...options?.headers },
-    body: {
-      'sync-collection': {
-        _attributes: getDAVAttribute([DAVNamespace.CALDAV, DAVNamespace.CARDDAV, DAVNamespace.DAV]),
-        'sync-level': options?.syncLevel,
-        'sync-token': options?.syncToken,
-        [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
+export const syncCollection = (params: {
+  url: string;
+  props: DAVProp[];
+  headers?: Record<string, string>;
+  syncLevel?: number;
+  syncToken?: string;
+}): Promise<DAVResponse[]> => {
+  const { url, props, headers, syncLevel, syncToken } = params;
+  return davRequest({
+    url,
+    init: {
+      method: 'REPORT',
+      namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
+      headers: { ...headers },
+      body: {
+        'sync-collection': {
+          _attributes: getDAVAttribute([
+            DAVNamespace.CALDAV,
+            DAVNamespace.CARDDAV,
+            DAVNamespace.DAV,
+          ]),
+          'sync-level': syncLevel,
+          'sync-token': syncToken,
+          [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
+        },
       },
     },
   });
 };
 
 /** remote collection to local */
-export const smartCollectionSync: SmartCollectionSync = async <T extends DAVCollection>(
-  collection: T,
-  method?: 'basic' | 'webdav',
-  options?: { headers?: { [key: string]: any }; account?: DAVAccount; detailedResult?: boolean }
-): Promise<any> => {
+export const smartCollectionSync: SmartCollectionSync = async <T extends DAVCollection>(params: {
+  collection: T;
+  method?: 'basic' | 'webdav';
+  headers?: Record<string, string>;
+  account?: DAVAccount;
+  detailedResult?: boolean;
+}): Promise<any> => {
+  const { collection, method, headers, account, detailedResult } = params;
   const requiredFields: Array<'accountType' | 'homeUrl'> = ['accountType', 'homeUrl'];
-  if (!options?.account || !hasFields(options?.account, requiredFields)) {
-    if (!options?.account) {
+  if (!account || !hasFields(account, requiredFields)) {
+    if (!account) {
       throw new Error('no account for smartCollectionSync');
     }
     throw new Error(
       `account must have ${findMissingFieldNames(
-        options.account,
+        account,
         requiredFields
       )} before smartCollectionSync`
     );
@@ -129,29 +149,26 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
 
   const syncMethod =
     method ?? (collection.reports?.includes('syncCollection') ? 'webdav' : 'basic');
-  debug(`smart collection sync with type ${options?.account.accountType} and method ${syncMethod}`);
+  debug(`smart collection sync with type ${account.accountType} and method ${syncMethod}`);
 
   if (syncMethod === 'webdav') {
-    const result = await syncCollection(
-      collection.url,
-      [
+    const result = await syncCollection({
+      url: collection.url,
+      props: [
         { name: 'getetag', namespace: DAVNamespace.DAV },
         {
-          name: options.account.accountType === 'caldav' ? 'calendar-data' : 'address-data',
-          namespace:
-            options.account.accountType === 'caldav' ? DAVNamespace.CALDAV : DAVNamespace.CARDDAV,
+          name: account.accountType === 'caldav' ? 'calendar-data' : 'address-data',
+          namespace: account.accountType === 'caldav' ? DAVNamespace.CALDAV : DAVNamespace.CARDDAV,
         },
         {
           name: 'displayname',
           namespace: DAVNamespace.DAV,
         },
       ],
-      {
-        syncLevel: 1,
-        syncToken: collection.syncToken,
-        headers: options?.headers,
-      }
-    );
+      syncLevel: 1,
+      syncToken: collection.syncToken,
+      headers,
+    });
 
     const objectResponses = result.filter(
       (r): r is RequireAndNotNullSome<DAVResponse, 'href'> => r.href?.slice(-4) === '.ics'
@@ -162,21 +179,20 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
     const deletedObjectUrls = objectResponses.filter((o) => o.status === 404).map((r) => r.href);
 
     const multiGetObjectResponse = changedObjectUrls.length
-      ? (await collection?.objectMultiGet?.(
-          collection.url,
-          [
+      ? (await collection?.objectMultiGet?.({
+          url: collection.url,
+          props: [
             { name: 'getetag', namespace: DAVNamespace.DAV },
             {
-              name: options.account.accountType === 'caldav' ? 'calendar-data' : 'address-data',
+              name: account.accountType === 'caldav' ? 'calendar-data' : 'address-data',
               namespace:
-                options.account.accountType === 'caldav'
-                  ? DAVNamespace.CALDAV
-                  : DAVNamespace.CARDDAV,
+                account.accountType === 'caldav' ? DAVNamespace.CALDAV : DAVNamespace.CARDDAV,
             },
           ],
-          changedObjectUrls,
-          { depth: '1', headers: options?.headers }
-        )) ?? []
+          objectUrls: changedObjectUrls,
+          depth: '1',
+          headers,
+        })) ?? []
       : [];
 
     const remoteObjects = multiGetObjectResponse.map((res) => {
@@ -184,7 +200,7 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
         url: res.href ?? '',
         etag: res.props?.getetag,
         data:
-          options.account?.accountType === 'caldav'
+          account?.accountType === 'caldav'
             ? res.props?.calendarData?._cdata ?? res.props?.calendarData
             : res.props?.addressData?._cdata ?? res.props?.addressData,
       };
@@ -219,7 +235,7 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
 
     return {
       ...collection,
-      objects: options.detailedResult
+      objects: detailedResult
         ? { created, updated, deleted }
         : [...unchanged, ...created, ...updated],
       // all syncToken in the results are the same so we use the first one here
@@ -228,12 +244,12 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
   }
 
   if (syncMethod === 'basic') {
-    const { isDirty, newCtag } = await isCollectionDirty(collection, {
-      headers: options?.headers,
+    const { isDirty, newCtag } = await isCollectionDirty({
+      collection,
+      headers,
     });
     const localObjects = collection.objects ?? [];
-    const remoteObjects =
-      (await collection.fetchObjects?.(collection, { headers: options?.headers })) ?? [];
+    const remoteObjects = (await collection.fetchObjects?.({ collection, headers })) ?? [];
 
     // no existing url
     const created = remoteObjects.filter((ro) =>
@@ -264,7 +280,7 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
     if (isDirty) {
       return {
         ...collection,
-        objects: options.detailedResult
+        objects: detailedResult
           ? { created, updated, deleted }
           : [...unchanged, ...created, ...updated],
         ctag: newCtag,
@@ -272,7 +288,7 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
     }
   }
 
-  return options.detailedResult
+  return detailedResult
     ? {
         ...collection,
         objects: {

@@ -50,11 +50,11 @@ export type DAVResponse = {
 };
 
 export type DAVRequest = {
-  headers?: { [key: string]: any };
+  headers?: Record<string, string>;
   method: DAVMethods | HTTPMethods;
   body: any;
   namespace?: string;
-  attributes?: { [key: string]: any };
+  attributes?: Record<string, string>;
 };
 
 export type DAVTokens = {

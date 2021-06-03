@@ -20,13 +20,14 @@ type RawResponse = {
   propstat: RawProp | RawProp[];
 };
 
-export const davRequest = async (
-  url: string,
-  init: DAVRequest,
-  options?: { convertIncoming?: boolean; parseOutgoing?: boolean }
-): Promise<DAVResponse[]> => {
+export const davRequest = async (params: {
+  url: string;
+  init: DAVRequest;
+  convertIncoming?: boolean;
+  parseOutgoing?: boolean;
+}): Promise<DAVResponse[]> => {
+  const { url, init, convertIncoming = true, parseOutgoing = true } = params;
   const { headers, body, namespace, method, attributes } = init;
-  const { convertIncoming = true, parseOutgoing = true } = options ?? {};
   const xmlBody = convertIncoming
     ? convert.js2xml(
         { ...body, _attributes: attributes },
@@ -148,58 +149,66 @@ export const davRequest = async (
   });
 };
 
-export const propfind = async (
-  url: string,
-  props: DAVProp[],
-  options?: { depth?: DAVDepth; headers?: { [key: string]: any } }
-): Promise<DAVResponse[]> => {
-  return davRequest(url, {
-    method: 'PROPFIND',
-    headers: { ...options?.headers, depth: options?.depth },
-    namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
-    body: {
-      propfind: {
-        _attributes: getDAVAttribute([
-          DAVNamespace.CALDAV,
-          DAVNamespace.CALDAV_APPLE,
-          DAVNamespace.CALENDAR_SERVER,
-          DAVNamespace.CARDDAV,
-          DAVNamespace.DAV,
-        ]),
-        prop: formatProps(props),
+export const propfind = async (params: {
+  url: string;
+  props: DAVProp[];
+  depth?: DAVDepth;
+  headers?: Record<string, string>;
+}): Promise<DAVResponse[]> => {
+  const { url, props, depth, headers } = params;
+  return davRequest({
+    url,
+    init: {
+      method: 'PROPFIND',
+      headers: cleanupUndefined({ ...headers, depth }),
+      namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
+      body: {
+        propfind: {
+          _attributes: getDAVAttribute([
+            DAVNamespace.CALDAV,
+            DAVNamespace.CALDAV_APPLE,
+            DAVNamespace.CALENDAR_SERVER,
+            DAVNamespace.CARDDAV,
+            DAVNamespace.DAV,
+          ]),
+          prop: formatProps(props),
+        },
       },
     },
   });
 };
 
-export const createObject = async (
-  url: string,
-  data: BodyInit,
-  options?: { headers?: { [key: string]: any } }
-): Promise<Response> => {
-  return fetch(url, { method: 'PUT', body: data, headers: options?.headers });
+export const createObject = async (params: {
+  url: string;
+  data: BodyInit;
+  headers?: Record<string, string>;
+}): Promise<Response> => {
+  const { url, data, headers } = params;
+  return fetch(url, { method: 'PUT', body: data, headers });
 };
 
-export const updateObject = async (
-  url: string,
-  data: BodyInit,
-  etag: string,
-  options?: { headers?: { [key: string]: any } }
-): Promise<Response> => {
+export const updateObject = async (params: {
+  url: string;
+  data: BodyInit;
+  etag: string;
+  headers?: Record<string, string>;
+}): Promise<Response> => {
+  const { url, data, etag, headers } = params;
   return fetch(url, {
     method: 'PUT',
     body: data,
-    headers: { ...options?.headers, 'If-Match': etag },
+    headers: cleanupUndefined({ ...headers, 'If-Match': etag }),
   });
 };
 
-export const deleteObject = async (
-  url: string,
-  etag?: string,
-  options?: { headers?: { [key: string]: any } }
-): Promise<Response> => {
+export const deleteObject = async (params: {
+  url: string;
+  etag?: string;
+  headers?: Record<string, string>;
+}): Promise<Response> => {
+  const { url, headers, etag } = params;
   return fetch(url, {
     method: 'DELETE',
-    headers: cleanupUndefined({ ...options?.headers, 'If-Match': etag }),
+    headers: cleanupUndefined({ ...headers, 'If-Match': etag }),
   });
 };

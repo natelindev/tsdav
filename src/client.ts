@@ -36,18 +36,10 @@ import {
   propfind as rawPropfind,
   updateObject as rawUpdateObject,
 } from './request';
-import { DAVDepth, DAVFilter, DAVProp, DAVRequest, DAVResponse } from './types/DAVTypes';
+import { DAVRequest, DAVResponse } from './types/DAVTypes';
 import { SmartCollectionSync, SyncCalendars } from './types/functionsOverloads';
-import {
-  DAVAccount,
-  DAVAddressBook,
-  DAVCalendar,
-  DAVCalendarObject,
-  DAVCollection,
-  DAVCredentials,
-  DAVVCard,
-} from './types/models';
-import { appendHeaders, getBasicAuthHeaders, getOauthHeaders } from './util/authHelper';
+import { DAVAccount, DAVCredentials } from './types/models';
+import { defaultParam, getBasicAuthHeaders, getOauthHeaders } from './util/authHelper';
 import { Await, Optional } from './util/typeHelper';
 
 const debug = getLogger('tsdav:client');
@@ -59,7 +51,7 @@ export const createDAVClient = async (
   authMethod?: 'Basic' | 'Oauth',
   defaultAccountType?: DAVAccount['accountType'] | undefined
 ) => {
-  const authHeaders: { [key: string]: any } =
+  const authHeaders: Record<string, string> =
     // eslint-disable-next-line no-nested-ternary
     authMethod === 'Basic'
       ? getBasicAuthHeaders(credentials)
@@ -68,235 +60,129 @@ export const createDAVClient = async (
       : {};
 
   const defaultAccount = defaultAccountType
-    ? await rawCreateAccount(
-        { serverUrl, credentials, accountType: defaultAccountType },
-        {
-          headers: authHeaders,
-        }
-      )
+    ? await rawCreateAccount({
+        account: { serverUrl, credentials, accountType: defaultAccountType },
+        headers: authHeaders,
+      })
     : undefined;
 
   // request
-  const raw = async (
-    url: string,
-    init: DAVRequest,
-    options?: { convertIncoming?: boolean; parseOutgoing?: boolean }
-  ): Promise<DAVResponse[]> =>
-    davRequest(
-      url ?? serverUrl,
-      { ...init, headers: { ...authHeaders, ...init.headers } },
-      options
-    );
-
-  const rawXML = async (
-    url: string,
-    init: DAVRequest,
-    options?: { parseOutgoing?: boolean }
-  ): Promise<DAVResponse[]> =>
-    davRequest(
-      url ?? serverUrl,
-      { ...init, headers: { ...authHeaders, ...init.headers } },
-      { ...options, convertIncoming: false }
-    );
-
-  const createObject = async (
-    url: string,
-    data: any,
-    options?: { headers?: { [key: string]: any } }
-  ): Promise<Response> =>
-    rawCreateObject(url ?? serverUrl, data, {
-      ...options,
-      headers: { ...authHeaders, ...options?.headers },
+  const raw = async (params: {
+    url: string;
+    init: DAVRequest;
+    convertIncoming?: boolean;
+    parseOutgoing?: boolean;
+  }): Promise<DAVResponse[]> => {
+    const { url, init, convertIncoming, parseOutgoing } = params;
+    return davRequest({
+      url: url ?? serverUrl,
+      init: { ...init, headers: { ...authHeaders, ...init.headers } },
+      convertIncoming,
+      parseOutgoing,
     });
+  };
 
-  const updateObject = async (
-    url: string,
-    data: any,
-    etag: string,
-    options?: { headers?: { [key: string]: any } }
-  ): Promise<Response> =>
-    rawUpdateObject(url ?? serverUrl, data, etag, {
-      ...options,
-      headers: { ...authHeaders, ...options?.headers },
+  const rawXML = async (params: {
+    url: string;
+    init: DAVRequest;
+    convertIncoming?: boolean;
+    parseOutgoing?: boolean;
+  }): Promise<DAVResponse[]> => {
+    const { url, init, convertIncoming = false, parseOutgoing } = params;
+    return davRequest({
+      url: url ?? serverUrl,
+      init: { ...init, headers: { ...authHeaders, ...init.headers } },
+      convertIncoming,
+      parseOutgoing,
     });
+  };
 
-  const deleteObject = async (
-    url: string,
-    etag?: string,
-    options?: { headers?: { [key: string]: any } }
-  ): Promise<Response> =>
-    rawDeleteObject(url ?? serverUrl, etag, {
-      ...options,
-      headers: { ...authHeaders, ...options?.headers },
-    });
+  const createObject = defaultParam(rawCreateObject, {
+    url: serverUrl,
+    headers: authHeaders,
+  });
+  const updateObject = defaultParam(rawUpdateObject, { headers: authHeaders, url: serverUrl });
+  const deleteObject = defaultParam(rawDeleteObject, { headers: authHeaders, url: serverUrl });
 
-  const propfind = async (
-    url: string,
-    props: DAVProp[],
-    options?: { depth?: DAVDepth; headers?: { [key: string]: any } }
-  ): Promise<DAVResponse[]> =>
-    rawPropfind(url ?? serverUrl, props, {
-      ...options,
-      headers: { ...authHeaders, ...options?.headers },
-    });
+  const propfind = defaultParam(rawPropfind, { headers: authHeaders });
 
   // account
-  const createAccount = async (
-    account: Optional<DAVAccount, 'serverUrl'>,
-    options?: { headers?: { [key: string]: any }; loadCollections: boolean; loadObjects: boolean }
-  ): Promise<DAVAccount> =>
-    rawCreateAccount(
-      { serverUrl, credentials, ...account },
-      {
-        ...options,
-        headers: { ...authHeaders, ...options?.headers },
-      }
-    );
+  const createAccount = async (params: {
+    account: Optional<DAVAccount, 'serverUrl'>;
+    headers?: Record<string, string>;
+    loadCollections?: boolean;
+    loadObjects?: boolean;
+  }): Promise<DAVAccount> => {
+    const { account, headers, loadCollections, loadObjects } = params;
+    return rawCreateAccount({
+      account: { serverUrl, credentials, ...account },
+      headers: { ...authHeaders, ...headers },
+      loadCollections,
+      loadObjects,
+    });
+  };
+
   // collection
-  const collectionQuery = appendHeaders(authHeaders, rawCollectionQuery);
-  const makeCollection = appendHeaders(authHeaders, rawMakeCollection);
-  const syncCollection = appendHeaders(authHeaders, rawSyncCollection);
+  const collectionQuery = defaultParam(rawCollectionQuery, { headers: authHeaders });
+  const makeCollection = defaultParam(rawMakeCollection, { headers: authHeaders });
+  const syncCollection = defaultParam(rawSyncCollection, { headers: authHeaders });
 
-  const supportedReportSet = async (
-    collection: DAVCollection,
-    options?: { headers?: { [key: string]: any } }
-  ): Promise<DAVResponse> =>
-    rawSupportedReportSet(collection, {
-      ...options,
-      headers: { ...authHeaders, ...options?.headers },
-    });
+  const supportedReportSet = defaultParam(rawSupportedReportSet, {
+    headers: authHeaders,
+  });
 
-  const isCollectionDirty = async (
-    collection: DAVCollection,
-    options?: { headers?: { [key: string]: any } }
-  ): Promise<{
-    isDirty: boolean;
-    newCtag: string;
-  }> =>
-    rawIsCollectionDirty(collection, {
-      ...options,
-      headers: { ...authHeaders, ...options?.headers },
-    });
+  const isCollectionDirty = defaultParam(rawIsCollectionDirty, {
+    headers: authHeaders,
+  });
 
-  const smartCollectionSync: SmartCollectionSync = async <T extends DAVCollection>(
-    collection: T,
-    method?: 'basic' | 'webdav',
-    options?: { headers?: { [key: string]: any }; account?: DAVAccount; detailedResult?: boolean }
-  ): Promise<any> =>
-    rawSmartCollectionSync<T>(collection, method, {
-      ...options,
-      headers: { ...authHeaders, ...options?.headers },
-      account: options?.account ?? defaultAccount,
-    });
+  const smartCollectionSync = defaultParam(rawSmartCollectionSync, {
+    headers: authHeaders,
+    account: defaultAccount,
+  }) as SmartCollectionSync;
 
   // calendar
-  const calendarQuery = appendHeaders(authHeaders, rawCalendarQuery);
+  const calendarQuery = defaultParam(rawCalendarQuery, { headers: authHeaders });
+  const calendarMultiGet = defaultParam(rawCalendarMultiGet, { headers: authHeaders });
+  const makeCalendar = defaultParam(rawMakeCalendar, { headers: authHeaders });
 
-  const calendarMultiGet = appendHeaders(authHeaders, rawCalendarMultiGet);
+  const fetchCalendars = defaultParam(rawFetchCalendars, {
+    headers: authHeaders,
+    account: defaultAccount,
+  });
 
-  const makeCalendar = appendHeaders(authHeaders, rawMakeCalendar);
+  const fetchCalendarObjects = defaultParam(rawFetchCalendarObjects, {
+    headers: authHeaders,
+  });
 
-  const fetchCalendars = async (options?: {
-    headers?: { [key: string]: any };
-    account?: DAVAccount;
-  }): Promise<DAVCalendar[]> =>
-    rawFetchCalendars({
-      ...options,
-      headers: { ...authHeaders, ...options?.headers },
-      account: options?.account ?? defaultAccount,
-    });
+  const createCalendarObject = defaultParam(rawCreateCalendarObject, {
+    headers: authHeaders,
+  });
 
-  const fetchCalendarObjects = async (
-    calendar: DAVCalendar,
-    options?: {
-      filters?: DAVFilter[];
-      headers?: { [key: string]: any };
-      objectUrls?: string[];
-      timeRange?: { startTime: Date; endTime: Date };
-    }
-  ): Promise<DAVCalendarObject[]> =>
-    rawFetchCalendarObjects(calendar, {
-      ...options,
-      headers: { ...authHeaders, ...options?.headers },
-    });
+  const updateCalendarObject = defaultParam(rawUpdateCalendarObject, {
+    headers: authHeaders,
+  });
 
-  const createCalendarObject = appendHeaders(authHeaders, rawCreateCalendarObject);
+  const deleteCalendarObject = defaultParam(rawDeleteCalendarObject, {
+    headers: authHeaders,
+  });
 
-  const updateCalendarObject = async (
-    calendarObject: DAVCalendarObject,
-    options?: { headers?: { [key: string]: any } }
-  ): Promise<Response> =>
-    rawUpdateCalendarObject(calendarObject, {
-      ...options,
-      headers: { ...authHeaders, ...options?.headers },
-    });
-
-  const deleteCalendarObject = async (
-    calendarObject: DAVCalendarObject,
-    options?: { headers?: { [key: string]: any } }
-  ): Promise<Response> =>
-    rawDeleteCalendarObject(calendarObject, {
-      ...options,
-      headers: { ...authHeaders, ...options?.headers },
-    });
-
-  const syncCalendars: SyncCalendars = async (
-    oldCalendars: DAVCalendar[],
-    options?: {
-      headers?: { [key: string]: any };
-      account?: DAVAccount;
-      detailedResult?: boolean;
-    }
-  ): Promise<any> =>
-    rawSyncCalendars(oldCalendars, {
-      ...options,
-      headers: { ...authHeaders, ...options?.headers },
-      account: options?.account ?? defaultAccount,
-    });
+  const syncCalendars = defaultParam(rawSyncCalendars, {
+    account: defaultAccount,
+    headers: authHeaders,
+  }) as SyncCalendars;
 
   // addressBook
-  const addressBookQuery = appendHeaders(authHeaders, rawAddressBookQuery);
+  const addressBookQuery = defaultParam(rawAddressBookQuery, { headers: authHeaders });
+  const addressBookMultiGet = defaultParam(rawAddressBookMultiGet, { headers: authHeaders });
+  const fetchAddressBooks = defaultParam(rawFetchAddressBooks, {
+    account: defaultAccount,
+    headers: authHeaders,
+  });
 
-  const addressBookMultiGet = appendHeaders(authHeaders, rawAddressBookMultiGet);
-
-  const fetchAddressBooks = async (options?: {
-    headers?: { [key: string]: any };
-    account?: DAVAccount;
-  }): Promise<DAVAddressBook[]> =>
-    rawFetchAddressBooks({
-      ...options,
-      headers: { ...authHeaders, ...options?.headers },
-      account: options?.account ?? defaultAccount,
-    });
-
-  const fetchVCards = async (
-    addressBook: DAVAddressBook,
-    options?: { headers?: { [key: string]: any }; objectUrls?: string[] }
-  ): Promise<DAVVCard[]> =>
-    rawFetchVCards(addressBook, {
-      ...options,
-      headers: { ...authHeaders, ...options?.headers },
-    });
-
-  const createVCard = appendHeaders(authHeaders, rawCreateVCard);
-
-  const updateVCard = async (
-    vCard: DAVVCard,
-    options?: { headers?: { [key: string]: any } }
-  ): Promise<Response> =>
-    rawUpdateVCard(vCard, {
-      ...options,
-      headers: { ...authHeaders, ...options?.headers },
-    });
-
-  const deleteVCard = async (
-    vCard: DAVVCard,
-    options?: { headers?: { [key: string]: any } }
-  ): Promise<Response> =>
-    rawDeleteVCard(vCard, {
-      ...options,
-      headers: { ...authHeaders, ...options?.headers },
-    });
+  const fetchVCards = defaultParam(rawFetchVCards, { headers: authHeaders });
+  const createVCard = defaultParam(rawCreateVCard, { headers: authHeaders });
+  const updateVCard = defaultParam(rawUpdateVCard, { headers: authHeaders });
+  const deleteVCard = defaultParam(rawDeleteVCard, { headers: authHeaders });
 
   return {
     raw,

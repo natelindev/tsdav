@@ -7,24 +7,29 @@ import { createObject, davRequest, deleteObject, propfind, updateObject } from '
 import { DAVDepth, DAVFilter, DAVProp, DAVResponse } from './types/DAVTypes';
 import { SyncCalendars } from './types/functionsOverloads';
 import { DAVAccount, DAVCalendar, DAVCalendarObject } from './types/models';
-import { formatFilters, formatProps, getDAVAttribute, urlEquals } from './util/requestHelpers';
+import {
+  cleanupUndefined,
+  formatFilters,
+  formatProps,
+  getDAVAttribute,
+  urlEquals,
+} from './util/requestHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelper';
 
 const debug = getLogger('tsdav:calendar');
 
-export const calendarQuery = async (
-  url: string,
-  props: DAVProp[],
-  options?: {
-    filters?: DAVFilter[];
-    timezone?: string;
-    depth?: DAVDepth;
-    headers?: { [key: string]: any };
-  }
-): Promise<DAVResponse[]> =>
-  collectionQuery(
+export const calendarQuery = async (params: {
+  url: string;
+  props: DAVProp[];
+  filters?: DAVFilter[];
+  timezone?: string;
+  depth?: DAVDepth;
+  headers?: Record<string, string>;
+}): Promise<DAVResponse[]> => {
+  const { url, props, filters, timezone, depth, headers } = params;
+  return collectionQuery({
     url,
-    {
+    body: {
       'calendar-query': {
         _attributes: getDAVAttribute([
           DAVNamespace.CALDAV,
@@ -33,81 +38,84 @@ export const calendarQuery = async (
           DAVNamespace.DAV,
         ]),
         [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
-        filter: formatFilters(options?.filters),
-        timezone: options?.timezone,
+        filter: formatFilters(filters),
+        timezone: timezone,
       },
     },
-    { depth: options?.depth, headers: options?.headers }
-  );
+    depth: depth,
+    headers: headers,
+  });
+};
 
-export const calendarMultiGet = async (
-  url: string,
-  props: DAVProp[],
-  objectUrls: string[],
-  options?: {
-    filters?: DAVFilter[];
-    timezone?: string;
-    depth: DAVDepth;
-    headers?: { [key: string]: any };
-  }
-): Promise<DAVResponse[]> =>
-  collectionQuery(
+export const calendarMultiGet = async (params: {
+  url: string;
+  props: DAVProp[];
+  objectUrls?: string[];
+  filters?: DAVFilter[];
+  timezone?: string;
+  depth: DAVDepth;
+  headers?: Record<string, string>;
+}): Promise<DAVResponse[]> => {
+  const { url, props, objectUrls, filters, timezone, depth, headers } = params;
+  return collectionQuery({
     url,
-    {
+    body: {
       'calendar-multiget': {
         _attributes: getDAVAttribute([DAVNamespace.DAV, DAVNamespace.CALDAV]),
         [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
         [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:href`]: objectUrls,
-        filter: formatFilters(options?.filters),
-        timezone: options?.timezone,
+        filter: formatFilters(filters),
+        timezone: timezone,
       },
     },
-    { depth: options?.depth, headers: options?.headers }
-  );
+    depth: depth,
+    headers: headers,
+  });
+};
 
-export const makeCalendar = async (
-  url: string,
-  props: DAVProp[],
-  options?: {
-    depth: DAVDepth;
-    headers?: { [key: string]: any };
-  }
-): Promise<DAVResponse[]> =>
-  davRequest(url, {
-    method: 'MKCALENDAR',
-    headers: { ...options?.headers, depth: options?.depth },
-    namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
-    body: {
-      [`${DAVNamespaceShorthandMap[DAVNamespace.CALDAV]}:mkcalendar`]: {
-        _attributes: getDAVAttribute([DAVNamespace.DAV, DAVNamespace.CALDAV]),
-        set: {
-          prop: formatProps(props),
+export const makeCalendar = async (params: {
+  url: string;
+  props: DAVProp[];
+  depth?: DAVDepth;
+  headers?: Record<string, string>;
+}): Promise<DAVResponse[]> => {
+  const { url, props, depth, headers } = params;
+  return davRequest({
+    url,
+    init: {
+      method: 'MKCALENDAR',
+      headers: cleanupUndefined({ ...headers, depth }),
+      namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
+      body: {
+        [`${DAVNamespaceShorthandMap[DAVNamespace.CALDAV]}:mkcalendar`]: {
+          _attributes: getDAVAttribute([DAVNamespace.DAV, DAVNamespace.CALDAV]),
+          set: {
+            prop: formatProps(props),
+          },
         },
       },
     },
   });
+};
 
-export const fetchCalendars = async (options?: {
-  headers?: { [key: string]: any };
+export const fetchCalendars = async (params?: {
+  headers?: Record<string, string>;
   account?: DAVAccount;
 }): Promise<DAVCalendar[]> => {
+  const { headers, account } = params ?? {};
   const requiredFields: Array<'homeUrl' | 'rootUrl'> = ['homeUrl', 'rootUrl'];
-  if (!options?.account || !hasFields(options?.account, requiredFields)) {
-    if (!options?.account) {
+  if (!account || !hasFields(account, requiredFields)) {
+    if (!account) {
       throw new Error('no account for fetchCalendars');
     }
     throw new Error(
-      `account must have ${findMissingFieldNames(
-        options.account,
-        requiredFields
-      )} before fetchCalendars`
+      `account must have ${findMissingFieldNames(account, requiredFields)} before fetchCalendars`
     );
   }
 
-  const { account } = options;
-  const res = await propfind(
-    options.account.homeUrl,
-    [
+  const res = await propfind({
+    url: account.homeUrl,
+    props: [
       { name: 'calendar-description', namespace: DAVNamespace.CALDAV },
       { name: 'calendar-timezone', namespace: DAVNamespace.CALDAV },
       { name: 'displayname', namespace: DAVNamespace.DAV },
@@ -116,8 +124,9 @@ export const fetchCalendars = async (options?: {
       { name: 'supported-calendar-component-set', namespace: DAVNamespace.CALDAV },
       { name: 'sync-token', namespace: DAVNamespace.DAV },
     ],
-    { depth: '1', headers: options?.headers }
-  );
+    depth: '1',
+    headers,
+  });
 
   return Promise.all(
     res
@@ -148,19 +157,21 @@ export const fetchCalendars = async (options?: {
           syncToken: rs.props?.syncToken,
         };
       })
-      .map(async (cal) => ({ ...cal, reports: await supportedReportSet(cal, options) }))
+      .map(async (cal) => ({
+        ...cal,
+        reports: await supportedReportSet({ collection: cal, headers }),
+      }))
   );
 };
 
-export const fetchCalendarObjects = async (
-  calendar: DAVCalendar,
-  options?: {
-    objectUrls?: string[];
-    filters?: DAVFilter[];
-    timeRange?: { startTime: Date; endTime: Date };
-    headers?: { [key: string]: any };
-  }
-): Promise<DAVCalendarObject[]> => {
+export const fetchCalendarObjects = async (params: {
+  calendar: DAVCalendar;
+  objectUrls?: string[];
+  filters?: DAVFilter[];
+  timeRange?: { startTime: Date; endTime: Date };
+  headers?: Record<string, string>;
+}): Promise<DAVCalendarObject[]> => {
+  const { calendar, objectUrls, filters: defaultFilters, timeRange, headers } = params;
   debug(`Fetching calendar objects from ${calendar?.url}`);
   const requiredFields: Array<'url'> = ['url'];
   if (!calendar || !hasFields(calendar, requiredFields)) {
@@ -176,7 +187,7 @@ export const fetchCalendarObjects = async (
   }
 
   // default to fetch all
-  const filters: DAVFilter[] = options?.filters ?? [
+  const filters: DAVFilter[] = defaultFilters ?? [
     {
       type: 'comp-filter',
       attributes: { name: 'VCALENDAR' },
@@ -184,13 +195,13 @@ export const fetchCalendarObjects = async (
         {
           type: 'comp-filter',
           attributes: { name: 'VEVENT' },
-          children: options?.timeRange
+          children: timeRange
             ? [
                 {
                   type: 'time-range',
                   attributes: {
-                    start: `${options.timeRange.startTime.toISOString().slice(0, -5)}Z`,
-                    end: `${options.timeRange.endTime.toISOString().slice(0, -5)}Z`,
+                    start: `${timeRange?.startTime.toISOString().slice(0, -5)}Z`,
+                    end: `${timeRange?.endTime.toISOString().slice(0, -5)}Z`,
                   },
                 },
               ]
@@ -201,13 +212,15 @@ export const fetchCalendarObjects = async (
   ];
 
   const calendarObjectUrls = (
-    options?.objectUrls ??
+    objectUrls ??
     // fetch all objects of the calendar
     (
-      await calendarQuery(calendar.url, [{ name: 'getetag', namespace: DAVNamespace.DAV }], {
+      await calendarQuery({
+        url: calendar.url,
+        props: [{ name: 'getetag', namespace: DAVNamespace.DAV }],
         filters,
         depth: '1',
-        headers: options?.headers,
+        headers,
       })
     ).map((res) => res.href ?? '')
   )
@@ -215,15 +228,16 @@ export const fetchCalendarObjects = async (
     .map((url) => new URL(url).pathname)
     .filter((url): url is string => Boolean(url?.includes('.ics')));
 
-  const calendarObjectResults = await calendarMultiGet(
-    calendar.url,
-    [
+  const calendarObjectResults = await calendarMultiGet({
+    url: calendar.url,
+    props: [
       { name: 'getetag', namespace: DAVNamespace.DAV },
       { name: 'calendar-data', namespace: DAVNamespace.CALDAV },
     ],
-    calendarObjectUrls,
-    { depth: '1', headers: options?.headers }
-  );
+    objectUrls: calendarObjectUrls,
+    depth: '1',
+    headers: headers,
+  });
 
   return calendarObjectResults.map((res) => ({
     url: new URL(res.href ?? '', calendar.url).href,
@@ -232,56 +246,63 @@ export const fetchCalendarObjects = async (
   }));
 };
 
-export const createCalendarObject = async (
-  calendar: DAVCalendar,
-  iCalString: string,
-  filename: string,
-  options?: { headers?: { [key: string]: any } }
-): Promise<Response> => {
-  return createObject(new URL(filename, calendar.url).href, iCalString, {
+export const createCalendarObject = async (params: {
+  calendar: DAVCalendar;
+  iCalString: string;
+  filename: string;
+  headers?: Record<string, string>;
+}): Promise<Response> => {
+  const { calendar, iCalString, filename, headers } = params;
+  return createObject({
+    url: new URL(filename, calendar.url).href,
+    data: iCalString,
     headers: {
       'content-type': 'text/calendar; charset=utf-8',
-      ...options?.headers,
+      ...headers,
     },
   });
 };
 
-export const updateCalendarObject = async (
-  calendarObject: DAVCalendarObject,
-  options?: { headers?: { [key: string]: any } }
-): Promise<Response> => {
-  return updateObject(calendarObject.url, calendarObject.data, calendarObject.etag, {
+export const updateCalendarObject = async (params: {
+  calendarObject: DAVCalendarObject;
+  headers?: Record<string, string>;
+}): Promise<Response> => {
+  const { calendarObject, headers } = params;
+  return updateObject({
+    url: calendarObject.url,
+    data: calendarObject.data,
+    etag: calendarObject.etag,
     headers: {
       'content-type': 'text/calendar; charset=utf-8',
-      ...options?.headers,
+      ...headers,
     },
   });
 };
 
-export const deleteCalendarObject = async (
-  calendarObject: DAVCalendarObject,
-  options?: { headers?: { [key: string]: any } }
-): Promise<Response> => {
-  return deleteObject(calendarObject.url, calendarObject.etag, options);
+export const deleteCalendarObject = async (params: {
+  calendarObject: DAVCalendarObject;
+  headers?: Record<string, string>;
+}): Promise<Response> => {
+  const { calendarObject, headers } = params;
+  return deleteObject({ url: calendarObject.url, etag: calendarObject.etag, headers });
 };
 
 /**
  * Sync remote calendars to local
  */
-export const syncCalendars: SyncCalendars = async (
-  oldCalendars: DAVCalendar[],
-  options?: {
-    headers?: { [key: string]: any };
-    account?: DAVAccount;
-    detailedResult?: boolean;
-  }
-): Promise<any> => {
-  if (!options?.account) {
+export const syncCalendars: SyncCalendars = async (params: {
+  oldCalendars: DAVCalendar[];
+  headers?: Record<string, string>;
+  account?: DAVAccount;
+  detailedResult?: boolean;
+}): Promise<any> => {
+  const { oldCalendars, account, detailedResult, headers } = params;
+  if (!account) {
     throw new Error('Must have account before syncCalendars');
   }
-  const { account } = options;
+
   const localCalendars = oldCalendars ?? account.calendars ?? [];
-  const remoteCalendars = await fetchCalendars({ ...options, account });
+  const remoteCalendars = await fetchCalendars({ account, headers });
 
   // no existing url
   const created = remoteCalendars.filter((rc) =>
@@ -305,14 +326,12 @@ export const syncCalendars: SyncCalendars = async (
 
   const updatedWithObjects: DAVCalendar[] = await Promise.all(
     updated.map(async (u) => {
-      const result = (await smartCollectionSync(
-        { ...u, objectMultiGet: calendarMultiGet },
-        'webdav',
-        {
-          headers: options.headers,
-          account,
-        }
-      )) as DAVCalendar;
+      const result = await smartCollectionSync({
+        collection: { ...u, objectMultiGet: calendarMultiGet },
+        method: 'webdav',
+        headers,
+        account,
+      });
       return result;
     })
   );
@@ -331,7 +350,7 @@ export const syncCalendars: SyncCalendars = async (
   );
   // debug(`unchanged calendars: ${unchanged.map((cc) => cc.displayName)}`);
 
-  return options?.detailedResult
+  return detailedResult
     ? {
         created,
         updated,

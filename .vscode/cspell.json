@@ -18,6 +18,7 @@
         "multiget",
         "multistatus",
         "propfind",
+        "PROPPATCH",
         "propstat",
         "readonly",
         "resourcetype",

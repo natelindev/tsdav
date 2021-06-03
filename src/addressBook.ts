@@ -11,14 +11,16 @@ import { findMissingFieldNames, hasFields } from './util/typeHelper';
 
 const debug = getLogger('tsdav:addressBook');
 
-export const addressBookQuery = async (
-  url: string,
-  props: DAVProp[],
-  options?: { depth?: DAVDepth; headers?: { [key: string]: any } }
-): Promise<DAVResponse[]> => {
-  return collectionQuery(
+export const addressBookQuery = async (params: {
+  url: string;
+  props: DAVProp[];
+  depth?: DAVDepth;
+  headers?: Record<string, string>;
+}): Promise<DAVResponse[]> => {
+  const { url, props, depth, headers } = params;
+  return collectionQuery({
     url,
-    {
+    body: {
       'addressbook-query': {
         _attributes: getDAVAttribute([DAVNamespace.CARDDAV, DAVNamespace.DAV]),
         [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
@@ -31,60 +33,60 @@ export const addressBookQuery = async (
         },
       },
     },
-    { depth: options?.depth, headers: options?.headers }
-  );
+    depth,
+    headers,
+  });
 };
 
-export const addressBookMultiGet = async (
-  url: string,
-  props: DAVProp[],
-  ObjectUrls: string[],
-  options?: {
-    filters?: DAVFilter[];
-    depth: DAVDepth;
-    headers?: { [key: string]: any };
-  }
-): Promise<DAVResponse[]> =>
-  collectionQuery(
+export const addressBookMultiGet = async (params: {
+  url: string;
+  props: DAVProp[];
+  objectUrls: string[];
+  filters?: DAVFilter[];
+  depth: DAVDepth;
+  headers?: Record<string, string>;
+}): Promise<DAVResponse[]> => {
+  const { url, props, objectUrls, filters, depth, headers } = params;
+  return collectionQuery({
     url,
-    {
+    body: {
       'addressbook-multiget': {
         _attributes: getDAVAttribute([DAVNamespace.DAV, DAVNamespace.CALDAV]),
         [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
-        [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:href`]: ObjectUrls,
-        filter: formatFilters(options?.filters),
+        [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:href`]: objectUrls,
+        filter: formatFilters(filters),
       },
     },
-    { depth: options?.depth, headers: options?.headers }
-  );
+    depth,
+    headers,
+  });
+};
 
-export const fetchAddressBooks = async (options?: {
-  headers?: { [key: string]: any };
+export const fetchAddressBooks = async (params?: {
+  headers?: Record<string, string>;
   account?: DAVAccount;
 }): Promise<DAVAddressBook[]> => {
+  const { account, headers } = params ?? {};
   const requiredFields: Array<keyof DAVAccount> = ['homeUrl', 'rootUrl'];
-  if (!options?.account || !hasFields(options?.account, requiredFields)) {
-    if (!options?.account) {
+  if (!account || !hasFields(account, requiredFields)) {
+    if (!account) {
       throw new Error('no account for fetchAddressBooks');
     }
     throw new Error(
-      `account must have ${findMissingFieldNames(
-        options.account,
-        requiredFields
-      )} before fetchAddressBooks`
+      `account must have ${findMissingFieldNames(account, requiredFields)} before fetchAddressBooks`
     );
   }
-  const { account } = options;
-  const res = await propfind(
-    account.homeUrl,
-    [
+  const res = await propfind({
+    url: account.homeUrl,
+    props: [
       { name: 'displayname', namespace: DAVNamespace.DAV },
       { name: 'getctag', namespace: DAVNamespace.CALENDAR_SERVER },
       { name: 'resourcetype', namespace: DAVNamespace.DAV },
       { name: 'sync-token', namespace: DAVNamespace.DAV },
     ],
-    { depth: '1', headers: options?.headers }
-  );
+    depth: '1',
+    headers,
+  });
   return Promise.all(
     res
       .filter((r) => r.props?.displayname && r.props.displayname.length)
@@ -101,14 +103,19 @@ export const fetchAddressBooks = async (options?: {
           syncToken: rs.props?.syncToken,
         };
       })
-      .map(async (addr) => ({ ...addr, reports: await supportedReportSet(addr, options) }))
+      .map(async (addr) => ({
+        ...addr,
+        reports: await supportedReportSet({ collection: addr, headers }),
+      }))
   );
 };
 
-export const fetchVCards = async (
-  addressBook: DAVAddressBook,
-  options?: { headers?: { [key: string]: any }; objectUrls?: string[] }
-): Promise<DAVVCard[]> => {
+export const fetchVCards = async (params: {
+  addressBook: DAVAddressBook;
+  headers?: Record<string, string>;
+  objectUrls?: string[];
+}): Promise<DAVVCard[]> => {
+  const { addressBook, headers, objectUrls } = params;
   debug(`Fetching vcards from ${addressBook?.url}`);
   const requiredFields: Array<'url'> = ['url'];
   if (!addressBook || !hasFields(addressBook, requiredFields)) {
@@ -124,12 +131,14 @@ export const fetchVCards = async (
   }
 
   const vcardUrls = (
-    options?.objectUrls ??
+    objectUrls ??
     // fetch all objects of the calendar
     (
-      await addressBookQuery(addressBook.url, [{ name: 'getetag', namespace: DAVNamespace.DAV }], {
+      await addressBookQuery({
+        url: addressBook.url,
+        props: [{ name: 'getetag', namespace: DAVNamespace.DAV }],
         depth: '1',
-        headers: options?.headers,
+        headers,
       })
     ).map((res) => res.href ?? '')
   )
@@ -137,15 +146,16 @@ export const fetchVCards = async (
     .map((url) => new URL(url).pathname)
     .filter((url): url is string => Boolean(url?.includes('.ics')));
 
-  const vCardResults = await addressBookMultiGet(
-    addressBook.url,
-    [
+  const vCardResults = await addressBookMultiGet({
+    url: addressBook.url,
+    props: [
       { name: 'getetag', namespace: DAVNamespace.DAV },
       { name: 'address-data', namespace: DAVNamespace.CARDDAV },
     ],
-    vcardUrls,
-    { depth: '1', headers: options?.headers }
-  );
+    objectUrls: vcardUrls,
+    depth: '1',
+    headers,
+  });
 
   return vCardResults.map((res) => ({
     url: new URL(res.href ?? '', addressBook.url).href,
@@ -154,35 +164,47 @@ export const fetchVCards = async (
   }));
 };
 
-export const createVCard = async (
-  addressBook: DAVAddressBook,
-  vCardString: string,
-  filename: string,
-  options?: { headers?: { [key: string]: any } }
-): Promise<Response> => {
-  return createObject(new URL(filename, addressBook.url).href, vCardString, {
+export const createVCard = async (params: {
+  addressBook: DAVAddressBook;
+  vCardString: string;
+  filename: string;
+  headers?: Record<string, string>;
+}): Promise<Response> => {
+  const { addressBook, vCardString, filename, headers } = params;
+  return createObject({
+    url: new URL(filename, addressBook.url).href,
+    data: vCardString,
     headers: {
       'content-type': 'text/vcard; charset=utf-8',
-      ...options?.headers,
+      ...headers,
     },
   });
 };
 
-export const updateVCard = async (
-  vCard: DAVVCard,
-  options?: { headers?: { [key: string]: any } }
-): Promise<Response> => {
-  return updateObject(vCard.url, vCard.data, vCard.etag, {
+export const updateVCard = async (params: {
+  vCard: DAVVCard;
+  headers?: Record<string, string>;
+}): Promise<Response> => {
+  const { vCard, headers } = params;
+  return updateObject({
+    url: vCard.url,
+    data: vCard.data,
+    etag: vCard.etag,
     headers: {
       'content-type': 'text/vcard; charset=utf-8',
-      ...options?.headers,
+      ...headers,
     },
   });
 };
 
-export const deleteVCard = async (
-  vCard: DAVVCard,
-  options?: { headers?: { [key: string]: any } }
-): Promise<Response> => {
-  return deleteObject(vCard.url, vCard.etag, options);
+export const deleteVCard = async (params: {
+  vCard: DAVVCard;
+  headers?: Record<string, string>;
+}): Promise<Response> => {
+  const { vCard, headers } = params;
+  return deleteObject({
+    url: vCard.url,
+    etag: vCard.etag,
+    headers,
+  });
 };
