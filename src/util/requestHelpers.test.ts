@@ -104,7 +104,7 @@ test('getDAVAttribute can extract dav attribute values', () => {
     DAVNamespace.CALDAV_APPLE,
     DAVNamespace.DAV,
   ]);
-  console.log(attributes);
+
   expect(attributes).toEqual({
     'xmlns:c': 'urn:ietf:params:xml:ns:caldav',
     'xmlns:cs': 'http://calendarserver.org/ns/',

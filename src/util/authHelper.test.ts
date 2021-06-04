@@ -38,7 +38,7 @@ test('fetchOauthTokens should rejects when missing args', async () => {
     await fetchOauthTokens({
       authorizationCode: '123',
     });
-  expect(t).rejects.toEqual(
+  expect(t).rejects.toThrow(
     'Oauth credentials missing: redirectUrl,clientId,clientSecret,tokenUrl'
   );
 });
@@ -48,7 +48,7 @@ test('refreshAccessToken should rejects when missing args', async () => {
     await refreshAccessToken({
       authorizationCode: '123',
     });
-  expect(t).rejects.toEqual(
-    'Oauth credentials missing: redirectUrl,clientId,clientSecret,tokenUrl'
+  expect(t).rejects.toThrow(
+    'Oauth credentials missing: refreshToken,clientId,clientSecret,tokenUrl'
   );
 });
