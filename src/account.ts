@@ -6,7 +6,7 @@ import { fetchCalendarObjects, fetchCalendars } from './calendar';
 import { DAVNamespace } from './consts';
 import { propfind } from './request';
 import { DAVAccount } from './types/models';
-import { urlEquals } from './util/requestHelpers';
+import { urlContains } from './util/requestHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelper';
 
 const debug = getLogger('tsdav:account');
@@ -98,7 +98,7 @@ export const fetchHomeUrl = async (params: {
     headers,
   });
 
-  const matched = responses.find((r) => urlEquals(account.principalUrl, r.href));
+  const matched = responses.find((r) => urlContains(account.principalUrl, r.href));
   if (!matched || !matched.ok) {
     throw new Error('cannot find homeUrl');
   }

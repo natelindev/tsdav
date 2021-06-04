@@ -5,6 +5,7 @@ import {
   formatProps,
   getDAVAttribute,
   mergeObjectDupKeyArray,
+  urlContains,
   urlEquals,
 } from './requestHelpers';
 
@@ -18,6 +19,7 @@ test('cleanupFalsy should clean undefined from object', () => {
     test6: '',
     test7: 0,
     test8: {},
+    test9: '0',
   };
   expect(cleanupFalsy(objA).hasOwnProperty('test1')).toBe(true);
   expect(cleanupFalsy(objA).hasOwnProperty('test2')).toBe(true);
@@ -27,6 +29,7 @@ test('cleanupFalsy should clean undefined from object', () => {
   expect(cleanupFalsy(objA).hasOwnProperty('test6')).toBe(false);
   expect(cleanupFalsy(objA).hasOwnProperty('test7')).toBe(false);
   expect(cleanupFalsy(objA).hasOwnProperty('test8')).toBe(true);
+  expect(cleanupFalsy(objA).hasOwnProperty('test9')).toBe(true);
 });
 
 test('urlEquals should handle almost identical urls', () => {
@@ -45,6 +48,26 @@ test('urlEquals should handle almost identical urls', () => {
   expect(urlEquals(url, url4)).toBe(false);
   expect(urlEquals(url, url5)).toBe(false);
   expect(urlEquals(url, url6)).toBe(false);
+});
+
+test('urlContains should handle almost substring of urls', () => {
+  const url = 'https://www.example.com';
+  const url1 = 'https://www.example.com/';
+  const url2 = 'https://www.example.com  ';
+  const url3 = 'https://www.example.com/  ';
+  const url4 = 'www.example.com/';
+  const url5 = 'www.example.com';
+  const url6 = 'example.com';
+  const url7 = 'blog.example.com';
+  expect(urlContains('', '')).toBe(true);
+  expect(urlContains('', url1)).toBe(false);
+  expect(urlContains(url, url1)).toBe(true);
+  expect(urlContains(url, url2)).toBe(true);
+  expect(urlContains(url, url3)).toBe(true);
+  expect(urlContains(url, url4)).toBe(true);
+  expect(urlContains(url, url5)).toBe(true);
+  expect(urlContains(url, url6)).toBe(true);
+  expect(urlContains(url, url7)).toBe(false);
 });
 
 test('mergeObjectDupKeyArray should be able to merge objects', () => {
