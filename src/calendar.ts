@@ -8,7 +8,7 @@ import { DAVDepth, DAVFilter, DAVProp, DAVResponse } from './types/DAVTypes';
 import { SyncCalendars } from './types/functionsOverloads';
 import { DAVAccount, DAVCalendar, DAVCalendarObject } from './types/models';
 import {
-  cleanupUndefined,
+  cleanupFalsy,
   formatFilters,
   formatProps,
   getDAVAttribute,
@@ -84,7 +84,7 @@ export const makeCalendar = async (params: {
     url,
     init: {
       method: 'MKCALENDAR',
-      headers: cleanupUndefined({ ...headers, depth }),
+      headers: cleanupFalsy({ ...headers, depth }),
       namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
       body: {
         [`${DAVNamespaceShorthandMap[DAVNamespace.CALDAV]}:mkcalendar`]: {

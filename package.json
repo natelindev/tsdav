@@ -12,7 +12,7 @@
   ],
   "scripts": {
     "test": "jest",
-    "build": "rimraf dist && tsc --emitDeclarationOnly --outDir ./dist && babel src --out-dir dist --extensions .ts",
+    "build": "rimraf dist && tsc --emitDeclarationOnly --outDir ./dist && babel src --out-dir dist --ignore **/*.test.ts --extensions .ts ",
     "watch:ts": "tsc --watch --emitDeclarationOnly --outDir ./dist",
     "watch:babel": "babel src --out-dir dist --extensions .ts --watch",
     "watch": "concurrently \"yarn watch:ts\" \"yarn watch:babel\" "

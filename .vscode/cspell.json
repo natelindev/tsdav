@@ -13,6 +13,7 @@
         "getctag",
         "getetag",
         "ICAL",
+        "icloud",
         "MKCALENDAR",
         "MKCOL",
         "multiget",

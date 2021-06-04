@@ -45,12 +45,13 @@ import { Await, Optional } from './util/typeHelper';
 const debug = getLogger('tsdav:client');
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export const createDAVClient = async (
-  serverUrl: string,
-  credentials: DAVCredentials,
-  authMethod?: 'Basic' | 'Oauth',
-  defaultAccountType?: DAVAccount['accountType'] | undefined
-) => {
+export const createDAVClient = async (params: {
+  serverUrl: string;
+  credentials: DAVCredentials;
+  authMethod?: 'Basic' | 'Oauth';
+  defaultAccountType?: DAVAccount['accountType'] | undefined;
+}) => {
+  const { serverUrl, credentials, authMethod, defaultAccountType } = params;
   const authHeaders: Record<string, string> =
     // eslint-disable-next-line no-nested-ternary
     authMethod === 'Basic'

@@ -6,7 +6,7 @@ import { DAVNamespace, DAVNamespaceShorthandMap } from './consts';
 import { DAVDepth, DAVProp, DAVRequest, DAVResponse } from './types/DAVTypes';
 import { camelCase } from './util/camelCase';
 import { nativeType } from './util/nativeType';
-import { cleanupUndefined, formatProps, getDAVAttribute } from './util/requestHelpers';
+import { cleanupFalsy, formatProps, getDAVAttribute } from './util/requestHelpers';
 
 const debug = getLogger('tsdav:request');
 
@@ -50,7 +50,7 @@ export const davRequest = async (params: {
   const davResponse = await fetch(url, {
     headers: {
       'Content-Type': 'text/xml;charset=UTF-8',
-      ...cleanupUndefined(headers),
+      ...cleanupFalsy(headers),
     },
     body: xmlBody,
     method,
@@ -160,7 +160,7 @@ export const propfind = async (params: {
     url,
     init: {
       method: 'PROPFIND',
-      headers: cleanupUndefined({ ...headers, depth }),
+      headers: cleanupFalsy({ ...headers, depth }),
       namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
       body: {
         propfind: {
@@ -197,7 +197,7 @@ export const updateObject = async (params: {
   return fetch(url, {
     method: 'PUT',
     body: data,
-    headers: cleanupUndefined({ ...headers, 'If-Match': etag }),
+    headers: cleanupFalsy({ ...headers, 'If-Match': etag }),
   });
 };
 
@@ -209,6 +209,6 @@ export const deleteObject = async (params: {
   const { url, headers, etag } = params;
   return fetch(url, {
     method: 'DELETE',
-    headers: cleanupUndefined({ ...headers, 'If-Match': etag }),
+    headers: cleanupFalsy({ ...headers, 'If-Match': etag }),
   });
 };

@@ -6,7 +6,7 @@ import { davRequest, propfind } from './request';
 import { DAVDepth, DAVProp, DAVResponse } from './types/DAVTypes';
 import { SmartCollectionSync } from './types/functionsOverloads';
 import { DAVAccount, DAVCollection, DAVObject } from './types/models';
-import { cleanupUndefined, formatProps, getDAVAttribute, urlEquals } from './util/requestHelpers';
+import { cleanupFalsy, formatProps, getDAVAttribute, urlEquals } from './util/requestHelpers';
 import { findMissingFieldNames, hasFields, RequireAndNotNullSome } from './util/typeHelper';
 
 const debug = getLogger('tsdav:collection');
@@ -22,7 +22,7 @@ export const collectionQuery = async (params: {
     url,
     init: {
       method: 'REPORT',
-      headers: cleanupUndefined({ ...headers, depth }),
+      headers: cleanupFalsy({ ...headers, depth }),
       namespace: DAVNamespaceShorthandMap[DAVNamespace.CALDAV],
       body,
     },
@@ -40,7 +40,7 @@ export const makeCollection = async (params: {
     url,
     init: {
       method: 'MKCOL',
-      headers: cleanupUndefined({ ...headers, depth }),
+      headers: cleanupFalsy({ ...headers, depth }),
       namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
       body: props
         ? {

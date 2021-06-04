@@ -1,14 +1,23 @@
 import { DAVAttributeMap, DAVNamespace, DAVNamespaceShorthandMap } from '../consts';
 import { DAVFilter, DAVProp } from '../types/DAVTypes';
 
-import type { NoUndefinedField } from './typeHelper';
+import type { NoUndefinedField, ValueOf } from './typeHelper';
 
 export const urlEquals = (urlA?: string, urlB?: string): boolean => {
+  if (!urlA && !urlB) {
+    return true;
+  }
   if (!urlA || !urlB) {
     return false;
   }
+
   const trimmedUrlA = urlA.trim();
   const trimmedUrlB = urlB.trim();
+
+  if (Math.abs(trimmedUrlA.length - trimmedUrlB.length) > 1) {
+    return false;
+  }
+
   const strippedUrlA = trimmedUrlA.slice(-1) === '/' ? trimmedUrlA.slice(0, -1) : trimmedUrlA;
   const strippedUrlB = trimmedUrlB.slice(-1) === '/' ? trimmedUrlB.slice(0, -1) : trimmedUrlB;
   return urlA.includes(strippedUrlB) || urlB.includes(strippedUrlA);
@@ -18,7 +27,7 @@ export const urlEquals = (urlA?: string, urlB?: string): boolean => {
 export const mergeObjectDupKeyArray = <T, U>(
   objA: T,
   ObjB: U
-): { [key in keyof T & keyof U]: any } =>
+): { [key in keyof T & keyof U]: ValueOf<T> | ValueOf<U> } =>
   (Object.entries(objA) as Array<[keyof T, any]>).reduce((merged: T & U, [currKey, currValue]): T &
     U => {
     if (merged[currKey] && Array.isArray(merged[currKey])) {
@@ -62,7 +71,7 @@ export const formatFilters = (filters?: DAVFilter[]): { [key: string]: any } | u
     },
   }));
 
-export const cleanupUndefined = <T = unknown>(obj: T): NoUndefinedField<T> =>
+export const cleanupFalsy = <T = unknown>(obj: T): NoUndefinedField<T> =>
   Object.entries(obj).reduce((prev, [key, value]) => {
     if (value) return { ...prev, [key]: value };
     return prev;

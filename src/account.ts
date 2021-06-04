@@ -11,11 +11,12 @@ import { findMissingFieldNames, hasFields } from './util/typeHelper';
 
 const debug = getLogger('tsdav:account');
 
-export const serviceDiscovery = async (
-  account: DAVAccount,
-  options?: { headers?: Record<string, string> }
-): Promise<string> => {
+export const serviceDiscovery = async (params: {
+  account: DAVAccount;
+  headers?: Record<string, string>;
+}): Promise<string> => {
   debug('Service discovery...');
+  const { account, headers } = params;
   const endpoint = new URL(account.serverUrl);
 
   const uri = new URL(`/.well-known/${account.accountType}`, endpoint);
@@ -23,7 +24,7 @@ export const serviceDiscovery = async (
 
   try {
     const response = await fetch(uri.href, {
-      headers: options?.headers,
+      headers,
       method: 'GET',
       redirect: 'manual',
     });
@@ -45,10 +46,11 @@ export const serviceDiscovery = async (
   return endpoint.href;
 };
 
-export const fetchPrincipalUrl = async (
-  account: DAVAccount,
-  options?: { headers?: Record<string, string> }
-): Promise<string> => {
+export const fetchPrincipalUrl = async (params: {
+  account: DAVAccount;
+  headers?: Record<string, string>;
+}): Promise<string> => {
+  const { account, headers } = params;
   const requiredFields: Array<'rootUrl'> = ['rootUrl'];
   if (!hasFields(account, requiredFields)) {
     throw new Error(
@@ -60,7 +62,7 @@ export const fetchPrincipalUrl = async (
     url: account.rootUrl,
     props: [{ name: 'current-user-principal', namespace: DAVNamespace.DAV }],
     depth: '0',
-    headers: options?.headers,
+    headers,
   });
   if (!response.ok) {
     debug(`Fetch principal url failed: ${response.statusText}`);
@@ -119,8 +121,8 @@ export const createAccount = async (params: {
 }): Promise<DAVAccount> => {
   const { account, headers, loadCollections = false, loadObjects = false } = params;
   const newAccount: DAVAccount = { ...account };
-  newAccount.rootUrl = await serviceDiscovery(account, { headers });
-  newAccount.principalUrl = await fetchPrincipalUrl(newAccount, { headers });
+  newAccount.rootUrl = await serviceDiscovery({ account, headers });
+  newAccount.principalUrl = await fetchPrincipalUrl({ account: newAccount, headers });
   newAccount.homeUrl = await fetchHomeUrl({ account: newAccount, headers });
   // to load objects you must first load collections
   if (loadCollections || loadObjects) {
