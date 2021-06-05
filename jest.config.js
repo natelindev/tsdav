@@ -1,4 +1,4 @@
 module.exports = {
   setupFiles: ['dotenv/config'],
-  testTimeout: 15000,
+  testTimeout: 60000,
 };

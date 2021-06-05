@@ -1,9 +1,15 @@
 import { createAccount, fetchHomeUrl, fetchPrincipalUrl, serviceDiscovery } from './account';
 import { getBasicAuthHeaders } from './util/authHelper';
 
-const authHeaders = getBasicAuthHeaders({
-  username: process.env.ICLOUD_USERNAME,
-  password: process.env.ICLOUD_APP_SPECIFIC_PASSWORD,
+let authHeaders: {
+  authorization?: string;
+};
+
+beforeAll(async () => {
+  authHeaders = getBasicAuthHeaders({
+    username: process.env.ICLOUD_USERNAME,
+    password: process.env.ICLOUD_APP_SPECIFIC_PASSWORD,
+  });
 });
 
 test('serviceDiscovery should be able to discover the caldav service', async () => {

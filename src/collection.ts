@@ -6,7 +6,7 @@ import { davRequest, propfind } from './request';
 import { DAVDepth, DAVProp, DAVResponse } from './types/DAVTypes';
 import { SmartCollectionSync } from './types/functionsOverloads';
 import { DAVAccount, DAVCollection, DAVObject } from './types/models';
-import { cleanupFalsy, formatProps, getDAVAttribute, urlEquals } from './util/requestHelpers';
+import { cleanupFalsy, formatProps, getDAVAttribute, urlContains } from './util/requestHelpers';
 import { findMissingFieldNames, hasFields, RequireAndNotNullSome } from './util/typeHelper';
 
 const debug = getLogger('tsdav:collection');
@@ -85,7 +85,7 @@ export const isCollectionDirty = async (params: {
     depth: '0',
     headers,
   });
-  const res = responses.filter((r) => urlEquals(collection.url, r.href))[0];
+  const res = responses.filter((r) => urlContains(collection.url, r.href))[0];
   if (!res) {
     throw new Error('Collection does not exist on server');
   }
@@ -210,13 +210,13 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
 
     // no existing url
     const created: DAVObject[] = remoteObjects.filter((o) =>
-      localObjects.every((lo) => !urlEquals(lo.url, o.url))
+      localObjects.every((lo) => !urlContains(lo.url, o.url))
     );
     // debug(`created objects: ${created.map((o) => o.url).join('\n')}`);
 
     // have same url, but etag different
     const updated = localObjects.reduce((prev, curr) => {
-      const found = remoteObjects.find((ro) => urlEquals(ro.url, curr.url));
+      const found = remoteObjects.find((ro) => urlContains(ro.url, curr.url));
       if (found && found.etag && found.etag !== curr.etag) {
         return [...prev, found];
       }
@@ -230,7 +230,7 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
     }));
     // debug(`deleted objects: ${deleted.map((o) => o.url).join('\n')}`);
     const unchanged = localObjects.filter((lo) =>
-      remoteObjects.some((ro) => urlEquals(lo.url, ro.url) && ro.etag === lo.etag)
+      remoteObjects.some((ro) => urlContains(lo.url, ro.url) && ro.etag === lo.etag)
     );
 
     return {
@@ -253,13 +253,13 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
 
     // no existing url
     const created = remoteObjects.filter((ro) =>
-      localObjects.every((lo) => !urlEquals(lo.url, ro.url))
+      localObjects.every((lo) => !urlContains(lo.url, ro.url))
     );
     // debug(`created objects: ${created.map((o) => o.url).join('\n')}`);
 
     // have same url, but etag different
     const updated = localObjects.reduce((prev, curr) => {
-      const found = remoteObjects.find((ro) => urlEquals(ro.url, curr.url));
+      const found = remoteObjects.find((ro) => urlContains(ro.url, curr.url));
       if (found && found.etag && found.etag !== curr.etag) {
         return [...prev, found];
       }
@@ -269,12 +269,12 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
 
     // does not present in remote
     const deleted = localObjects.filter((cal) =>
-      remoteObjects.every((ro) => !urlEquals(ro.url, cal.url))
+      remoteObjects.every((ro) => !urlContains(ro.url, cal.url))
     );
     // debug(`deleted objects: ${deleted.map((o) => o.url).join('\n')}`);
 
     const unchanged = localObjects.filter((lo) =>
-      remoteObjects.some((ro) => urlEquals(lo.url, ro.url) && ro.etag === lo.etag)
+      remoteObjects.some((ro) => urlContains(lo.url, ro.url) && ro.etag === lo.etag)
     );
 
     if (isDirty) {

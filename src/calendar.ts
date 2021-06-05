@@ -12,7 +12,7 @@ import {
   formatFilters,
   formatProps,
   getDAVAttribute,
-  urlEquals,
+  urlContains,
 } from './util/requestHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelper';
 
@@ -306,13 +306,13 @@ export const syncCalendars: SyncCalendars = async (params: {
 
   // no existing url
   const created = remoteCalendars.filter((rc) =>
-    localCalendars.every((lc) => !urlEquals(lc.url, rc.url))
+    localCalendars.every((lc) => !urlContains(lc.url, rc.url))
   );
   debug(`new calendars: ${created.map((cc) => cc.displayName)}`);
 
   // have same url, but syncToken/ctag different
   const updated = localCalendars.reduce((prev, curr) => {
-    const found = remoteCalendars.find((rc) => urlEquals(rc.url, curr.url));
+    const found = remoteCalendars.find((rc) => urlContains(rc.url, curr.url));
     if (
       found &&
       ((found.syncToken && found.syncToken !== curr.syncToken) ||
@@ -337,14 +337,14 @@ export const syncCalendars: SyncCalendars = async (params: {
   );
   // does not present in remote
   const deleted = localCalendars.filter((cal) =>
-    remoteCalendars.every((rc) => !urlEquals(rc.url, cal.url))
+    remoteCalendars.every((rc) => !urlContains(rc.url, cal.url))
   );
   debug(`deleted calendars: ${deleted.map((cc) => cc.displayName)}`);
 
   const unchanged = localCalendars.filter((cal) =>
     remoteCalendars.some(
       (rc) =>
-        urlEquals(rc.url, cal.url) &&
+        urlContains(rc.url, cal.url) &&
         ((rc.syncToken && rc.syncToken !== cal.syncToken) || (rc.ctag && rc.ctag !== cal.ctag))
     )
   );

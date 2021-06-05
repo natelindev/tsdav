@@ -35,5 +35,6 @@
   "importSorter.importStringConfiguration.tabSize": 2,
   "importSorter.importStringConfiguration.quoteMark": "single",
   "importSorter.importStringConfiguration.trailingComma": "multiLine",
-  "typescript.tsdk": "node_modules/typescript/lib"
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "jestrunner.configPath": "./jest.config.js"
 }
