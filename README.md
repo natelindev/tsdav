@@ -1,8 +1,10 @@
 <p align="center">
-  <img width="300" height="300" src="http://github.com/llldar/tsDAV/docs/static/img/logo.png">
-  webdav client made easy
-</p>
+  <img width="300" height="300" src="https://github.com/llldar/tsDAV/blob/master/docs/static/img/logo.png">
 
+</p>
+<p align="center">
+webdav client made easy
+</p>
 #### Features
 
 - oauth2 & basic auth helpers built-in.
