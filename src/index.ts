@@ -3,7 +3,7 @@ import * as addressBook from './addressBook';
 import * as calendar from './calendar';
 import * as client from './client';
 import * as collection from './collection';
-import { DAVNamespace } from './consts';
+import { DAVAttributeMap, DAVNamespace, DAVNamespaceShorthandMap } from './consts';
 import * as request from './request';
 import * as authHelper from './util/authHelper';
 
@@ -61,16 +61,25 @@ export {
   deleteVCard,
 } from './addressBook';
 
-export { fetchOauthTokens, refreshAccessToken } from './util/authHelper';
-export { DAVNamespace } from './consts';
+export {
+  getBasicAuthHeaders,
+  getOauthHeaders,
+  fetchOauthTokens,
+  refreshAccessToken,
+} from './util/authHelper';
+export { DAVNamespace, DAVNamespaceShorthandMap, DAVAttributeMap } from './consts';
 export default {
   DAVNamespace,
+  DAVNamespaceShorthandMap,
+  DAVAttributeMap,
   ...client,
   ...request,
   ...collection,
   ...account,
   ...addressBook,
   ...calendar,
+  getBasicAuthHeaders: authHelper.getBasicAuthHeaders,
+  getOauthHeaders: authHelper.getOauthHeaders,
   fetchOauthTokens: authHelper.fetchOauthTokens,
   refreshAccessToken: authHelper.refreshAccessToken,
 };

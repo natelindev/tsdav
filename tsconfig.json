@@ -13,7 +13,6 @@
     "module": "commonjs",
     "target": "es5",
     "declaration": true,
-    "emitDeclarationOnly": true,
     "isolatedModules": true,
     "baseUrl": ".",
     "paths": {

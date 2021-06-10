@@ -1,5 +1,5 @@
 {
-  "name": "ts-dav",
+  "name": "tsdav",
   "version": "1.0.0",
   "private": false,
   "license": "MIT",
@@ -12,10 +12,8 @@
   ],
   "scripts": {
     "test": "jest",
-    "build": "rimraf dist && tsc --emitDeclarationOnly --outDir ./dist && babel src --out-dir dist --ignore '**/*.test.ts' --extensions .ts ",
-    "watch:ts": "tsc --watch --emitDeclarationOnly --outDir ./dist",
-    "watch:babel": "babel src --out-dir dist --extensions .ts --watch",
-    "watch": "concurrently \"yarn watch:ts\" \"yarn watch:babel\" "
+    "build": "rimraf dist && tsc",
+    "watch": "tsc --watch --outDir ./dist"
   },
   "dependencies": {
     "base-64": "^1.0.0",
@@ -24,12 +22,6 @@
     "xml-js": "^1.6.11"
   },
   "devDependencies": {
-    "@babel/cli": "^7.14.5",
-    "@babel/core": "^7.14.5",
-    "@babel/plugin-proposal-class-properties": "^7.14.5",
-    "@babel/plugin-transform-runtime": "^7.14.5",
-    "@babel/preset-env": "^7.14.5",
-    "@babel/preset-typescript": "^7.14.5",
     "@types/base-64": "^1.0.0",
     "@types/debug": "^4.1.5",
     "@types/jest": "^26.0.23",
@@ -47,7 +39,6 @@
     "jest": "^27.0.4",
     "prettier": "^2.3.1",
     "rimraf": "^3.0.2",
-    "sort-package-json": "1.50.0",
     "ts-node-dev": "^1.1.6",
     "typescript": "^4.3.2"
   },

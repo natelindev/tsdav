@@ -9,6 +9,8 @@ import { findMissingFieldNames, hasFields } from './typeHelper';
 const debug = getLogger('tsdav:authHelper');
 
 /**
+ * Provide given params as default params to given function with optional params.
+ *
  * suitable only for one param functions
  * params are shallow merged
  */

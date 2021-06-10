@@ -113,7 +113,6 @@ END:VCALENDAR`;
       { name: 'calendar-data', namespace: DAVNamespace.CALDAV },
     ],
     depth: '1',
-
     headers: authHeaders,
   });
 
