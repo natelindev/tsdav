@@ -67,37 +67,6 @@ export const createDAVClient = async (params: {
       })
     : undefined;
 
-  // request
-  const raw = async (params: {
-    url: string;
-    init: DAVRequest;
-    convertIncoming?: boolean;
-    parseOutgoing?: boolean;
-  }): Promise<DAVResponse[]> => {
-    const { url, init, convertIncoming, parseOutgoing } = params;
-    return davRequest({
-      url: url ?? serverUrl,
-      init: { ...init, headers: { ...authHeaders, ...init.headers } },
-      convertIncoming,
-      parseOutgoing,
-    });
-  };
-
-  const rawXML = async (params: {
-    url: string;
-    init: DAVRequest;
-    convertIncoming?: boolean;
-    parseOutgoing?: boolean;
-  }): Promise<DAVResponse[]> => {
-    const { url, init, convertIncoming = false, parseOutgoing } = params;
-    return davRequest({
-      url: url ?? serverUrl,
-      init: { ...init, headers: { ...authHeaders, ...init.headers } },
-      convertIncoming,
-      parseOutgoing,
-    });
-  };
-
   const createObject = defaultParam(rawCreateObject, {
     url: serverUrl,
     headers: authHeaders,

@@ -23,7 +23,7 @@ const calendarObjects = await calendarMultiGet({
   ],
   depth: '1',
   headers: {
-    authorization: 'Basic x0C9u/Wd9Vz8OwS0DEAtkAlj'
+    authorization: 'Basic x0C9ueWd9Vz8OwS0DEAtkAlj'
   },
 });
 ```
@@ -31,15 +31,17 @@ const calendarObjects = await calendarMultiGet({
 ### Arguments
 
 - `url` url of CALDAV server
-- `props` [DAVProp](../types/DAVProp.md) the client needs
 - `objectUrls` urls of calendar object to get
+- `props` [DAVProp](../types/DAVProp.md) the client needs
+- `filters` [DAVFilter](../types/DAVFilter.md) the filter on the calendar objects
 - `depth` [DAVDepth](../types/DAVDepth.md) of the request
+- `timezone` timezone of the calendar
 - `headers` request headers
-
 
 ### Return Value
 
-a list of [DAVCalendarObject](../types/DAVCalendarObject.md)
+array of [DAVCalendarObject](../types/DAVCalendarObject.md)
 
 ### Behavior
 
+it will send caldav:calendar-multiget REPORT request and parse the response xml to extract an array of [DAVCalendarObject](../types/DAVCalendarObject.md) data.

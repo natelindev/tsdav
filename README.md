@@ -5,6 +5,7 @@
 <p align="center">
 webdav client made easy
 </p>
+
 #### Features
 
 - oauth2 & basic auth helpers built-in.
@@ -15,7 +16,16 @@ webdav client made easy
 - tested with apple & google cloud.
 - JSON based data structure instead of xml, (have option to use xml as well)
 
+#### Documentation
+
 check out documentation at [Documentation]()
+
+#### Test
+
+to run tests locally, you need to setup environnement variables,
+ICLOUD_USERNAME=
+ICLOUD_APP_SPECIFIC_PASSWORD=
+
 #### License
 
 MIT

@@ -1,10 +1,11 @@
 ---
-sidebar_position: 2
+sidebar_position: 6
 ---
-## `addressBookMultiGet`
+## `fetchPrincipalUrl`
 
 ### Arguments
 
 ### Return Value
+
 
 ### Behavior

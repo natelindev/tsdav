@@ -1,7 +1,7 @@
 ---
-sidebar_position: 7
+sidebar_position: 6
 ---
-## `deleteVCard`
+## `updateVCard`
 
 ### Arguments
 

@@ -24,13 +24,24 @@ const calendarObjects = await calendarQuery({
   ],
   depth: '1',
   headers: {
-    authorization: 'Basic x0C9u/Wd9Vz8OwS0DEAtkAlj'
+    authorization: 'Basic x0C9uFWd9Vz8OwS0DEAtkAlj'
   },
 })
 ```
 
 ### Arguments
 
+- `url` request target url
+- `props` array of [DAVProp](../types/DAVProp.md)
+- `filters` array of [DAVFilter](../types/DAVFilter.md)
+- `depth` [DAVDepth](../types/DAVDepth.md)
+- `timezone` iana timezone name
+- `headers` request headers
+
 ### Return Value
 
+array of [DAVCalendarObject](../types/DAVCalendarObject.md)
+
 ### Behavior
+
+it will send out calendar-query REPORT request, after server applies the filters and parse the response xml to extract an array of [DAVCalendarObject](../types/DAVCalendarObject.md) data.
