@@ -1,6 +1,5 @@
 ---
 sidebar_position: 1
-
 ---
 
 ## `calendarQuery`
@@ -24,15 +23,15 @@ const calendarObjects = await calendarQuery({
   ],
   depth: '1',
   headers: {
-    authorization: 'Basic x0C9uFWd9Vz8OwS0DEAtkAlj'
+    authorization: 'Basic x0C9uFWd9Vz8OwS0DEAtkAlj',
   },
-})
+});
 ```
 
 ### Arguments
 
-- `url` request target url
-- `props` array of [DAVProp](../types/DAVProp.md)
+- `url` **required**, request target url
+- `props` **required**, array of [DAVProp](../types/DAVProp.md)
 - `filters` array of [DAVFilter](../types/DAVFilter.md)
 - `depth` [DAVDepth](../types/DAVDepth.md)
 - `timezone` iana timezone name

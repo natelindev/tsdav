@@ -1,6 +1,5 @@
 ---
 sidebar_position: 2
-
 ---
 
 ## `calendarMultiGet`
@@ -23,15 +22,15 @@ const calendarObjects = await calendarMultiGet({
   ],
   depth: '1',
   headers: {
-    authorization: 'Basic x0C9ueWd9Vz8OwS0DEAtkAlj'
+    authorization: 'Basic x0C9ueWd9Vz8OwS0DEAtkAlj',
   },
 });
 ```
 
 ### Arguments
 
-- `url` url of CALDAV server
-- `objectUrls` urls of calendar object to get
+- `url` **required**, url of CALDAV server
+- `objectUrls` **required**, urls of calendar object to get
 - `props` [DAVProp](../types/DAVProp.md) the client needs
 - `filters` [DAVFilter](../types/DAVFilter.md) the filter on the calendar objects
 - `depth` [DAVDepth](../types/DAVDepth.md) of the request

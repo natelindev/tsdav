@@ -99,8 +99,8 @@ export const makeCalendar = async (params: {
 };
 
 export const fetchCalendars = async (params?: {
-  headers?: Record<string, string>;
   account?: DAVAccount;
+  headers?: Record<string, string>;
 }): Promise<DAVCalendar[]> => {
   const { headers, account } = params ?? {};
   const requiredFields: Array<'homeUrl' | 'rootUrl'> = ['homeUrl', 'rootUrl'];
@@ -168,7 +168,7 @@ export const fetchCalendarObjects = async (params: {
   calendar: DAVCalendar;
   objectUrls?: string[];
   filters?: DAVFilter[];
-  timeRange?: { startTime: Date; endTime: Date };
+  timeRange?: { start: string; end: string };
   headers?: Record<string, string>;
 }): Promise<DAVCalendarObject[]> => {
   const { calendar, objectUrls, filters: defaultFilters, timeRange, headers } = params;
@@ -200,8 +200,8 @@ export const fetchCalendarObjects = async (params: {
                 {
                   type: 'time-range',
                   attributes: {
-                    start: `${timeRange?.startTime.toISOString().slice(0, -5)}Z`,
-                    end: `${timeRange?.endTime.toISOString().slice(0, -5)}Z`,
+                    start: `${timeRange?.start.slice(0, -5)}Z`,
+                    end: `${timeRange?.end.slice(0, -5)}Z`,
                   },
                 },
               ]

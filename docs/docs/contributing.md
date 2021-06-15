@@ -1,22 +1,21 @@
 ---
 sidebar_position: 7
-
 ---
 
 # Contributing
 
-### Build the client
+First you need to clone the repo and
+
+### Build
 
 ```bash
 npm run build
 ```
 
-### Publish the client
-
-Update the version number and then
+or
 
 ```bash
-npm publish
+yarn build
 ```
 
 ### WEBDAV quick guide
