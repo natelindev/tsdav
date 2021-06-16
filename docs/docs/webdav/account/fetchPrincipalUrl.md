@@ -1,11 +1,11 @@
 ---
-sidebar_position: 6
+sidebar_position: 3
 ---
+
 ## `fetchPrincipalUrl`
 
 ### Arguments
 
 ### Return Value
-
 
 ### Behavior

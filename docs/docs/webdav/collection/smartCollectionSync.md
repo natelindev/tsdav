@@ -1,11 +1,11 @@
 ---
 sidebar_position: 6
 ---
-## `createAccount`
+
+## `smartCollectionSync`
 
 ### Arguments
 
 ### Return Value
-
 
 ### Behavior

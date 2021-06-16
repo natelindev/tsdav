@@ -29,11 +29,12 @@ import {
 } from './collection';
 import {
   createObject as rawCreateObject,
-  davRequest,
+  davRequest as rawDavRequest,
   deleteObject as rawDeleteObject,
   propfind as rawPropfind,
   updateObject as rawUpdateObject,
 } from './request';
+import { DAVRequest, DAVResponse } from './types/DAVTypes';
 import { SmartCollectionSync, SyncCalendars } from './types/functionsOverloads';
 import { DAVAccount, DAVCredentials } from './types/models';
 import { defaultParam, getBasicAuthHeaders, getOauthHeaders } from './util/authHelper';
@@ -61,6 +62,26 @@ export const createDAVClient = async (params: {
         headers: authHeaders,
       })
     : undefined;
+
+  const davRequest = async (params0: {
+    url: string;
+    init: DAVRequest;
+    convertIncoming?: boolean;
+    parseOutgoing?: boolean;
+  }): Promise<DAVResponse[]> => {
+    const { init, ...rest } = params0;
+    const { headers, ...restInit } = init;
+    return rawDavRequest({
+      ...rest,
+      init: {
+        ...restInit,
+        headers: {
+          ...authHeaders,
+          ...headers,
+        },
+      },
+    });
+  };
 
   const createObject = defaultParam(rawCreateObject, {
     url: serverUrl,

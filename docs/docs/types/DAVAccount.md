@@ -17,5 +17,5 @@ export type DAVAccount = {
 - `rootUrl` root url of the account
 - `principalUrl` principal resource url
 - `homeUrl` resource home set url
-- `calendars` calendars of the account, will only be populated by [createAccount](../webdav/createAccount.md)
-- `addressBooks` addressBooks of the account, will only be populated by [createAccount](../webdav/createAccount.md)
+- `calendars` calendars of the account, will only be populated by [createAccount](../webdav/account/createAccount.md)
+- `addressBooks` addressBooks of the account, will only be populated by [createAccount](../webdav/account/createAccount.md)

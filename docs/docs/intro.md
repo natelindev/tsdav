@@ -60,7 +60,7 @@ However, you can always pass in custom header to override the default header for
 
 For Google
 
-```js
+```ts
 const client = await createDAVClient({
   serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
   credentials: {
@@ -76,7 +76,7 @@ const client = await createDAVClient({
 
 For Apple
 
-```js
+```ts
 const client = await createDAVClient({
   serverUrl: 'https://caldav.icloud.com',
   credentials: {
@@ -90,22 +90,22 @@ const client = await createDAVClient({
 
 #### Get calendars
 
-```js
-const calendars = await caldavClient.fetchCalendars();
+```ts
+const calendars = await client.fetchCalendars();
 ```
 
 #### Get calendar objects on calendars
 
-```js
-const calendarObjects = await caldavClient.fetchCalendarObjects({
+```ts
+const calendarObjects = await client.fetchCalendarObjects({
   calendar: myCalendar,
 });
 ```
 
 #### Get specific calendar objects on calendar using urls
 
-```js
-const calendarObjects = await caldavClient.fetchCalendarObjects({
+```ts
+const calendarObjects = await client.fetchCalendarObjects({
   calendar: myCalendar,
   calendarObjectUrls: urlArray,
 });
@@ -113,8 +113,8 @@ const calendarObjects = await caldavClient.fetchCalendarObjects({
 
 ##### Get calendars changes from remote
 
-```js
-const { created, updated, deleted } = await caldavClient.syncCalendars({
+```ts
+const { created, updated, deleted } = await client.syncCalendars({
   calendars: myCalendars,
   detailedResult: true,
 });
@@ -122,15 +122,15 @@ const { created, updated, deleted } = await caldavClient.syncCalendars({
 
 #### Get calendar object changes on a calendar from remote
 
-```js
+```ts
 const { created, updated, deleted } = (
-  await caldavClient.smartCollectionSync({
+  await client.smartCollectionSync({
     collection: {
       url: localCalendar.url,
       ctag: localCalendar.ctag,
       syncToken: localCalendar.syncToken,
       objects: localCalendarObjects,
-      objectMultiGet: caldavClient.calendarMultiGet,
+      objectMultiGet: client.calendarMultiGet,
     },
     method: 'webdav',
     detailedResult: true,

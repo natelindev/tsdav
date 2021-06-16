@@ -13,6 +13,9 @@ const result = updateVCard({
     data: 'BEGIN:VCARD\nVERSION:3.0\nN:;Test BBB;;;\nFN:Test BBB\nUID:0976cf06-a0e8-44bd-9217-327f6907242c\nPRODID:-//Apple Inc.//iCloud Web Address Book 2109B35//EN\nREV:2021-06-16T01:28:23Z\nEND:VCARD',
     etag: '"63758758580"',
   },
+  headers: {
+    authorization: 'Basic x0C9uFWd9Vz8OwS0DEAtkAlj',
+  },
 });
 ```
 
