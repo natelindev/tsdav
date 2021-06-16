@@ -1,13 +1,6 @@
 import { createAccount } from './account';
 import { fetchCalendars } from './calendar';
-import {
-  collectionQuery,
-  isCollectionDirty,
-  makeCollection,
-  smartCollectionSync,
-  supportedReportSet,
-  syncCollection,
-} from './collection';
+import { isCollectionDirty } from './collection';
 import { createObject, deleteObject } from './request';
 import { DAVAccount, DAVCalendar } from './types/models';
 import { getBasicAuthHeaders } from './util/authHelper';

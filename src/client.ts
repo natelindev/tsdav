@@ -1,5 +1,3 @@
-import getLogger from 'debug';
-
 import { createAccount as rawCreateAccount } from './account';
 import {
   addressBookMultiGet as rawAddressBookMultiGet,
@@ -36,13 +34,10 @@ import {
   propfind as rawPropfind,
   updateObject as rawUpdateObject,
 } from './request';
-import { DAVRequest, DAVResponse } from './types/DAVTypes';
 import { SmartCollectionSync, SyncCalendars } from './types/functionsOverloads';
 import { DAVAccount, DAVCredentials } from './types/models';
 import { defaultParam, getBasicAuthHeaders, getOauthHeaders } from './util/authHelper';
 import { Await, Optional } from './util/typeHelper';
-
-const debug = getLogger('tsdav:client');
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export const createDAVClient = async (params: {
@@ -77,13 +72,13 @@ export const createDAVClient = async (params: {
   const propfind = defaultParam(rawPropfind, { headers: authHeaders });
 
   // account
-  const createAccount = async (params: {
+  const createAccount = async (params0: {
     account: Optional<DAVAccount, 'serverUrl'>;
     headers?: Record<string, string>;
     loadCollections?: boolean;
     loadObjects?: boolean;
   }): Promise<DAVAccount> => {
-    const { account, headers, loadCollections, loadObjects } = params;
+    const { account, headers, loadCollections, loadObjects } = params0;
     return rawCreateAccount({
       account: { serverUrl, credentials, ...account },
       headers: { ...authHeaders, ...headers },
@@ -155,6 +150,7 @@ export const createDAVClient = async (params: {
   const deleteVCard = defaultParam(rawDeleteVCard, { headers: authHeaders });
 
   return {
+    davRequest,
     propfind,
     createAccount,
     createObject,

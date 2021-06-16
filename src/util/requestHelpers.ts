@@ -44,22 +44,24 @@ export const mergeObjectDupKeyArray = <T, U>(
   objA: T,
   ObjB: U
 ): { [key in keyof T & keyof U]: ValueOf<T> | ValueOf<U> } =>
-  (Object.entries(objA) as Array<[keyof T, any]>).reduce((merged: T & U, [currKey, currValue]): T &
-    U => {
-    if (merged[currKey] && Array.isArray(merged[currKey])) {
-      // is array
-      return {
-        ...merged,
-        [currKey]: [...(merged[currKey] as unknown as unknown[]), currValue],
-      };
-    }
-    if (merged[currKey] && !Array.isArray(merged[currKey])) {
-      // not array
-      return { ...merged, [currKey]: [merged[currKey], currValue] };
-    }
-    // not exist
-    return { ...merged, [currKey]: currValue };
-  }, ObjB);
+  (Object.entries(objA) as Array<[keyof T, any]>).reduce(
+    (merged: T & U, [currKey, currValue]): T & U => {
+      if (merged[currKey] && Array.isArray(merged[currKey])) {
+        // is array
+        return {
+          ...merged,
+          [currKey]: [...(merged[currKey] as unknown as unknown[]), currValue],
+        };
+      }
+      if (merged[currKey] && !Array.isArray(merged[currKey])) {
+        // not array
+        return { ...merged, [currKey]: [merged[currKey], currValue] };
+      }
+      // not exist
+      return { ...merged, [currKey]: currValue };
+    },
+    ObjB
+  );
 
 export const getDAVAttribute = (nsArr: DAVNamespace[]): { [key: string]: DAVNamespace } =>
   nsArr.reduce((prev, curr) => ({ ...prev, [DAVAttributeMap[curr]]: curr }), {});

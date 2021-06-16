@@ -1,11 +1,5 @@
 import { createAccount } from './account';
-import {
-  addressBookQuery,
-  createVCard,
-  deleteVCard,
-  fetchAddressBooks,
-  fetchVCards,
-} from './addressBook';
+import { createVCard, fetchAddressBooks, fetchVCards } from './addressBook';
 import { deleteObject } from './request';
 import { DAVAccount } from './types/models';
 import { getBasicAuthHeaders } from './util/authHelper';
@@ -35,12 +29,11 @@ test('fetchAddressBooks should be able to fetch addressBooks', async () => {
     account,
     headers: authHeaders,
   });
-  console.log(addressBooks);
   expect(addressBooks.length > 0).toBe(true);
   expect(addressBooks.every((a) => a.url.length > 0)).toBe(true);
 });
 
-test('createVCard', async () => {
+test('createVCard should be able to create vcard', async () => {
   const addressBooks = await fetchAddressBooks({
     account,
     headers: authHeaders,
@@ -63,6 +56,7 @@ END:VCARD`,
 
   const deleteResult = await deleteObject({
     url: new URL('test.vcf', addressBooks[0].url).href,
+    headers: authHeaders,
   });
 
   expect(deleteResult.ok).toBe(true);

@@ -35,7 +35,7 @@ test('getBasicAuthHeaders should return correct hash', () => {
 
 test('fetchOauthTokens should rejects when missing args', async () => {
   const t = async () =>
-    await fetchOauthTokens({
+    fetchOauthTokens({
       authorizationCode: '123',
     });
   expect(t).rejects.toThrow(
@@ -45,7 +45,7 @@ test('fetchOauthTokens should rejects when missing args', async () => {
 
 test('refreshAccessToken should rejects when missing args', async () => {
   const t = async () =>
-    await refreshAccessToken({
+    refreshAccessToken({
       authorizationCode: '123',
     });
   expect(t).rejects.toThrow(

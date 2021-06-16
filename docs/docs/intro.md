@@ -1,11 +1,10 @@
 ---
 sidebar_position: 1
-
 ---
 
 # Intro
 
-[WEBDAV]([rfc4918](https://tools.ietf.org/html/rfc4918)), `Web Distributed Authoring and Versioning`, is an extension of the HTTP to allow handling distributed authoring, versioning of various resources.
+[WEBDAV](https://tools.ietf.org/html/rfc4918), `Web Distributed Authoring and Versioning`, is an extension of the HTTP to allow handling distributed authoring, versioning of various resources.
 
 It's very common to be used for cloud storage, as well as calendar, contacts information syncing.
 
@@ -17,7 +16,7 @@ For apple you want to go to [this page](https://support.apple.com/en-us/HT204397
 
 ##### Google
 
-For google you want to go to Google Cloud Platform/Credentials page, then create a credential that suite your use case. You want `clientId` ,`client secret` and  after this. Also you need to enable Google CALDAV/CARDDAV for your project.
+For google you want to go to Google Cloud Platform/Credentials page, then create a credential that suite your use case. You want `clientId` ,`client secret` and after this. Also you need to enable Google CALDAV/CARDDAV for your project.
 
 Also you need to setup oauth screen, use proper oauth2 grant flow and you might need to get your application verified by google in order to be able to use CALDAV/CARDDAV api. Refer to [this page](https://developers.google.com/identity/protocols/oauth2) for more details.
 
@@ -63,16 +62,16 @@ For Google
 
 ```js
 const client = await createDAVClient({
-    serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
-    credentials: {
-      refreshToken: 'YOUR_REFRESH_TOKEN',
-      tokenUrl: 'https://oauth2.googleapis.com/token',
-      clientId: 'YOUR_CLIENT_ID',
-      clientSecret: 'YOUR_CLIENT_TOKEN',
-    },
-    authMethod: 'Oauth',
-    defaultAccountType: 'caldav',
-  });
+  serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
+  credentials: {
+    refreshToken: 'YOUR_REFRESH_TOKEN',
+    tokenUrl: 'https://oauth2.googleapis.com/token',
+    clientId: 'YOUR_CLIENT_ID',
+    clientSecret: 'YOUR_CLIENT_TOKEN',
+  },
+  authMethod: 'Oauth',
+  defaultAccountType: 'caldav',
+});
 ```
 
 For Apple
@@ -85,7 +84,7 @@ const client = await createDAVClient({
     password: 'YOUR_APP_SPECIFIC_PASSWORD',
   },
   authMethod: 'Basic',
-  defaultAccountType: 'caldav'
+  defaultAccountType: 'caldav',
 });
 ```
 
@@ -99,7 +98,7 @@ const calendars = await caldavClient.fetchCalendars();
 
 ```js
 const calendarObjects = await caldavClient.fetchCalendarObjects({
-  calendar: myCalendar
+  calendar: myCalendar,
 });
 ```
 
@@ -138,4 +137,3 @@ const { created, updated, deleted } = (
   })
 ).objects;
 ```
-

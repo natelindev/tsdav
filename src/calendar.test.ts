@@ -1,15 +1,5 @@
 import { createAccount } from './account';
-import {
-  calendarMultiGet,
-  calendarQuery,
-  createCalendarObject,
-  deleteCalendarObject,
-  fetchCalendarObjects,
-  fetchCalendars,
-  makeCalendar,
-  syncCalendars,
-  updateCalendarObject,
-} from './calendar';
+import { calendarMultiGet, fetchCalendarObjects, fetchCalendars } from './calendar';
 import { DAVNamespace } from './consts';
 import { createObject, deleteObject } from './request';
 import { DAVAccount } from './types/models';

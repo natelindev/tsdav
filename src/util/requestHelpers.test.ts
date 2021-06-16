@@ -21,15 +21,15 @@ test('cleanupFalsy should clean undefined from object', () => {
     test8: {},
     test9: '0',
   };
-  expect(cleanupFalsy(objA).hasOwnProperty('test1')).toBe(true);
-  expect(cleanupFalsy(objA).hasOwnProperty('test2')).toBe(true);
-  expect(cleanupFalsy(objA).hasOwnProperty('test3')).toBe(false);
-  expect(cleanupFalsy(objA).hasOwnProperty('test4')).toBe(false);
-  expect(cleanupFalsy(objA).hasOwnProperty('test5')).toBe(false);
-  expect(cleanupFalsy(objA).hasOwnProperty('test6')).toBe(false);
-  expect(cleanupFalsy(objA).hasOwnProperty('test7')).toBe(false);
-  expect(cleanupFalsy(objA).hasOwnProperty('test8')).toBe(true);
-  expect(cleanupFalsy(objA).hasOwnProperty('test9')).toBe(true);
+  expect(Object.prototype.hasOwnProperty.call(cleanupFalsy(objA), 'test1')).toBe(true);
+  expect(Object.prototype.hasOwnProperty.call(cleanupFalsy(objA), 'test2')).toBe(true);
+  expect(Object.prototype.hasOwnProperty.call(cleanupFalsy(objA), 'test3')).toBe(false);
+  expect(Object.prototype.hasOwnProperty.call(cleanupFalsy(objA), 'test4')).toBe(false);
+  expect(Object.prototype.hasOwnProperty.call(cleanupFalsy(objA), 'test5')).toBe(false);
+  expect(Object.prototype.hasOwnProperty.call(cleanupFalsy(objA), 'test6')).toBe(false);
+  expect(Object.prototype.hasOwnProperty.call(cleanupFalsy(objA), 'test7')).toBe(false);
+  expect(Object.prototype.hasOwnProperty.call(cleanupFalsy(objA), 'test8')).toBe(true);
+  expect(Object.prototype.hasOwnProperty.call(cleanupFalsy(objA), 'test9')).toBe(true);
 });
 
 test('urlEquals should handle almost identical urls', () => {

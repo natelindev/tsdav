@@ -39,12 +39,12 @@ export const calendarQuery = async (params: {
         ]),
         [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
         filter: formatFilters(filters),
-        timezone: timezone,
+        timezone,
       },
     },
     defaultNamespace: DAVNamespace.CALDAV,
-    depth: depth,
-    headers: headers,
+    depth,
+    headers,
   });
 };
 
@@ -66,7 +66,7 @@ export const calendarMultiGet = async (params: {
         [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
         [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:href`]: objectUrls,
         filter: formatFilters(filters),
-        timezone: timezone,
+        timezone,
       },
     },
     defaultNamespace: DAVNamespace.CALDAV,
