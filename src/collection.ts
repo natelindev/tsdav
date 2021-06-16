@@ -18,13 +18,13 @@ export const collectionQuery = async (params: {
   defaultNamespace?: DAVNamespace;
   headers?: Record<string, string>;
 }): Promise<DAVResponse[]> => {
-  const { url, body, depth, defaultNamespace, headers } = params;
+  const { url, body, depth, defaultNamespace = DAVNamespace.DAV, headers } = params;
   return davRequest({
     url,
     init: {
       method: 'REPORT',
       headers: cleanupFalsy({ ...headers, depth }),
-      namespace: DAVNamespaceShorthandMap[defaultNamespace ?? DAVNamespace.DAV],
+      namespace: DAVNamespaceShorthandMap[defaultNamespace],
       body,
     },
   });
@@ -59,7 +59,7 @@ export const makeCollection = async (params: {
 export const supportedReportSet = async (params: {
   collection: DAVCollection;
   headers?: Record<string, string>;
-}): Promise<DAVResponse> => {
+}): Promise<string[]> => {
   const { collection, headers } = params;
   const res = await propfind({
     url: collection.url,
@@ -171,9 +171,10 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
       headers,
     });
 
-    const objectResponses = result.filter(
-      (r): r is RequireAndNotNullSome<DAVResponse, 'href'> => r.href?.slice(-4) === '.ics'
-    );
+    const objectResponses = result.filter((r): r is RequireAndNotNullSome<DAVResponse, 'href'> => {
+      const extName = account.accountType === 'caldav' ? '.ics' : '.vcf';
+      return r.href?.slice(-4) === extName;
+    });
 
     const changedObjectUrls = objectResponses.filter((o) => o.status !== 404).map((r) => r.href);
 
