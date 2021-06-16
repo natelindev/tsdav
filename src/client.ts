@@ -155,8 +155,6 @@ export const createDAVClient = async (params: {
   const deleteVCard = defaultParam(rawDeleteVCard, { headers: authHeaders });
 
   return {
-    raw,
-    rawXML,
     propfind,
     createAccount,
     createObject,

@@ -15,15 +15,16 @@ export const collectionQuery = async (params: {
   url: string;
   body: any;
   depth?: DAVDepth;
+  defaultNamespace?: DAVNamespace;
   headers?: Record<string, string>;
 }): Promise<DAVResponse[]> => {
-  const { url, body, depth, headers } = params;
+  const { url, body, depth, defaultNamespace, headers } = params;
   return davRequest({
     url,
     init: {
       method: 'REPORT',
       headers: cleanupFalsy({ ...headers, depth }),
-      namespace: DAVNamespaceShorthandMap[DAVNamespace.CALDAV],
+      namespace: DAVNamespaceShorthandMap[defaultNamespace ?? DAVNamespace.DAV],
       body,
     },
   });

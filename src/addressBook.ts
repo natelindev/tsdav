@@ -33,6 +33,7 @@ export const addressBookQuery = async (params: {
         },
       },
     },
+    defaultNamespace: DAVNamespace.CARDDAV,
     depth,
     headers,
   });
@@ -51,12 +52,13 @@ export const addressBookMultiGet = async (params: {
     url,
     body: {
       'addressbook-multiget': {
-        _attributes: getDAVAttribute([DAVNamespace.DAV, DAVNamespace.CALDAV]),
+        _attributes: getDAVAttribute([DAVNamespace.DAV, DAVNamespace.CARDDAV]),
         [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
         [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:href`]: objectUrls,
         filter: formatFilters(filters),
       },
     },
+    defaultNamespace: DAVNamespace.CARDDAV,
     depth,
     headers,
   });
@@ -89,17 +91,16 @@ export const fetchAddressBooks = async (params?: {
   });
   return Promise.all(
     res
-      .filter((r) => r.props?.displayname && r.props.displayname.length)
+      .filter((r) => Object.keys(r.props?.resourcetype ?? {}).includes('addressbook'))
       .map((rs) => {
-        debug(`Found address book named ${rs.props?.displayname},
+        const displayName = rs.props?.displayname;
+        debug(`Found address book named ${typeof displayName === 'string' ? displayName : ''},
              props: ${JSON.stringify(rs.props)}`);
         return {
-          data: rs,
-          account,
           url: new URL(rs.href ?? '', account.rootUrl ?? '').href,
           ctag: rs.props?.getctag,
-          displayName: rs.props?.displayname,
-          resourcetype: rs.props?.resourcetype,
+          displayName: typeof displayName === 'string' ? displayName : '',
+          resourcetype: Object.keys(rs.props?.resourcetype),
           syncToken: rs.props?.syncToken,
         };
       })
@@ -144,7 +145,7 @@ export const fetchVCards = async (params: {
   )
     .map((url) => (url.includes('http') ? url : new URL(url, addressBook.url).href))
     .map((url) => new URL(url).pathname)
-    .filter((url): url is string => Boolean(url?.includes('.ics')));
+    .filter((url): url is string => Boolean(url?.includes('.vcf')));
 
   const vCardResults = await addressBookMultiGet({
     url: addressBook.url,

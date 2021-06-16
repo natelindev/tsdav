@@ -42,6 +42,7 @@ export const calendarQuery = async (params: {
         timezone: timezone,
       },
     },
+    defaultNamespace: DAVNamespace.CALDAV,
     depth: depth,
     headers: headers,
   });
@@ -68,8 +69,9 @@ export const calendarMultiGet = async (params: {
         timezone: timezone,
       },
     },
-    depth: depth,
-    headers: headers,
+    defaultNamespace: DAVNamespace.CALDAV,
+    depth,
+    headers,
   });
 };
 
@@ -236,7 +238,7 @@ export const fetchCalendarObjects = async (params: {
     ],
     objectUrls: calendarObjectUrls,
     depth: '1',
-    headers: headers,
+    headers,
   });
 
   return calendarObjectResults.map((res) => ({

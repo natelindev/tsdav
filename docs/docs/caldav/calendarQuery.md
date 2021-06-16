@@ -43,4 +43,4 @@ array of [DAVCalendarObject](../types/DAVCalendarObject.md)
 
 ### Behavior
 
-it will send out calendar-query REPORT request, after server applies the filters and parse the response xml to extract an array of [DAVCalendarObject](../types/DAVCalendarObject.md) data.
+send a calendar-query REPORT request, after server applies the filters and parse the response xml to extract an array of [DAVCalendarObject](../types/DAVCalendarObject.md) data.
