@@ -17,7 +17,7 @@ const objects = await fetchCalendarObjects({
 
 - `calendar` **required**, [DAVCalendar](../types/DAVCalendar.md) to fetch calendar objects from
 - `objectUrls` calendar object urls to fetch
-- `filters` DAVFilter[];
+- `filters` array of [DAVFilter](../types/DAVFilter.md);
 - `timeRange` time range in iso format
   - `start` start time in ISO 8601 format
   - `end` end time in ISO 8601 format

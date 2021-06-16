@@ -8,3 +8,12 @@ export type DAVTokens = {
   scope?: string;
 };
 ```
+
+oauth token response
+
+- `access_token` oauth access token
+- `refresh_token` oauth refresh token
+- `expires_in` token expires time in ms
+- `id_token` oauth id token
+- `token_type` oauth token type, usually `Bearer`
+- `scope` oauth token scope

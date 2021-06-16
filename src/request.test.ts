@@ -48,11 +48,11 @@ test('davRequest should be able to send normal webdav requests', async () => {
       },
     },
   });
-  expect(result.href.length > 0);
-  expect(result.status === 207);
-  expect(result.statusText === 'Multi-Status');
+  expect(result.href?.length).toBeTruthy();
+  expect(result.status).toBe(207);
+  expect(result.statusText).toBe('Multi-Status');
   expect(result.ok).toBe(true);
-  expect(result.props.currentUserPrincipal.href).toMatch(/\/[0-9]+\/principal\//);
+  expect(result.props?.currentUserPrincipal.href).toMatch(/\/[0-9]+\/principal\//);
   expect(result.hasOwnProperty('raw')).toBe(true);
 });
 
@@ -72,11 +72,11 @@ test('davRequest should be able to send raw xml requests', async () => {
     },
     convertIncoming: false,
   });
-  expect(result.href.length > 0);
-  expect(result.status === 207);
-  expect(result.statusText === 'Multi-Status');
+  expect(result.href?.length).toBeTruthy();
+  expect(result.status).toBe(207);
+  expect(result.statusText).toBe('Multi-Status');
   expect(result.ok).toBe(true);
-  expect(result.props.currentUserPrincipal.href).toMatch(/\/[0-9]+\/principal\//);
+  expect(result.props?.currentUserPrincipal.href).toMatch(/\/[0-9]+\/principal\//);
   expect(result.hasOwnProperty('raw')).toBe(true);
 });
 
@@ -97,9 +97,9 @@ test('davRequest should be able to get raw xml response', async () => {
     convertIncoming: false,
     parseOutgoing: false,
   });
-  expect(result.href.length > 0);
-  expect(result.status === 207);
-  expect(result.statusText === 'Multi-Status');
+  expect(result.href?.length).toBeTruthy();
+  expect(result.status).toBe(207);
+  expect(result.statusText).toBe('Multi-Status');
   expect(result.ok).toBe(true);
   expect(result.raw).toMatch(
     /<current-user-principal xmlns="DAV:"><href xmlns="DAV:">\/[0-9]+\/principal\/<\/href><\/current-user-principal>/
@@ -112,11 +112,11 @@ test('propfind should be able to find props', async () => {
     props: [{ name: 'current-user-principal', namespace: DAVNamespace.DAV }],
     headers: authHeaders,
   });
-  expect(result.href.length > 0);
-  expect(result.status === 207);
-  expect(result.statusText === 'Multi-Status');
+  expect(result.href?.length).toBeTruthy();
+  expect(result.status).toBe(207);
+  expect(result.statusText).toBe('Multi-Status');
   expect(result.ok).toBe(true);
-  expect(result.props.currentUserPrincipal.href).toMatch(/\/[0-9]+\/principal\//);
+  expect(result.props?.currentUserPrincipal.href).toMatch(/\/[0-9]+\/principal\//);
   expect(result.hasOwnProperty('raw')).toBe(true);
 });
 

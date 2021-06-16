@@ -8,7 +8,7 @@ export type DAVProp = {
 
 export type DAVFilter = {
   type: string;
-  attributes: { [key: string]: string };
+  attributes: Record<string, string>;
   value?: string | number;
   children?: DAVFilter[];
 };
