@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="300" height="300" src="https://github.com/llldar/tsDAV/blob/master/docs/static/img/logo.png">
+  <img width="300" height="300" src="https://github.com/llldar/tsDAV/blob/master/docs/static/img/logo.svg">
 
 </p>
 <p align="center">
@@ -18,7 +18,7 @@ webdav client made easy
 
 #### Documentation
 
-check out documentation at [Documentation]()
+check out documentation at [Documentation](https://tsdav.vercel.app/)
 
 #### Test
 
