@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "test": "jest",
-    "build": "rimraf dist && tsc",
+    "build": "rimraf dist && tsc -p ./tsconfig.build.json",
     "watch": "tsc --watch --outDir ./dist"
   },
   "dependencies": {
