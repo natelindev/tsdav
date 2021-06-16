@@ -18,15 +18,6 @@ webdav client made easy
 
 Check out the [Documentation](https://tsdav.vercel.app/)
 
-#### Test
-
-to run tests locally, you need to setup environnement variables using `.env` file
-
-```
-ICLOUD_USERNAME=
-ICLOUD_APP_SPECIFIC_PASSWORD=
-```
-
 #### License
 
 MIT
