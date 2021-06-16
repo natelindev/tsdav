@@ -1,6 +1,5 @@
 <p align="center">
-  <img width="300" height="300" src="https://github.com/llldar/tsDAV/blob/master/docs/static/img/logo.svg">
-
+  <img width="300" height="200" src="https://github.com/llldar/tsDAV/blob/master/docs/static/img/logo.svg">
 </p>
 <p align="center">
 webdav client made easy
@@ -8,23 +7,25 @@ webdav client made easy
 
 #### Features
 
-- oauth2 & basic auth helpers built-in.
-- large selection of easy to use, well tested and well documented api
-- works on both browser(not ie) and node.
-- written fully in typescript
-- support WEBDAV, CALDAV, CARDDAV
-- tested with apple & google cloud.
-- JSON based data structure instead of xml, (have option to use xml as well)
+- Easy to use, well documented JSON based WEBDAV API
+- Works in both `Browsers` and `Node.js`
+- OAuth2 & Basic Auth helpers built-in
+- Native typescript, fully linted and well tested
+- Supports WEBDAV, CALDAV, CARDDAV
+- End to end tested with Apple & Google Cloud.
 
 #### Documentation
 
-check out documentation at [Documentation](https://tsdav.vercel.app/)
+Check out the [Documentation](https://tsdav.vercel.app/)
 
 #### Test
 
-to run tests locally, you need to setup environnement variables,
+to run tests locally, you need to setup environnement variables using `.env` file
+
+```
 ICLOUD_USERNAME=
 ICLOUD_APP_SPECIFIC_PASSWORD=
+```
 
 #### License
 

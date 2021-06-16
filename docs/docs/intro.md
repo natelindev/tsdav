@@ -12,7 +12,7 @@ It's very common to be used for cloud storage, as well as calendar, contacts inf
 
 ##### Apple
 
-For apple you want to go to [this page](https://support.apple.com/en-us/HT204397) and after following the guide, you will need Apple ID and app-specific password.
+For apple you want to go to [this page](https://support.apple.com/en-us/HT204397) and after following the guide, you will have Apple ID and app-specific password.
 
 ##### Google
 
@@ -23,7 +23,7 @@ Also you need to setup oauth screen, use proper oauth2 grant flow and you might 
 After the oauth2 offline grant you should be able to obtain oauth2 refresh token.
 
 :::info
-Other cloud providers are not currently tested, they might or might not work, stay tuned for updates.
+Other cloud providers are not currently tested, in theory any cloud with basic auth and oauth2 should work, stay tuned for updates.
 :::
 
 ### Install

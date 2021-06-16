@@ -18,6 +18,15 @@ or
 yarn build
 ```
 
+#### Test
+
+to run tests locally, you need to setup environnement variables using `.env` file
+
+```
+ICLOUD_USERNAME=
+ICLOUD_APP_SPECIFIC_PASSWORD=
+```
+
 ### WEBDAV quick guide
 
 WEBDAV uses xml for all its data when communicating, the basic element is `object`, multiple `object`s can form a `collection`, webdav server have `account`s and an `account` have a `principal` resource (i.e the default, main resource) and under that principle resource we have `home set` of the said resource where your actual resources are.

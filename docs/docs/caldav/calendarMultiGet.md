@@ -6,7 +6,7 @@ sidebar_position: 2
 
 calendarMultiGet is used to retrieve specific calendar object resources from within a collection.
 
-If the Request-URI is a calendar object resource. This method is similar to the [calendarQuery](./calendarQuery.md), except that it takes a list of calendar object urls, instead of a filter, to determine which calendar object resources to return.
+If the Request-URI is a calendar object resource. This method is similar to the [calendarQuery](./calendarQuery.md), except that it takes a list of calendar object urls, instead of a filter, to determine which calendar objects to return.
 
 ```ts
 // fetch 2 specific objects from one calendar
@@ -33,7 +33,7 @@ const calendarObjects = await calendarMultiGet({
 - `objectUrls` **required**, urls of calendar object to get
 - `props` [DAVProp](../types/DAVProp.md) the client needs
 - `filters` [DAVFilter](../types/DAVFilter.md) the filter on the calendar objects
-- `depth` [DAVDepth](../types/DAVDepth.md) of the request
+- `depth` **required**, [DAVDepth](../types/DAVDepth.md) of the request
 - `timezone` timezone of the calendar
 - `headers` request headers
 
@@ -43,4 +43,4 @@ array of [DAVCalendarObject](../types/DAVCalendarObject.md)
 
 ### Behavior
 
-it will send caldav:calendar-multiget REPORT request and parse the response xml to extract an array of [DAVCalendarObject](../types/DAVCalendarObject.md) data.
+send caldav:calendar-multiget REPORT request and parse the response xml to extract an array of [DAVCalendarObject](../types/DAVCalendarObject.md) data.

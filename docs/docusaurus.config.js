@@ -10,6 +10,10 @@ module.exports = {
   organizationName: 'llldar', // Usually your GitHub org/user name.
   projectName: 'tsDAV', // Usually your repo name.
   themeConfig: {
+    colorMode: {
+      defaultMode: 'dark',
+      respectPrefersColorScheme: true,
+    },
     navbar: {
       title: 'tsdav',
       logo: {

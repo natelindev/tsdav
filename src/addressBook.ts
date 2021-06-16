@@ -65,8 +65,8 @@ export const addressBookMultiGet = async (params: {
 };
 
 export const fetchAddressBooks = async (params?: {
-  headers?: Record<string, string>;
   account?: DAVAccount;
+  headers?: Record<string, string>;
 }): Promise<DAVAddressBook[]> => {
   const { account, headers } = params ?? {};
   const requiredFields: Array<keyof DAVAccount> = ['homeUrl', 'rootUrl'];

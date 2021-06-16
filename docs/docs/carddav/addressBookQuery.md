@@ -14,9 +14,8 @@ vCard properties that should be returned in the address object
 resource data that matches the filter.
 
 ```ts
-
 const addressbooks = await addressBookQuery({
-  url: 'https://contactsws.icloud.com/1234567/calendars/personal/',
+  url: 'https://contacts.icloud.com/123456/carddavhome/card/',
   props: [{ name: 'getetag', namespace: DAVNamespace.DAV }],
   depth: '1',
   headers: {
@@ -27,8 +26,8 @@ const addressbooks = await addressBookQuery({
 
 ### Arguments
 
-- `url` request target url
-- `props` array of [DAVProp](../types/DAVProp.md)
+- `url` **required**, request target url
+- `props` **required**, array of [DAVProp](../types/DAVProp.md)
 - `depth` [DAVDepth](../types/DAVDepth.md)
 - `headers` request headers
 
@@ -38,5 +37,4 @@ array of [DAVResponse](../types/DAVResponse.md)
 
 ### Behavior
 
-
-send a addressbook-query REPORT request, after server applies the filters and parse the response xml to extract an array of [DAVAddressBook](../types/DAVAddressBook.md) data.
+send a addressbook-query REPORT request, after server applies the filters and parse the response xml to an array of [DAVResponse](../types/DAVResponse.md).

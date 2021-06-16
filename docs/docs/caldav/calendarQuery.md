@@ -12,7 +12,7 @@ In the case of the `calendarData` element, one can explicitly specify the calend
 
 ```ts
 // fetch all objects of the calendar
-const calendarObjects = await calendarQuery({
+const results = await calendarQuery({
   url: 'https://caldav.icloud.com/1234567/calendars/personal/',
   props: [{ name: 'getetag', namespace: DAVNamespace.DAV }],
   filters: [
@@ -39,8 +39,8 @@ const calendarObjects = await calendarQuery({
 
 ### Return Value
 
-array of [DAVCalendarObject](../types/DAVCalendarObject.md)
+array of [DAVResponse](../types/DAVResponse.md)
 
 ### Behavior
 
-send a calendar-query REPORT request, after server applies the filters and parse the response xml to extract an array of [DAVCalendarObject](../types/DAVCalendarObject.md) data.
+send a calendar-query REPORT request, after server applies the filters and parse the response xml to an array of [DAVResponse](../types/DAVResponse.md).
