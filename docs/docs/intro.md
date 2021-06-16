@@ -54,9 +54,9 @@ import createDAVClient = from 'tsdav';
 
 #### create client
 
-By creating a client, you can now use all tsdav methods without applying authentication header.
+By creating a client, you can now use all tsdav methods without supplying authentication header or accounts.
 
-However, you can always pass in custom header to override the default header for each request.
+However, you can always pass in custom header or account to override the default for each request.
 
 For Google
 
