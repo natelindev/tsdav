@@ -28,7 +28,7 @@ function HomepageHeader() {
 export default function Home() {
   const { siteConfig } = useDocusaurusContext();
   return (
-    <Layout title={`${siteConfig.title}`} description="webdav client made easy">
+    <Layout title={`${siteConfig.title}`} description="webdav request made easy">
       <HomepageHeader />
       <main>
         <HomepageFeatures />

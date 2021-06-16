@@ -2,7 +2,7 @@
   <img width="300" height="200" src="https://github.com/llldar/tsDAV/blob/master/docs/static/img/logo.svg">
 </p>
 <p align="center">
-webdav client made easy
+webdav request made easy
 </p>
 
 #### Features
