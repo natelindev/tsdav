@@ -1,8 +1,11 @@
 {
   "name": "tsdav",
   "version": "1.0.0",
-  "private": false,
+  "description": "WEBDAV client",
+  "homepage": "https://tsdav.vercel.app/",
+  "repository": "https://github.com/llldar/tsDAV",
   "license": "MIT",
+  "author": "linlilulll@gmail.com",
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -14,7 +17,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "test": "jest",
-    "build": "rimraf dist && tsc -p ./tsconfig.build.json",
+    "build": "rimraf dist && tsc -p ./tsconfig.build.json && copyfiles package.json LICENSE README.md ./dist",
     "watch": "tsc --watch --outDir ./dist"
   },
   "dependencies": {
@@ -31,6 +34,7 @@
     "@typescript-eslint/eslint-plugin": "^4.27.0",
     "@typescript-eslint/parser": "^4.27.0",
     "concurrently": "^6.2.0",
+    "copyfiles": "^2.4.1",
     "cross-env": "^7.0.3",
     "dotenv": "10.0.0",
     "eslint": "^7.28.0",
