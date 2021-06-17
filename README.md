@@ -1,3 +1,5 @@
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fllldar%2FtsDAV.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fllldar%2FtsDAV?ref=badge_shield)
+
 <p align="center">
   <img width="300" height="200" src="https://github.com/llldar/tsDAV/blob/master/docs/static/img/logo.svg">
 </p>
@@ -82,3 +84,6 @@ Check out the [Documentation](https://tsdav.vercel.app/)
 ### License
 
 [MIT](https://github.com/llldar/tsDAV/blob/master/LICENSE)
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fllldar%2FtsDAV.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fllldar%2FtsDAV?ref=badge_large)
