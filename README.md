@@ -5,6 +5,21 @@
 webdav request made easy
 </p>
 
+<p align="center">
+  <a href="https://bundlephobia.com/result?p=tsdav">
+    <img alt="Bundlephobia" src="https://img.shields.io/bundlephobia/minzip/tsdav?style=for-the-badge&labelColor=24292e">
+  </a>
+  <a aria-label="Types" href="https://www.npmjs.com/package/tsdav">
+    <img alt="Types" src="https://img.shields.io/npm/types/tsdav?style=for-the-badge&labelColor=24292e">
+  </a>
+  <a aria-label="NPM version" href="https://www.npmjs.com/package/tsdav">
+    <img alt="NPM Version" src="https://img.shields.io/npm/v/tsdav?style=for-the-badge&labelColor=24292e">
+  </a>
+  <a aria-label="License" href="https://github.com/llldar/tsDAV/blob/master/LICENSE">
+    <img alt="MIT License" src="https://img.shields.io/npm/l/tsdav?style=for-the-badge&labelColor=24292e">
+  </a>
+</p>
+
 ### Features
 
 - Easy to use, well documented JSON based WEBDAV API
