@@ -1,6 +1,6 @@
 {
   "name": "tsdav",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "WEBDAV client",
   "homepage": "https://tsdav.vercel.app/",
   "repository": "https://github.com/llldar/tsDAV",
