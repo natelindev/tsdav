@@ -5,7 +5,7 @@
 webdav request made easy
 </p>
 
-#### Features
+### Features
 
 - Easy to use, well documented JSON based WEBDAV API
 - Works in both `Browsers` and `Node.js`
@@ -14,10 +14,71 @@ webdav request made easy
 - Supports WEBDAV, CALDAV, CARDDAV
 - End to end tested with Apple & Google Cloud.
 
-#### Documentation
+### Install
+
+```bash
+npm install tsdav
+```
+
+or
+
+```bash
+yarn add tsdav
+```
+
+### Quickstart
+
+##### Google CALDAV
+
+```ts
+import { createDAVClient } from 'tsdav';
+
+(async () => {
+  const googleClient = await createDAVClient({
+    serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
+    credentials: {
+      refreshToken: 'YOUR_REFRESH_TOKEN_WITH_CALDAV_PERMISSION',
+    },
+    authMethod: 'Oauth',
+    defaultAccountType: 'caldav',
+  });
+
+  const calendars = await client.fetchCalendars();
+
+  const calendarObjects = await client.fetchCalendarObjects({
+    calendar: calendars[0],
+  });
+})();
+```
+
+##### Apple CARDDAV
+
+```ts
+import { createDAVClient } from 'tsdav';
+
+(async () => {
+  const client = await createDAVClient({
+    serverUrl: 'https://contacts.icloud.com',
+    credentials: {
+      username: 'YOUR_APPLE_ID',
+      password: 'YOUR_APP_SPECIFIC_PASSWORD',
+    },
+    authMethod: 'Basic',
+    defaultAccountType: 'carddav',
+  });
+
+  const addressBooks = await client.fetchAddressBooks();
+
+  const vcards = await client.fetchVCards({
+    addressBook: addressBooks[0],
+  });
+})();
+```
+
+### Documentation
 
 Check out the [Documentation](https://tsdav.vercel.app/)
 
-#### License
+### License
 
-MIT
+[MIT](https://github.com/llldar/tsDAV/blob/master/LICENSE)

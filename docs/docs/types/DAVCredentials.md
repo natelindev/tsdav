@@ -13,6 +13,8 @@ export type DAVCredentials = {
 };
 ```
 
+refer to [this page](https://developers.google.com/identity/protocols/oauth2) for more on what these fields mean
+
 - `username` basic auth username
 - `password` basic auth password
 - `clientId` oauth client id
@@ -22,4 +24,4 @@ export type DAVCredentials = {
 - `tokenUrl` oauth api token url
 - `accessToken` oauth access token
 - `refreshToken` oauth refresh token
-- `expiration` oauth access token expiration time in ms
+- `expiration` oauth access token expiration time

@@ -28,6 +28,7 @@
         "propfind",
         "PROPPATCH",
         "propstat",
+        "Quickstart",
         "readonly",
         "resourcetype",
         "respawn",

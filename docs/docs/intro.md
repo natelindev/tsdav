@@ -43,13 +43,13 @@ npm install tsdav
 #### Import the dependency
 
 ```ts
-import { createDAVClient } = from 'tsdav';
+import { createDAVClient } from 'tsdav';
 ```
 
 or
 
 ```ts
-import createDAVClient = from 'tsdav';
+import tsdav from 'tsdav';
 ```
 
 #### create client
@@ -64,7 +64,20 @@ For Google
 const client = await createDAVClient({
   serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
   credentials: {
-    refreshToken: 'YOUR_REFRESH_TOKEN',
+    refreshToken: 'YOUR_REFRESH_TOKEN_WITH_CALDAV_PERMISSION',
+  },
+  authMethod: 'Oauth',
+  defaultAccountType: 'caldav',
+});
+```
+
+or
+
+```ts
+const client = await createDAVClient({
+  serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
+  credentials: {
+    authorizationCode: 'AUTH_CODE_OBTAINED_FROM_OAUTH_CALLBACK',
     tokenUrl: 'https://oauth2.googleapis.com/token',
     clientId: 'YOUR_CLIENT_ID',
     clientSecret: 'YOUR_CLIENT_TOKEN',
