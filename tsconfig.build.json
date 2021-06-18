@@ -1,25 +1,4 @@
 {
-  "compilerOptions": {
-    "sourceMap": false,
-    "esModuleInterop": true,
-    "allowJs": false,
-    "noImplicitAny": true,
-    "noImplicitReturns": true,
-    "noImplicitThis": true,
-    "strictNullChecks": true,
-    "resolveJsonModule": true,
-    "moduleResolution": "node",
-    "lib": ["es2018", "dom"],
-    "module": "commonjs",
-    "target": "es5",
-    "declaration": true,
-    "isolatedModules": true,
-    "baseUrl": ".",
-    "paths": {
-      "*": ["node_modules/*"]
-    },
-    "outDir": "./dist"
-  },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "src/**/*.test.ts"]
+  "extends": "./tsconfig.json",
+  "exclude": ["node_modules", "**/*.test.ts"]
 }
