@@ -67,6 +67,22 @@ STATUS:CONFIRMED
 TRANSP:OPAQUE
 END:VEVENT
 END:VCALENDAR`;
+  const iCalString3 = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Caldav test./tsdav test 1.0.0//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+DTSTART:20210502T090800Z
+DTEND:20210502T100800Z
+DTSTAMP:20210402T090944Z
+UID:6aefd54f-c038-409a-8f9c-bf3413efd611
+CREATED:20210502T090944Z
+SEQUENCE:0
+SUMMARY:Test
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+END:VCALENDAR`;
   const calendars = await fetchCalendars({
     account,
     headers: authHeaders,
@@ -74,6 +90,7 @@ END:VCALENDAR`;
 
   const objectUrl1 = new URL('test11.ics', calendars[1].url).href;
   const objectUrl2 = new URL('test22.ics', calendars[1].url).href;
+  const objectUrl3 = new URL('http.ics', calendars[1].url).href;
 
   const response1 = await createObject({
     url: objectUrl1,
@@ -93,8 +110,18 @@ END:VCALENDAR`;
     },
   });
 
+  const response3 = await createObject({
+    url: objectUrl3,
+    data: iCalString3,
+    headers: {
+      'content-type': 'text/calendar; charset=utf-8',
+      ...authHeaders,
+    },
+  });
+
   expect(response1.ok).toBe(true);
   expect(response2.ok).toBe(true);
+  expect(response3.ok).toBe(true);
 
   const calendarObjects = await calendarMultiGet({
     url: calendars[1].url,
@@ -118,8 +145,14 @@ END:VCALENDAR`;
     headers: authHeaders,
   });
 
+  const deleteResult3 = await deleteObject({
+    url: objectUrl3,
+    headers: authHeaders,
+  });
+
   expect(deleteResult1.ok).toBe(true);
   expect(deleteResult2.ok).toBe(true);
+  expect(deleteResult3.ok).toBe(true);
 });
 
 test('fetchCalendarObjects should be able to fetch calendar objects', async () => {

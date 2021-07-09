@@ -226,9 +226,9 @@ export const fetchCalendarObjects = async (params: {
       })
     ).map((res) => res.href ?? '')
   )
-    .map((url) => (url.includes('http') ? url : new URL(url, calendar.url).href))
-    .map((url) => new URL(url).pathname)
-    .filter((url): url is string => Boolean(url?.includes('.ics')));
+    .map((url) => (url.startsWith('http') ? url : new URL(url, calendar.url).href)) // patch up to full url if url is not full
+    .map((url) => new URL(url).pathname) // obtain pathname of the url
+    .filter((url): url is string => Boolean(url?.includes('.ics'))); // filter out non ics calendar objects since apple calendar might have those
 
   const calendarObjectResults = await calendarMultiGet({
     url: calendar.url,
