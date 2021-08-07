@@ -99,3 +99,9 @@ Check out the [Documentation](https://tsdav.vercel.app/)
 [MIT](https://github.com/llldar/tsDAV/blob/master/LICENSE)
 
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fllldar%2FtsDAV.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fllldar%2FtsDAV?ref=badge_large)
+
+### RELEASE NOTES
+
+##### v1.0.3
+
+Fixed a bug where calendar objects with `http` in its id would cause operations on it to fail.
