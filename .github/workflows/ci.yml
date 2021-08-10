@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Use Node.js ${{ matrix.node_version }}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node_version }}
 
@@ -33,3 +33,6 @@ jobs:
 
       - name: Run `test`
         run: yarn test
+        env:
+          ICLOUD_USERNAME: ${{secrets.ICLOUD_USERNAME}}
+          ICLOUD_APP_SPECIFIC_PASSWORD: ${{secrets.ICLOUD_APP_SPECIFIC_PASSWORD}}
