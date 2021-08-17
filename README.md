@@ -102,6 +102,10 @@ Check out the [Documentation](https://tsdav.vercel.app/)
 
 ### RELEASE NOTES
 
+##### v1.0.4
+
+Fixed a bug where timeRange filter sometimes might be in the wrong format.
+
 ##### v1.0.3
 
 Fixed a bug where calendar objects with `http` in its id would cause operations on it to fail.
