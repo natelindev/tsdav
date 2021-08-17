@@ -219,10 +219,7 @@ export const fetchCalendarObjects = async (params: {
     (
       await calendarQuery({
         url: calendar.url,
-        props: [
-          { name: 'getetag', namespace: DAVNamespace.DAV },
-          { name: 'calendar-data', namespace: DAVNamespace.DAV },
-        ],
+        props: [{ name: 'getetag', namespace: DAVNamespace.DAV }],
         filters,
         depth: '1',
         headers,
