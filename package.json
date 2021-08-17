@@ -1,6 +1,6 @@
 {
   "name": "tsdav",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "WebDAV, CALDAV, and CARDDAV client for Nodejs and the Browser",
   "keywords": [
     "dav",
