@@ -202,8 +202,8 @@ export const fetchCalendarObjects = async (params: {
                 {
                   type: 'time-range',
                   attributes: {
-                    start: `${timeRange?.start.slice(0, -5)}Z`,
-                    end: `${timeRange?.end.slice(0, -5)}Z`,
+                    start: timeRange?.start.replace(/[-:Z]/g, ''),
+                    end: timeRange?.end.replace(/[-:Z]/g, ''),
                   },
                 },
               ]
@@ -219,7 +219,10 @@ export const fetchCalendarObjects = async (params: {
     (
       await calendarQuery({
         url: calendar.url,
-        props: [{ name: 'getetag', namespace: DAVNamespace.DAV }],
+        props: [
+          { name: 'getetag', namespace: DAVNamespace.DAV },
+          { name: 'calendar-data', namespace: DAVNamespace.DAV },
+        ],
         filters,
         depth: '1',
         headers,
