@@ -102,7 +102,7 @@ Check out the [Documentation](https://tsdav.vercel.app/)
 
 ### RELEASE NOTES
 
-##### v1.0.4
+##### v1.0.5
 
 Fixed a bug where timeRange filter sometimes might be in the wrong format.
 

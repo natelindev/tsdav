@@ -1,6 +1,6 @@
 {
   "name": "tsdav",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "WebDAV, CALDAV, and CARDDAV client for Nodejs and the Browser",
   "keywords": [
     "dav",
@@ -34,6 +34,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "test": "jest",
+    "prepublishOnly": "yarn build",
     "build": "rimraf dist && tsc -p ./tsconfig.build.json && copyfiles package.json LICENSE README.md ./dist",
     "watch": "tsc --watch --outDir ./dist"
   },
