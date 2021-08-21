@@ -7,7 +7,7 @@ import { DAVNamespace } from './consts';
 import { propfind } from './request';
 import { DAVAccount } from './types/models';
 import { urlContains } from './util/requestHelpers';
-import { findMissingFieldNames, hasFields } from './util/typeHelper';
+import { findMissingFieldNames, hasFields } from './util/typeHelpers';
 
 const debug = getLogger('tsdav:account');
 

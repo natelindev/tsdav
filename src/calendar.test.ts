@@ -3,7 +3,7 @@ import { calendarMultiGet, fetchCalendarObjects, fetchCalendars } from './calend
 import { DAVNamespace } from './consts';
 import { createObject, deleteObject } from './request';
 import { DAVAccount } from './types/models';
-import { getBasicAuthHeaders } from './util/authHelper';
+import { getBasicAuthHeaders } from './util/authHelpers';
 
 let authHeaders: {
   authorization?: string;
@@ -169,4 +169,143 @@ test('fetchCalendarObjects should be able to fetch calendar objects', async () =
   expect(objects.every((o) => o.data.length > 0 && o.etag.length > 0 && o.url.length > 0)).toBe(
     true
   );
+});
+
+test('fetchCalendarObjects should be able to fetch target calendar objects when specified timeRange', async () => {
+  const iCalString1 = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Caldav test./tsdav test 1.0.0//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+DTSTART:20210401T090800Z
+DTEND:20210401T100800Z
+DTSTAMP:20210401T090944Z
+UID:4e3ce4c2-02c7-4fbc-ace0-f2b7d579eed6
+CREATED:20210401T090944Z
+SEQUENCE:0
+SUMMARY:Test
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+END:VCALENDAR`;
+  const iCalString2 = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Caldav test./tsdav test 1.0.0//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+DTSTART:20210402T090800Z
+DTEND:20210402T100800Z
+DTSTAMP:20210402T090944Z
+UID:1f28015d-e140-4484-900b-0fa15e10210e
+CREATED:20210402T090944Z
+SEQUENCE:0
+SUMMARY:Test
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+END:VCALENDAR`;
+  const iCalString3 = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Caldav test./tsdav test 1.0.0//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+DTSTART:20210502T090800Z
+DTEND:20210502T100800Z
+DTSTAMP:20210402T090944Z
+UID:6aefd54f-c038-409a-8f9c-bf3413efd611
+CREATED:20210502T090944Z
+SEQUENCE:0
+SUMMARY:Test
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+END:VCALENDAR`;
+  const calendars = await fetchCalendars({
+    account,
+    headers: authHeaders,
+  });
+
+  const objectUrl1 = new URL('test11.ics', calendars[1].url).href;
+  const objectUrl2 = new URL('test22.ics', calendars[1].url).href;
+  const objectUrl3 = new URL('http.ics', calendars[1].url).href;
+
+  const response1 = await createObject({
+    url: objectUrl1,
+    data: iCalString1,
+    headers: {
+      'content-type': 'text/calendar; charset=utf-8',
+      ...authHeaders,
+    },
+  });
+
+  const response2 = await createObject({
+    url: objectUrl2,
+    data: iCalString2,
+    headers: {
+      'content-type': 'text/calendar; charset=utf-8',
+      ...authHeaders,
+    },
+  });
+
+  const response3 = await createObject({
+    url: objectUrl3,
+    data: iCalString3,
+    headers: {
+      'content-type': 'text/calendar; charset=utf-8',
+      ...authHeaders,
+    },
+  });
+
+  expect(response1.ok).toBe(true);
+  expect(response2.ok).toBe(true);
+  expect(response3.ok).toBe(true);
+
+  const objects = await fetchCalendarObjects({
+    calendar: calendars[1],
+    headers: authHeaders,
+    timeRange: {
+      start: '2021-05-01T00:00:00.000Z',
+      end: '2021-05-04T00:00:00.000Z',
+    },
+  });
+
+  expect(objects.length).toBe(1);
+  expect(objects[0].url).toEqual(objectUrl3);
+
+  const deleteResult1 = await deleteObject({
+    url: objectUrl1,
+    headers: authHeaders,
+  });
+
+  const deleteResult2 = await deleteObject({
+    url: objectUrl2,
+    headers: authHeaders,
+  });
+
+  const deleteResult3 = await deleteObject({
+    url: objectUrl3,
+    headers: authHeaders,
+  });
+
+  expect(deleteResult1.ok).toBe(true);
+  expect(deleteResult2.ok).toBe(true);
+  expect(deleteResult3.ok).toBe(true);
+});
+
+test('fetchCalendarObjects should fail when passed timeRange is invalid', async () => {
+  const calendars = await fetchCalendars({
+    account,
+    headers: authHeaders,
+  });
+  const t = () =>
+    fetchCalendarObjects({
+      calendar: calendars[1],
+      headers: authHeaders,
+      timeRange: {
+        start: 'Sat May 01 2021 00:00:00 GMT+0800',
+        end: 'Sat May 04 2021 00:00:00 GMT+0800',
+      },
+    });
+
+  expect(t()).rejects.toEqual(new Error('invalid timeRange format, not in ISO8601'));
 });

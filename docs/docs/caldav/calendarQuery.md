@@ -34,7 +34,7 @@ const results = await calendarQuery({
 - `props` **required**, array of [DAVProp](../types/DAVProp.md)
 - `filters` array of [DAVFilter](../types/DAVFilter.md)
 - `depth` [DAVDepth](../types/DAVDepth.md)
-- `timezone` iana timezone name
+- `timezone` iana timezone name, like `America/Los_Angeles`
 - `headers` request headers
 
 ### Return Value

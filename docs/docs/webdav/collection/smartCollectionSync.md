@@ -44,6 +44,10 @@ const { created, updated, deleted } = (
 - `detailedResult` boolean indicate whether the return value should be detailed or not
 - `headers` request headers
 
+:::info
+`objects` inside `collection` are not needed when `detailedResult` is `true`.
+:::
+
 ### Return Value
 
 depend on `detailedResult` option

@@ -2,7 +2,7 @@ import { createAccount } from './account';
 import { createVCard, fetchAddressBooks, fetchVCards } from './addressBook';
 import { deleteObject } from './request';
 import { DAVAccount } from './types/models';
-import { getBasicAuthHeaders } from './util/authHelper';
+import { getBasicAuthHeaders } from './util/authHelpers';
 
 let authHeaders: {
   authorization?: string;

@@ -5,7 +5,8 @@ import * as client from './client';
 import * as collection from './collection';
 import { DAVAttributeMap, DAVNamespace, DAVNamespaceShorthandMap } from './consts';
 import * as request from './request';
-import * as authHelper from './util/authHelper';
+import * as authHelpers from './util/authHelpers';
+import * as requestHelpers from './util/requestHelpers';
 
 export type {
   DAVProp,
@@ -27,11 +28,12 @@ export type {
   DAVVCard,
 } from './types/models';
 
-export type { DAVClient } from './client';
+export { DAVClient } from './client';
 
 export { createDAVClient } from './client';
 export { createAccount } from './account';
 export { davRequest, propfind, createObject, updateObject, deleteObject } from './request';
+
 export {
   collectionQuery,
   supportedReportSet,
@@ -66,7 +68,16 @@ export {
   getOauthHeaders,
   fetchOauthTokens,
   refreshAccessToken,
-} from './util/authHelper';
+} from './util/authHelpers';
+export {
+  mergeObjectDupKeyArray,
+  urlContains,
+  urlEquals,
+  getDAVAttribute,
+  formatFilters,
+  formatProps,
+  cleanupFalsy,
+} from './util/requestHelpers';
 export { DAVNamespace, DAVNamespaceShorthandMap, DAVAttributeMap } from './consts';
 export default {
   DAVNamespace,
@@ -78,8 +89,6 @@ export default {
   ...account,
   ...addressBook,
   ...calendar,
-  getBasicAuthHeaders: authHelper.getBasicAuthHeaders,
-  getOauthHeaders: authHelper.getOauthHeaders,
-  fetchOauthTokens: authHelper.fetchOauthTokens,
-  refreshAccessToken: authHelper.refreshAccessToken,
+  ...authHelpers,
+  ...requestHelpers,
 };

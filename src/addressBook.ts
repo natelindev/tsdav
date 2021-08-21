@@ -7,7 +7,7 @@ import { createObject, deleteObject, propfind, updateObject } from './request';
 import { DAVDepth, DAVFilter, DAVProp, DAVResponse } from './types/DAVTypes';
 import { DAVAccount, DAVAddressBook, DAVVCard } from './types/models';
 import { formatFilters, formatProps, getDAVAttribute } from './util/requestHelpers';
-import { findMissingFieldNames, hasFields } from './util/typeHelper';
+import { findMissingFieldNames, hasFields } from './util/typeHelpers';
 
 const debug = getLogger('tsdav:addressBook');
 

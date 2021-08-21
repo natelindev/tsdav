@@ -1,5 +1,5 @@
 import { createAccount, fetchHomeUrl, fetchPrincipalUrl, serviceDiscovery } from './account';
-import { getBasicAuthHeaders } from './util/authHelper';
+import { getBasicAuthHeaders } from './util/authHelpers';
 
 let authHeaders: {
   authorization?: string;

@@ -21,8 +21,8 @@ const objects = await fetchCalendarObjects({
 - `objectUrls` calendar object urls to fetch
 - `filters` array of [DAVFilter](../types/DAVFilter.md)
 - `timeRange` time range in iso format
-  - `start` start time in [ISO 8601 format](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toISOString) `YYYY-MM-DDTHH:mm:ss.sssZ`
-  - `end` end time in [ISO 8601 format](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toISOString) `YYYY-MM-DDTHH:mm:ss.sssZ`
+  - `start` start time in [ISO 8601 format](https://en.wikipedia.org/wiki/ISO_8601), format that's not in ISO 8601 will cause an error be thrown.
+  - `end` end time in [ISO 8601 format](https://en.wikipedia.org/wiki/ISO_8601), format that's not in ISO 8601 will cause an error be thrown.
 - `headers` request headers
 
 ### Return Value

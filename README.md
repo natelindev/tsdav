@@ -24,6 +24,7 @@ webdav request made easy
 
 - Easy to use, well documented JSON based WEBDAV API
 - Works in both `Browsers` and `Node.js`
+- Supports Both `commonjs` and `esm`
 - OAuth2 & Basic Auth helpers built-in
 - Native typescript, fully linted and well tested
 - Supports WEBDAV, CALDAV, CARDDAV
@@ -49,7 +50,7 @@ yarn add tsdav
 import { createDAVClient } from 'tsdav';
 
 (async () => {
-  const googleClient = await createDAVClient({
+  const client = await createDAVClient({
     serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
     credentials: {
       refreshToken: 'YOUR_REFRESH_TOKEN_WITH_CALDAV_PERMISSION',
@@ -90,6 +91,59 @@ import { createDAVClient } from 'tsdav';
 })();
 ```
 
+After `v1.1.0`, you have a new way of creating clients.
+
+##### Google CALDAV
+
+```ts
+import { DAVClient } from 'tsdav';
+
+const client = new DAVClient({
+  serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
+  credentials: {
+    refreshToken: 'YOUR_REFRESH_TOKEN_WITH_CALDAV_PERMISSION',
+  },
+  authMethod: 'Oauth',
+  defaultAccountType: 'caldav',
+});
+
+(async () => {
+  await googleClient.login();
+
+  const calendars = await client.fetchCalendars();
+
+  const calendarObjects = await client.fetchCalendarObjects({
+    calendar: calendars[0],
+  });
+})();
+```
+
+##### Apple CARDDAV
+
+```ts
+import { DAVClient } from 'tsdav';
+
+const client = new DAVClient({
+  serverUrl: 'https://contacts.icloud.com',
+  credentials: {
+    username: 'YOUR_APPLE_ID',
+    password: 'YOUR_APP_SPECIFIC_PASSWORD',
+  },
+  authMethod: 'Basic',
+  defaultAccountType: 'carddav',
+});
+
+(async () => {
+  await client.login();
+
+  const addressBooks = await client.fetchAddressBooks();
+
+  const vcards = await client.fetchVCards({
+    addressBook: addressBooks[0],
+  });
+})();
+```
+
 ### Documentation
 
 Check out the [Documentation](https://tsdav.vercel.app/)
@@ -100,12 +154,11 @@ Check out the [Documentation](https://tsdav.vercel.app/)
 
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fllldar%2FtsDAV.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fllldar%2FtsDAV?ref=badge_large)
 
-### RELEASE NOTES
+### Changelog
 
-##### v1.0.6
+refers to [Changelog](./CHANGELOG.md)
 
-Fixed a bug where timeRange filter sometimes might be in the wrong format.
+### Debugging
 
-##### v1.0.3
-
-Fixed a bug where calendar objects with `http` in its id would cause operations on it to fail.
+this package uses `debug` package,
+add `tsdav:*` to `DEBUG` env variable to enable debug logs

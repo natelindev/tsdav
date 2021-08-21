@@ -1,0 +1,45 @@
+name: auto-release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: ["14"]
+
+    environment:
+      name: Production
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: use node.js ${{ matrix.node_version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node_version }}
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: install dependencies
+        run: yarn --frozen-lockfile
+
+      - name: check types
+        run: yarn typecheck
+
+      - name: lint
+        run: yarn lint
+
+      - name: test
+        run: yarn test
+        env:
+          ICLOUD_USERNAME: ${{secrets.ICLOUD_USERNAME}}
+          ICLOUD_APP_SPECIFIC_PASSWORD: ${{secrets.ICLOUD_APP_SPECIFIC_PASSWORD}}
+
+      - name: publish package
+        run: yarn run publish
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}

@@ -7,7 +7,7 @@ import { DAVDepth, DAVProp, DAVResponse } from './types/DAVTypes';
 import { SmartCollectionSync } from './types/functionsOverloads';
 import { DAVAccount, DAVCollection, DAVObject } from './types/models';
 import { cleanupFalsy, formatProps, getDAVAttribute, urlContains } from './util/requestHelpers';
-import { findMissingFieldNames, hasFields, RequireAndNotNullSome } from './util/typeHelper';
+import { findMissingFieldNames, hasFields, RequireAndNotNullSome } from './util/typeHelpers';
 
 const debug = getLogger('tsdav:collection');
 
@@ -217,7 +217,7 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
     // debug(`created objects: ${created.map((o) => o.url).join('\n')}`);
 
     // have same url, but etag different
-    const updated = localObjects.reduce((prev, curr) => {
+    const updated = localObjects.reduce<DAVObject[]>((prev, curr) => {
       const found = remoteObjects.find((ro) => urlContains(ro.url, curr.url));
       if (found && found.etag && found.etag !== curr.etag) {
         return [...prev, found];
@@ -260,7 +260,7 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
     // debug(`created objects: ${created.map((o) => o.url).join('\n')}`);
 
     // have same url, but etag different
-    const updated = localObjects.reduce((prev, curr) => {
+    const updated = localObjects.reduce<DAVObject[]>((prev, curr) => {
       const found = remoteObjects.find((ro) => urlContains(ro.url, curr.url));
       if (found && found.etag && found.etag !== curr.etag) {
         return [...prev, found];

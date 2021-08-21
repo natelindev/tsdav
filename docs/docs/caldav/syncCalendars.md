@@ -33,12 +33,14 @@ const { created, updated, deleted } = await syncCalendars({
 
 ### Arguments
 
-**required**
-
 - `oldCalendars` **required**, locally version of calendars of this account, should contain [calendar objects](../types/DAVCalendarObject.md) as well if `detailedResult` is `false`
 - `account` the account which calendars belong to,
 - `detailedResult` if falsy, the result would be latest version of the calendars of this account, otherwise they would be separated into three groups of `created`, `updated`, and `deleted`.
 - `headers` request headers
+
+:::info
+`objects` inside `oldCalendars` are not needed when `detailedResult` is `true`.
+:::
 
 ### Return Value
 

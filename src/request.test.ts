@@ -5,7 +5,7 @@ import { fetchCalendarObjects, fetchCalendars } from './calendar';
 import { DAVNamespace } from './consts';
 import { createObject, davRequest, deleteObject, propfind, updateObject } from './request';
 import { DAVAccount, DAVCalendar } from './types/models';
-import { getBasicAuthHeaders } from './util/authHelper';
+import { getBasicAuthHeaders } from './util/authHelpers';
 
 let authHeaders: {
   authorization?: string;

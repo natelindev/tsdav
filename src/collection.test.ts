@@ -3,7 +3,7 @@ import { fetchCalendars } from './calendar';
 import { isCollectionDirty } from './collection';
 import { createObject, deleteObject } from './request';
 import { DAVAccount, DAVCalendar } from './types/models';
-import { getBasicAuthHeaders } from './util/authHelper';
+import { getBasicAuthHeaders } from './util/authHelpers';
 
 let authHeaders: {
   authorization?: string;

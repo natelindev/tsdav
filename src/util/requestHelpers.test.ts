@@ -79,6 +79,7 @@ test('mergeObjectDupKeyArray should be able to merge objects', () => {
         test6: 'bbb',
       },
     },
+    test7: 'ooo',
   };
   const objB = {
     test1: 234,
@@ -88,12 +89,15 @@ test('mergeObjectDupKeyArray should be able to merge objects', () => {
         test6: 'ddd',
       },
     },
+    test8: 'ttt',
   };
   const mergedObj = mergeObjectDupKeyArray(objA, objB);
   expect(mergedObj).toEqual({
     test1: [234, 123],
     test2: ['ccc', 'aaa'],
     test4: [{ test5: { test6: 'ddd' } }, { test5: { test6: 'bbb' } }],
+    test7: 'ooo',
+    test8: 'ttt',
   });
 });
 

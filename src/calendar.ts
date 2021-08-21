@@ -14,7 +14,7 @@ import {
   getDAVAttribute,
   urlContains,
 } from './util/requestHelpers';
-import { findMissingFieldNames, hasFields } from './util/typeHelper';
+import { findMissingFieldNames, hasFields } from './util/typeHelpers';
 
 const debug = getLogger('tsdav:calendar');
 
@@ -174,6 +174,18 @@ export const fetchCalendarObjects = async (params: {
   headers?: Record<string, string>;
 }): Promise<DAVCalendarObject[]> => {
   const { calendar, objectUrls, filters: defaultFilters, timeRange, headers } = params;
+
+  if (timeRange) {
+    // validate timeRange
+    const ISO_8601 = /^\d{4}(-\d\d(-\d\d(T\d\d:\d\d(:\d\d)?(\.\d+)?(([+-]\d\d:\d\d)|Z)?)?)?)?$/i;
+    const ISO_8601_FULL = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?(([+-]\d\d:\d\d)|Z)?$/i;
+    if (
+      (!ISO_8601.test(timeRange.start) || !ISO_8601.test(timeRange.end)) &&
+      (!ISO_8601_FULL.test(timeRange.start) || !ISO_8601_FULL.test(timeRange.end))
+    ) {
+      throw new Error('invalid timeRange format, not in ISO8601');
+    }
+  }
   debug(`Fetching calendar objects from ${calendar?.url}`);
   const requiredFields: Array<'url'> = ['url'];
   if (!calendar || !hasFields(calendar, requiredFields)) {
@@ -202,8 +214,8 @@ export const fetchCalendarObjects = async (params: {
                 {
                   type: 'time-range',
                   attributes: {
-                    start: timeRange?.start.replace(/[-:.]/g, ''),
-                    end: timeRange?.end.replace(/[-:.]/g, ''),
+                    start: new Date(timeRange.start).toISOString().replace(/[-:.]/g, ''),
+                    end: new Date(timeRange.end).toISOString().replace(/[-:.]/g, ''),
                   },
                 },
               ]
@@ -313,7 +325,7 @@ export const syncCalendars: SyncCalendars = async (params: {
   debug(`new calendars: ${created.map((cc) => cc.displayName)}`);
 
   // have same url, but syncToken/ctag different
-  const updated = localCalendars.reduce((prev, curr) => {
+  const updated = localCalendars.reduce<DAVCalendar[]>((prev, curr) => {
     const found = remoteCalendars.find((rc) => urlContains(rc.url, curr.url));
     if (
       found &&

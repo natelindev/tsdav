@@ -3,7 +3,7 @@ import {
   fetchOauthTokens,
   getBasicAuthHeaders,
   refreshAccessToken,
-} from './authHelper';
+} from './authHelpers';
 
 test('defaultParam should be able to add default param', () => {
   const fn1 = (params: { a?: number; b?: number }) => {

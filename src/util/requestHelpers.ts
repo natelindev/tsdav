@@ -1,7 +1,7 @@
 import { DAVAttributeMap, DAVNamespace, DAVNamespaceShorthandMap } from '../consts';
 import { DAVFilter, DAVProp } from '../types/DAVTypes';
 
-import type { NoUndefinedField, ValueOf } from './typeHelper';
+import type { NoUndefinedField } from './typeHelpers';
 
 export const urlEquals = (urlA?: string, urlB?: string): boolean => {
   if (!urlA && !urlB) {
@@ -40,12 +40,21 @@ export const urlContains = (urlA?: string, urlB?: string): boolean => {
 };
 
 // merge two objects, same key property become array
-export const mergeObjectDupKeyArray = <T, U>(
-  objA: T,
-  ObjB: U
-): { [key in keyof T & keyof U]: ValueOf<T> | ValueOf<U> } =>
-  (Object.entries(objA) as Array<[keyof T, any]>).reduce(
-    (merged: T & U, [currKey, currValue]): T & U => {
+type ShallowMergeDupKeyArray<A, B> = {
+  [key in keyof A | keyof B]: key extends keyof A & keyof B
+    ? Array<A[key] | B[key]>
+    : key extends keyof A
+    ? A[key]
+    : key extends keyof B
+    ? B[key]
+    : never;
+};
+export const mergeObjectDupKeyArray = <A, B>(objA: A, objB: B): ShallowMergeDupKeyArray<A, B> => {
+  return (Object.entries(objA) as Array<[keyof A | keyof B, unknown]>).reduce(
+    (
+      merged: ShallowMergeDupKeyArray<A, B>,
+      [currKey, currValue]
+    ): ShallowMergeDupKeyArray<A, B> => {
       if (merged[currKey] && Array.isArray(merged[currKey])) {
         // is array
         return {
@@ -60,8 +69,9 @@ export const mergeObjectDupKeyArray = <T, U>(
       // not exist
       return { ...merged, [currKey]: currValue };
     },
-    ObjB
+    objB as ShallowMergeDupKeyArray<A, B>
   );
+};
 
 export const getDAVAttribute = (nsArr: DAVNamespace[]): { [key: string]: DAVNamespace } =>
   nsArr.reduce((prev, curr) => ({ ...prev, [DAVAttributeMap[curr]]: curr }), {});

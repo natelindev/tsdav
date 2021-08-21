@@ -52,7 +52,7 @@ or
 import tsdav from 'tsdav';
 ```
 
-#### create client
+#### Create Client
 
 By creating a client, you can now use all tsdav methods without supplying authentication header or accounts.
 
@@ -91,6 +91,57 @@ For Apple
 
 ```ts
 const client = await createDAVClient({
+  serverUrl: 'https://caldav.icloud.com',
+  credentials: {
+    username: 'YOUR_APPLE_ID',
+    password: 'YOUR_APP_SPECIFIC_PASSWORD',
+  },
+  authMethod: 'Basic',
+  defaultAccountType: 'caldav',
+});
+```
+
+After `v1.1.0`, you have a new way of creating clients.
+
+:::info
+
+You need to call `client.login()` with this method before using the functions
+
+:::
+
+For Google
+
+```ts
+const client = new DAVClient({
+  serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
+  credentials: {
+    refreshToken: 'YOUR_REFRESH_TOKEN_WITH_CALDAV_PERMISSION',
+  },
+  authMethod: 'Oauth',
+  defaultAccountType: 'caldav',
+});
+```
+
+or
+
+```ts
+const client = new DAVClient({
+  serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
+  credentials: {
+    authorizationCode: 'AUTH_CODE_OBTAINED_FROM_OAUTH_CALLBACK',
+    tokenUrl: 'https://oauth2.googleapis.com/token',
+    clientId: 'YOUR_CLIENT_ID',
+    clientSecret: 'YOUR_CLIENT_TOKEN',
+  },
+  authMethod: 'Oauth',
+  defaultAccountType: 'caldav',
+});
+```
+
+For Apple
+
+```ts
+const client = new DAVClient({
   serverUrl: 'https://caldav.icloud.com',
   credentials: {
     username: 'YOUR_APPLE_ID',

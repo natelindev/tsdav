@@ -4,7 +4,7 @@ import getLogger from 'debug';
 
 import { DAVTokens } from '../types/DAVTypes';
 import { DAVCredentials } from '../types/models';
-import { findMissingFieldNames, hasFields } from './typeHelper';
+import { findMissingFieldNames, hasFields } from './typeHelpers';
 
 const debug = getLogger('tsdav:authHelper');
 
