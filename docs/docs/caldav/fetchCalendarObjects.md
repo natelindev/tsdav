@@ -8,7 +8,7 @@ get all/specified calendarObjects of the passed in calendar
 
 ```ts
 const objects = await fetchCalendarObjects({
-  calendar: calendars[1],
+  calendar: calendars[0],
   headers: {
     authorization: 'Basic x0C9uFWd9Vz8OwS0DEAtkAlj',
   },

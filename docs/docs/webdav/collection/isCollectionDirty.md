@@ -8,7 +8,7 @@ detect if the collection have changed
 
 ```ts
 const { isDirty, newCtag } = await isCollectionDirty({
-  collection: calendars[1],
+  collection: calendars[0],
   headers: {
     authorization: 'Basic x0C9uFWd9Vz8OwS0DEAtkAlj',
   },

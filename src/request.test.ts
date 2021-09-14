@@ -138,7 +138,7 @@ TRANSP:OPAQUE
 END:VEVENT
 END:VCALENDAR`;
 
-  const objectUrl = new URL('test.ics', calendars[1].url).href;
+  const objectUrl = new URL('test.ics', calendars[0].url).href;
   const response = await createObject({
     url: objectUrl,
     data: iCalString,
@@ -149,7 +149,7 @@ END:VCALENDAR`;
   });
 
   const [calendarObject] = await fetchCalendarObjects({
-    calendar: calendars[1],
+    calendar: calendars[0],
     objectUrls: [objectUrl],
     headers: authHeaders,
   });
@@ -203,7 +203,7 @@ END:VEVENT
 END:VCALENDAR
 `;
 
-  const objectUrl = new URL('test2.ics', calendars[1].url).href;
+  const objectUrl = new URL('test2.ics', calendars[0].url).href;
   const createResult = await createObject({
     url: objectUrl,
     data: iCalString,
@@ -215,7 +215,7 @@ END:VCALENDAR
   expect(createResult.ok).toBe(true);
 
   const [calendarObject] = await fetchCalendarObjects({
-    calendar: calendars[1],
+    calendar: calendars[0],
     objectUrls: [objectUrl],
     headers: authHeaders,
   });
@@ -265,7 +265,7 @@ TRANSP:OPAQUE
 END:VEVENT
 END:VCALENDAR`;
 
-  const objectUrl = new URL('test3.ics', calendars[1].url).href;
+  const objectUrl = new URL('test3.ics', calendars[0].url).href;
   const createResult = await createObject({
     url: objectUrl,
     data: iCalString,

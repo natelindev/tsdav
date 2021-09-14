@@ -67,6 +67,23 @@ test('fetchVCards should be able to fetch vcards', async () => {
     account,
     headers: authHeaders,
   });
+
+  const createResult = await createVCard({
+    addressBook: addressBooks[0],
+    vCardString: `BEGIN:VCARD
+VERSION:3.0
+N:;Test ABC;;;
+FN:Test ABC
+UID:5123fcac-0ed3-4d77-ae93-5f36984747b4
+PRODID:-//Apple Inc.//iCloud Web Address Book 2109B35//EN
+REV:2021-06-16T01:28:23Z
+END:VCARD`,
+    filename: 'test233.vcf',
+    headers: authHeaders,
+  });
+
+  expect(createResult.ok).toBe(true);
+
   const vcards = await fetchVCards({
     addressBook: addressBooks[0],
     headers: authHeaders,
@@ -76,4 +93,11 @@ test('fetchVCards should be able to fetch vcards', async () => {
   expect(vcards.every((o) => o.data.length > 0 && o.etag.length > 0 && o.url.length > 0)).toBe(
     true
   );
+
+  const deleteResult = await deleteObject({
+    url: new URL('test233.vcf', addressBooks[0].url).href,
+    headers: authHeaders,
+  });
+
+  expect(deleteResult.ok).toBe(true);
 });

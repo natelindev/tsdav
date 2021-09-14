@@ -7,7 +7,7 @@ on:
 
 jobs:
 
-  build:
+  automated-test:
     runs-on: ubuntu-latest
 
     strategy:

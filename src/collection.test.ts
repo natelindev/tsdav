@@ -48,7 +48,7 @@ TRANSP:OPAQUE
 END:VEVENT
 END:VCALENDAR`;
 
-  const objectUrl = new URL('testCollection.ics', calendars[1].url).href;
+  const objectUrl = new URL('testCollection.ics', calendars[0].url).href;
   const createResponse = await createObject({
     url: objectUrl,
     data: iCalString,
@@ -61,12 +61,12 @@ END:VCALENDAR`;
   expect(createResponse.ok).toBe(true);
 
   const { isDirty, newCtag } = await isCollectionDirty({
-    collection: calendars[1],
+    collection: calendars[0],
     headers: authHeaders,
   });
   expect(isDirty).toBe(true);
   expect(newCtag.length > 0).toBe(true);
-  expect(newCtag).not.toEqual(calendars[1].ctag);
+  expect(newCtag).not.toEqual(calendars[0].ctag);
 
   const deleteResult = await deleteObject({
     url: objectUrl,

@@ -4,5 +4,5 @@ module.exports = {
     '^.+\\.(js|ts|jsx|tsx)$': 'ts-jest',
   },
   setupFiles: ['dotenv/config'],
-  testTimeout: 60000,
+  testTimeout: 120000,
 };

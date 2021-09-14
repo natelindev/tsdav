@@ -88,9 +88,9 @@ END:VCALENDAR`;
     headers: authHeaders,
   });
 
-  const objectUrl1 = new URL('test11.ics', calendars[1].url).href;
-  const objectUrl2 = new URL('test22.ics', calendars[1].url).href;
-  const objectUrl3 = new URL('http.ics', calendars[1].url).href;
+  const objectUrl1 = new URL('test11.ics', calendars[0].url).href;
+  const objectUrl2 = new URL('test22.ics', calendars[0].url).href;
+  const objectUrl3 = new URL('http.ics', calendars[0].url).href;
 
   const response1 = await createObject({
     url: objectUrl1,
@@ -124,7 +124,7 @@ END:VCALENDAR`;
   expect(response3.ok).toBe(true);
 
   const calendarObjects = await calendarMultiGet({
-    url: calendars[1].url,
+    url: calendars[0].url,
     props: [
       { name: 'getetag', namespace: DAVNamespace.DAV },
       { name: 'calendar-data', namespace: DAVNamespace.CALDAV },
@@ -156,19 +156,52 @@ END:VCALENDAR`;
 });
 
 test('fetchCalendarObjects should be able to fetch calendar objects', async () => {
+  const iCalString1 = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Caldav test./tsdav test 1.0.0//EN
+CALSCALE:GREGORIAN
+BEGIN:VEVENT
+DTSTART:20200401T090800Z
+DTEND:20200401T100800Z
+DTSTAMP:20200401T090944Z
+UID:2baa32b7-a4cc-41c3-8760-73e4377c00cd
+CREATED:20200401T090944Z
+SEQUENCE:0
+SUMMARY:Test
+STATUS:CONFIRMED
+TRANSP:OPAQUE
+END:VEVENT
+END:VCALENDAR`;
+
   const calendars = await fetchCalendars({
     account,
     headers: authHeaders,
   });
+
+  const objectUrl1 = new URL('test20.ics', calendars[0].url).href;
+  await createObject({
+    url: objectUrl1,
+    data: iCalString1,
+    headers: {
+      'content-type': 'text/calendar; charset=utf-8',
+      ...authHeaders,
+    },
+  });
+
   const objects = await fetchCalendarObjects({
-    calendar: calendars[1],
+    calendar: calendars[0],
     headers: authHeaders,
   });
 
   expect(objects.length > 0).toBe(true);
-  expect(objects.every((o) => o.data.length > 0 && o.etag.length > 0 && o.url.length > 0)).toBe(
+  expect(objects.every((o) => o.data?.length > 0 && o.etag?.length > 0 && o.url?.length > 0)).toBe(
     true
   );
+
+  await deleteObject({
+    url: objectUrl1,
+    headers: authHeaders,
+  });
 });
 
 test('fetchCalendarObjects should be able to fetch target calendar objects when specified timeRange', async () => {
@@ -225,9 +258,9 @@ END:VCALENDAR`;
     headers: authHeaders,
   });
 
-  const objectUrl1 = new URL('test11.ics', calendars[1].url).href;
-  const objectUrl2 = new URL('test22.ics', calendars[1].url).href;
-  const objectUrl3 = new URL('http.ics', calendars[1].url).href;
+  const objectUrl1 = new URL('test11.ics', calendars[0].url).href;
+  const objectUrl2 = new URL('test22.ics', calendars[0].url).href;
+  const objectUrl3 = new URL('http.ics', calendars[0].url).href;
 
   const response1 = await createObject({
     url: objectUrl1,
@@ -261,7 +294,7 @@ END:VCALENDAR`;
   expect(response3.ok).toBe(true);
 
   const objects = await fetchCalendarObjects({
-    calendar: calendars[1],
+    calendar: calendars[0],
     headers: authHeaders,
     timeRange: {
       start: '2021-05-01T00:00:00.000Z',
@@ -299,7 +332,7 @@ test('fetchCalendarObjects should fail when passed timeRange is invalid', async 
   });
   const t = () =>
     fetchCalendarObjects({
-      calendar: calendars[1],
+      calendar: calendars[0],
       headers: authHeaders,
       timeRange: {
         start: 'Sat May 01 2021 00:00:00 GMT+0800',
