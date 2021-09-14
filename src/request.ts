@@ -99,7 +99,7 @@ export const davRequest = async (params: {
           parentOfParent[keyName] = nativeType(value);
         }
       } catch (e) {
-        debug(e.stack);
+        debug((e as Error).stack);
       }
     },
     // remove namespace & camelCase

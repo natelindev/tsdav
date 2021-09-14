@@ -45,7 +45,7 @@ export const serviceDiscovery = async (params: {
       }
     }
   } catch (err) {
-    debug(`Service discovery failed: ${err.stack}`);
+    debug(`Service discovery failed: ${(err as Error).stack}`);
   }
 
   return endpoint.href;
