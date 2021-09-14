@@ -35,6 +35,11 @@ export const serviceDiscovery = async (params: {
       if (typeof location === 'string' && location.length) {
         debug(`Service discovery redirected to ${location}`);
         const serviceURL = new URL(location, endpoint);
+
+        if (serviceURL.hostname === uri.hostname && uri.port && !serviceURL.port) {
+          serviceURL.port = uri.port;
+        }
+
         serviceURL.protocol = endpoint.protocol ?? 'http';
         return serviceURL.href;
       }
