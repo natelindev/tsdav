@@ -1,3 +1,12 @@
+
+##### v1.1.1
+
+**improvements**
+
+- Fixed spread params for new way of creating dav client, thanks to @molaux
+- Ensure service discovery redirect maintains the proper port, thanks to @n8io
+- Fixed a time range issue with new time range format
+
 ##### v1.1.0
 
 **breaking changes**
