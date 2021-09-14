@@ -355,7 +355,9 @@ export class DAVClient {
     return defaultParam(rawMakeCalendar, { headers: this.authHeaders })(params[0]);
   }
 
-  async calendarMultiGet(...params: Parameters<typeof rawCalendarMultiGet>): Promise<DAVResponse[]> {
+  async calendarMultiGet(
+    ...params: Parameters<typeof rawCalendarMultiGet>
+  ): Promise<DAVResponse[]> {
     return defaultParam(rawCalendarMultiGet, { headers: this.authHeaders })(params[0]);
   }
 
@@ -398,7 +400,9 @@ export class DAVClient {
     )(params[0]);
   }
 
-  async addressBookQuery(...params: Parameters<typeof rawAddressBookQuery>): Promise<DAVResponse[]> {
+  async addressBookQuery(
+    ...params: Parameters<typeof rawAddressBookQuery>
+  ): Promise<DAVResponse[]> {
     return defaultParam(rawAddressBookQuery, { headers: this.authHeaders })(params[0]);
   }
 

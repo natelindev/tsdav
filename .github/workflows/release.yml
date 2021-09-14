@@ -40,6 +40,6 @@ jobs:
           ICLOUD_APP_SPECIFIC_PASSWORD: ${{secrets.ICLOUD_APP_SPECIFIC_PASSWORD}}
 
       - name: publish package
-        run: yarn run publish
+        run: yarn publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
