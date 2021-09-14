@@ -145,7 +145,7 @@ export const fetchCalendars = async (params?: {
       .map((rs) => {
         // debug(`Found calendar ${rs.props?.displayname}`);
         const description = rs.props?.calendarDescription;
-        const timezone = rs.props?.calendarTimezon;
+        const timezone = rs.props?.calendarTimezone;
         return {
           description: typeof description === 'string' ? description : '',
           timezone: typeof timezone === 'string' ? timezone : '',
