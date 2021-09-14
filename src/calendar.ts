@@ -214,8 +214,14 @@ export const fetchCalendarObjects = async (params: {
                 {
                   type: 'time-range',
                   attributes: {
-                    start: new Date(timeRange.start).toISOString().replace(/[-:.]/g, ''),
-                    end: new Date(timeRange.end).toISOString().replace(/[-:.]/g, ''),
+                    start: `${new Date(timeRange.start)
+                      .toISOString()
+                      .slice(0, 19)
+                      .replace(/[-:.]/g, '')}Z`,
+                    end: `${new Date(timeRange.end)
+                      .toISOString()
+                      .slice(0, 19)
+                      .replace(/[-:.]/g, '')}Z`,
                   },
                 },
               ]
