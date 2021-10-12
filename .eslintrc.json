@@ -39,6 +39,7 @@
         "optionalDependencies": false,
         "peerDependencies": false
       }
-    ]
+    ],
+    "import/no-cycle": 0
   }
 }
