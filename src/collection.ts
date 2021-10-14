@@ -67,8 +67,10 @@ export const supportedReportSet = async (params: {
     depth: '1',
     headers,
   });
-  return res[0]?.props?.supportedReportSet.supportedReport.map(
-    (sr: { report: any }) => Object.keys(sr.report)[0]
+  return (
+    res[0]?.props?.supportedReportSet?.supportedReport?.map(
+      (sr: { report: any }) => Object.keys(sr.report)[0]
+    ) ?? []
   );
 };
 
