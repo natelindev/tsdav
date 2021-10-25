@@ -1,4 +1,4 @@
-import { DAVNamespace } from '../consts';
+import { DAVNamespace } from '../../consts';
 import {
   cleanupFalsy,
   formatFilters,
@@ -7,7 +7,7 @@ import {
   mergeObjectDupKeyArray,
   urlContains,
   urlEquals,
-} from './requestHelpers';
+} from '../../util/requestHelpers';
 
 test('cleanupFalsy should clean undefined from object', () => {
   const objA = {

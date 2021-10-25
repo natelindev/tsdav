@@ -1,9 +1,9 @@
-import { createAccount } from './account';
-import { calendarMultiGet, fetchCalendarObjects, fetchCalendars } from './calendar';
-import { DAVNamespace } from './consts';
-import { createObject, deleteObject } from './request';
-import { DAVAccount } from './types/models';
-import { getBasicAuthHeaders } from './util/authHelpers';
+import { createAccount } from '../../../account';
+import { calendarMultiGet, fetchCalendarObjects, fetchCalendars } from '../../../calendar';
+import { DAVNamespace } from '../../../consts';
+import { createObject, deleteObject } from '../../../request';
+import { DAVAccount } from '../../../types/models';
+import { getBasicAuthHeaders } from '../../../util/authHelpers';
 
 let authHeaders: {
   authorization?: string;

@@ -1,30 +1,37 @@
-import { createAccount, fetchHomeUrl, fetchPrincipalUrl, serviceDiscovery } from './account';
-import { getBasicAuthHeaders } from './util/authHelpers';
+import { createAccount, fetchHomeUrl, fetchPrincipalUrl, serviceDiscovery } from '../../../account';
+import { getOauthHeaders } from '../../../util/authHelpers';
 
 let authHeaders: {
   authorization?: string;
 };
 
 beforeAll(async () => {
-  authHeaders = getBasicAuthHeaders({
-    username: process.env.ICLOUD_USERNAME,
-    password: process.env.ICLOUD_APP_SPECIFIC_PASSWORD,
-  });
+  authHeaders = (
+    await getOauthHeaders({
+      username: process.env.CREDENTIAL_GOOGLE_USERNAME,
+      refreshToken: process.env.CREDENTIAL_GOOGLE_REFRESH_TOKEN,
+      clientId: process.env.CREDENTIAL_GOOGLE_CLIENT_ID,
+      clientSecret: process.env.CREDENTIAL_GOOGLE_CLIENT_SECRET,
+    })
+  ).headers;
 });
 
 test('serviceDiscovery should be able to discover the caldav service', async () => {
   const url = await serviceDiscovery({
-    account: { serverUrl: 'https://caldav.icloud.com/', accountType: 'caldav' },
+    account: {
+      serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
+      accountType: 'caldav',
+    },
     headers: authHeaders,
   });
-  expect(url).toEqual('https://caldav.icloud.com/');
+  expect(url).toEqual('https://apidata.googleusercontent.com/caldav/v2/');
 });
 
 test('fetchPrincipalUrl should be able to fetch the url of principle collection', async () => {
   const url = await fetchPrincipalUrl({
     account: {
-      serverUrl: 'https://caldav.icloud.com/',
-      rootUrl: 'https://caldav.icloud.com/',
+      serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
+      rootUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
       accountType: 'caldav',
     },
     headers: authHeaders,
@@ -35,8 +42,8 @@ test('fetchPrincipalUrl should be able to fetch the url of principle collection'
 test('fetchHomeUrl should be able to fetch the url of home set', async () => {
   const principalUrl = await fetchPrincipalUrl({
     account: {
-      serverUrl: 'https://caldav.icloud.com/',
-      rootUrl: 'https://caldav.icloud.com/',
+      serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
+      rootUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
       accountType: 'caldav',
     },
     headers: authHeaders,
@@ -44,8 +51,8 @@ test('fetchHomeUrl should be able to fetch the url of home set', async () => {
   const url = await fetchHomeUrl({
     account: {
       principalUrl,
-      serverUrl: 'https://caldav.icloud.com/',
-      rootUrl: 'https://caldav.icloud.com/',
+      serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
+      rootUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
       accountType: 'caldav',
     },
     headers: authHeaders,
@@ -56,12 +63,12 @@ test('fetchHomeUrl should be able to fetch the url of home set', async () => {
 test('createAccount should be able to create account', async () => {
   const account = await createAccount({
     account: {
-      serverUrl: 'https://caldav.icloud.com/',
+      serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
       accountType: 'caldav',
     },
     headers: authHeaders,
   });
-  expect(account.rootUrl).toEqual('https://caldav.icloud.com/');
+  expect(account.rootUrl).toEqual('https://apidata.googleusercontent.com/caldav/v2/');
   expect(account.principalUrl).toMatch(/https:\/\/.*caldav.icloud.com\/[0-9]+\/principal/);
   expect(account.homeUrl).toMatch(/https:\/\/p[0-9]+-caldav.icloud.com\/[0-9]+\/calendars/);
 });
