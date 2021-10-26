@@ -1,3 +1,5 @@
+import fsp from 'fs/promises';
+
 import { createAccount } from '../../../account';
 import { fetchCalendars } from '../../../calendar';
 import { isCollectionDirty } from '../../../collection';
@@ -35,24 +37,9 @@ beforeAll(async () => {
 });
 
 test('isCollectionDirty should be able to tell if a collection have changed', async () => {
-  const iCalString = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//Caldav test./tsdav test 1.0.0//EN
-CALSCALE:GREGORIAN
-BEGIN:VEVENT
-DTSTART:20210201T090800Z
-DTEND:20210201T100800Z
-DTSTAMP:20210201T090944Z
-UID:6a3ac536-5b42-4529-ae92-5ef21c37be51
-CREATED:20210201T090944Z
-SEQUENCE:0
-SUMMARY:Test
-STATUS:CONFIRMED
-TRANSP:OPAQUE
-END:VEVENT
-END:VCALENDAR`;
+  const iCalString = await fsp.readFile(`${__dirname}/../data/ical/8.ics`, 'utf-8');
 
-  const objectUrl = new URL('testCollection.ics', calendars[0].url).href;
+  const objectUrl = new URL('8.ics', calendars[0].url).href;
   const createResponse = await createObject({
     url: objectUrl,
     data: iCalString,

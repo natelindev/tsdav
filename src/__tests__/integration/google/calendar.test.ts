@@ -1,3 +1,5 @@
+import fsp from 'fs/promises';
+
 import { createAccount } from '../../../account';
 import { calendarMultiGet, fetchCalendarObjects, fetchCalendars } from '../../../calendar';
 import { DAVNamespace } from '../../../consts';
@@ -39,62 +41,17 @@ test('fetchCalendars should be able to fetch calendars', async () => {
 });
 
 test('calendarMultiGet should be able to get information about multiple calendar objects', async () => {
-  const iCalString1 = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//Caldav test./tsdav test 1.0.0//EN
-CALSCALE:GREGORIAN
-BEGIN:VEVENT
-DTSTART:20210401T090800Z
-DTEND:20210401T100800Z
-DTSTAMP:20210401T090944Z
-UID:4e3ce4c2-02c7-4fbc-ace0-f2b7d579eed6
-CREATED:20210401T090944Z
-SEQUENCE:0
-SUMMARY:Test
-STATUS:CONFIRMED
-TRANSP:OPAQUE
-END:VEVENT
-END:VCALENDAR`;
-  const iCalString2 = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//Caldav test./tsdav test 1.0.0//EN
-CALSCALE:GREGORIAN
-BEGIN:VEVENT
-DTSTART:20210402T090800Z
-DTEND:20210402T100800Z
-DTSTAMP:20210402T090944Z
-UID:1f28015d-e140-4484-900b-0fa15e10210e
-CREATED:20210402T090944Z
-SEQUENCE:0
-SUMMARY:Test
-STATUS:CONFIRMED
-TRANSP:OPAQUE
-END:VEVENT
-END:VCALENDAR`;
-  const iCalString3 = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//Caldav test./tsdav test 1.0.0//EN
-CALSCALE:GREGORIAN
-BEGIN:VEVENT
-DTSTART:20210502T090800Z
-DTEND:20210502T100800Z
-DTSTAMP:20210402T090944Z
-UID:6aefd54f-c038-409a-8f9c-bf3413efd611
-CREATED:20210502T090944Z
-SEQUENCE:0
-SUMMARY:Test
-STATUS:CONFIRMED
-TRANSP:OPAQUE
-END:VEVENT
-END:VCALENDAR`;
+  const iCalString1 = await fsp.readFile(`${__dirname}/../data/ical/1.ics`, 'utf-8');
+  const iCalString2 = await fsp.readFile(`${__dirname}/../data/ical/2.ics`, 'utf-8');
+  const iCalString3 = await fsp.readFile(`${__dirname}/../data/ical/3.ics`, 'utf-8');
   const calendars = await fetchCalendars({
     account,
     headers: authHeaders,
   });
 
-  const objectUrl1 = new URL('test11.ics', calendars[0].url).href;
-  const objectUrl2 = new URL('test22.ics', calendars[0].url).href;
-  const objectUrl3 = new URL('http.ics', calendars[0].url).href;
+  const objectUrl1 = new URL('1.ics', calendars[0].url).href;
+  const objectUrl2 = new URL('2.ics', calendars[0].url).href;
+  const objectUrl3 = new URL('3.ics', calendars[0].url).href;
 
   const response1 = await createObject({
     url: objectUrl1,
@@ -160,22 +117,7 @@ END:VCALENDAR`;
 });
 
 test('fetchCalendarObjects should be able to fetch calendar objects', async () => {
-  const iCalString1 = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//Caldav test./tsdav test 1.0.0//EN
-CALSCALE:GREGORIAN
-BEGIN:VEVENT
-DTSTART:20200401T090800Z
-DTEND:20200401T100800Z
-DTSTAMP:20200401T090944Z
-UID:2baa32b7-a4cc-41c3-8760-73e4377c00cd
-CREATED:20200401T090944Z
-SEQUENCE:0
-SUMMARY:Test
-STATUS:CONFIRMED
-TRANSP:OPAQUE
-END:VEVENT
-END:VCALENDAR`;
+  const iCalString1 = await fsp.readFile(`${__dirname}/../data/ical/4.ics`, 'utf-8');
 
   const calendars = await fetchCalendars({
     account,
@@ -209,62 +151,17 @@ END:VCALENDAR`;
 });
 
 test('fetchCalendarObjects should be able to fetch target calendar objects when specified timeRange', async () => {
-  const iCalString1 = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//Caldav test./tsdav test 1.0.0//EN
-CALSCALE:GREGORIAN
-BEGIN:VEVENT
-DTSTART:20210401T090800Z
-DTEND:20210401T100800Z
-DTSTAMP:20210401T090944Z
-UID:4e3ce4c2-02c7-4fbc-ace0-f2b7d579eed6
-CREATED:20210401T090944Z
-SEQUENCE:0
-SUMMARY:Test
-STATUS:CONFIRMED
-TRANSP:OPAQUE
-END:VEVENT
-END:VCALENDAR`;
-  const iCalString2 = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//Caldav test./tsdav test 1.0.0//EN
-CALSCALE:GREGORIAN
-BEGIN:VEVENT
-DTSTART:20210402T090800Z
-DTEND:20210402T100800Z
-DTSTAMP:20210402T090944Z
-UID:1f28015d-e140-4484-900b-0fa15e10210e
-CREATED:20210402T090944Z
-SEQUENCE:0
-SUMMARY:Test
-STATUS:CONFIRMED
-TRANSP:OPAQUE
-END:VEVENT
-END:VCALENDAR`;
-  const iCalString3 = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//Caldav test./tsdav test 1.0.0//EN
-CALSCALE:GREGORIAN
-BEGIN:VEVENT
-DTSTART:20210502T090800Z
-DTEND:20210502T100800Z
-DTSTAMP:20210402T090944Z
-UID:6aefd54f-c038-409a-8f9c-bf3413efd611
-CREATED:20210502T090944Z
-SEQUENCE:0
-SUMMARY:Test
-STATUS:CONFIRMED
-TRANSP:OPAQUE
-END:VEVENT
-END:VCALENDAR`;
+  const iCalString1 = await fsp.readFile(`${__dirname}/../data/ical/5.ics`, 'utf-8');
+  const iCalString2 = await fsp.readFile(`${__dirname}/../data/ical/6.ics`, 'utf-8');
+  const iCalString3 = await fsp.readFile(`${__dirname}/../data/ical/7.ics`, 'utf-8');
   const calendars = await fetchCalendars({
     account,
     headers: authHeaders,
   });
 
-  const objectUrl1 = new URL('test11.ics', calendars[0].url).href;
-  const objectUrl2 = new URL('test22.ics', calendars[0].url).href;
-  const objectUrl3 = new URL('http.ics', calendars[0].url).href;
+  const objectUrl1 = new URL('5.ics', calendars[0].url).href;
+  const objectUrl2 = new URL('6.ics', calendars[0].url).href;
+  const objectUrl3 = new URL('7.ics', calendars[0].url).href;
 
   const response1 = await createObject({
     url: objectUrl1,
