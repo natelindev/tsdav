@@ -38,10 +38,10 @@
     "lintFix": "eslint src --ext .ts --fix",
     "prepublishOnly": "yarn build",
     "test": "concurrently \"yarn test:unit\" \"yarn test:integration\"",
-    "test:apple": "jest --watchAll --testPathPattern=src/__tests__/integration/apple",
-    "test:google": "jest --watchAll --testPathPattern=src/__tests__/integration/google",
+    "test:apple": "jest --testPathPattern=src/__tests__/integration/apple",
+    "test:google": "jest --testPathPattern=src/__tests__/integration/google",
     "test:integration": "concurrently \"yarn test:apple\" \"yarn test:google\"",
-    "test:unit": "jest --watchAll --testPathPattern=src/__tests__/unit",
+    "test:unit": "jest --testPathPattern=src/__tests__/unit",
     "typecheck": "tsc --noEmit",
     "watch": "tsc --watch --outDir ./dist"
   },

@@ -1,3 +1,5 @@
+import fsp from 'fs/promises';
+
 import { createAccount } from '../../../account';
 import { createVCard, fetchAddressBooks, fetchVCards } from '../../../addressBook';
 import { deleteObject } from '../../../request';
@@ -12,8 +14,8 @@ let account: DAVAccount;
 
 beforeAll(async () => {
   authHeaders = getBasicAuthHeaders({
-    username: process.env.ICLOUD_USERNAME,
-    password: process.env.ICLOUD_APP_SPECIFIC_PASSWORD,
+    username: process.env.CREDENTIAL_ICLOUD_USERNAME,
+    password: process.env.CREDENTIAL_ICLOUD_APP_SPECIFIC_PASSWORD,
   });
   account = await createAccount({
     account: {
@@ -38,24 +40,18 @@ test('createVCard should be able to create vcard', async () => {
     account,
     headers: authHeaders,
   });
+  const vcard1 = await fsp.readFile(`${__dirname}/../data/vcard/1.vcf`, 'utf8');
   const createResult = await createVCard({
     addressBook: addressBooks[0],
-    vCardString: `BEGIN:VCARD
-VERSION:3.0
-N:;Test BBB;;;
-FN:Test BBB
-UID:0976cf06-a0e8-44bd-9217-327f6907242c
-PRODID:-//Apple Inc.//iCloud Web Address Book 2109B35//EN
-REV:2021-06-16T01:28:23Z
-END:VCARD`,
-    filename: 'test.vcf',
+    vCardString: vcard1,
+    filename: '1.vcf',
     headers: authHeaders,
   });
 
   expect(createResult.ok).toBe(true);
 
   const deleteResult = await deleteObject({
-    url: new URL('test.vcf', addressBooks[0].url).href,
+    url: new URL('1.vcf', addressBooks[0].url).href,
     headers: authHeaders,
   });
 
@@ -68,17 +64,11 @@ test('fetchVCards should be able to fetch vcards', async () => {
     headers: authHeaders,
   });
 
+  const vcard2 = await fsp.readFile(`${__dirname}/../data/vcard/2.vcf`, 'utf8');
   const createResult = await createVCard({
     addressBook: addressBooks[0],
-    vCardString: `BEGIN:VCARD
-VERSION:3.0
-N:;Test ABC;;;
-FN:Test ABC
-UID:5123fcac-0ed3-4d77-ae93-5f36984747b4
-PRODID:-//Apple Inc.//iCloud Web Address Book 2109B35//EN
-REV:2021-06-16T01:28:23Z
-END:VCARD`,
-    filename: 'test233.vcf',
+    vCardString: vcard2,
+    filename: '2.vcf',
     headers: authHeaders,
   });
 
@@ -95,7 +85,7 @@ END:VCARD`,
   );
 
   const deleteResult = await deleteObject({
-    url: new URL('test233.vcf', addressBooks[0].url).href,
+    url: new URL('2.vcf', addressBooks[0].url).href,
     headers: authHeaders,
   });
 

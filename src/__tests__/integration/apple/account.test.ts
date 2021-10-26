@@ -7,8 +7,8 @@ let authHeaders: {
 
 beforeAll(async () => {
   authHeaders = getBasicAuthHeaders({
-    username: process.env.ICLOUD_USERNAME,
-    password: process.env.ICLOUD_APP_SPECIFIC_PASSWORD,
+    username: process.env.CREDENTIAL_ICLOUD_USERNAME,
+    password: process.env.CREDENTIAL_ICLOUD_APP_SPECIFIC_PASSWORD,
   });
 });
 
