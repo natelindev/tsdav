@@ -17,6 +17,7 @@ let calendars: DAVCalendar[];
 beforeAll(async () => {
   authHeaders = (
     await getOauthHeaders({
+      tokenUrl: 'https://accounts.google.com/o/oauth2/token',
       username: process.env.CREDENTIAL_GOOGLE_USERNAME,
       refreshToken: process.env.CREDENTIAL_GOOGLE_REFRESH_TOKEN,
       clientId: process.env.CREDENTIAL_GOOGLE_CLIENT_ID,
@@ -39,7 +40,7 @@ beforeAll(async () => {
 test('isCollectionDirty should be able to tell if a collection have changed', async () => {
   const iCalString = await fsp.readFile(`${__dirname}/../data/ical/8.ics`, 'utf-8');
 
-  const objectUrl = new URL('8.ics', calendars[0].url).href;
+  const objectUrl = new URL('6a3ac536-5b42-4529-ae92-5ef21c37be51.ics', calendars[0].url).href;
   const createResponse = await createObject({
     url: objectUrl,
     data: iCalString,

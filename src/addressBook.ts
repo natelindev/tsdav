@@ -43,11 +43,10 @@ export const addressBookMultiGet = async (params: {
   url: string;
   props: DAVProp[];
   objectUrls: string[];
-  filters?: DAVFilter[];
   depth: DAVDepth;
   headers?: Record<string, string>;
 }): Promise<DAVResponse[]> => {
-  const { url, props, objectUrls, filters, depth, headers } = params;
+  const { url, props, objectUrls, depth, headers } = params;
   return collectionQuery({
     url,
     body: {
@@ -55,7 +54,6 @@ export const addressBookMultiGet = async (params: {
         _attributes: getDAVAttribute([DAVNamespace.DAV, DAVNamespace.CARDDAV]),
         [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
         [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:href`]: objectUrls,
-        filter: formatFilters(filters),
       },
     },
     defaultNamespace: DAVNamespace.CARDDAV,
@@ -145,7 +143,7 @@ export const fetchVCards = async (params: {
   )
     .map((url) => (url.includes('http') ? url : new URL(url, addressBook.url).href))
     .map((url) => new URL(url).pathname)
-    .filter((url): url is string => Boolean(url?.includes('.vcf')));
+    .filter((url): url is string => url !== addressBook.url);
 
   const vCardResults = await addressBookMultiGet({
     url: addressBook.url,

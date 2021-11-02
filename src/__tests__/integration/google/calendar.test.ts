@@ -16,6 +16,7 @@ let account: DAVAccount;
 beforeAll(async () => {
   authHeaders = (
     await getOauthHeaders({
+      tokenUrl: 'https://accounts.google.com/o/oauth2/token',
       username: process.env.CREDENTIAL_GOOGLE_USERNAME,
       refreshToken: process.env.CREDENTIAL_GOOGLE_REFRESH_TOKEN,
       clientId: process.env.CREDENTIAL_GOOGLE_CLIENT_ID,
@@ -49,9 +50,9 @@ test('calendarMultiGet should be able to get information about multiple calendar
     headers: authHeaders,
   });
 
-  const objectUrl1 = new URL('1.ics', calendars[0].url).href;
-  const objectUrl2 = new URL('2.ics', calendars[0].url).href;
-  const objectUrl3 = new URL('3.ics', calendars[0].url).href;
+  const objectUrl1 = new URL(`e5d0fab9-c366-453e-a430-88267fceade1.ics`, calendars[0].url).href;
+  const objectUrl2 = new URL(`a99e4d44-f7f1-4f94-a973-875e8ecc1855.ics`, calendars[0].url).href;
+  const objectUrl3 = new URL(`c89227ad-7356-43b2-ae15-ce3eac13bedf.ics`, calendars[0].url).href;
 
   const response1 = await createObject({
     url: objectUrl1,
@@ -124,7 +125,7 @@ test('fetchCalendarObjects should be able to fetch calendar objects', async () =
     headers: authHeaders,
   });
 
-  const objectUrl1 = new URL('test20.ics', calendars[0].url).href;
+  const objectUrl1 = new URL('2baa32b7-a4cc-41c3-8760-73e4377c00cd.ics', calendars[0].url).href;
   await createObject({
     url: objectUrl1,
     data: iCalString1,
@@ -159,9 +160,9 @@ test('fetchCalendarObjects should be able to fetch target calendar objects when 
     headers: authHeaders,
   });
 
-  const objectUrl1 = new URL('5.ics', calendars[0].url).href;
-  const objectUrl2 = new URL('6.ics', calendars[0].url).href;
-  const objectUrl3 = new URL('7.ics', calendars[0].url).href;
+  const objectUrl1 = new URL('4e3ce4c2-02c7-4fbc-ace0-f2b7d579eed6.ics', calendars[0].url).href;
+  const objectUrl2 = new URL('1f28015d-e140-4484-900b-0fa15e10210e.ics', calendars[0].url).href;
+  const objectUrl3 = new URL('6aefd54f-c038-409a-8f9c-bf3413efd611.ics', calendars[0].url).href;
 
   const response1 = await createObject({
     url: objectUrl1,

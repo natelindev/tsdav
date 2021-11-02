@@ -1,4 +1,6 @@
+import { fetch } from 'cross-fetch';
 import fsp from 'fs/promises';
+import { v4 } from 'uuid';
 
 import { createAccount } from '../../../account';
 import { createVCard, fetchAddressBooks, fetchVCards } from '../../../addressBook';
@@ -15,6 +17,7 @@ let account: DAVAccount;
 beforeAll(async () => {
   authHeaders = (
     await getOauthHeaders({
+      tokenUrl: 'https://accounts.google.com/o/oauth2/token',
       username: process.env.CREDENTIAL_GOOGLE_USERNAME,
       refreshToken: process.env.CREDENTIAL_GOOGLE_REFRESH_TOKEN,
       clientId: process.env.CREDENTIAL_GOOGLE_CLIENT_ID,
@@ -23,7 +26,7 @@ beforeAll(async () => {
   ).headers;
   account = await createAccount({
     account: {
-      serverUrl: 'https://apidata.googleusercontent.com/carddav/v2/',
+      serverUrl: 'https://apidata.googleusercontent.com/carddav/v1/',
       accountType: 'carddav',
     },
     headers: authHeaders,
@@ -44,18 +47,24 @@ test('createVCard should be able to create vcard', async () => {
     account,
     headers: authHeaders,
   });
+  const id = v4();
   const vcard1 = await fsp.readFile(`${__dirname}/../data/vcard/1.vcf`, 'utf8');
   const createResult = await createVCard({
     addressBook: addressBooks[0],
     vCardString: vcard1,
-    filename: '1.vcf',
+    filename: `${id}.vcf`,
     headers: authHeaders,
   });
 
   expect(createResult.ok).toBe(true);
 
+  const vcardInfo = await fetch(new URL(`${id}.vcf`, addressBooks[0].url).href, {
+    headers: authHeaders,
+  });
+  const vcardUid = (await vcardInfo.text()).split('UID:')[1].split('\n')[0];
+
   const deleteResult = await deleteObject({
-    url: new URL('1.vcf', addressBooks[0].url).href,
+    url: new URL(vcardUid, addressBooks[0].url).href,
     headers: authHeaders,
   });
 
@@ -68,11 +77,12 @@ test('fetchVCards should be able to fetch vcards', async () => {
     headers: authHeaders,
   });
 
+  const id = v4();
   const vcard2 = await fsp.readFile(`${__dirname}/../data/vcard/2.vcf`, 'utf8');
   const createResult = await createVCard({
     addressBook: addressBooks[0],
     vCardString: vcard2,
-    filename: '2.vcf',
+    filename: `${id}.vcf`,
     headers: authHeaders,
   });
 
@@ -84,12 +94,18 @@ test('fetchVCards should be able to fetch vcards', async () => {
   });
 
   expect(vcards.length > 0).toBe(true);
-  expect(vcards.every((o) => o.data.length > 0 && o.etag.length > 0 && o.url.length > 0)).toBe(
+  expect(vcards.every((o) => o.data?.length > 0 && o.etag?.length > 0 && o.url?.length > 0)).toBe(
     true
   );
 
+  const vcardInfoResponse = await fetch(new URL(`${id}.vcf`, addressBooks[0].url).href, {
+    headers: authHeaders,
+  });
+  const vcardInfo = await vcardInfoResponse.text();
+  const vcardUid = vcardInfo.split('UID:')[1].split('\n')[0];
+
   const deleteResult = await deleteObject({
-    url: new URL('2.vcf', addressBooks[0].url).href,
+    url: new URL(vcardUid, addressBooks[0].url).href,
     headers: authHeaders,
   });
 

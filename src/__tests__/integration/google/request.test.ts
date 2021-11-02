@@ -17,6 +17,7 @@ let calendars: DAVCalendar[];
 beforeAll(async () => {
   authHeaders = (
     await getOauthHeaders({
+      tokenUrl: 'https://accounts.google.com/o/oauth2/token',
       username: process.env.CREDENTIAL_GOOGLE_USERNAME,
       refreshToken: process.env.CREDENTIAL_GOOGLE_REFRESH_TOKEN,
       clientId: process.env.CREDENTIAL_GOOGLE_CLIENT_ID,
@@ -38,7 +39,7 @@ beforeAll(async () => {
 
 test('davRequest should be able to send normal webdav requests', async () => {
   const [result] = await davRequest({
-    url: 'https://caldav.icloud.com/',
+    url: 'https://apidata.googleusercontent.com/caldav/v2/',
     init: {
       method: 'PROPFIND',
       headers: authHeaders,
@@ -69,7 +70,7 @@ test('davRequest should be able to send raw xml requests', async () => {
      </d:prop>
   </d:propfind>`;
   const [result] = await davRequest({
-    url: 'https://caldav.icloud.com/',
+    url: 'https://apidata.googleusercontent.com/caldav/v2/',
     init: {
       method: 'PROPFIND',
       headers: authHeaders,
@@ -93,7 +94,7 @@ test('davRequest should be able to get raw xml response', async () => {
      </d:prop>
   </d:propfind>`;
   const [result] = await davRequest({
-    url: 'https://caldav.icloud.com/',
+    url: 'https://apidata.googleusercontent.com/caldav/v2/',
     init: {
       method: 'PROPFIND',
       headers: authHeaders,
@@ -113,7 +114,7 @@ test('davRequest should be able to get raw xml response', async () => {
 
 test('propfind should be able to find props', async () => {
   const [result] = await propfind({
-    url: 'https://caldav.icloud.com/',
+    url: 'https://apidata.googleusercontent.com/caldav/v2/',
     props: [{ name: 'current-user-principal', namespace: DAVNamespace.DAV }],
     headers: authHeaders,
   });
@@ -128,7 +129,7 @@ test('propfind should be able to find props', async () => {
 test('createObject should be able to create object', async () => {
   const iCalString = await fsp.readFile(`${__dirname}/../data/ical/9.ics`, 'utf-8');
 
-  const objectUrl = new URL('9.ics', calendars[0].url).href;
+  const objectUrl = new URL('b53b6846-ede3-4689-b744-aa33963e1586.ics', calendars[0].url).href;
   const response = await createObject({
     url: objectUrl,
     data: iCalString,
@@ -161,7 +162,7 @@ test('updateObject should be able to update object', async () => {
   const iCalString = await fsp.readFile(`${__dirname}/../data/ical/10.ics`, 'utf-8');
   const updatedICalString = await fsp.readFile(`${__dirname}/../data/ical/11.ics`, 'utf-8');
 
-  const objectUrl = new URL('10.ics', calendars[0].url).href;
+  const objectUrl = new URL('fbc5a3fe-e77d-4c3f-adf2-00bba5cf90b2.ics', calendars[0].url).href;
   const createResult = await createObject({
     url: objectUrl,
     data: iCalString,
@@ -208,7 +209,7 @@ test('updateObject should be able to update object', async () => {
 test('deleteObject should be able to delete object', async () => {
   const iCalString = await fsp.readFile(`${__dirname}/../data/ical/12.ics`, 'utf-8');
 
-  const objectUrl = new URL('test3.ics', calendars[0].url).href;
+  const objectUrl = new URL('0398667c-2292-4576-9751-a445f88394ab.ics', calendars[0].url).href;
   const createResult = await createObject({
     url: objectUrl,
     data: iCalString,

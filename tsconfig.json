@@ -17,6 +17,6 @@
     },
     "outDir": "./dist"
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "env.d.ts"],
   "exclude": ["node_modules"]
 }

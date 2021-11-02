@@ -8,6 +8,7 @@ let authHeaders: {
 beforeAll(async () => {
   authHeaders = (
     await getOauthHeaders({
+      tokenUrl: 'https://accounts.google.com/o/oauth2/token',
       username: process.env.CREDENTIAL_GOOGLE_USERNAME,
       refreshToken: process.env.CREDENTIAL_GOOGLE_REFRESH_TOKEN,
       clientId: process.env.CREDENTIAL_GOOGLE_CLIENT_ID,
@@ -36,7 +37,7 @@ test('fetchPrincipalUrl should be able to fetch the url of principle collection'
     },
     headers: authHeaders,
   });
-  expect(url).toMatch(/https:\/\/.*caldav.icloud.com\/[0-9]+\/principal/);
+  expect(url).toMatch(/^https:\/\/apidata.googleusercontent.com\/caldav\/v2\/.+\/user$/);
 });
 
 test('fetchHomeUrl should be able to fetch the url of home set', async () => {
@@ -57,7 +58,7 @@ test('fetchHomeUrl should be able to fetch the url of home set', async () => {
     },
     headers: authHeaders,
   });
-  expect(url).toMatch(/https:\/\/p[0-9]+-caldav.icloud.com\/[0-9]+\/calendars/);
+  expect(url).toMatch(/https:\/\/apidata.googleusercontent.com\/caldav\/v2\/.+\//);
 });
 
 test('createAccount should be able to create account', async () => {
@@ -69,6 +70,8 @@ test('createAccount should be able to create account', async () => {
     headers: authHeaders,
   });
   expect(account.rootUrl).toEqual('https://apidata.googleusercontent.com/caldav/v2/');
-  expect(account.principalUrl).toMatch(/https:\/\/.*caldav.icloud.com\/[0-9]+\/principal/);
-  expect(account.homeUrl).toMatch(/https:\/\/p[0-9]+-caldav.icloud.com\/[0-9]+\/calendars/);
+  expect(account.principalUrl).toMatch(
+    /^https:\/\/apidata.googleusercontent.com\/caldav\/v2\/.+\/user$/
+  );
+  expect(account.homeUrl).toMatch(/https:\/\/apidata.googleusercontent.com\/caldav\/v2\/.+\//);
 });
