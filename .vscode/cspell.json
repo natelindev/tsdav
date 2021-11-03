@@ -4,6 +4,7 @@
   "words": [
     "addressbook",
     "addressbooks",
+    "apidata",
     "Bundlephobia",
     "caldav",
     "CALSCALE",
@@ -20,6 +21,7 @@
     "etag",
     "getctag",
     "getetag",
+    "googleusercontent",
     "ICAL",
     "icloud",
     "MKCALENDAR",
@@ -48,5 +50,7 @@
     "VTODO",
     "webdav"
   ],
-  "ignorePaths": ["node_modules/**"]
+  "ignorePaths": [
+    "node_modules/**"
+  ]
 }

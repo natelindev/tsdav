@@ -42,7 +42,10 @@ test('davRequest should be able to send normal webdav requests', async () => {
     url: 'https://apidata.googleusercontent.com/caldav/v2/',
     init: {
       method: 'PROPFIND',
-      headers: authHeaders,
+      headers: {
+        ...authHeaders,
+        depth: '0',
+      },
       namespace: 'd',
       body: {
         propfind: {
@@ -58,7 +61,7 @@ test('davRequest should be able to send normal webdav requests', async () => {
   expect(result.status).toBe(207);
   expect(result.statusText).toBe('Multi-Status');
   expect(result.ok).toBe(true);
-  expect(result.props?.currentUserPrincipal.href).toMatch(/\/[0-9]+\/principal\//);
+  expect(result.props?.currentUserPrincipal.href).toMatch(/\/caldav\/v2\/.+\/user/);
   expect(Object.prototype.hasOwnProperty.call(result, 'raw')).toBe(true);
 });
 
@@ -73,7 +76,10 @@ test('davRequest should be able to send raw xml requests', async () => {
     url: 'https://apidata.googleusercontent.com/caldav/v2/',
     init: {
       method: 'PROPFIND',
-      headers: authHeaders,
+      headers: {
+        ...authHeaders,
+        depth: '0',
+      },
       body: xml,
     },
     convertIncoming: false,
@@ -82,7 +88,7 @@ test('davRequest should be able to send raw xml requests', async () => {
   expect(result.status).toBe(207);
   expect(result.statusText).toBe('Multi-Status');
   expect(result.ok).toBe(true);
-  expect(result.props?.currentUserPrincipal.href).toMatch(/\/[0-9]+\/principal\//);
+  expect(result.props?.currentUserPrincipal.href).toMatch(/\/caldav\/v2\/.+\/user/);
   expect(Object.prototype.hasOwnProperty.call(result, 'raw')).toBe(true);
 });
 
@@ -97,7 +103,10 @@ test('davRequest should be able to get raw xml response', async () => {
     url: 'https://apidata.googleusercontent.com/caldav/v2/',
     init: {
       method: 'PROPFIND',
-      headers: authHeaders,
+      headers: {
+        ...authHeaders,
+        depth: '0',
+      },
       body: xml,
     },
     convertIncoming: false,
@@ -108,7 +117,7 @@ test('davRequest should be able to get raw xml response', async () => {
   expect(result.statusText).toBe('Multi-Status');
   expect(result.ok).toBe(true);
   expect(result.raw).toMatch(
-    /<current-user-principal xmlns="DAV:"><href xmlns="DAV:">\/[0-9]+\/principal\/<\/href><\/current-user-principal>/
+    /<D:current-user-principal>\s+<D:href>\/caldav\/v2\/.+\/user<\/D:href>\s+<\/D:current-user-principal>/
   );
 });
 
@@ -116,13 +125,14 @@ test('propfind should be able to find props', async () => {
   const [result] = await propfind({
     url: 'https://apidata.googleusercontent.com/caldav/v2/',
     props: [{ name: 'current-user-principal', namespace: DAVNamespace.DAV }],
+    depth: '0',
     headers: authHeaders,
   });
   expect(result.href?.length).toBeTruthy();
   expect(result.status).toBe(207);
   expect(result.statusText).toBe('Multi-Status');
   expect(result.ok).toBe(true);
-  expect(result.props?.currentUserPrincipal.href).toMatch(/\/[0-9]+\/principal\//);
+  expect(result.props?.currentUserPrincipal.href).toMatch(/\/caldav\/v2\/.+\/user/);
   expect(Object.prototype.hasOwnProperty.call(result, 'raw')).toBe(true);
 });
 
@@ -148,7 +158,9 @@ test('createObject should be able to create object', async () => {
   expect(response.ok).toBe(true);
   expect(calendarObject.url.length > 0).toBe(true);
   expect(calendarObject.etag.length > 0).toBe(true);
-  expect(calendarObject.data.split('\r\n').join('\n')).toEqual(iCalString);
+  expect(calendarObject.data.split('DTSTART:')[1].split('\n')[0]).toEqual('20210307T090800Z');
+  expect(calendarObject.data.split('DTEND:')[1].split('\n')[0]).toEqual('20210307T100800Z');
+  expect(calendarObject.data.split('SUMMARY:')[1].split('\n')[0]).toEqual('9');
 
   const deleteResult = await deleteObject({
     url: objectUrl,
@@ -196,7 +208,11 @@ test('updateObject should be able to update object', async () => {
   });
 
   expect(result.ok).toBe(true);
-  expect((await result.text()).split('\r\n').join('\n')).toEqual(updatedICalString);
+
+  const iCalText = await result.text();
+
+  expect(iCalText.split('DTSTART:')[1].split('\r\n')[0]).toEqual('20210309T090800Z');
+  expect(iCalText.split('DTEND:')[1].split('\r\n')[0]).toEqual('20210309T100800Z');
 
   const deleteResult = await deleteObject({
     url: objectUrl,
