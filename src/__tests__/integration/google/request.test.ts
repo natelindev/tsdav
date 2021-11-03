@@ -174,7 +174,7 @@ test('updateObject should be able to update object', async () => {
   const iCalString = await fsp.readFile(`${__dirname}/../data/ical/10.ics`, 'utf-8');
   const updatedICalString = await fsp.readFile(`${__dirname}/../data/ical/11.ics`, 'utf-8');
 
-  const objectUrl = new URL('fbc5a3fe-e77d-4c3f-adf2-00bba5cf90b2.ics', calendars[0].url).href;
+  const objectUrl = new URL('f7fcf23d-a90a-4044-925f-91ad2c9c81cd.ics', calendars[0].url).href;
   const createResult = await createObject({
     url: objectUrl,
     data: iCalString,

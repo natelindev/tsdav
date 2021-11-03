@@ -1,8 +1,16 @@
-import { fetch as realFetch } from 'cross-fetch';
+import { fetch as realFetch, Headers } from 'cross-fetch';
+import { createHash } from 'crypto';
 import fs from 'fs';
 
 const dataPath = `${__dirname}/../../__tests__/integration/data/networkRequestData.json`;
-type StoredValue = Exclude<Response, 'text'> & { text: string };
+type StoredValue = {
+  readonly headers: Record<string, string>;
+  readonly ok: boolean;
+  readonly status: number;
+  readonly statusText: string;
+  readonly url: string;
+  readonly text: string;
+};
 
 const appendJSON = async (filepath: string, keyData: string, valueData: string) => {
   // create if not exist
@@ -12,12 +20,11 @@ const appendJSON = async (filepath: string, keyData: string, valueData: string) 
 
   // read from json file
   const store: Record<string, string> = JSON.parse(await fs.promises.readFile(filepath, 'utf8'));
-  // convert key to base64
-  const key = Buffer.from(keyData).toString('base64');
+  // hash keyData
+  const hash = createHash('sha256');
+  const key = hash.update(keyData).digest('base64');
   const value = Buffer.from(valueData).toString('base64');
-  if (key in store) {
-    return;
-  }
+
   // store inside json
   store[key] = value;
   // write back to json
@@ -30,18 +37,21 @@ export const fetch = async (
 ) => {
   if (process.env.MOCK_FETCH === 'true' && fs.existsSync(dataPath)) {
     const data = JSON.parse(await fs.promises.readFile(dataPath, 'utf8'));
-    // parse base64
-    const key = Buffer.from(JSON.stringify({ url, init }), 'base64').toString();
+    const hash = createHash('sha256');
+    const key = hash
+      .update(JSON.stringify({ url, init: { method: init.method, body: init.body } }))
+      .digest('base64');
     if (!(key in data)) {
       throw new Error(`No mock data for network request ${url} with method ${init.method}`);
     }
+    // parse base64
     const value = Buffer.from(data[key], 'base64').toString();
     const valueData: StoredValue = JSON.parse(value);
     return {
       ok: valueData.ok,
       status: valueData.status,
       statusText: valueData.statusText,
-      headers: valueData.headers,
+      headers: new Headers(valueData.headers),
       url: valueData.url,
       text: async () => valueData.text,
       json: async () => JSON.parse(valueData.text),
@@ -53,12 +63,12 @@ export const fetch = async (
   if (process.env.RECORD_NETWORK_REQUESTS === 'true') {
     await appendJSON(
       dataPath,
-      JSON.stringify({ url, init }),
+      JSON.stringify({ url, init: { method: init.method, body: init.body } }),
       JSON.stringify(<StoredValue>{
         ok: response.ok,
         status: response?.status,
         statusText: response?.statusText,
-        headers: response?.headers,
+        headers: Object.fromEntries(response?.headers.entries()),
         url: response?.url,
         text,
       })
