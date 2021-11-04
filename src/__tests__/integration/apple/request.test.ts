@@ -1,11 +1,12 @@
-import fetch from 'cross-fetch';
+import { fetch } from 'cross-fetch';
+import fsp from 'fs/promises';
 
-import { createAccount } from './account';
-import { fetchCalendarObjects, fetchCalendars } from './calendar';
-import { DAVNamespace } from './consts';
-import { createObject, davRequest, deleteObject, propfind, updateObject } from './request';
-import { DAVAccount, DAVCalendar } from './types/models';
-import { getBasicAuthHeaders } from './util/authHelpers';
+import { createAccount } from '../../../account';
+import { fetchCalendarObjects, fetchCalendars } from '../../../calendar';
+import { DAVNamespace } from '../../../consts';
+import { createObject, davRequest, deleteObject, propfind, updateObject } from '../../../request';
+import { DAVAccount, DAVCalendar } from '../../../types/models';
+import { getBasicAuthHeaders } from '../../../util/authHelpers';
 
 let authHeaders: {
   authorization?: string;
@@ -15,8 +16,8 @@ let calendars: DAVCalendar[];
 
 beforeAll(async () => {
   authHeaders = getBasicAuthHeaders({
-    username: process.env.ICLOUD_USERNAME,
-    password: process.env.ICLOUD_APP_SPECIFIC_PASSWORD,
+    username: process.env.CREDENTIAL_ICLOUD_USERNAME,
+    password: process.env.CREDENTIAL_ICLOUD_APP_SPECIFIC_PASSWORD,
   });
   account = await createAccount({
     account: {
@@ -121,24 +122,9 @@ test('propfind should be able to find props', async () => {
 });
 
 test('createObject should be able to create object', async () => {
-  const iCalString = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//Caldav test./tsdav test 1.0.0//EN
-CALSCALE:GREGORIAN
-BEGIN:VEVENT
-DTSTART:20210307T090800Z
-DTEND:20210307T100800Z
-DTSTAMP:20210307T090944Z
-UID:b53b6846-ede3-4689-b744-aa33963e1586
-CREATED:20210307T090944Z
-SEQUENCE:0
-SUMMARY:Test
-STATUS:CONFIRMED
-TRANSP:OPAQUE
-END:VEVENT
-END:VCALENDAR`;
+  const iCalString = await fsp.readFile(`${__dirname}/../data/ical/9.ics`, 'utf-8');
 
-  const objectUrl = new URL('test.ics', calendars[0].url).href;
+  const objectUrl = new URL('9.ics', calendars[0].url).href;
   const response = await createObject({
     url: objectUrl,
     data: iCalString,
@@ -168,42 +154,10 @@ END:VCALENDAR`;
 });
 
 test('updateObject should be able to update object', async () => {
-  const iCalString = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//Caldav test./tsdav test 1.0.0//EN
-CALSCALE:GREGORIAN
-BEGIN:VEVENT
-DTSTART:20210308T090800Z
-DTEND:20210308T100800Z
-DTSTAMP:20210308T090944Z
-UID:fbc5a3fe-e77d-4c3f-adf2-00bba5cf90b2
-CREATED:20210308T090944Z
-SEQUENCE:0
-SUMMARY:Test
-STATUS:CONFIRMED
-TRANSP:OPAQUE
-END:VEVENT
-END:VCALENDAR`;
+  const iCalString = await fsp.readFile(`${__dirname}/../data/ical/10.ics`, 'utf-8');
+  const updatedICalString = await fsp.readFile(`${__dirname}/../data/ical/11.ics`, 'utf-8');
 
-  const updatedICalString = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//Caldav test./tsdav test 1.0.0//EN
-CALSCALE:GREGORIAN
-BEGIN:VEVENT
-DTSTART:20210308T090800Z
-DTEND:20210308T100800Z
-DTSTAMP:20210308T090944Z
-UID:fbc5a3fe-e77d-4c3f-adf2-00bba5cf90b2
-CREATED:20210308T090944Z
-SEQUENCE:0
-SUMMARY:updated summary
-STATUS:CONFIRMED
-TRANSP:OPAQUE
-END:VEVENT
-END:VCALENDAR
-`;
-
-  const objectUrl = new URL('test2.ics', calendars[0].url).href;
+  const objectUrl = new URL('10.ics', calendars[0].url).href;
   const createResult = await createObject({
     url: objectUrl,
     data: iCalString,
@@ -248,22 +202,7 @@ END:VCALENDAR
 });
 
 test('deleteObject should be able to delete object', async () => {
-  const iCalString = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//Caldav test./tsdav test 1.0.0//EN
-CALSCALE:GREGORIAN
-BEGIN:VEVENT
-DTSTART:20210309T090800Z
-DTEND:20210309T100800Z
-DTSTAMP:20210309T090944Z
-UID:0398667c-2292-4576-9751-a445f88394ab
-CREATED:20210309T090944Z
-SEQUENCE:0
-SUMMARY:Test
-STATUS:CONFIRMED
-TRANSP:OPAQUE
-END:VEVENT
-END:VCALENDAR`;
+  const iCalString = await fsp.readFile(`${__dirname}/../data/ical/12.ics`, 'utf-8');
 
   const objectUrl = new URL('test3.ics', calendars[0].url).href;
   const createResult = await createObject({

@@ -1,6 +1,6 @@
 {
   "name": "tsdav",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "WebDAV, CALDAV, and CARDDAV client for Nodejs and the Browser",
   "keywords": [
     "dav",
@@ -38,6 +38,9 @@
     "lintFix": "eslint src --ext .ts --fix",
     "prepublishOnly": "yarn build",
     "test": "jest",
+    "test:apple": "jest --testPathPattern=src/__tests__/integration/apple",
+    "test:google": "jest --testPathPattern=src/__tests__/integration/google",
+    "test:unit": "jest --testPathPattern=src/__tests__/unit",
     "typecheck": "tsc --noEmit",
     "watch": "tsc --watch --outDir ./dist"
   },
@@ -45,32 +48,31 @@
     "base-64": "1.0.0",
     "cross-fetch": "3.1.4",
     "debug": "4.3.2",
-    "eslint-module-utils": "2.7.0",
+    "eslint-module-utils": "2.7.1",
     "xml-js": "1.6.11"
   },
   "devDependencies": {
     "@types/base-64": "1.0.0",
     "@types/debug": "4.1.7",
     "@types/jest": "27.0.2",
-    "@types/node": "16.10.3",
-    "@typescript-eslint/eslint-plugin": "5.0.0",
-    "@typescript-eslint/parser": "5.0.0",
-    "concurrently": "6.3.0",
+    "@types/node": "16.11.6",
+    "@typescript-eslint/eslint-plugin": "5.3.0",
+    "@typescript-eslint/parser": "5.3.0",
     "copyfiles": "2.4.1",
     "cross-env": "7.0.3",
     "dotenv": "10.0.0",
-    "eslint": "8.0.0",
+    "eslint": "8.1.0",
     "eslint-config-airbnb": "18.2.1",
     "eslint-config-airbnb-typescript": "14.0.1",
     "eslint-config-prettier": "8.3.0",
-    "eslint-plugin-import": "2.25.1",
+    "eslint-plugin-import": "2.25.2",
     "eslint-plugin-prettier": "4.0.0",
-    "jest": "27.2.5",
+    "jest": "27.3.1",
     "prettier": "2.4.1",
     "rimraf": "3.0.2",
     "sort-package-json": "1.52.0",
-    "ts-jest": "27.0.5",
-    "typescript": "4.4.3"
+    "ts-jest": "27.0.7",
+    "typescript": "4.4.4"
   },
   "engines": {
     "node": ">=10"

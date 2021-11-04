@@ -1,5 +1,5 @@
-import { createAccount, fetchHomeUrl, fetchPrincipalUrl, serviceDiscovery } from './account';
-import { getBasicAuthHeaders } from './util/authHelpers';
+import { createAccount, fetchHomeUrl, fetchPrincipalUrl, serviceDiscovery } from '../../../account';
+import { getBasicAuthHeaders } from '../../../util/authHelpers';
 
 let authHeaders: {
   authorization?: string;
@@ -7,8 +7,8 @@ let authHeaders: {
 
 beforeAll(async () => {
   authHeaders = getBasicAuthHeaders({
-    username: process.env.ICLOUD_USERNAME,
-    password: process.env.ICLOUD_APP_SPECIFIC_PASSWORD,
+    username: process.env.CREDENTIAL_ICLOUD_USERNAME,
+    password: process.env.CREDENTIAL_ICLOUD_APP_SPECIFIC_PASSWORD,
   });
 });
 

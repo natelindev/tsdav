@@ -1,9 +1,11 @@
-import { createAccount } from './account';
-import { fetchCalendars } from './calendar';
-import { isCollectionDirty } from './collection';
-import { createObject, deleteObject } from './request';
-import { DAVAccount, DAVCalendar } from './types/models';
-import { getBasicAuthHeaders } from './util/authHelpers';
+import fsp from 'fs/promises';
+
+import { createAccount } from '../../../account';
+import { fetchCalendars } from '../../../calendar';
+import { isCollectionDirty } from '../../../collection';
+import { createObject, deleteObject } from '../../../request';
+import { DAVAccount, DAVCalendar } from '../../../types/models';
+import { getOauthHeaders } from '../../../util/authHelpers';
 
 let authHeaders: {
   authorization?: string;
@@ -13,13 +15,18 @@ let account: DAVAccount;
 let calendars: DAVCalendar[];
 
 beforeAll(async () => {
-  authHeaders = getBasicAuthHeaders({
-    username: process.env.ICLOUD_USERNAME,
-    password: process.env.ICLOUD_APP_SPECIFIC_PASSWORD,
-  });
+  authHeaders = (
+    await getOauthHeaders({
+      tokenUrl: 'https://accounts.google.com/o/oauth2/token',
+      username: process.env.CREDENTIAL_GOOGLE_USERNAME,
+      refreshToken: process.env.CREDENTIAL_GOOGLE_REFRESH_TOKEN,
+      clientId: process.env.CREDENTIAL_GOOGLE_CLIENT_ID,
+      clientSecret: process.env.CREDENTIAL_GOOGLE_CLIENT_SECRET,
+    })
+  ).headers;
   account = await createAccount({
     account: {
-      serverUrl: 'https://caldav.icloud.com/',
+      serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
       accountType: 'caldav',
     },
     headers: authHeaders,
@@ -31,24 +38,9 @@ beforeAll(async () => {
 });
 
 test('isCollectionDirty should be able to tell if a collection have changed', async () => {
-  const iCalString = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//Caldav test./tsdav test 1.0.0//EN
-CALSCALE:GREGORIAN
-BEGIN:VEVENT
-DTSTART:20210201T090800Z
-DTEND:20210201T100800Z
-DTSTAMP:20210201T090944Z
-UID:6a3ac536-5b42-4529-ae92-5ef21c37be51
-CREATED:20210201T090944Z
-SEQUENCE:0
-SUMMARY:Test
-STATUS:CONFIRMED
-TRANSP:OPAQUE
-END:VEVENT
-END:VCALENDAR`;
+  const iCalString = await fsp.readFile(`${__dirname}/../data/ical/8.ics`, 'utf-8');
 
-  const objectUrl = new URL('testCollection.ics', calendars[0].url).href;
+  const objectUrl = new URL('6a3ac536-5b42-4529-ae92-5ef21c37be51.ics', calendars[0].url).href;
   const createResponse = await createObject({
     url: objectUrl,
     data: iCalString,

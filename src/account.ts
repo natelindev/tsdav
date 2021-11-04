@@ -25,7 +25,7 @@ export const serviceDiscovery = async (params: {
   try {
     const response = await fetch(uri.href, {
       headers,
-      method: 'GET',
+      method: 'PROPFIND',
       redirect: 'manual',
     });
 

@@ -6,7 +6,7 @@
     "strict": true,
     "resolveJsonModule": true,
     "moduleResolution": "node",
-    "lib": ["es2015", "dom"],
+    "lib": ["es2015", "dom", "DOM.Iterable"],
     "module": "commonjs",
     "target": "es2015",
     "declaration": true,
@@ -17,6 +17,6 @@
     },
     "outDir": "./dist"
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "env.d.ts"],
   "exclude": ["node_modules"]
 }

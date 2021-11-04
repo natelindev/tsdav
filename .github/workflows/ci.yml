@@ -2,17 +2,16 @@ name: CI
 
 on:
   pull_request:
-    types: ["opened", "synchronize"]
+    types: ['opened', 'synchronize']
     branches: [master]
 
 jobs:
-
   automated-test:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        node-version: ['14']
+        node-version: ['14', '16']
 
     environment:
       name: Production
@@ -37,5 +36,4 @@ jobs:
       - name: Run `test`
         run: yarn test
         env:
-          ICLOUD_USERNAME: ${{secrets.ICLOUD_USERNAME}}
-          ICLOUD_APP_SPECIFIC_PASSWORD: ${{secrets.ICLOUD_APP_SPECIFIC_PASSWORD}}
+          MOCK_FETCH: 'true'

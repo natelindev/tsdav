@@ -1,5 +1,5 @@
 ---
-sidebar_position: 7
+sidebar_position: 8
 ---
 
 # Contributing
@@ -20,12 +20,17 @@ yarn build
 
 #### Test
 
-to run tests locally, you need to setup environnement variables using `.env` file
+to run tests locally, you need to setup environnement variables using `.env` file from `.env.example`
 
+```bash
+mv .env.example .env
 ```
-ICLOUD_USERNAME=
-ICLOUD_APP_SPECIFIC_PASSWORD=
-```
+
+and fill in the missing values
+
+If you didn't add any new api, you should set MOCK_FETCH="true".
+If you added new api and need to test against cloud providers, you should set
+MOCK_FETCH="false" and RECORD_NETWORK_REQUESTS="true" to updated network request mock data.
 
 ### WEBDAV quick guide
 

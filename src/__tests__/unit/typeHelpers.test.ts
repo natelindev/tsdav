@@ -1,4 +1,4 @@
-import { findMissingFieldNames, hasFields } from './typeHelpers';
+import { findMissingFieldNames, hasFields } from '../../util/typeHelpers';
 
 test('hasFields should detect missing fields', () => {
   const obj = {

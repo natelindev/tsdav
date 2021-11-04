@@ -1,3 +1,14 @@
+##### v1.1.2
+
+**improvements**
+
+- Fixed a bug which prevents from addressBookMultiGet working #18
+- Fixed supportedReportSet undefined error
+- ctag obtained from isCollectionDirty should now correctly be string instead of number
+- updated all dependencies
+- tests are now restructured to integration and unit tests, allowing much better extensibility.
+- test requests are now mocked, allowing testing the whole stack without external dependencies
+- fixed multiple errors in documentation
 
 ##### v1.1.1
 

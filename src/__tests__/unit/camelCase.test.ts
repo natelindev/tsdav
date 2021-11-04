@@ -1,4 +1,4 @@
-import { camelCase } from './camelCase';
+import { camelCase } from '../../util/camelCase';
 
 test('camelCase should convert snakeCase to camelCase', () => {
   const snakeString1 = 'snake-name';

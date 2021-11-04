@@ -92,7 +92,10 @@ export const isCollectionDirty = async (params: {
   if (!res) {
     throw new Error('Collection does not exist on server');
   }
-  return { isDirty: collection.ctag !== res.props?.getctag, newCtag: res.props?.getctag };
+  return {
+    isDirty: collection.ctag !== res.props?.getctag,
+    newCtag: res.props?.getctag?.toString(),
+  };
 };
 
 /**

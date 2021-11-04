@@ -1,4 +1,4 @@
-import { nativeType } from './nativeType';
+import { nativeType } from '../../util/nativeType';
 
 test('nativeType should be able to handle numbers', () => {
   const a = nativeType('123');
