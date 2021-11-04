@@ -53,7 +53,11 @@ import { createDAVClient } from 'tsdav';
   const client = await createDAVClient({
     serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
     credentials: {
+      tokenUrl: 'https://accounts.google.com/o/oauth2/token',
+      username: 'YOUR_EMAIL_ADDRESS',
       refreshToken: 'YOUR_REFRESH_TOKEN_WITH_CALDAV_PERMISSION',
+      clientId: 'YOUR_CLIENT_ID',
+      clientSecret: 'YOUR_CLIENT_SECRET',
     },
     authMethod: 'Oauth',
     defaultAccountType: 'caldav',
@@ -101,7 +105,11 @@ import { DAVClient } from 'tsdav';
 const client = new DAVClient({
   serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
   credentials: {
+    tokenUrl: 'https://accounts.google.com/o/oauth2/token',
+    username: 'YOUR_EMAIL_ADDRESS',
     refreshToken: 'YOUR_REFRESH_TOKEN_WITH_CALDAV_PERMISSION',
+    clientId: 'YOUR_CLIENT_ID',
+    clientSecret: 'YOUR_CLIENT_SECRET',
   },
   authMethod: 'Oauth',
   defaultAccountType: 'caldav',
