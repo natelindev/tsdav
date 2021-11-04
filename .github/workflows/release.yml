@@ -10,7 +10,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: ['14', '16']
+        node-version: ['16']
 
     environment:
       name: Production
@@ -36,7 +36,14 @@ jobs:
       - name: test
         run: yarn test
         env:
+          RECORD_NETWORK_REQUESTS: 'false'
           MOCK_FETCH: 'true'
+          CREDENTIAL_ICLOUD_USERNAME: ${{secrets.CREDENTIAL_ICLOUD_USERNAME}}
+          CREDENTIAL_ICLOUD_APP_SPECIFIC_PASSWORD: ${{secrets.CREDENTIAL_ICLOUD_APP_SPECIFIC_PASSWORD}}
+          CREDENTIAL_GOOGLE_USERNAME: ${{secrets.CREDENTIAL_GOOGLE_USERNAME}}
+          CREDENTIAL_GOOGLE_REFRESH_TOKEN: ${{secrets.CREDENTIAL_GOOGLE_REFRESH_TOKEN}}
+          CREDENTIAL_GOOGLE_CLIENT_ID: ${{secrets.CREDENTIAL_GOOGLE_CLIENT_ID}}
+          CREDENTIAL_GOOGLE_CLIENT_SECRET: ${{secrets.CREDENTIAL_GOOGLE_CLIENT_SECRET}}
 
       - name: publish package
         run: yarn publish
