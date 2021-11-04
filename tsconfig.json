@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "sourceMap": true,
+    "sourceMap": false,
     "esModuleInterop": true,
     "allowJs": false,
     "strict": true,
@@ -17,6 +17,6 @@
     },
     "outDir": "./dist"
   },
-  "include": ["src/**/*", "env.d.ts"],
+  "include": ["src/**/*", "env.d.ts", "rollup.config.js"],
   "exclude": ["node_modules"]
 }

@@ -1,3 +1,15 @@
+##### v1.1.3
+
+**improvements**
+
+- Fixed esm and browser support problems #19
+- Added rollup as bundler to allow CDN support #32
+- dist builds are now committed and now comes with four versions:
+  - `tsdav.cjs.js` commonjs version which can be used on node.
+  - `tsdav.esm.js` esm version which can be used in node 12 or later in pure esm packages.
+  - `tsdav.js` version which can be used in both browser and node, contains polyfills and bundled in dependencies, which makes the file larger.
+  - `tsdav.min.js` minified version of `tsdav.js`.
+
 ##### v1.1.2
 
 **improvements**

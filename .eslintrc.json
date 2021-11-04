@@ -35,7 +35,7 @@
     "import/no-extraneous-dependencies": [
       "error",
       {
-        "devDependencies": ["**/*.test.ts"],
+        "devDependencies": ["**/*.test.ts", "rollup.config.js"],
         "optionalDependencies": false,
         "peerDependencies": false
       }
