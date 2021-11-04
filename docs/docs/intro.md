@@ -8,23 +8,14 @@ sidebar_position: 1
 
 It's very common to be used for cloud storage, as well as calendar, contacts information syncing.
 
-### Prepare credentials from cloud providers
+### Cloud provider support status
 
-##### Apple
+| Provider name | Webdav | Caldav | Carddav |
+| ------------- | ------ | ------ | ------------ |
+| iCloud        | ✅     | ✅     | ✅           |
+| Google cloud  | ✅     | ✅     | ✅           |
 
-For apple you want to go to [this page](https://support.apple.com/en-us/HT204397) and after following the guide, you will have Apple ID and app-specific password.
-
-##### Google
-
-For google you want to go to Google Cloud Platform/Credentials page, then create a credential that suite your use case. You want `clientId` ,`client secret` and after this. Also you need to enable Google CALDAV/CARDDAV for your project.
-
-Also you need to setup oauth screen, use proper oauth2 grant flow and you might need to get your application verified by google in order to be able to use CALDAV/CARDDAV api. Refer to [this page](https://developers.google.com/identity/protocols/oauth2) for more details.
-
-After the oauth2 offline grant you should be able to obtain oauth2 refresh token.
-
-:::info
-Other cloud providers are not currently tested, in theory any cloud with basic auth and oauth2 should work, stay tuned for updates.
-:::
+For more information on cloud providers, go to [cloud providers](./cloud%20providers.md) for more information.
 
 ### Install
 
@@ -64,7 +55,11 @@ For Google
 const client = await createDAVClient({
   serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
   credentials: {
+    tokenUrl: 'https://accounts.google.com/o/oauth2/token',
+    username: "YOUR_EMAIL_ADDRESS",
     refreshToken: 'YOUR_REFRESH_TOKEN_WITH_CALDAV_PERMISSION',
+    clientId: "YOUR_CLIENT_ID",
+    clientSecret: "YOUR_CLIENT_SECRET"
   },
   authMethod: 'Oauth',
   defaultAccountType: 'caldav',
@@ -78,9 +73,9 @@ const client = await createDAVClient({
   serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
   credentials: {
     authorizationCode: 'AUTH_CODE_OBTAINED_FROM_OAUTH_CALLBACK',
-    tokenUrl: 'https://oauth2.googleapis.com/token',
+    tokenUrl: 'https://accounts.google.com/o/oauth2/token',
     clientId: 'YOUR_CLIENT_ID',
-    clientSecret: 'YOUR_CLIENT_TOKEN',
+    clientSecret: 'YOUR_CLIENT_SECRET',
   },
   authMethod: 'Oauth',
   defaultAccountType: 'caldav',
@@ -115,7 +110,11 @@ For Google
 const client = new DAVClient({
   serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
   credentials: {
+    tokenUrl: 'https://accounts.google.com/o/oauth2/token',
+    username: "YOUR_EMAIL_ADDRESS",
     refreshToken: 'YOUR_REFRESH_TOKEN_WITH_CALDAV_PERMISSION',
+    clientId: "YOUR_CLIENT_ID",
+    clientSecret: "YOUR_CLIENT_SECRET"
   },
   authMethod: 'Oauth',
   defaultAccountType: 'caldav',
@@ -129,9 +128,9 @@ const client = new DAVClient({
   serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
   credentials: {
     authorizationCode: 'AUTH_CODE_OBTAINED_FROM_OAUTH_CALLBACK',
-    tokenUrl: 'https://oauth2.googleapis.com/token',
+    tokenUrl: 'https://accounts.google.com/o/oauth2/token',
     clientId: 'YOUR_CLIENT_ID',
-    clientSecret: 'YOUR_CLIENT_TOKEN',
+    clientSecret: 'YOUR_CLIENT_SECRET',
   },
   authMethod: 'Oauth',
   defaultAccountType: 'caldav',
