@@ -626,16 +626,16 @@ const fetchAddressBooks = (params) => __awaiter(void 0, void 0, void 0, function
     return Promise.all(res
         .filter((r) => { var _a, _b; return Object.keys((_b = (_a = r.props) === null || _a === void 0 ? void 0 : _a.resourcetype) !== null && _b !== void 0 ? _b : {}).includes('addressbook'); })
         .map((rs) => {
-        var _a, _b, _c, _d, _e, _f;
-        const displayName = (_a = rs.props) === null || _a === void 0 ? void 0 : _a.displayname;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j;
+        const displayName = (_c = (_b = (_a = rs.props) === null || _a === void 0 ? void 0 : _a.displayname) === null || _b === void 0 ? void 0 : _b._cdata) !== null && _c !== void 0 ? _c : (_d = rs.props) === null || _d === void 0 ? void 0 : _d.displayname;
         debug$3(`Found address book named ${typeof displayName === 'string' ? displayName : ''},
              props: ${JSON.stringify(rs.props)}`);
         return {
-            url: new URL((_b = rs.href) !== null && _b !== void 0 ? _b : '', (_c = account.rootUrl) !== null && _c !== void 0 ? _c : '').href,
-            ctag: (_d = rs.props) === null || _d === void 0 ? void 0 : _d.getctag,
+            url: new URL((_e = rs.href) !== null && _e !== void 0 ? _e : '', (_f = account.rootUrl) !== null && _f !== void 0 ? _f : '').href,
+            ctag: (_g = rs.props) === null || _g === void 0 ? void 0 : _g.getctag,
             displayName: typeof displayName === 'string' ? displayName : '',
-            resourcetype: Object.keys((_e = rs.props) === null || _e === void 0 ? void 0 : _e.resourcetype),
-            syncToken: (_f = rs.props) === null || _f === void 0 ? void 0 : _f.syncToken,
+            resourcetype: Object.keys((_h = rs.props) === null || _h === void 0 ? void 0 : _h.resourcetype),
+            syncToken: (_j = rs.props) === null || _j === void 0 ? void 0 : _j.syncToken,
         };
     })
         .map((addr) => __awaiter(void 0, void 0, void 0, function* () {
@@ -725,7 +725,7 @@ const calendarQuery = (params) => __awaiter(void 0, void 0, void 0, function* ()
     return collectionQuery({
         url,
         body: {
-            'calendar-query': {
+            'calendar-query': cleanupFalsy({
                 _attributes: getDAVAttribute([
                     exports.DAVNamespace.CALDAV,
                     exports.DAVNamespace.CALENDAR_SERVER,
@@ -735,7 +735,7 @@ const calendarQuery = (params) => __awaiter(void 0, void 0, void 0, function* ()
                 [`${DAVNamespaceShorthandMap[exports.DAVNamespace.DAV]}:prop`]: formatProps(props),
                 filter: formatFilters(filters),
                 timezone,
-            },
+            }),
         },
         defaultNamespace: exports.DAVNamespace.CALDAV,
         depth,
@@ -813,7 +813,7 @@ const fetchCalendars = (params) => __awaiter(void 0, void 0, void 0, function* (
         return components.some((c) => Object.values(ICALObjects).includes(c));
     })
         .map((rs) => {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
         // debug(`Found calendar ${rs.props?.displayname}`);
         const description = (_a = rs.props) === null || _a === void 0 ? void 0 : _a.calendarDescription;
         const timezone = (_b = rs.props) === null || _b === void 0 ? void 0 : _b.calendarTimezone;
@@ -822,12 +822,12 @@ const fetchCalendars = (params) => __awaiter(void 0, void 0, void 0, function* (
             timezone: typeof timezone === 'string' ? timezone : '',
             url: new URL((_c = rs.href) !== null && _c !== void 0 ? _c : '', (_d = account.rootUrl) !== null && _d !== void 0 ? _d : '').href,
             ctag: (_e = rs.props) === null || _e === void 0 ? void 0 : _e.getctag,
-            displayName: (_f = rs.props) === null || _f === void 0 ? void 0 : _f.displayname,
-            components: Array.isArray((_g = rs.props) === null || _g === void 0 ? void 0 : _g.supportedCalendarComponentSet.comp)
-                ? (_h = rs.props) === null || _h === void 0 ? void 0 : _h.supportedCalendarComponentSet.comp.map((sc) => sc._attributes.name)
-                : [(_j = rs.props) === null || _j === void 0 ? void 0 : _j.supportedCalendarComponentSet.comp._attributes.name],
-            resourcetype: Object.keys((_k = rs.props) === null || _k === void 0 ? void 0 : _k.resourcetype),
-            syncToken: (_l = rs.props) === null || _l === void 0 ? void 0 : _l.syncToken,
+            displayName: (_g = (_f = rs.props) === null || _f === void 0 ? void 0 : _f.displayname._cdata) !== null && _g !== void 0 ? _g : (_h = rs.props) === null || _h === void 0 ? void 0 : _h.displayname,
+            components: Array.isArray((_j = rs.props) === null || _j === void 0 ? void 0 : _j.supportedCalendarComponentSet.comp)
+                ? (_k = rs.props) === null || _k === void 0 ? void 0 : _k.supportedCalendarComponentSet.comp.map((sc) => sc._attributes.name)
+                : [(_l = rs.props) === null || _l === void 0 ? void 0 : _l.supportedCalendarComponentSet.comp._attributes.name],
+            resourcetype: Object.keys((_m = rs.props) === null || _m === void 0 ? void 0 : _m.resourcetype),
+            syncToken: (_o = rs.props) === null || _o === void 0 ? void 0 : _o.syncToken,
         };
     })
         .map((cal) => __awaiter(void 0, void 0, void 0, function* () {

@@ -30,7 +30,7 @@ export const calendarQuery = async (params: {
   return collectionQuery({
     url,
     body: {
-      'calendar-query': {
+      'calendar-query': cleanupFalsy({
         _attributes: getDAVAttribute([
           DAVNamespace.CALDAV,
           DAVNamespace.CALENDAR_SERVER,
@@ -40,7 +40,7 @@ export const calendarQuery = async (params: {
         [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
         filter: formatFilters(filters),
         timezone,
-      },
+      }),
     },
     defaultNamespace: DAVNamespace.CALDAV,
     depth,
@@ -151,7 +151,7 @@ export const fetchCalendars = async (params?: {
           timezone: typeof timezone === 'string' ? timezone : '',
           url: new URL(rs.href ?? '', account.rootUrl ?? '').href,
           ctag: rs.props?.getctag,
-          displayName: rs.props?.displayname,
+          displayName: rs.props?.displayname._cdata ?? rs.props?.displayname,
           components: Array.isArray(rs.props?.supportedCalendarComponentSet.comp)
             ? rs.props?.supportedCalendarComponentSet.comp.map((sc: any) => sc._attributes.name)
             : [rs.props?.supportedCalendarComponentSet.comp._attributes.name],

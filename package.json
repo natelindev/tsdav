@@ -1,6 +1,6 @@
 {
   "name": "tsdav",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "description": "WebDAV, CALDAV, and CARDDAV client for Nodejs and the Browser",
   "keywords": [
     "dav",
@@ -38,6 +38,7 @@
     "prepublishOnly": "yarn build",
     "test": "jest",
     "test:apple": "jest --testPathPattern=src/__tests__/integration/apple",
+    "test:fastmail": "jest --testPathPattern=src/__tests__/integration/fastmail",
     "test:google": "jest --testPathPattern=src/__tests__/integration/google",
     "test:unit": "jest --testPathPattern=src/__tests__/unit",
     "typecheck": "tsc --noEmit",

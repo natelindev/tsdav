@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "sourceMap": false,
+    "sourceMap": true,
     "esModuleInterop": true,
     "allowJs": false,
     "strict": true,

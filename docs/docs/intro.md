@@ -11,9 +11,10 @@ It's very common to be used for cloud storage, as well as calendar, contacts inf
 ### Cloud provider support status
 
 | Provider name | Webdav | Caldav | Carddav |
-| ------------- | ------ | ------ | ------------ |
-| iCloud        | ✅     | ✅     | ✅           |
-| Google cloud  | ✅     | ✅     | ✅           |
+| ------------- | ------ | ------ | ------- |
+| iCloud        | ✅     | ✅     | ✅      |
+| Google cloud  | ✅     | ✅     | ✅      |
+| Fastmail      | ✅     | ✅     | ✅      |
 
 For more information on cloud providers, go to [cloud providers](./cloud%20providers.md) for more information.
 
@@ -56,10 +57,10 @@ const client = await createDAVClient({
   serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
   credentials: {
     tokenUrl: 'https://accounts.google.com/o/oauth2/token',
-    username: "YOUR_EMAIL_ADDRESS",
+    username: 'YOUR_EMAIL_ADDRESS',
     refreshToken: 'YOUR_REFRESH_TOKEN_WITH_CALDAV_PERMISSION',
-    clientId: "YOUR_CLIENT_ID",
-    clientSecret: "YOUR_CLIENT_SECRET"
+    clientId: 'YOUR_CLIENT_ID',
+    clientSecret: 'YOUR_CLIENT_SECRET',
   },
   authMethod: 'Oauth',
   defaultAccountType: 'caldav',
@@ -111,10 +112,10 @@ const client = new DAVClient({
   serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
   credentials: {
     tokenUrl: 'https://accounts.google.com/o/oauth2/token',
-    username: "YOUR_EMAIL_ADDRESS",
+    username: 'YOUR_EMAIL_ADDRESS',
     refreshToken: 'YOUR_REFRESH_TOKEN_WITH_CALDAV_PERMISSION',
-    clientId: "YOUR_CLIENT_ID",
-    clientSecret: "YOUR_CLIENT_SECRET"
+    clientId: 'YOUR_CLIENT_ID',
+    clientSecret: 'YOUR_CLIENT_SECRET',
   },
   authMethod: 'Oauth',
   defaultAccountType: 'caldav',

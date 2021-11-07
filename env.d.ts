@@ -1,6 +1,8 @@
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
+      CREDENTIAL_FASTMAIL_USERNAME: string;
+      CREDENTIAL_FASTMAIL_APP_PASSWORD: string;
       CREDENTIAL_ICLOUD_USERNAME: string;
       CREDENTIAL_ICLOUD_APP_SPECIFIC_PASSWORD: string;
       CREDENTIAL_GOOGLE_USERNAME: string;

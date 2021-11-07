@@ -91,7 +91,7 @@ export const fetchAddressBooks = async (params?: {
     res
       .filter((r) => Object.keys(r.props?.resourcetype ?? {}).includes('addressbook'))
       .map((rs) => {
-        const displayName = rs.props?.displayname;
+        const displayName = rs.props?.displayname?._cdata ?? rs.props?.displayname;
         debug(`Found address book named ${typeof displayName === 'string' ? displayName : ''},
              props: ${JSON.stringify(rs.props)}`);
         return {

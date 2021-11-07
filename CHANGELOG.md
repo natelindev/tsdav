@@ -1,4 +1,18 @@
-##### v1.1.3
+## v1.1.4
+
+**features**
+
+Added fastmail cloud providers support.
+
+**improvements**
+
+- Fixed a bug which prevents calendar objects from being fetched.
+- Fixed a bug which prevents display name of calendars from being fetched.
+- 
+
+
+
+## v1.1.3
 
 **improvements**
 
@@ -10,7 +24,7 @@
   - `tsdav.js` version which can be used in both browser and node, contains polyfills and with dependencies bundled in, which makes the file size larger.
   - `tsdav.min.js` minified version of `tsdav.js`.
 
-##### v1.1.2
+## v1.1.2
 
 **improvements**
 
@@ -22,7 +36,7 @@
 - test requests are now mocked, allowing testing the whole stack without external dependencies
 - fixed multiple errors in documentation
 
-##### v1.1.1
+## v1.1.1
 
 **improvements**
 
@@ -30,7 +44,7 @@
 - Ensure service discovery redirect maintains the proper port, thanks to @n8io
 - Fixed a time range issue with new time range format
 
-##### v1.1.0
+## v1.1.0
 
 **breaking changes**
 
@@ -49,10 +63,10 @@
 - added more exports, now all internal functions are exported.
 - multiple documentation improvements.
 
-##### v1.0.6
+## v1.0.6
 
 Fixed a bug where timeRange filter sometimes might be in the wrong format.
 
-##### v1.0.3
+## v1.0.3
 
 Fixed a bug where calendar objects with `http` in its id would cause operations on it to fail.
