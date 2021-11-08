@@ -37,9 +37,10 @@
     "lintFix": "eslint src --ext .ts --fix",
     "prepublishOnly": "yarn build",
     "test": "jest",
-    "test:apple": "jest --testPathPattern=src/__tests__/integration/apple",
-    "test:fastmail": "jest --testPathPattern=src/__tests__/integration/fastmail",
-    "test:google": "jest --testPathPattern=src/__tests__/integration/google",
+    "test:apple": "jest --testPathPattern=src/__tests__/integration/apple --runInBand",
+    "test:fastmail": "jest --testPathPattern=src/__tests__/integration/fastmail --runInBand",
+    "test:google": "jest --testPathPattern=src/__tests__/integration/google --runInBand",
+    "test:nextcloud": "jest --testPathPattern=src/__tests__/integration/nextcloud --runInBand",
     "test:unit": "jest --testPathPattern=src/__tests__/unit",
     "typecheck": "tsc --noEmit",
     "watch": "tsc --watch --outDir ./dist"

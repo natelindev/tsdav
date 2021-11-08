@@ -8,9 +8,6 @@ Added fastmail cloud providers support.
 
 - Fixed a bug which prevents calendar objects from being fetched.
 - Fixed a bug which prevents display name of calendars from being fetched.
-- 
-
-
 
 ## v1.1.3
 
