@@ -1,3 +1,10 @@
+## v1.1.5
+
+**improvements**
+
+- fixed import error when using with node
+- tested with nextcloud
+
 ## v1.1.4
 
 **features**

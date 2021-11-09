@@ -1,6 +1,6 @@
 {
   "name": "tsdav",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "WebDAV, CALDAV, and CARDDAV client for Nodejs and the Browser",
   "keywords": [
     "dav",
@@ -23,9 +23,9 @@
   "repository": "https://github.com/llldar/tsDAV",
   "license": "MIT",
   "author": "linlilulll@gmail.com",
-  "main": "tsdav.cjs.js",
-  "module": "tsdav.esm.js",
-  "types": "tsdav.d.ts",
+  "main": "dist/tsdav.cjs.js",
+  "module": "dist/tsdav.esm.js",
+  "types": "dist/tsdav.d.ts",
   "files": [
     "dist",
     "package.json"
@@ -37,9 +37,10 @@
     "lintFix": "eslint src --ext .ts --fix",
     "prepublishOnly": "yarn build",
     "test": "jest",
-    "test:apple": "jest --testPathPattern=src/__tests__/integration/apple",
-    "test:fastmail": "jest --testPathPattern=src/__tests__/integration/fastmail",
-    "test:google": "jest --testPathPattern=src/__tests__/integration/google",
+    "test:apple": "jest --testPathPattern=src/__tests__/integration/apple --runInBand",
+    "test:fastmail": "jest --testPathPattern=src/__tests__/integration/fastmail --runInBand",
+    "test:google": "jest --testPathPattern=src/__tests__/integration/google --runInBand",
+    "test:nextcloud": "jest --testPathPattern=src/__tests__/integration/nextcloud --runInBand",
     "test:unit": "jest --testPathPattern=src/__tests__/unit",
     "typecheck": "tsc --noEmit",
     "watch": "tsc --watch --outDir ./dist"
