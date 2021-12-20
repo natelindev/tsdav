@@ -1,6 +1,9 @@
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
+      CREDENTIAL_BAIKAL_USERNAME: string;
+      CREDENTIAL_BAIKAL_PASSWORD: string;
+      CREDENTIAL_BAIKAL_SERVER_URL: string;
       CREDENTIAL_NEXTCLOUD_USERNAME: string;
       CREDENTIAL_NEXTCLOUD_PASSWORD: string;
       CREDENTIAL_NEXTCLOUD_SERVER_URL: string;

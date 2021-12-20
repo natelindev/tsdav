@@ -20,7 +20,7 @@ test('serviceDiscovery should be able to discover the caldav service', async () 
   expect(url).toEqual('https://caldav.messagingengine.com/dav/calendars');
 });
 
-test('fetchPrincipalUrl should be able to fetch the url of principle collection', async () => {
+test('fetchPrincipalUrl should be able to fetch the url of principal collection', async () => {
   const url = await fetchPrincipalUrl({
     account: {
       serverUrl: 'https://caldav.messagingengine.com/dav/calendars',

@@ -4,7 +4,7 @@ sidebar_position: 3
 
 ## `fetchPrincipalUrl`
 
-fetch resource principle collection url
+fetch resource principal collection url
 
 ```ts
 const url = await fetchPrincipalUrl({
@@ -26,8 +26,8 @@ const url = await fetchPrincipalUrl({
 
 ### Return Value
 
-principle collection url
+principal collection url
 
 ### Behavior
 
-send current-user-principal PROPFIND request and extract principle collection url from xml response
+send current-user-principal PROPFIND request and extract principal collection url from xml response

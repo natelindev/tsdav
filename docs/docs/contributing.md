@@ -34,7 +34,7 @@ MOCK_FETCH="false" and RECORD_NETWORK_REQUESTS="true" to updated network request
 
 ### WEBDAV quick guide
 
-WEBDAV uses xml for all its data when communicating, the basic element is `object`, multiple `object`s can form a `collection`, webdav server have `account`s and an `account` have a `principal` resource (i.e the default, main resource) and under that principle resource we have `home set` of the said resource where your actual resources are.
+WEBDAV uses xml for all its data when communicating, the basic element is `object`, multiple `object`s can form a `collection`, webdav server have `account`s and an `account` have a `principal` resource (i.e the default, main resource) and under that principal resource we have `home set` of the said resource where your actual resources are.
 
 `syncToken` and `ctag` are basically like hash of the object/collection, if anything in it changes, this token will change.
 

@@ -23,7 +23,7 @@ test('serviceDiscovery should be able to discover the caldav service', async () 
   expect(url).toEqual(`${process.env.CREDENTIAL_NEXTCLOUD_SERVER_URL}/remote.php/dav/`);
 });
 
-test('fetchPrincipalUrl should be able to fetch the url of principle collection', async () => {
+test('fetchPrincipalUrl should be able to fetch the url of principal collection', async () => {
   const url = await fetchPrincipalUrl({
     account: {
       serverUrl: `${process.env.CREDENTIAL_NEXTCLOUD_SERVER_URL}/remote.php/dav`,

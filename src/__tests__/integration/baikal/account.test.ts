@@ -7,36 +7,39 @@ let authHeaders: {
 
 beforeAll(async () => {
   authHeaders = getBasicAuthHeaders({
-    username: process.env.CREDENTIAL_ICLOUD_USERNAME,
-    password: process.env.CREDENTIAL_ICLOUD_APP_SPECIFIC_PASSWORD,
+    username: process.env.CREDENTIAL_BAIKAL_USERNAME,
+    password: process.env.CREDENTIAL_BAIKAL_PASSWORD,
   });
 });
 
 test('serviceDiscovery should be able to discover the caldav service', async () => {
   const url = await serviceDiscovery({
-    account: { serverUrl: 'https://caldav.icloud.com/', accountType: 'caldav' },
+    account: {
+      serverUrl: `${process.env.CREDENTIAL_BAIKAL_SERVER_URL}/dav.php`,
+      accountType: 'caldav',
+    },
     headers: authHeaders,
   });
-  expect(url).toEqual('https://caldav.icloud.com/');
+  expect(url).toEqual(`${process.env.CREDENTIAL_BAIKAL_SERVER_URL}/dav.php`);
 });
 
 test('fetchPrincipalUrl should be able to fetch the url of principal collection', async () => {
   const url = await fetchPrincipalUrl({
     account: {
-      serverUrl: 'https://caldav.icloud.com/',
-      rootUrl: 'https://caldav.icloud.com/',
+      serverUrl: `${process.env.CREDENTIAL_BAIKAL_SERVER_URL}/dav.php`,
+      rootUrl: `${process.env.CREDENTIAL_BAIKAL_SERVER_URL}/dav.php`,
       accountType: 'caldav',
     },
     headers: authHeaders,
   });
-  expect(url).toMatch(/https:\/\/.*caldav.icloud.com\/[0-9]+\/principal/);
+  expect(url).toMatch(/http:\/\/.+\/dav\.php\/principals\/.+\//);
 });
 
 test('fetchHomeUrl should be able to fetch the url of home set', async () => {
   const principalUrl = await fetchPrincipalUrl({
     account: {
-      serverUrl: 'https://caldav.icloud.com/',
-      rootUrl: 'https://caldav.icloud.com/',
+      serverUrl: `${process.env.CREDENTIAL_BAIKAL_SERVER_URL}/dav.php`,
+      rootUrl: `${process.env.CREDENTIAL_BAIKAL_SERVER_URL}/dav.php`,
       accountType: 'caldav',
     },
     headers: authHeaders,
@@ -44,24 +47,24 @@ test('fetchHomeUrl should be able to fetch the url of home set', async () => {
   const url = await fetchHomeUrl({
     account: {
       principalUrl,
-      serverUrl: 'https://caldav.icloud.com/',
-      rootUrl: 'https://caldav.icloud.com/',
+      serverUrl: `${process.env.CREDENTIAL_BAIKAL_SERVER_URL}/dav.php`,
+      rootUrl: `${process.env.CREDENTIAL_BAIKAL_SERVER_URL}/dav.php`,
       accountType: 'caldav',
     },
     headers: authHeaders,
   });
-  expect(url).toMatch(/https:\/\/p[0-9]+-caldav.icloud.com\/[0-9]+\/calendars/);
+  expect(url).toMatch(/http:\/\/.+\/dav\.php\/calendars\/.+\//);
 });
 
 test('createAccount should be able to create account', async () => {
   const account = await createAccount({
     account: {
-      serverUrl: 'https://caldav.icloud.com/',
+      serverUrl: `${process.env.CREDENTIAL_BAIKAL_SERVER_URL}/dav.php`,
       accountType: 'caldav',
     },
     headers: authHeaders,
   });
-  expect(account.rootUrl).toEqual('https://caldav.icloud.com/');
-  expect(account.principalUrl).toMatch(/https:\/\/.*caldav.icloud.com\/[0-9]+\/principal/);
-  expect(account.homeUrl).toMatch(/https:\/\/p[0-9]+-caldav.icloud.com\/[0-9]+\/calendars/);
+  expect(account.rootUrl).toEqual(`${process.env.CREDENTIAL_BAIKAL_SERVER_URL}/dav.php`);
+  expect(account.principalUrl).toMatch(/http:\/\/.+\/dav\.php\/principals\/.+\//);
+  expect(account.homeUrl).toMatch(/http:\/\/.+\/dav\.php\/calendars\/.+\//);
 });

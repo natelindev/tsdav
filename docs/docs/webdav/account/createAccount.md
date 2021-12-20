@@ -31,5 +31,5 @@ created [DAVAccount](../../types/DAVAccount.md)
 
 ### Behavior
 
-perform [serviceDiscovery](serviceDiscovery.md),[fetchHomeUrl](fetchHomeUrl.md), [fetchPrincipleUrl](fetchPrincipalUrl.md) for account information gathering.
+perform [serviceDiscovery](serviceDiscovery.md),[fetchHomeUrl](fetchHomeUrl.md), [fetchPrincipalUrl](fetchPrincipalUrl.md) for account information gathering.
 make fetch collections & fetch objects requests depend on options.
