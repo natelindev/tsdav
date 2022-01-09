@@ -20,7 +20,7 @@
     "typescript"
   ],
   "homepage": "https://tsdav.vercel.app/",
-  "repository": "https://github.com/llldar/tsDAV",
+  "repository": "https://github.com/natelindev/tsdav",
   "license": "MIT",
   "author": "linlilulll@gmail.com",
   "main": "dist/tsdav.cjs.js",

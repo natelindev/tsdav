@@ -7,8 +7,8 @@ module.exports = {
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico',
-  organizationName: 'llldar', // Usually your GitHub org/user name.
-  projectName: 'tsDAV', // Usually your repo name.
+  organizationName: 'natelindev', // Usually your GitHub org/user name.
+  projectName: 'tsdav', // Usually your repo name.
   themeConfig: {
     colorMode: {
       defaultMode: 'dark',
@@ -28,7 +28,7 @@ module.exports = {
           label: 'Docs',
         },
         {
-          href: 'https://github.com/llldar/tsDAV',
+          href: 'https://github.com/natelindev/tsdav',
           label: 'GitHub',
           position: 'right',
         },
@@ -45,7 +45,7 @@ module.exports = {
       {
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
-          editUrl: 'https://github.com/llldar/tsDAV/edit/master/docs/',
+          editUrl: 'https://github.com/natelindev/tsdav/edit/master/docs/',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),

@@ -38,7 +38,7 @@ WEBDAV uses xml for all its data when communicating, the basic element is `objec
 
 `syncToken` and `ctag` are basically like hash of the object/collection, if anything in it changes, this token will change.
 
-For caldav, the calendar data in caldav are in `rfc5545` ical format, there's `iCal2Js` and `js2iCal` function with my other project [pretty-jcal](https://github.com/llldar/pretty-jcal) to help your convert them from/to js objects.
+For caldav, the calendar data in caldav are in `rfc5545` ical format, there's `iCal2Js` and `js2iCal` function with my other project [pretty-jcal](https://github.com/natelindev/pretty-jcal) to help your convert them from/to js objects.
 
 Here's cheat sheet on webdav operations compared with rest:
 
