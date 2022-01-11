@@ -51,7 +51,7 @@
     "debug": "4.3.2",
     "eslint-module-utils": "2.7.1",
     "rollup-plugin-node-builtins": "2.1.2",
-    "rollup-plugin-polyfill-node": "0.7.0",
+    "rollup-plugin-polyfill-node": "0.8.0",
     "xml-js": "1.6.11"
   },
   "devDependencies": {
