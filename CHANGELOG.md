@@ -1,3 +1,9 @@
+## v1.1.6
+
+**improvements**
+
+- Added `vCardUrlFilter` to `fetchVCards` to allow vCard Urls to be filtered before fetching
+
 ## v1.1.5
 
 **improvements**
