@@ -79,7 +79,7 @@
     "rollup": "2.59.0",
     "rollup-plugin-dts": "4.0.1",
     "rollup-plugin-terser": "7.0.2",
-    "sort-package-json": "1.52.0",
+    "sort-package-json": "1.53.1",
     "ts-jest": "27.0.7",
     "typescript": "4.4.4"
   },
