@@ -113,8 +113,9 @@ export const fetchVCards = async (params: {
   addressBook: DAVAddressBook;
   headers?: Record<string, string>;
   objectUrls?: string[];
+  vCardUrlFilter?: (url: string) => boolean;
 }): Promise<DAVVCard[]> => {
-  const { addressBook, headers, objectUrls } = params;
+  const { addressBook, headers, objectUrls, vCardUrlFilter } = params;
   debug(`Fetching vcards from ${addressBook?.url}`);
   const requiredFields: Array<'url'> = ['url'];
   if (!addressBook || !hasFields(addressBook, requiredFields)) {
@@ -143,7 +144,7 @@ export const fetchVCards = async (params: {
   )
     .map((url) => (url.includes('http') ? url : new URL(url, addressBook.url).href))
     .map((url) => new URL(url).pathname)
-    .filter((url): url is string => url !== addressBook.url);
+    .filter(vCardUrlFilter ?? ((url: string): url is string => url !== addressBook.url));
 
   const vCardResults = await addressBookMultiGet({
     url: addressBook.url,

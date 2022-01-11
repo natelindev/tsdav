@@ -20,6 +20,7 @@ const vcards = await fetchVCards({
 - `addressBook` **required**, [DAVAddressBook](../types/DAVAddressBook.md) to fetch vcards from
 - `objectUrls` vcard urls to fetch
 - `headers` request headers
+- `vCardUrlFilter` predicate function to filter urls from the address book before fetching
 
 ### Return Value
 
