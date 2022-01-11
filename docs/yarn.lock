@@ -2065,10 +2065,10 @@
     cssesc "^3.0.0"
     immediate "^3.2.3"
 
-"@easyops-cn/docusaurus-search-local@0.19.1":
-  version "0.19.1"
-  resolved "https://registry.npmjs.org/@easyops-cn/docusaurus-search-local/-/docusaurus-search-local-0.19.1.tgz#cd0673624e6901a384f4cf1c289f18ec360734db"
-  integrity sha512-iBtFxP7y/eLuUABa7ODqn/RNcrWiao/LW5HiEjM56RR5hlOXjML5GmDwVdcazZHuPhR8K0sOjZE33vLRUFdCog==
+"@easyops-cn/docusaurus-search-local@0.21.4":
+  version "0.21.4"
+  resolved "https://registry.yarnpkg.com/@easyops-cn/docusaurus-search-local/-/docusaurus-search-local-0.21.4.tgz#d5df409e5f80503bcd62def991dbd230e58ee3c5"
+  integrity sha512-sUYxRKLfN/rInn1awf3Z6M5lefk9gSsrQp/6nKUTgaJI/NUmvZY8Hk3nRk0BPIHK8jjjzm+gWOhz8O0SBq8ihw==
   dependencies:
     "@docusaurus/utils" "^2.0.0-beta.4"
     "@docusaurus/utils-validation" "^2.0.0-beta.4"
