@@ -195,8 +195,9 @@ declare const fetchAddressBooks: (params?: {
 } | undefined) => Promise<DAVAddressBook[]>;
 declare const fetchVCards: (params: {
     addressBook: DAVAddressBook;
-    headers?: Record<string, string>;
-    objectUrls?: string[];
+    headers?: Record<string, string> | undefined;
+    objectUrls?: string[] | undefined;
+    vCardUrlFilter?: ((url: string) => boolean) | undefined;
 }) => Promise<DAVVCard[]>;
 declare const createVCard: (params: {
     addressBook: DAVAddressBook;
@@ -480,6 +481,7 @@ declare const createDAVClient: (params: {
         addressBook: DAVCollection;
         headers?: Record<string, string> | undefined;
         objectUrls?: string[] | undefined;
+        vCardUrlFilter?: ((url: string) => boolean) | undefined;
     }) => Promise<DAVObject[]>;
     createVCard: (params: {
         addressBook: DAVCollection;
@@ -694,6 +696,7 @@ declare const _default: {
         addressBook: DAVCollection;
         headers?: Record<string, string> | undefined;
         objectUrls?: string[] | undefined;
+        vCardUrlFilter?: ((url: string) => boolean) | undefined;
     }) => Promise<DAVObject[]>;
     createVCard: (params: {
         addressBook: DAVCollection;
@@ -932,6 +935,7 @@ declare const _default: {
             addressBook: DAVCollection;
             headers?: Record<string, string> | undefined;
             objectUrls?: string[] | undefined;
+            vCardUrlFilter?: ((url: string) => boolean) | undefined;
         }) => Promise<DAVObject[]>;
         createVCard: (params: {
             addressBook: DAVCollection;

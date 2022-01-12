@@ -643,7 +643,7 @@ const fetchAddressBooks = (params) => __awaiter(void 0, void 0, void 0, function
     })));
 });
 const fetchVCards = (params) => __awaiter(void 0, void 0, void 0, function* () {
-    const { addressBook, headers, objectUrls } = params;
+    const { addressBook, headers, objectUrls, vCardUrlFilter } = params;
     debug$3(`Fetching vcards from ${addressBook === null || addressBook === void 0 ? void 0 : addressBook.url}`);
     const requiredFields = ['url'];
     if (!addressBook || !hasFields(addressBook, requiredFields)) {
@@ -662,7 +662,7 @@ const fetchVCards = (params) => __awaiter(void 0, void 0, void 0, function* () {
     })).map((res) => { var _a; return (_a = res.href) !== null && _a !== void 0 ? _a : ''; }))
         .map((url) => (url.includes('http') ? url : new URL(url, addressBook.url).href))
         .map((url) => new URL(url).pathname)
-        .filter((url) => url !== addressBook.url);
+        .filter(vCardUrlFilter !== null && vCardUrlFilter !== void 0 ? vCardUrlFilter : ((url) => url !== addressBook.url));
     const vCardResults = yield addressBookMultiGet({
         url: addressBook.url,
         props: [

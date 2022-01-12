@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="300" height="200" src="https://github.com/llldar/tsDAV/blob/master/docs/static/img/logo.svg">
+  <img width="300" height="200" src="https://github.com/natelindev/tsdav/blob/master/docs/static/img/logo.svg">
 </p>
 <p align="center">
 webdav request made easy
@@ -15,7 +15,7 @@ webdav request made easy
   <a aria-label="NPM version" href="https://www.npmjs.com/package/tsdav">
     <img alt="NPM Version" src="https://img.shields.io/npm/v/tsdav?style=for-the-badge&labelColor=24292e">
   </a>
-  <a aria-label="License" href="https://github.com/llldar/tsDAV/blob/master/LICENSE">
+  <a aria-label="License" href="https://github.com/natelindev/tsdav/blob/master/LICENSE">
     <img alt="MIT License" src="https://img.shields.io/npm/l/tsdav?style=for-the-badge&labelColor=24292e">
   </a>
 </p>
@@ -158,9 +158,7 @@ Check out the [Documentation](https://tsdav.vercel.app/)
 
 ### License
 
-[MIT](https://github.com/llldar/tsDAV/blob/master/LICENSE)
-
-[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fllldar%2FtsDAV.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fllldar%2FtsDAV?ref=badge_large)
+[MIT](https://github.com/natelindev/tsdav/blob/master/LICENSE)
 
 ### Changelog
 
