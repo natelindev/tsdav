@@ -17,8 +17,11 @@ const results = await calendarQuery({
   props: [{ name: 'getetag', namespace: DAVNamespace.DAV }],
   filters: [
     {
-      type: 'comp-filter',
-      attributes: { name: 'VCALENDAR' },
+      'comp-filter': {
+        _attributes: {
+          name: 'VCALENDAR',
+        },
+      },
     },
   ],
   depth: '1',
@@ -31,8 +34,8 @@ const results = await calendarQuery({
 ### Arguments
 
 - `url` **required**, request target url
-- `props` **required**, array of [DAVProp](../types/DAVProp.md)
-- `filters` array of [DAVFilter](../types/DAVFilter.md)
+- `props` **required**, [CALDAV prop element](https://datatracker.ietf.org/doc/html/rfc4791#section-9.6.4) in [ElementCompact](../types/ElementCompact.md) form
+- `filters` [CALDAV filter element](https://datatracker.ietf.org/doc/html/rfc4791#section-9.7) in [ElementCompact](../types/ElementCompact.md) form
 - `depth` [DAVDepth](../types/DAVDepth.md)
 - `timezone` iana timezone name, like `America/Los_Angeles`
 - `headers` request headers

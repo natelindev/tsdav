@@ -1,4 +1,6 @@
-import { DAVDepth, DAVFilter, DAVProp, DAVResponse } from './DAVTypes';
+import { ElementCompact } from 'xml-js';
+
+import { DAVDepth, DAVResponse } from './DAVTypes';
 
 export type DAVCollection = {
   objects?: DAVObject[];
@@ -21,9 +23,9 @@ export type DAVCollection = {
       }) => Promise<DAVVCard[]>);
   objectMultiGet?: (params: {
     url: string;
-    props: DAVProp[];
+    props: ElementCompact;
     objectUrls: string[];
-    filters?: DAVFilter[];
+    filters?: ElementCompact;
     timezone?: string;
     depth: DAVDepth;
     headers?: Record<string, string>;

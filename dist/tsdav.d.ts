@@ -1,36 +1,6 @@
-declare enum DAVNamespace {
-    CALENDAR_SERVER = "http://calendarserver.org/ns/",
-    CALDAV_APPLE = "http://apple.com/ns/ical/",
-    CALDAV = "urn:ietf:params:xml:ns:caldav",
-    CARDDAV = "urn:ietf:params:xml:ns:carddav",
-    DAV = "DAV:"
-}
-declare const DAVAttributeMap: {
-    "urn:ietf:params:xml:ns:caldav": string;
-    "urn:ietf:params:xml:ns:carddav": string;
-    "http://calendarserver.org/ns/": string;
-    "http://apple.com/ns/ical/": string;
-    "DAV:": string;
-};
-declare const DAVNamespaceShorthandMap: {
-    "urn:ietf:params:xml:ns:caldav": string;
-    "urn:ietf:params:xml:ns:carddav": string;
-    "http://calendarserver.org/ns/": string;
-    "http://apple.com/ns/ical/": string;
-    "DAV:": string;
-};
+import * as xml_js from 'xml-js';
+import { ElementCompact } from 'xml-js';
 
-declare type DAVProp = {
-    name: string;
-    namespace?: DAVNamespace;
-    value?: string | number;
-};
-declare type DAVFilter = {
-    type: string;
-    attributes: Record<string, string>;
-    value?: string | number;
-    children?: DAVFilter[];
-};
 declare type DAVDepth = '0' | '1' | 'infinity';
 declare type DAVMethods = 'COPY' | 'LOCK' | 'MKCOL' | 'MOVE' | 'PROPFIND' | 'PROPPATCH' | 'UNLOCK' | 'REPORT' | 'SEARCH' | 'MKCALENDAR';
 declare type HTTPMethods = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'DELETE' | 'CONNECT' | 'OPTIONS' | 'TRACE' | 'PATCH';
@@ -87,9 +57,9 @@ declare type DAVCollection = {
     }) => Promise<DAVVCard[]>);
     objectMultiGet?: (params: {
         url: string;
-        props: DAVProp[];
+        props: ElementCompact;
         objectUrls: string[];
-        filters?: DAVFilter[];
+        filters?: ElementCompact;
         timezone?: string;
         depth: DAVDepth;
         headers?: Record<string, string>;
@@ -176,28 +146,52 @@ declare type NoUndefinedField<T> = {
     [P in keyof T]-?: NoUndefinedField<NonNullable<T[P]>>;
 };
 
+declare enum DAVNamespace {
+    CALENDAR_SERVER = "http://calendarserver.org/ns/",
+    CALDAV_APPLE = "http://apple.com/ns/ical/",
+    CALDAV = "urn:ietf:params:xml:ns:caldav",
+    CARDDAV = "urn:ietf:params:xml:ns:carddav",
+    DAV = "DAV:"
+}
+declare const DAVAttributeMap: {
+    "urn:ietf:params:xml:ns:caldav": string;
+    "urn:ietf:params:xml:ns:carddav": string;
+    "http://calendarserver.org/ns/": string;
+    "http://apple.com/ns/ical/": string;
+    "DAV:": string;
+};
+declare enum DAVNamespaceShort {
+    CALDAV = "c",
+    CARDDAV = "card",
+    CALENDAR_SERVER = "cs",
+    CALDAV_APPLE = "ca",
+    DAV = "d"
+}
+
 declare const addressBookQuery: (params: {
     url: string;
-    props: DAVProp[];
+    props: ElementCompact;
+    filters?: ElementCompact;
     depth?: DAVDepth;
     headers?: Record<string, string>;
 }) => Promise<DAVResponse[]>;
 declare const addressBookMultiGet: (params: {
     url: string;
-    props: DAVProp[];
+    props: ElementCompact;
     objectUrls: string[];
     depth: DAVDepth;
     headers?: Record<string, string>;
 }) => Promise<DAVResponse[]>;
 declare const fetchAddressBooks: (params?: {
     account?: DAVAccount | undefined;
+    props?: ElementCompact | undefined;
     headers?: Record<string, string> | undefined;
 } | undefined) => Promise<DAVAddressBook[]>;
 declare const fetchVCards: (params: {
     addressBook: DAVAddressBook;
     headers?: Record<string, string> | undefined;
     objectUrls?: string[] | undefined;
-    vCardUrlFilter?: ((url: string) => boolean) | undefined;
+    urlFilter?: ((url: string) => boolean) | undefined;
 }) => Promise<DAVVCard[]>;
 declare const createVCard: (params: {
     addressBook: DAVAddressBook;
@@ -216,40 +210,43 @@ declare const deleteVCard: (params: {
 
 declare const calendarQuery: (params: {
     url: string;
-    props: DAVProp[];
-    filters?: DAVFilter[];
+    props: ElementCompact;
+    filters?: ElementCompact;
     timezone?: string;
     depth?: DAVDepth;
     headers?: Record<string, string>;
 }) => Promise<DAVResponse[]>;
 declare const calendarMultiGet: (params: {
     url: string;
-    props: DAVProp[];
+    props: ElementCompact;
     objectUrls?: string[];
-    filters?: DAVFilter[];
+    filters?: ElementCompact;
     timezone?: string;
     depth: DAVDepth;
     headers?: Record<string, string>;
 }) => Promise<DAVResponse[]>;
 declare const makeCalendar: (params: {
     url: string;
-    props: DAVProp[];
+    props: ElementCompact;
     depth?: DAVDepth;
     headers?: Record<string, string>;
 }) => Promise<DAVResponse[]>;
 declare const fetchCalendars: (params?: {
     account?: DAVAccount | undefined;
+    props?: ElementCompact | undefined;
     headers?: Record<string, string> | undefined;
 } | undefined) => Promise<DAVCalendar[]>;
 declare const fetchCalendarObjects: (params: {
     calendar: DAVCalendar;
-    objectUrls?: string[];
-    filters?: DAVFilter[];
+    objectUrls?: string[] | undefined;
+    filters?: ElementCompact | undefined;
     timeRange?: {
         start: string;
         end: string;
-    };
-    headers?: Record<string, string>;
+    } | undefined;
+    expand?: boolean | undefined;
+    urlFilter?: ((url: string) => boolean) | undefined;
+    headers?: Record<string, string> | undefined;
 }) => Promise<DAVCalendarObject[]>;
 declare const createCalendarObject: (params: {
     calendar: DAVCalendar;
@@ -269,17 +266,26 @@ declare const deleteCalendarObject: (params: {
  * Sync remote calendars to local
  */
 declare const syncCalendars: SyncCalendars;
+declare const freeBusyQuery: (params: {
+    url: string;
+    timeRange: {
+        start: string;
+        end: string;
+    };
+    depth?: DAVDepth;
+    headers?: Record<string, string>;
+}) => Promise<DAVResponse>;
 
 declare const collectionQuery: (params: {
     url: string;
     body: any;
     depth?: DAVDepth;
-    defaultNamespace?: DAVNamespace;
+    defaultNamespace?: DAVNamespaceShort;
     headers?: Record<string, string>;
 }) => Promise<DAVResponse[]>;
 declare const makeCollection: (params: {
     url: string;
-    props?: DAVProp[];
+    props?: ElementCompact;
     depth?: DAVDepth;
     headers?: Record<string, string>;
 }) => Promise<DAVResponse[]>;
@@ -299,7 +305,7 @@ declare const isCollectionDirty: (params: {
  */
 declare const syncCollection: (params: {
     url: string;
-    props: DAVProp[];
+    props: ElementCompact;
     headers?: Record<string, string>;
     syncLevel?: number;
     syncToken?: string;
@@ -315,7 +321,7 @@ declare const davRequest: (params: {
 }) => Promise<DAVResponse[]>;
 declare const propfind: (params: {
     url: string;
-    props: DAVProp[];
+    props: ElementCompact;
     depth?: DAVDepth;
     headers?: Record<string, string>;
 }) => Promise<DAVResponse[]>;
@@ -350,7 +356,7 @@ declare const createDAVClient: (params: {
     }) => Promise<DAVResponse[]>;
     propfind: (params: {
         url: string;
-        props: DAVProp[];
+        props: xml_js.ElementCompact;
         depth?: DAVDepth | undefined;
         headers?: Record<string, string> | undefined;
     }) => Promise<DAVResponse[]>;
@@ -378,15 +384,16 @@ declare const createDAVClient: (params: {
     }) => Promise<Response>;
     calendarQuery: (params: {
         url: string;
-        props: DAVProp[];
-        filters?: DAVFilter[] | undefined;
+        props: xml_js.ElementCompact;
+        filters?: xml_js.ElementCompact | undefined;
         timezone?: string | undefined;
         depth?: DAVDepth | undefined;
         headers?: Record<string, string> | undefined;
     }) => Promise<DAVResponse[]>;
     addressBookQuery: (params: {
         url: string;
-        props: DAVProp[];
+        props: xml_js.ElementCompact;
+        filters?: xml_js.ElementCompact | undefined;
         depth?: DAVDepth | undefined;
         headers?: Record<string, string> | undefined;
     }) => Promise<DAVResponse[]>;
@@ -394,33 +401,33 @@ declare const createDAVClient: (params: {
         url: string;
         body: any;
         depth?: DAVDepth | undefined;
-        defaultNamespace?: DAVNamespace | undefined;
+        defaultNamespace?: DAVNamespaceShort | undefined;
         headers?: Record<string, string> | undefined;
     }) => Promise<DAVResponse[]>;
     makeCollection: (params: {
         url: string;
-        props?: DAVProp[] | undefined;
+        props?: xml_js.ElementCompact | undefined;
         depth?: DAVDepth | undefined;
         headers?: Record<string, string> | undefined;
     }) => Promise<DAVResponse[]>;
     calendarMultiGet: (params: {
         url: string;
-        props: DAVProp[];
+        props: xml_js.ElementCompact;
         objectUrls?: string[] | undefined;
-        filters?: DAVFilter[] | undefined;
+        filters?: xml_js.ElementCompact | undefined;
         timezone?: string | undefined;
         depth: DAVDepth;
         headers?: Record<string, string> | undefined;
     }) => Promise<DAVResponse[]>;
     makeCalendar: (params: {
         url: string;
-        props: DAVProp[];
+        props: xml_js.ElementCompact;
         depth?: DAVDepth | undefined;
         headers?: Record<string, string> | undefined;
     }) => Promise<DAVResponse[]>;
     syncCollection: (params: {
         url: string;
-        props: DAVProp[];
+        props: xml_js.ElementCompact;
         headers?: Record<string, string> | undefined;
         syncLevel?: number | undefined;
         syncToken?: string | undefined;
@@ -439,16 +446,19 @@ declare const createDAVClient: (params: {
     smartCollectionSync: SmartCollectionSync;
     fetchCalendars: (params?: {
         account?: DAVAccount | undefined;
+        props?: xml_js.ElementCompact | undefined;
         headers?: Record<string, string> | undefined;
     } | undefined) => Promise<DAVCalendar[]>;
     fetchCalendarObjects: (params: {
         calendar: DAVCalendar;
         objectUrls?: string[] | undefined;
-        filters?: DAVFilter[] | undefined;
+        filters?: xml_js.ElementCompact | undefined;
         timeRange?: {
             start: string;
             end: string;
         } | undefined;
+        expand?: boolean | undefined;
+        urlFilter?: ((url: string) => boolean) | undefined;
         headers?: Record<string, string> | undefined;
     }) => Promise<DAVObject[]>;
     createCalendarObject: (params: {
@@ -468,11 +478,12 @@ declare const createDAVClient: (params: {
     syncCalendars: SyncCalendars;
     fetchAddressBooks: (params?: {
         account?: DAVAccount | undefined;
+        props?: xml_js.ElementCompact | undefined;
         headers?: Record<string, string> | undefined;
     } | undefined) => Promise<DAVCollection[]>;
     addressBookMultiGet: (params: {
         url: string;
-        props: DAVProp[];
+        props: xml_js.ElementCompact;
         objectUrls: string[];
         depth: DAVDepth;
         headers?: Record<string, string> | undefined;
@@ -481,7 +492,7 @@ declare const createDAVClient: (params: {
         addressBook: DAVCollection;
         headers?: Record<string, string> | undefined;
         objectUrls?: string[] | undefined;
-        vCardUrlFilter?: ((url: string) => boolean) | undefined;
+        urlFilter?: ((url: string) => boolean) | undefined;
     }) => Promise<DAVObject[]>;
     createVCard: (params: {
         addressBook: DAVCollection;
@@ -579,34 +590,17 @@ declare const getOauthHeaders: (credentials: DAVCredentials) => Promise<{
 
 declare const urlEquals: (urlA?: string | undefined, urlB?: string | undefined) => boolean;
 declare const urlContains: (urlA?: string | undefined, urlB?: string | undefined) => boolean;
-declare type ShallowMergeDupKeyArray<A, B> = {
-    [key in keyof A | keyof B]: key extends keyof A & keyof B ? Array<A[key] | B[key]> : key extends keyof A ? A[key] : key extends keyof B ? B[key] : never;
-};
-declare const mergeObjectDupKeyArray: <A, B>(objA: A, objB: B) => ShallowMergeDupKeyArray<A, B>;
 declare const getDAVAttribute: (nsArr: DAVNamespace[]) => {
     [key: string]: DAVNamespace;
 };
-declare const formatProps: (props?: DAVProp[] | undefined) => {
-    [key: string]: any;
-} | undefined;
-declare const formatFilters: (filters?: DAVFilter[] | undefined) => {
-    [key: string]: any;
-} | undefined;
 declare const cleanupFalsy: <T = unknown>(obj: T) => NoUndefinedField<T>;
 
 declare const _default: {
     urlEquals: (urlA?: string | undefined, urlB?: string | undefined) => boolean;
     urlContains: (urlA?: string | undefined, urlB?: string | undefined) => boolean;
-    mergeObjectDupKeyArray: <A, B>(objA: A, objB: B) => { [key in keyof A | keyof B]: key extends keyof A & keyof B ? (A[key] | B[key])[] : key extends keyof A ? A[key] : key extends keyof B ? B[key] : never; };
     getDAVAttribute: (nsArr: DAVNamespace[]) => {
         [key: string]: DAVNamespace;
     };
-    formatProps: (props?: DAVProp[] | undefined) => {
-        [key: string]: any;
-    } | undefined;
-    formatFilters: (filters?: DAVFilter[] | undefined) => {
-        [key: string]: any;
-    } | undefined;
     cleanupFalsy: <T = unknown>(obj: T) => NoUndefinedField<T>;
     defaultParam: <F extends (...args: any[]) => any>(fn: F, params: Partial<Parameters<F>[0]>) => (...args: Parameters<F>) => ReturnType<F>;
     getBasicAuthHeaders: (credentials: DAVCredentials) => {
@@ -625,39 +619,42 @@ declare const _default: {
     }>;
     calendarQuery: (params: {
         url: string;
-        props: DAVProp[];
-        filters?: DAVFilter[] | undefined;
+        props: xml_js.ElementCompact;
+        filters?: xml_js.ElementCompact | undefined;
         timezone?: string | undefined;
         depth?: DAVDepth | undefined;
         headers?: Record<string, string> | undefined;
     }) => Promise<DAVResponse[]>;
     calendarMultiGet: (params: {
         url: string;
-        props: DAVProp[];
+        props: xml_js.ElementCompact;
         objectUrls?: string[] | undefined;
-        filters?: DAVFilter[] | undefined;
+        filters?: xml_js.ElementCompact | undefined;
         timezone?: string | undefined;
         depth: DAVDepth;
         headers?: Record<string, string> | undefined;
     }) => Promise<DAVResponse[]>;
     makeCalendar: (params: {
         url: string;
-        props: DAVProp[];
+        props: xml_js.ElementCompact;
         depth?: DAVDepth | undefined;
         headers?: Record<string, string> | undefined;
     }) => Promise<DAVResponse[]>;
     fetchCalendars: (params?: {
         account?: DAVAccount | undefined;
+        props?: xml_js.ElementCompact | undefined;
         headers?: Record<string, string> | undefined;
     } | undefined) => Promise<DAVCalendar[]>;
     fetchCalendarObjects: (params: {
         calendar: DAVCalendar;
         objectUrls?: string[] | undefined;
-        filters?: DAVFilter[] | undefined;
+        filters?: xml_js.ElementCompact | undefined;
         timeRange?: {
             start: string;
             end: string;
         } | undefined;
+        expand?: boolean | undefined;
+        urlFilter?: ((url: string) => boolean) | undefined;
         headers?: Record<string, string> | undefined;
     }) => Promise<DAVObject[]>;
     createCalendarObject: (params: {
@@ -675,28 +672,39 @@ declare const _default: {
         headers?: Record<string, string> | undefined;
     }) => Promise<Response>;
     syncCalendars: SyncCalendars;
+    freeBusyQuery: (params: {
+        url: string;
+        timeRange: {
+            start: string;
+            end: string;
+        };
+        depth?: DAVDepth | undefined;
+        headers?: Record<string, string> | undefined;
+    }) => Promise<DAVResponse>;
     addressBookQuery: (params: {
         url: string;
-        props: DAVProp[];
+        props: xml_js.ElementCompact;
+        filters?: xml_js.ElementCompact | undefined;
         depth?: DAVDepth | undefined;
         headers?: Record<string, string> | undefined;
     }) => Promise<DAVResponse[]>;
     addressBookMultiGet: (params: {
         url: string;
-        props: DAVProp[];
+        props: xml_js.ElementCompact;
         objectUrls: string[];
         depth: DAVDepth;
         headers?: Record<string, string> | undefined;
     }) => Promise<DAVResponse[]>;
     fetchAddressBooks: (params?: {
         account?: DAVAccount | undefined;
+        props?: xml_js.ElementCompact | undefined;
         headers?: Record<string, string> | undefined;
     } | undefined) => Promise<DAVCollection[]>;
     fetchVCards: (params: {
         addressBook: DAVCollection;
         headers?: Record<string, string> | undefined;
         objectUrls?: string[] | undefined;
-        vCardUrlFilter?: ((url: string) => boolean) | undefined;
+        urlFilter?: ((url: string) => boolean) | undefined;
     }) => Promise<DAVObject[]>;
     createVCard: (params: {
         addressBook: DAVCollection;
@@ -734,12 +742,12 @@ declare const _default: {
         url: string;
         body: any;
         depth?: DAVDepth | undefined;
-        defaultNamespace?: DAVNamespace | undefined;
+        defaultNamespace?: DAVNamespaceShort | undefined;
         headers?: Record<string, string> | undefined;
     }) => Promise<DAVResponse[]>;
     makeCollection: (params: {
         url: string;
-        props?: DAVProp[] | undefined;
+        props?: xml_js.ElementCompact | undefined;
         depth?: DAVDepth | undefined;
         headers?: Record<string, string> | undefined;
     }) => Promise<DAVResponse[]>;
@@ -756,7 +764,7 @@ declare const _default: {
     }>;
     syncCollection: (params: {
         url: string;
-        props: DAVProp[];
+        props: xml_js.ElementCompact;
         headers?: Record<string, string> | undefined;
         syncLevel?: number | undefined;
         syncToken?: string | undefined;
@@ -770,7 +778,7 @@ declare const _default: {
     }) => Promise<DAVResponse[]>;
     propfind: (params: {
         url: string;
-        props: DAVProp[];
+        props: xml_js.ElementCompact;
         depth?: DAVDepth | undefined;
         headers?: Record<string, string> | undefined;
     }) => Promise<DAVResponse[]>;
@@ -804,7 +812,7 @@ declare const _default: {
         }) => Promise<DAVResponse[]>;
         propfind: (params: {
             url: string;
-            props: DAVProp[];
+            props: xml_js.ElementCompact;
             depth?: DAVDepth | undefined;
             headers?: Record<string, string> | undefined;
         }) => Promise<DAVResponse[]>;
@@ -832,15 +840,16 @@ declare const _default: {
         }) => Promise<Response>;
         calendarQuery: (params: {
             url: string;
-            props: DAVProp[];
-            filters?: DAVFilter[] | undefined;
+            props: xml_js.ElementCompact;
+            filters?: xml_js.ElementCompact | undefined;
             timezone?: string | undefined;
             depth?: DAVDepth | undefined;
             headers?: Record<string, string> | undefined;
         }) => Promise<DAVResponse[]>;
         addressBookQuery: (params: {
             url: string;
-            props: DAVProp[];
+            props: xml_js.ElementCompact;
+            filters?: xml_js.ElementCompact | undefined;
             depth?: DAVDepth | undefined;
             headers?: Record<string, string> | undefined;
         }) => Promise<DAVResponse[]>;
@@ -848,33 +857,33 @@ declare const _default: {
             url: string;
             body: any;
             depth?: DAVDepth | undefined;
-            defaultNamespace?: DAVNamespace | undefined;
+            defaultNamespace?: DAVNamespaceShort | undefined;
             headers?: Record<string, string> | undefined;
         }) => Promise<DAVResponse[]>;
         makeCollection: (params: {
             url: string;
-            props?: DAVProp[] | undefined;
+            props?: xml_js.ElementCompact | undefined;
             depth?: DAVDepth | undefined;
             headers?: Record<string, string> | undefined;
         }) => Promise<DAVResponse[]>;
         calendarMultiGet: (params: {
             url: string;
-            props: DAVProp[];
+            props: xml_js.ElementCompact;
             objectUrls?: string[] | undefined;
-            filters?: DAVFilter[] | undefined;
+            filters?: xml_js.ElementCompact | undefined;
             timezone?: string | undefined;
             depth: DAVDepth;
             headers?: Record<string, string> | undefined;
         }) => Promise<DAVResponse[]>;
         makeCalendar: (params: {
             url: string;
-            props: DAVProp[];
+            props: xml_js.ElementCompact;
             depth?: DAVDepth | undefined;
             headers?: Record<string, string> | undefined;
         }) => Promise<DAVResponse[]>;
         syncCollection: (params: {
             url: string;
-            props: DAVProp[];
+            props: xml_js.ElementCompact;
             headers?: Record<string, string> | undefined;
             syncLevel?: number | undefined;
             syncToken?: string | undefined;
@@ -893,16 +902,19 @@ declare const _default: {
         smartCollectionSync: SmartCollectionSync;
         fetchCalendars: (params?: {
             account?: DAVAccount | undefined;
+            props?: xml_js.ElementCompact | undefined;
             headers?: Record<string, string> | undefined;
         } | undefined) => Promise<DAVCalendar[]>;
         fetchCalendarObjects: (params: {
             calendar: DAVCalendar;
             objectUrls?: string[] | undefined;
-            filters?: DAVFilter[] | undefined;
+            filters?: xml_js.ElementCompact | undefined;
             timeRange?: {
                 start: string;
                 end: string;
             } | undefined;
+            expand?: boolean | undefined;
+            urlFilter?: ((url: string) => boolean) | undefined;
             headers?: Record<string, string> | undefined;
         }) => Promise<DAVObject[]>;
         createCalendarObject: (params: {
@@ -922,11 +934,12 @@ declare const _default: {
         syncCalendars: SyncCalendars;
         fetchAddressBooks: (params?: {
             account?: DAVAccount | undefined;
+            props?: xml_js.ElementCompact | undefined;
             headers?: Record<string, string> | undefined;
         } | undefined) => Promise<DAVCollection[]>;
         addressBookMultiGet: (params: {
             url: string;
-            props: DAVProp[];
+            props: xml_js.ElementCompact;
             objectUrls: string[];
             depth: DAVDepth;
             headers?: Record<string, string> | undefined;
@@ -935,7 +948,7 @@ declare const _default: {
             addressBook: DAVCollection;
             headers?: Record<string, string> | undefined;
             objectUrls?: string[] | undefined;
-            vCardUrlFilter?: ((url: string) => boolean) | undefined;
+            urlFilter?: ((url: string) => boolean) | undefined;
         }) => Promise<DAVObject[]>;
         createVCard: (params: {
             addressBook: DAVCollection;
@@ -954,13 +967,7 @@ declare const _default: {
     }>;
     DAVClient: typeof DAVClient;
     DAVNamespace: typeof DAVNamespace;
-    DAVNamespaceShorthandMap: {
-        "urn:ietf:params:xml:ns:caldav": string;
-        "urn:ietf:params:xml:ns:carddav": string;
-        "http://calendarserver.org/ns/": string;
-        "http://apple.com/ns/ical/": string;
-        "DAV:": string;
-    };
+    DAVNamespaceShort: typeof DAVNamespaceShort;
     DAVAttributeMap: {
         "urn:ietf:params:xml:ns:caldav": string;
         "urn:ietf:params:xml:ns:carddav": string;
@@ -970,4 +977,4 @@ declare const _default: {
     };
 };
 
-export { DAVAccount, DAVAddressBook, DAVAttributeMap, DAVCalendar, DAVCalendarObject, DAVClient, DAVCollection, DAVCredentials, DAVDepth, DAVFilter, DAVMethods, DAVNamespace, DAVNamespaceShorthandMap, DAVObject, DAVProp, DAVRequest, DAVResponse, DAVTokens, DAVVCard, addressBookQuery, calendarMultiGet, calendarQuery, cleanupFalsy, collectionQuery, createAccount, createCalendarObject, createDAVClient, createObject, createVCard, davRequest, _default as default, deleteCalendarObject, deleteObject, deleteVCard, fetchAddressBooks, fetchCalendarObjects, fetchCalendars, fetchOauthTokens, fetchVCards, formatFilters, formatProps, getBasicAuthHeaders, getDAVAttribute, getOauthHeaders, isCollectionDirty, makeCalendar, mergeObjectDupKeyArray, propfind, refreshAccessToken, smartCollectionSync, supportedReportSet, syncCalendars, syncCollection, updateCalendarObject, updateObject, updateVCard, urlContains, urlEquals };
+export { DAVAccount, DAVAddressBook, DAVAttributeMap, DAVCalendar, DAVCalendarObject, DAVClient, DAVCollection, DAVCredentials, DAVDepth, DAVMethods, DAVNamespace, DAVNamespaceShort, DAVObject, DAVRequest, DAVResponse, DAVTokens, DAVVCard, addressBookQuery, calendarMultiGet, calendarQuery, cleanupFalsy, collectionQuery, createAccount, createCalendarObject, createDAVClient, createObject, createVCard, davRequest, _default as default, deleteCalendarObject, deleteObject, deleteVCard, fetchAddressBooks, fetchCalendarObjects, fetchCalendars, fetchOauthTokens, fetchVCards, freeBusyQuery, getBasicAuthHeaders, getDAVAttribute, getOauthHeaders, isCollectionDirty, makeCalendar, propfind, refreshAccessToken, smartCollectionSync, supportedReportSet, syncCalendars, syncCollection, updateCalendarObject, updateObject, updateVCard, urlContains, urlEquals };

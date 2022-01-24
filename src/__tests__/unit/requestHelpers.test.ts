@@ -1,13 +1,8 @@
-import { DAVNamespace } from '../../consts';
-import {
-  cleanupFalsy,
-  formatFilters,
-  formatProps,
-  getDAVAttribute,
-  mergeObjectDupKeyArray,
-  urlContains,
-  urlEquals,
-} from '../../util/requestHelpers';
+import convert from 'xml-js';
+
+import { camelCase } from '../../util/camelCase';
+import { nativeType } from '../../util/nativeType';
+import { cleanupFalsy, urlContains, urlEquals } from '../../util/requestHelpers';
 
 test('cleanupFalsy should clean undefined from object', () => {
   const objA = {
@@ -68,96 +63,4 @@ test('urlContains should handle almost substring of urls', () => {
   expect(urlContains(url, url5)).toBe(true);
   expect(urlContains(url, url6)).toBe(true);
   expect(urlContains(url, url7)).toBe(false);
-});
-
-test('mergeObjectDupKeyArray should be able to merge objects', () => {
-  const objA = {
-    test1: 123,
-    test2: 'aaa',
-    test4: {
-      test5: {
-        test6: 'bbb',
-      },
-    },
-    test7: 'ooo',
-  };
-  const objB = {
-    test1: 234,
-    test2: 'ccc',
-    test4: {
-      test5: {
-        test6: 'ddd',
-      },
-    },
-    test8: 'ttt',
-  };
-  const mergedObj = mergeObjectDupKeyArray(objA, objB);
-  expect(mergedObj).toEqual({
-    test1: [234, 123],
-    test2: ['ccc', 'aaa'],
-    test4: [{ test5: { test6: 'ddd' } }, { test5: { test6: 'bbb' } }],
-    test7: 'ooo',
-    test8: 'ttt',
-  });
-});
-
-test('getDAVAttribute can extract dav attribute values', () => {
-  const attributes = getDAVAttribute([
-    DAVNamespace.CALDAV,
-    DAVNamespace.CALENDAR_SERVER,
-    DAVNamespace.CALDAV_APPLE,
-    DAVNamespace.DAV,
-  ]);
-
-  expect(attributes).toEqual({
-    'xmlns:c': 'urn:ietf:params:xml:ns:caldav',
-    'xmlns:cs': 'http://calendarserver.org/ns/',
-    'xmlns:ca': 'http://apple.com/ns/ical/',
-    'xmlns:d': 'DAV:',
-  });
-});
-
-test('formatProps should be able to format props to expected format', () => {
-  const formattedProps = formatProps([
-    { name: 'calendar-description', namespace: DAVNamespace.CALDAV },
-    { name: 'calendar-timezone', namespace: DAVNamespace.CALDAV },
-    { name: 'displayname', namespace: DAVNamespace.DAV },
-    { name: 'getctag', namespace: DAVNamespace.CALENDAR_SERVER },
-    { name: 'resourcetype', namespace: DAVNamespace.DAV },
-    { name: 'supported-calendar-component-set', namespace: DAVNamespace.CALDAV },
-    { name: 'sync-token', namespace: DAVNamespace.DAV },
-  ]);
-  expect(formattedProps).toEqual({
-    'c:calendar-description': {},
-    'c:calendar-timezone': {},
-    'd:displayname': {},
-    'cs:getctag': {},
-    'd:resourcetype': {},
-    'c:supported-calendar-component-set': {},
-    'd:sync-token': {},
-  });
-});
-
-test('formatFilters should be able to format filters to expected format', () => {
-  const formattedFilters = formatFilters([
-    {
-      type: 'comp-filter',
-      attributes: { name: 'VCALENDAR' },
-      children: [
-        {
-          type: 'comp-filter',
-          attributes: { name: 'VEVENT' },
-        },
-      ],
-    },
-  ]);
-  expect(formattedFilters).toEqual([
-    {
-      'comp-filter': {
-        _attributes: { name: 'VCALENDAR' },
-        'comp-filter': { _attributes: { name: 'VEVENT' }, _text: '' },
-        _text: '',
-      },
-    },
-  ]);
 });

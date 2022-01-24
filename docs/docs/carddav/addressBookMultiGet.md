@@ -13,10 +13,10 @@ If the Request-URI is an address object resource. This report is similar to the 
 // fetch 2 specific vcards from one addressBook
 const vcards = await addressBookMultiGet({
   url: 'https://contacts.icloud.com/1234567/carddavhome/card/',
-  props: [
-    { name: 'getetag', namespace: DAVNamespace.DAV },
-    { name: 'address-data', namespace: DAVNamespace.CARDDAV },
-  ],
+  props: {
+    [`${DAVNamespaceShort.DAV}:getetag`]: {},
+    [`${DAVNamespaceShort.CARDDAV}:address-data`]: {},
+  },
   objectUrls: [
     'https://contacts.icloud.com/1234567/carddavhome/card/1.vcf',
     'https://contacts.icloud.com/1234567/carddavhome/card/2.vcf',
@@ -32,8 +32,8 @@ const vcards = await addressBookMultiGet({
 
 - `url` **required**, url of CARDDAV server
 - `objectUrls` **required**, urls of vcards to get
-- `props` **required**, [DAVProp](../types/DAVProp.md) the client needs
-- `filters` [DAVFilter](../types/DAVFilter.md) the filter on the vcards
+- `props` **required**, [CARDDAV prop element](https://datatracker.ietf.org/doc/html/rfc6352#section-10.4.2) in [ElementCompact](../types/ElementCompact.md) form
+- `filters` [CARDDAV filter element](https://datatracker.ietf.org/doc/html/rfc6352#section-10.5) in [ElementCompact](../types/ElementCompact.md) form, overriding default filters
 - `depth` **required**, [DAVDepth](../types/DAVDepth.md) of the request
 - `headers` request headers
 

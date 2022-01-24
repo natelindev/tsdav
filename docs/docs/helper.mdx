@@ -1,0 +1,75 @@
+---
+sidebar_position: 9
+---
+
+import { Converter } from '../src/components/Converter.tsx';
+
+# Helper
+
+Helper to convert xml to expected js object to be consumed by tsdav
+
+### xml -> js
+
+<Converter
+  variant="xml"
+  content={`<?xml version="1.0" encoding="utf-8" ?>
+<C:calendar-query xmlns:D="DAV:"
+                  xmlns:C="urn:ietf:params:xml:ns:caldav">
+  <D:prop>
+    <C:calendar-data>
+      <C:expand start="20060103T000000Z"
+                end="20060105T000000Z"/>
+    </C:calendar-data>
+  </D:prop>
+  <C:filter>
+    <C:comp-filter name="VCALENDAR">
+      <C:comp-filter name="VEVENT">
+        <C:time-range start="20060103T000000Z"
+                      end="20060105T000000Z"/>
+      </C:comp-filter>
+    </C:comp-filter>
+  </C:filter>
+</C:calendar-query>`}
+/>
+
+### js -> xml
+
+<Converter
+  variant="xml-reverse"
+  content={{
+    calendarQuery: {
+      _attributes: {
+        'xmlns:D': 'DAV:',
+        'xmlns:C': 'urn:ietf:params:xml:ns:caldav',
+      },
+      prop: {
+        calendarData: {
+          expand: {
+            _attributes: {
+              start: '20060103T000000Z',
+              end: '20060105T000000Z',
+            },
+          },
+        },
+      },
+      filter: {
+        compFilter: {
+          _attributes: {
+            name: 'VCALENDAR',
+          },
+          compFilter: {
+            _attributes: {
+              name: 'VEVENT',
+            },
+            timeRange: {
+              _attributes: {
+                start: '20060103T000000Z',
+                end: '20060105T000000Z',
+              },
+            },
+          },
+        },
+      },
+    },
+  }}
+/>

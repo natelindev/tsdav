@@ -55,13 +55,14 @@ const DAVAttributeMap = {
     [DAVNamespace.CALDAV_APPLE]: 'xmlns:ca',
     [DAVNamespace.DAV]: 'xmlns:d',
 };
-const DAVNamespaceShorthandMap = {
-    [DAVNamespace.CALDAV]: 'c',
-    [DAVNamespace.CARDDAV]: 'card',
-    [DAVNamespace.CALENDAR_SERVER]: 'cs',
-    [DAVNamespace.CALDAV_APPLE]: 'ca',
-    [DAVNamespace.DAV]: 'd',
-};
+var DAVNamespaceShort;
+(function (DAVNamespaceShort) {
+    DAVNamespaceShort["CALDAV"] = "c";
+    DAVNamespaceShort["CARDDAV"] = "card";
+    DAVNamespaceShort["CALENDAR_SERVER"] = "cs";
+    DAVNamespaceShort["CALDAV_APPLE"] = "ca";
+    DAVNamespaceShort["DAV"] = "d";
+})(DAVNamespaceShort || (DAVNamespaceShort = {}));
 var ICALObjects;
 (function (ICALObjects) {
     ICALObjects["VEVENT"] = "VEVENT";
@@ -118,34 +119,7 @@ const urlContains = (urlA, urlB) => {
     const strippedUrlB = trimmedUrlB.slice(-1) === '/' ? trimmedUrlB.slice(0, -1) : trimmedUrlB;
     return urlA.includes(strippedUrlB) || urlB.includes(strippedUrlA);
 };
-const mergeObjectDupKeyArray = (objA, objB) => {
-    return Object.entries(objA).reduce((merged, [currKey, currValue]) => {
-        if (merged[currKey] && Array.isArray(merged[currKey])) {
-            // is array
-            return Object.assign(Object.assign({}, merged), { [currKey]: [...merged[currKey], currValue] });
-        }
-        if (merged[currKey] && !Array.isArray(merged[currKey])) {
-            // not array
-            return Object.assign(Object.assign({}, merged), { [currKey]: [merged[currKey], currValue] });
-        }
-        // not exist
-        return Object.assign(Object.assign({}, merged), { [currKey]: currValue });
-    }, objB);
-};
 const getDAVAttribute = (nsArr) => nsArr.reduce((prev, curr) => (Object.assign(Object.assign({}, prev), { [DAVAttributeMap[curr]]: curr })), {});
-const formatProps = (props) => props === null || props === void 0 ? void 0 : props.reduce((prev, curr) => {
-    var _a, _b;
-    if (curr.namespace) {
-        return Object.assign(Object.assign({}, prev), { [`${DAVNamespaceShorthandMap[curr.namespace]}:${curr.name}`]: (_a = curr.value) !== null && _a !== void 0 ? _a : {} });
-    }
-    return Object.assign(Object.assign({}, prev), { [`${curr.name}`]: (_b = curr.value) !== null && _b !== void 0 ? _b : {} });
-}, {});
-const formatFilters = (filters) => filters === null || filters === void 0 ? void 0 : filters.map((f) => {
-    var _a, _b;
-    return ({
-        [f.type]: Object.assign(Object.assign({ _attributes: f.attributes }, (_a = (f.children ? formatFilters(f.children) : [])) === null || _a === void 0 ? void 0 : _a.reduce((prev, curr) => mergeObjectDupKeyArray(prev, curr), {})), { _text: (_b = f.value) !== null && _b !== void 0 ? _b : '' }),
-    });
-});
 const cleanupFalsy = (obj) => Object.entries(obj).reduce((prev, [key, value]) => {
     if (value)
         return Object.assign(Object.assign({}, prev), { [key]: value });
@@ -156,10 +130,7 @@ var requestHelpers = /*#__PURE__*/Object.freeze({
     __proto__: null,
     urlEquals: urlEquals,
     urlContains: urlContains,
-    mergeObjectDupKeyArray: mergeObjectDupKeyArray,
     getDAVAttribute: getDAVAttribute,
-    formatProps: formatProps,
-    formatFilters: formatFilters,
     cleanupFalsy: cleanupFalsy
 });
 
@@ -169,7 +140,7 @@ const davRequest = (params) => __awaiter(void 0, void 0, void 0, function* () {
     const { url, init, convertIncoming = true, parseOutgoing = true } = params;
     const { headers, body, namespace, method, attributes } = init;
     const xmlBody = convertIncoming
-        ? convert.js2xml(Object.assign(Object.assign({}, body), { _attributes: attributes }), {
+        ? convert.js2xml(Object.assign(Object.assign({ _declaration: { _attributes: { version: '1.0', encoding: 'utf-8' } } }, body), { _attributes: attributes }), {
             compact: true,
             spaces: 2,
             elementNameFn: (name) => {
@@ -182,6 +153,17 @@ const davRequest = (params) => __awaiter(void 0, void 0, void 0, function* () {
         })
         : body;
     // debug('outgoing xml:');
+    // debug(`${method} ${url}`);
+    // debug(
+    //   `headers: ${JSON.stringify(
+    //     {
+    //       'Content-Type': 'text/xml;charset=UTF-8',
+    //       ...cleanupFalsy(headers),
+    //     },
+    //     null,
+    //     2
+    //   )}`
+    // );
     // debug(xmlBody);
     const davResponse = yield fetch(url, {
         headers: Object.assign({ 'Content-Type': 'text/xml;charset=UTF-8' }, cleanupFalsy(headers)),
@@ -278,7 +260,7 @@ const propfind = (params) => __awaiter(void 0, void 0, void 0, function* () {
         init: {
             method: 'PROPFIND',
             headers: cleanupFalsy(Object.assign(Object.assign({}, headers), { depth })),
-            namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
+            namespace: DAVNamespaceShort.DAV,
             body: {
                 propfind: {
                     _attributes: getDAVAttribute([
@@ -288,7 +270,7 @@ const propfind = (params) => __awaiter(void 0, void 0, void 0, function* () {
                         DAVNamespace.CARDDAV,
                         DAVNamespace.DAV,
                     ]),
-                    prop: formatProps(props),
+                    prop: props,
                 },
             },
         },
@@ -334,13 +316,13 @@ const findMissingFieldNames = (obj, fields) => fields.reduce((prev, curr) => (ob
 
 const debug$4 = getLogger('tsdav:collection');
 const collectionQuery = (params) => __awaiter(void 0, void 0, void 0, function* () {
-    const { url, body, depth, defaultNamespace = DAVNamespace.DAV, headers } = params;
+    const { url, body, depth, defaultNamespace = DAVNamespaceShort.DAV, headers } = params;
     return davRequest({
         url,
         init: {
             method: 'REPORT',
             headers: cleanupFalsy(Object.assign(Object.assign({}, headers), { depth })),
-            namespace: DAVNamespaceShorthandMap[defaultNamespace],
+            namespace: defaultNamespace,
             body,
         },
     });
@@ -352,12 +334,12 @@ const makeCollection = (params) => __awaiter(void 0, void 0, void 0, function* (
         init: {
             method: 'MKCOL',
             headers: cleanupFalsy(Object.assign(Object.assign({}, headers), { depth })),
-            namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
+            namespace: DAVNamespaceShort.DAV,
             body: props
                 ? {
                     mkcol: {
                         set: {
-                            prop: formatProps(props),
+                            prop: props,
                         },
                     },
                 }
@@ -370,7 +352,9 @@ const supportedReportSet = (params) => __awaiter(void 0, void 0, void 0, functio
     const { collection, headers } = params;
     const res = yield propfind({
         url: collection.url,
-        props: [{ name: 'supported-report-set', namespace: DAVNamespace.DAV }],
+        props: {
+            [`${DAVNamespaceShort.DAV}:supported-report-set`]: {},
+        },
         depth: '1',
         headers,
     });
@@ -381,7 +365,9 @@ const isCollectionDirty = (params) => __awaiter(void 0, void 0, void 0, function
     const { collection, headers } = params;
     const responses = yield propfind({
         url: collection.url,
-        props: [{ name: 'getctag', namespace: DAVNamespace.CALENDAR_SERVER }],
+        props: {
+            [`${DAVNamespaceShort.CALENDAR_SERVER}:getctag`]: {},
+        },
         depth: '0',
         headers,
     });
@@ -403,7 +389,7 @@ const syncCollection = (params) => {
         url,
         init: {
             method: 'REPORT',
-            namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
+            namespace: DAVNamespaceShort.DAV,
             headers: Object.assign({}, headers),
             body: {
                 'sync-collection': {
@@ -414,7 +400,7 @@ const syncCollection = (params) => {
                     ]),
                     'sync-level': syncLevel,
                     'sync-token': syncToken,
-                    [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
+                    [`${DAVNamespaceShort.DAV}:prop`]: props,
                 },
             },
         },
@@ -436,17 +422,11 @@ const smartCollectionSync = (params) => __awaiter(void 0, void 0, void 0, functi
     if (syncMethod === 'webdav') {
         const result = yield syncCollection({
             url: collection.url,
-            props: [
-                { name: 'getetag', namespace: DAVNamespace.DAV },
-                {
-                    name: account.accountType === 'caldav' ? 'calendar-data' : 'address-data',
-                    namespace: account.accountType === 'caldav' ? DAVNamespace.CALDAV : DAVNamespace.CARDDAV,
-                },
-                {
-                    name: 'displayname',
-                    namespace: DAVNamespace.DAV,
-                },
-            ],
+            props: {
+                [`${DAVNamespaceShort.DAV}:getetag`]: {},
+                [`${account.accountType === 'caldav' ? DAVNamespaceShort.CALDAV : DAVNamespaceShort.CARDDAV}:${account.accountType === 'caldav' ? 'calendar-data' : 'address-data'}`]: {},
+                [`${DAVNamespaceShort.DAV}:displayname`]: {},
+            },
             syncLevel: 1,
             syncToken: collection.syncToken,
             headers,
@@ -461,13 +441,12 @@ const smartCollectionSync = (params) => __awaiter(void 0, void 0, void 0, functi
         const multiGetObjectResponse = changedObjectUrls.length
             ? (_l = (yield ((_k = collection === null || collection === void 0 ? void 0 : collection.objectMultiGet) === null || _k === void 0 ? void 0 : _k.call(collection, {
                 url: collection.url,
-                props: [
-                    { name: 'getetag', namespace: DAVNamespace.DAV },
-                    {
-                        name: account.accountType === 'caldav' ? 'calendar-data' : 'address-data',
-                        namespace: account.accountType === 'caldav' ? DAVNamespace.CALDAV : DAVNamespace.CARDDAV,
-                    },
-                ],
+                props: {
+                    [`${DAVNamespaceShort.DAV}:getetag`]: {},
+                    [`${account.accountType === 'caldav'
+                        ? DAVNamespaceShort.CALDAV
+                        : DAVNamespaceShort.CARDDAV}:${account.accountType === 'caldav' ? 'calendar-data' : 'address-data'}`]: {},
+                },
                 objectUrls: changedObjectUrls,
                 depth: '1',
                 headers,
@@ -557,14 +536,14 @@ var collection = /*#__PURE__*/Object.freeze({
 
 const debug$3 = getLogger('tsdav:addressBook');
 const addressBookQuery = (params) => __awaiter(void 0, void 0, void 0, function* () {
-    const { url, props, depth, headers } = params;
+    const { url, props, filters, depth, headers } = params;
     return collectionQuery({
         url,
         body: {
             'addressbook-query': {
                 _attributes: getDAVAttribute([DAVNamespace.CARDDAV, DAVNamespace.DAV]),
-                [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
-                filter: {
+                [`${DAVNamespaceShort.DAV}:prop`]: props,
+                filter: filters !== null && filters !== void 0 ? filters : {
                     'prop-filter': {
                         _attributes: {
                             name: 'FN',
@@ -573,7 +552,7 @@ const addressBookQuery = (params) => __awaiter(void 0, void 0, void 0, function*
                 },
             },
         },
-        defaultNamespace: DAVNamespace.CARDDAV,
+        defaultNamespace: DAVNamespaceShort.CARDDAV,
         depth,
         headers,
     });
@@ -585,17 +564,17 @@ const addressBookMultiGet = (params) => __awaiter(void 0, void 0, void 0, functi
         body: {
             'addressbook-multiget': {
                 _attributes: getDAVAttribute([DAVNamespace.DAV, DAVNamespace.CARDDAV]),
-                [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
-                [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:href`]: objectUrls,
+                [`${DAVNamespaceShort.DAV}:prop`]: props,
+                [`${DAVNamespaceShort.DAV}:href`]: objectUrls,
             },
         },
-        defaultNamespace: DAVNamespace.CARDDAV,
+        defaultNamespace: DAVNamespaceShort.CARDDAV,
         depth,
         headers,
     });
 });
 const fetchAddressBooks = (params) => __awaiter(void 0, void 0, void 0, function* () {
-    const { account, headers } = params !== null && params !== void 0 ? params : {};
+    const { account, headers, props: customProps } = params !== null && params !== void 0 ? params : {};
     const requiredFields = ['homeUrl', 'rootUrl'];
     if (!account || !hasFields(account, requiredFields)) {
         if (!account) {
@@ -605,12 +584,12 @@ const fetchAddressBooks = (params) => __awaiter(void 0, void 0, void 0, function
     }
     const res = yield propfind({
         url: account.homeUrl,
-        props: [
-            { name: 'displayname', namespace: DAVNamespace.DAV },
-            { name: 'getctag', namespace: DAVNamespace.CALENDAR_SERVER },
-            { name: 'resourcetype', namespace: DAVNamespace.DAV },
-            { name: 'sync-token', namespace: DAVNamespace.DAV },
-        ],
+        props: customProps !== null && customProps !== void 0 ? customProps : {
+            [`${DAVNamespaceShort.DAV}:displayname`]: {},
+            [`${DAVNamespaceShort.CALENDAR_SERVER}:getctag`]: {},
+            [`${DAVNamespaceShort.DAV}:resourcetype`]: {},
+            [`${DAVNamespaceShort.DAV}:sync-token`]: {},
+        },
         depth: '1',
         headers,
     });
@@ -634,7 +613,7 @@ const fetchAddressBooks = (params) => __awaiter(void 0, void 0, void 0, function
     })));
 });
 const fetchVCards = (params) => __awaiter(void 0, void 0, void 0, function* () {
-    const { addressBook, headers, objectUrls, vCardUrlFilter } = params;
+    const { addressBook, headers, objectUrls, urlFilter } = params;
     debug$3(`Fetching vcards from ${addressBook === null || addressBook === void 0 ? void 0 : addressBook.url}`);
     const requiredFields = ['url'];
     if (!addressBook || !hasFields(addressBook, requiredFields)) {
@@ -647,19 +626,19 @@ const fetchVCards = (params) => __awaiter(void 0, void 0, void 0, function* () {
     // fetch all objects of the calendar
     (yield addressBookQuery({
         url: addressBook.url,
-        props: [{ name: 'getetag', namespace: DAVNamespace.DAV }],
+        props: { [`${DAVNamespaceShort.DAV}:getetag`]: {} },
         depth: '1',
         headers,
     })).map((res) => { var _a; return (_a = res.href) !== null && _a !== void 0 ? _a : ''; }))
         .map((url) => (url.includes('http') ? url : new URL(url, addressBook.url).href))
         .map((url) => new URL(url).pathname)
-        .filter(vCardUrlFilter !== null && vCardUrlFilter !== void 0 ? vCardUrlFilter : ((url) => url !== addressBook.url));
+        .filter(urlFilter !== null && urlFilter !== void 0 ? urlFilter : ((url) => url !== addressBook.url));
     const vCardResults = yield addressBookMultiGet({
         url: addressBook.url,
-        props: [
-            { name: 'getetag', namespace: DAVNamespace.DAV },
-            { name: 'address-data', namespace: DAVNamespace.CARDDAV },
-        ],
+        props: {
+            [`${DAVNamespaceShort.DAV}:getetag`]: {},
+            [`${DAVNamespaceShort.CARDDAV}:address-data`]: {},
+        },
         objectUrls: vcardUrls,
         depth: '1',
         headers,
@@ -723,12 +702,12 @@ const calendarQuery = (params) => __awaiter(void 0, void 0, void 0, function* ()
                     DAVNamespace.CALDAV_APPLE,
                     DAVNamespace.DAV,
                 ]),
-                [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
-                filter: formatFilters(filters),
+                [`${DAVNamespaceShort.DAV}:prop`]: props,
+                filter: filters,
                 timezone,
             }),
         },
-        defaultNamespace: DAVNamespace.CALDAV,
+        defaultNamespace: DAVNamespaceShort.CALDAV,
         depth,
         headers,
     });
@@ -740,13 +719,13 @@ const calendarMultiGet = (params) => __awaiter(void 0, void 0, void 0, function*
         body: {
             'calendar-multiget': {
                 _attributes: getDAVAttribute([DAVNamespace.DAV, DAVNamespace.CALDAV]),
-                [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
-                [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:href`]: objectUrls,
-                filter: formatFilters(filters),
+                [`${DAVNamespaceShort.DAV}:prop`]: props,
+                [`${DAVNamespaceShort.DAV}:href`]: objectUrls,
+                filter: filters,
                 timezone,
             },
         },
-        defaultNamespace: DAVNamespace.CALDAV,
+        defaultNamespace: DAVNamespaceShort.CALDAV,
         depth,
         headers,
     });
@@ -758,12 +737,12 @@ const makeCalendar = (params) => __awaiter(void 0, void 0, void 0, function* () 
         init: {
             method: 'MKCALENDAR',
             headers: cleanupFalsy(Object.assign(Object.assign({}, headers), { depth })),
-            namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
+            namespace: DAVNamespaceShort.DAV,
             body: {
-                [`${DAVNamespaceShorthandMap[DAVNamespace.CALDAV]}:mkcalendar`]: {
+                [`${DAVNamespaceShort.CALDAV}:mkcalendar`]: {
                     _attributes: getDAVAttribute([DAVNamespace.DAV, DAVNamespace.CALDAV]),
                     set: {
-                        prop: formatProps(props),
+                        prop: props,
                     },
                 },
             },
@@ -771,7 +750,7 @@ const makeCalendar = (params) => __awaiter(void 0, void 0, void 0, function* () 
     });
 });
 const fetchCalendars = (params) => __awaiter(void 0, void 0, void 0, function* () {
-    const { headers, account } = params !== null && params !== void 0 ? params : {};
+    const { headers, account, props: customProps } = params !== null && params !== void 0 ? params : {};
     const requiredFields = ['homeUrl', 'rootUrl'];
     if (!account || !hasFields(account, requiredFields)) {
         if (!account) {
@@ -781,15 +760,16 @@ const fetchCalendars = (params) => __awaiter(void 0, void 0, void 0, function* (
     }
     const res = yield propfind({
         url: account.homeUrl,
-        props: [
-            { name: 'calendar-description', namespace: DAVNamespace.CALDAV },
-            { name: 'calendar-timezone', namespace: DAVNamespace.CALDAV },
-            { name: 'displayname', namespace: DAVNamespace.DAV },
-            { name: 'getctag', namespace: DAVNamespace.CALENDAR_SERVER },
-            { name: 'resourcetype', namespace: DAVNamespace.DAV },
-            { name: 'supported-calendar-component-set', namespace: DAVNamespace.CALDAV },
-            { name: 'sync-token', namespace: DAVNamespace.DAV },
-        ],
+        props: customProps !== null && customProps !== void 0 ? customProps : {
+            [`${DAVNamespaceShort.CALDAV}:calendar-description`]: {},
+            [`${DAVNamespaceShort.CALDAV}:calendar-timezone`]: {},
+            [`${DAVNamespaceShort.CALDAV}:displayname`]: {},
+            [`${DAVNamespaceShort.CALDAV_APPLE}:calendar-color`]: {},
+            [`${DAVNamespaceShort.CALDAV_APPLE}:getctag`]: {},
+            [`${DAVNamespaceShort.DAV}:resourcetype`]: {},
+            [`${DAVNamespaceShort.CALDAV}:supported-calendar-component-set`]: {},
+            [`${DAVNamespaceShort.DAV}:sync-token`]: {},
+        },
         depth: '1',
         headers,
     });
@@ -804,7 +784,7 @@ const fetchCalendars = (params) => __awaiter(void 0, void 0, void 0, function* (
         return components.some((c) => Object.values(ICALObjects).includes(c));
     })
         .map((rs) => {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
         // debug(`Found calendar ${rs.props?.displayname}`);
         const description = (_a = rs.props) === null || _a === void 0 ? void 0 : _a.calendarDescription;
         const timezone = (_b = rs.props) === null || _b === void 0 ? void 0 : _b.calendarTimezone;
@@ -813,12 +793,13 @@ const fetchCalendars = (params) => __awaiter(void 0, void 0, void 0, function* (
             timezone: typeof timezone === 'string' ? timezone : '',
             url: new URL((_c = rs.href) !== null && _c !== void 0 ? _c : '', (_d = account.rootUrl) !== null && _d !== void 0 ? _d : '').href,
             ctag: (_e = rs.props) === null || _e === void 0 ? void 0 : _e.getctag,
-            displayName: (_g = (_f = rs.props) === null || _f === void 0 ? void 0 : _f.displayname._cdata) !== null && _g !== void 0 ? _g : (_h = rs.props) === null || _h === void 0 ? void 0 : _h.displayname,
-            components: Array.isArray((_j = rs.props) === null || _j === void 0 ? void 0 : _j.supportedCalendarComponentSet.comp)
-                ? (_k = rs.props) === null || _k === void 0 ? void 0 : _k.supportedCalendarComponentSet.comp.map((sc) => sc._attributes.name)
-                : [(_l = rs.props) === null || _l === void 0 ? void 0 : _l.supportedCalendarComponentSet.comp._attributes.name],
-            resourcetype: Object.keys((_m = rs.props) === null || _m === void 0 ? void 0 : _m.resourcetype),
-            syncToken: (_o = rs.props) === null || _o === void 0 ? void 0 : _o.syncToken,
+            calendarColor: (_f = rs.props) === null || _f === void 0 ? void 0 : _f.calendarColor,
+            displayName: (_h = (_g = rs.props) === null || _g === void 0 ? void 0 : _g.displayname._cdata) !== null && _h !== void 0 ? _h : (_j = rs.props) === null || _j === void 0 ? void 0 : _j.displayname,
+            components: Array.isArray((_k = rs.props) === null || _k === void 0 ? void 0 : _k.supportedCalendarComponentSet.comp)
+                ? (_l = rs.props) === null || _l === void 0 ? void 0 : _l.supportedCalendarComponentSet.comp.map((sc) => sc._attributes.name)
+                : [(_m = rs.props) === null || _m === void 0 ? void 0 : _m.supportedCalendarComponentSet.comp._attributes.name],
+            resourcetype: Object.keys((_o = rs.props) === null || _o === void 0 ? void 0 : _o.resourcetype),
+            syncToken: (_p = rs.props) === null || _p === void 0 ? void 0 : _p.syncToken,
         };
     })
         .map((cal) => __awaiter(void 0, void 0, void 0, function* () {
@@ -826,7 +807,7 @@ const fetchCalendars = (params) => __awaiter(void 0, void 0, void 0, function* (
     })));
 });
 const fetchCalendarObjects = (params) => __awaiter(void 0, void 0, void 0, function* () {
-    const { calendar, objectUrls, filters: defaultFilters, timeRange, headers } = params;
+    const { calendar, objectUrls, filters: customFilters, timeRange, headers, expand, urlFilter, } = params;
     if (timeRange) {
         // validate timeRange
         const ISO_8601 = /^\d{4}(-\d\d(-\d\d(T\d\d:\d\d(:\d\d)?(\.\d+)?(([+-]\d\d:\d\d)|Z)?)?)?)?$/i;
@@ -845,53 +826,68 @@ const fetchCalendarObjects = (params) => __awaiter(void 0, void 0, void 0, funct
         throw new Error(`calendar must have ${findMissingFieldNames(calendar, requiredFields)} before fetchCalendarObjects`);
     }
     // default to fetch all
-    const filters = defaultFilters !== null && defaultFilters !== void 0 ? defaultFilters : [
+    const filters = customFilters !== null && customFilters !== void 0 ? customFilters : [
         {
-            type: 'comp-filter',
-            attributes: { name: 'VCALENDAR' },
-            children: [
-                {
-                    type: 'comp-filter',
-                    attributes: { name: 'VEVENT' },
-                    children: timeRange
-                        ? [
-                            {
-                                type: 'time-range',
-                                attributes: {
-                                    start: `${new Date(timeRange.start)
-                                        .toISOString()
-                                        .slice(0, 19)
-                                        .replace(/[-:.]/g, '')}Z`,
-                                    end: `${new Date(timeRange.end)
-                                        .toISOString()
-                                        .slice(0, 19)
-                                        .replace(/[-:.]/g, '')}Z`,
-                                },
-                            },
-                        ]
-                        : undefined,
+            'comp-filter': {
+                _attributes: {
+                    name: 'VCALENDAR',
                 },
-            ],
+                'comp-filter': Object.assign({ _attributes: {
+                        name: 'VEVENT',
+                    } }, (timeRange
+                    ? {
+                        'time-range': {
+                            _attributes: {
+                                start: `${new Date(timeRange.start)
+                                    .toISOString()
+                                    .slice(0, 19)
+                                    .replace(/[-:.]/g, '')}Z`,
+                                end: `${new Date(timeRange.end)
+                                    .toISOString()
+                                    .slice(0, 19)
+                                    .replace(/[-:.]/g, '')}Z`,
+                            },
+                        },
+                    }
+                    : {})),
+            },
         },
     ];
     const calendarObjectUrls = (objectUrls !== null && objectUrls !== void 0 ? objectUrls : 
     // fetch all objects of the calendar
     (yield calendarQuery({
         url: calendar.url,
-        props: [{ name: 'getetag', namespace: DAVNamespace.DAV }],
+        props: {
+            [`${DAVNamespaceShort.DAV}:getetag`]: {},
+        },
         filters,
         depth: '1',
         headers,
     })).map((res) => { var _a; return (_a = res.href) !== null && _a !== void 0 ? _a : ''; }))
         .map((url) => (url.startsWith('http') ? url : new URL(url, calendar.url).href)) // patch up to full url if url is not full
         .map((url) => new URL(url).pathname) // obtain pathname of the url
-        .filter((url) => Boolean(url === null || url === void 0 ? void 0 : url.includes('.ics'))); // filter out non ics calendar objects since apple calendar might have those
+        .filter(urlFilter !== null && urlFilter !== void 0 ? urlFilter : ((url) => Boolean(url === null || url === void 0 ? void 0 : url.includes('.ics')))); // filter out non ics calendar objects since apple calendar might have those
     const calendarObjectResults = yield calendarMultiGet({
         url: calendar.url,
-        props: [
-            { name: 'getetag', namespace: DAVNamespace.DAV },
-            { name: 'calendar-data', namespace: DAVNamespace.CALDAV },
-        ],
+        props: {
+            [`${DAVNamespaceShort.DAV}:getetag`]: {},
+            [`${DAVNamespaceShort.CALDAV}:calendar-data`]: Object.assign({}, (expand && timeRange
+                ? {
+                    [`${DAVNamespaceShort.CALDAV}:expand`]: {
+                        _attributes: {
+                            start: `${new Date(timeRange.start)
+                                .toISOString()
+                                .slice(0, 19)
+                                .replace(/[-:.]/g, '')}Z`,
+                            end: `${new Date(timeRange.end)
+                                .toISOString()
+                                .slice(0, 19)
+                                .replace(/[-:.]/g, '')}Z`,
+                        },
+                    },
+                }
+                : {})),
+        },
         objectUrls: calendarObjectUrls,
         depth: '1',
         headers,
@@ -974,6 +970,39 @@ const syncCalendars = (params) => __awaiter(void 0, void 0, void 0, function* ()
         }
         : [...unchanged, ...created, ...updatedWithObjects];
 });
+const freeBusyQuery = (params) => __awaiter(void 0, void 0, void 0, function* () {
+    const { url, timeRange, depth, headers } = params;
+    if (timeRange) {
+        // validate timeRange
+        const ISO_8601 = /^\d{4}(-\d\d(-\d\d(T\d\d:\d\d(:\d\d)?(\.\d+)?(([+-]\d\d:\d\d)|Z)?)?)?)?$/i;
+        const ISO_8601_FULL = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?(([+-]\d\d:\d\d)|Z)?$/i;
+        if ((!ISO_8601.test(timeRange.start) || !ISO_8601.test(timeRange.end)) &&
+            (!ISO_8601_FULL.test(timeRange.start) || !ISO_8601_FULL.test(timeRange.end))) {
+            throw new Error('invalid timeRange format, not in ISO8601');
+        }
+    }
+    else {
+        throw new Error('timeRange is required');
+    }
+    const result = yield collectionQuery({
+        url,
+        body: {
+            'free-busy-query': cleanupFalsy({
+                _attributes: getDAVAttribute([DAVNamespace.CALDAV]),
+                [`${DAVNamespaceShort.CALDAV}:time-range`]: {
+                    _attributes: {
+                        start: `${new Date(timeRange.start).toISOString().slice(0, 19).replace(/[-:.]/g, '')}Z`,
+                        end: `${new Date(timeRange.end).toISOString().slice(0, 19).replace(/[-:.]/g, '')}Z`,
+                    },
+                },
+            }),
+        },
+        defaultNamespace: DAVNamespaceShort.CALDAV,
+        depth,
+        headers,
+    });
+    return result[0];
+});
 
 var calendar = /*#__PURE__*/Object.freeze({
     __proto__: null,
@@ -985,7 +1014,8 @@ var calendar = /*#__PURE__*/Object.freeze({
     createCalendarObject: createCalendarObject,
     updateCalendarObject: updateCalendarObject,
     deleteCalendarObject: deleteCalendarObject,
-    syncCalendars: syncCalendars
+    syncCalendars: syncCalendars,
+    freeBusyQuery: freeBusyQuery
 });
 
 const debug$1 = getLogger('tsdav:account');
@@ -1022,7 +1052,7 @@ const serviceDiscovery = (params) => __awaiter(void 0, void 0, void 0, function*
     return endpoint.href;
 });
 const fetchPrincipalUrl = (params) => __awaiter(void 0, void 0, void 0, function* () {
-    var _c, _d, _e;
+    var _c, _d, _e, _f, _g;
     const { account, headers } = params;
     const requiredFields = ['rootUrl'];
     if (!hasFields(account, requiredFields)) {
@@ -1031,7 +1061,9 @@ const fetchPrincipalUrl = (params) => __awaiter(void 0, void 0, void 0, function
     debug$1(`Fetching principal url from path ${account.rootUrl}`);
     const [response] = yield propfind({
         url: account.rootUrl,
-        props: [{ name: 'current-user-principal', namespace: DAVNamespace.DAV }],
+        props: {
+            [`${DAVNamespaceShort.DAV}:current-user-principal`]: {},
+        },
         depth: '0',
         headers,
     });
@@ -1041,11 +1073,11 @@ const fetchPrincipalUrl = (params) => __awaiter(void 0, void 0, void 0, function
             throw new Error('Invalid credentials');
         }
     }
-    debug$1(`Fetched principal url ${(_c = response.props) === null || _c === void 0 ? void 0 : _c.currentUserPrincipal.href}`);
-    return new URL((_e = (_d = response.props) === null || _d === void 0 ? void 0 : _d.currentUserPrincipal.href) !== null && _e !== void 0 ? _e : '', account.rootUrl).href;
+    debug$1(`Fetched principal url ${(_d = (_c = response.props) === null || _c === void 0 ? void 0 : _c.currentUserPrincipal) === null || _d === void 0 ? void 0 : _d.href}`);
+    return new URL((_g = (_f = (_e = response.props) === null || _e === void 0 ? void 0 : _e.currentUserPrincipal) === null || _f === void 0 ? void 0 : _f.href) !== null && _g !== void 0 ? _g : '', account.rootUrl).href;
 });
 const fetchHomeUrl = (params) => __awaiter(void 0, void 0, void 0, function* () {
-    var _f, _g;
+    var _h, _j;
     const { account, headers } = params;
     const requiredFields = ['principalUrl', 'rootUrl'];
     if (!hasFields(account, requiredFields)) {
@@ -1054,11 +1086,9 @@ const fetchHomeUrl = (params) => __awaiter(void 0, void 0, void 0, function* () 
     debug$1(`Fetch home url from ${account.principalUrl}`);
     const responses = yield propfind({
         url: account.principalUrl,
-        props: [
-            account.accountType === 'caldav'
-                ? { name: 'calendar-home-set', namespace: DAVNamespace.CALDAV }
-                : { name: 'addressbook-home-set', namespace: DAVNamespace.CARDDAV },
-        ],
+        props: account.accountType === 'caldav'
+            ? { [`${DAVNamespaceShort.CALDAV}:calendar-home-set`]: {} }
+            : { [`${DAVNamespaceShort.CARDDAV}:addressbook-home-set`]: {} },
         depth: '0',
         headers,
     });
@@ -1067,8 +1097,8 @@ const fetchHomeUrl = (params) => __awaiter(void 0, void 0, void 0, function* () 
         throw new Error('cannot find homeUrl');
     }
     const result = new URL(account.accountType === 'caldav'
-        ? (_f = matched === null || matched === void 0 ? void 0 : matched.props) === null || _f === void 0 ? void 0 : _f.calendarHomeSet.href
-        : (_g = matched === null || matched === void 0 ? void 0 : matched.props) === null || _g === void 0 ? void 0 : _g.addressbookHomeSet.href, account.rootUrl).href;
+        ? (_h = matched === null || matched === void 0 ? void 0 : matched.props) === null || _h === void 0 ? void 0 : _h.calendarHomeSet.href
+        : (_j = matched === null || matched === void 0 ? void 0 : matched.props) === null || _j === void 0 ? void 0 : _j.addressbookHomeSet.href, account.rootUrl).href;
     debug$1(`Fetched home url ${result}`);
     return result;
 });
@@ -1537,7 +1567,7 @@ var client = /*#__PURE__*/Object.freeze({
 });
 
 var index = Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({ DAVNamespace,
-    DAVNamespaceShorthandMap,
+    DAVNamespaceShort,
     DAVAttributeMap }, client), request), collection), account), addressBook), calendar), authHelpers), requestHelpers);
 
-export { DAVAttributeMap, DAVClient, DAVNamespace, DAVNamespaceShorthandMap, addressBookQuery, calendarMultiGet, calendarQuery, cleanupFalsy, collectionQuery, createAccount, createCalendarObject, createDAVClient, createObject, createVCard, davRequest, index as default, deleteCalendarObject, deleteObject, deleteVCard, fetchAddressBooks, fetchCalendarObjects, fetchCalendars, fetchOauthTokens, fetchVCards, formatFilters, formatProps, getBasicAuthHeaders, getDAVAttribute, getOauthHeaders, isCollectionDirty, makeCalendar, mergeObjectDupKeyArray, propfind, refreshAccessToken, smartCollectionSync, supportedReportSet, syncCalendars, syncCollection, updateCalendarObject, updateObject, updateVCard, urlContains, urlEquals };
+export { DAVAttributeMap, DAVClient, DAVNamespace, DAVNamespaceShort, addressBookQuery, calendarMultiGet, calendarQuery, cleanupFalsy, collectionQuery, createAccount, createCalendarObject, createDAVClient, createObject, createVCard, davRequest, index as default, deleteCalendarObject, deleteObject, deleteVCard, fetchAddressBooks, fetchCalendarObjects, fetchCalendars, fetchOauthTokens, fetchVCards, freeBusyQuery, getBasicAuthHeaders, getDAVAttribute, getOauthHeaders, isCollectionDirty, makeCalendar, propfind, refreshAccessToken, smartCollectionSync, supportedReportSet, syncCalendars, syncCollection, updateCalendarObject, updateObject, updateVCard, urlContains, urlEquals };

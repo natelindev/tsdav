@@ -1,30 +1,32 @@
 /* eslint-disable no-underscore-dangle */
 import getLogger from 'debug';
+import { ElementCompact } from 'xml-js';
 
 import { collectionQuery, supportedReportSet } from './collection';
-import { DAVNamespace, DAVNamespaceShorthandMap } from './consts';
+import { DAVNamespace, DAVNamespaceShort } from './consts';
 import { createObject, deleteObject, propfind, updateObject } from './request';
-import { DAVDepth, DAVProp, DAVResponse } from './types/DAVTypes';
+import { DAVDepth, DAVResponse } from './types/DAVTypes';
 import { DAVAccount, DAVAddressBook, DAVVCard } from './types/models';
-import { formatProps, getDAVAttribute } from './util/requestHelpers';
+import { getDAVAttribute } from './util/requestHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelpers';
 
 const debug = getLogger('tsdav:addressBook');
 
 export const addressBookQuery = async (params: {
   url: string;
-  props: DAVProp[];
+  props: ElementCompact;
+  filters?: ElementCompact;
   depth?: DAVDepth;
   headers?: Record<string, string>;
 }): Promise<DAVResponse[]> => {
-  const { url, props, depth, headers } = params;
+  const { url, props, filters, depth, headers } = params;
   return collectionQuery({
     url,
     body: {
       'addressbook-query': {
         _attributes: getDAVAttribute([DAVNamespace.CARDDAV, DAVNamespace.DAV]),
-        [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
-        filter: {
+        [`${DAVNamespaceShort.DAV}:prop`]: props,
+        filter: filters ?? {
           'prop-filter': {
             _attributes: {
               name: 'FN',
@@ -33,7 +35,7 @@ export const addressBookQuery = async (params: {
         },
       },
     },
-    defaultNamespace: DAVNamespace.CARDDAV,
+    defaultNamespace: DAVNamespaceShort.CARDDAV,
     depth,
     headers,
   });
@@ -41,7 +43,7 @@ export const addressBookQuery = async (params: {
 
 export const addressBookMultiGet = async (params: {
   url: string;
-  props: DAVProp[];
+  props: ElementCompact;
   objectUrls: string[];
   depth: DAVDepth;
   headers?: Record<string, string>;
@@ -52,11 +54,11 @@ export const addressBookMultiGet = async (params: {
     body: {
       'addressbook-multiget': {
         _attributes: getDAVAttribute([DAVNamespace.DAV, DAVNamespace.CARDDAV]),
-        [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
-        [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:href`]: objectUrls,
+        [`${DAVNamespaceShort.DAV}:prop`]: props,
+        [`${DAVNamespaceShort.DAV}:href`]: objectUrls,
       },
     },
-    defaultNamespace: DAVNamespace.CARDDAV,
+    defaultNamespace: DAVNamespaceShort.CARDDAV,
     depth,
     headers,
   });
@@ -64,9 +66,10 @@ export const addressBookMultiGet = async (params: {
 
 export const fetchAddressBooks = async (params?: {
   account?: DAVAccount;
+  props?: ElementCompact;
   headers?: Record<string, string>;
 }): Promise<DAVAddressBook[]> => {
-  const { account, headers } = params ?? {};
+  const { account, headers, props: customProps } = params ?? {};
   const requiredFields: Array<keyof DAVAccount> = ['homeUrl', 'rootUrl'];
   if (!account || !hasFields(account, requiredFields)) {
     if (!account) {
@@ -78,12 +81,12 @@ export const fetchAddressBooks = async (params?: {
   }
   const res = await propfind({
     url: account.homeUrl,
-    props: [
-      { name: 'displayname', namespace: DAVNamespace.DAV },
-      { name: 'getctag', namespace: DAVNamespace.CALENDAR_SERVER },
-      { name: 'resourcetype', namespace: DAVNamespace.DAV },
-      { name: 'sync-token', namespace: DAVNamespace.DAV },
-    ],
+    props: customProps ?? {
+      [`${DAVNamespaceShort.DAV}:displayname`]: {},
+      [`${DAVNamespaceShort.CALENDAR_SERVER}:getctag`]: {},
+      [`${DAVNamespaceShort.DAV}:resourcetype`]: {},
+      [`${DAVNamespaceShort.DAV}:sync-token`]: {},
+    },
     depth: '1',
     headers,
   });
@@ -113,9 +116,9 @@ export const fetchVCards = async (params: {
   addressBook: DAVAddressBook;
   headers?: Record<string, string>;
   objectUrls?: string[];
-  vCardUrlFilter?: (url: string) => boolean;
+  urlFilter?: (url: string) => boolean;
 }): Promise<DAVVCard[]> => {
-  const { addressBook, headers, objectUrls, vCardUrlFilter } = params;
+  const { addressBook, headers, objectUrls, urlFilter } = params;
   debug(`Fetching vcards from ${addressBook?.url}`);
   const requiredFields: Array<'url'> = ['url'];
   if (!addressBook || !hasFields(addressBook, requiredFields)) {
@@ -136,7 +139,7 @@ export const fetchVCards = async (params: {
     (
       await addressBookQuery({
         url: addressBook.url,
-        props: [{ name: 'getetag', namespace: DAVNamespace.DAV }],
+        props: { [`${DAVNamespaceShort.DAV}:getetag`]: {} },
         depth: '1',
         headers,
       })
@@ -144,14 +147,14 @@ export const fetchVCards = async (params: {
   )
     .map((url) => (url.includes('http') ? url : new URL(url, addressBook.url).href))
     .map((url) => new URL(url).pathname)
-    .filter(vCardUrlFilter ?? ((url: string): url is string => url !== addressBook.url));
+    .filter(urlFilter ?? ((url: string): url is string => url !== addressBook.url));
 
   const vCardResults = await addressBookMultiGet({
     url: addressBook.url,
-    props: [
-      { name: 'getetag', namespace: DAVNamespace.DAV },
-      { name: 'address-data', namespace: DAVNamespace.CARDDAV },
-    ],
+    props: {
+      [`${DAVNamespaceShort.DAV}:getetag`]: {},
+      [`${DAVNamespaceShort.CARDDAV}:address-data`]: {},
+    },
     objectUrls: vcardUrls,
     depth: '1',
     headers,

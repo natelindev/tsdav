@@ -12,7 +12,7 @@ const result = await collectionQuery({
   body: {
     'addressbook-query': {
       _attributes: getDAVAttribute([DAVNamespace.CARDDAV, DAVNamespace.DAV]),
-      [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
+      [`${DAVNamespaceShort.DAV}:prop`]: props,
       filter: {
         'prop-filter': {
           _attributes: {
@@ -22,7 +22,7 @@ const result = await collectionQuery({
       },
     },
   },
-  defaultNamespace: DAVNamespace.CARDDAV,
+  defaultNamespace: DAVNamespaceShort.CARDDAV,
   depth: '1',
   headers: {
     authorization: 'Basic x0C9uFWd9Vz8OwS0DEAtkAlj',
@@ -35,7 +35,7 @@ const result = await collectionQuery({
 - `url` **required**, collection url
 - `body` **required**, query request body
 - `depth` [DAVDepth](../../types/DAVDepth.md)
-- `defaultNamespace` defaults to `DAVNamespace.DAV`, default namespace for the the request body
+- `defaultNamespace` defaults to `DAVNamespaceShort.DAV`, default namespace for the the request body
 - `headers` request headers
 
 ### Return Value

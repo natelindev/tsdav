@@ -3,7 +3,7 @@ import getLogger from 'debug';
 
 import { fetchAddressBooks, fetchVCards } from './addressBook';
 import { fetchCalendarObjects, fetchCalendars } from './calendar';
-import { DAVNamespace } from './consts';
+import { DAVNamespaceShort } from './consts';
 import { propfind } from './request';
 import { DAVAccount } from './types/models';
 import { urlContains } from './util/requestHelpers';
@@ -65,7 +65,9 @@ export const fetchPrincipalUrl = async (params: {
   debug(`Fetching principal url from path ${account.rootUrl}`);
   const [response] = await propfind({
     url: account.rootUrl,
-    props: [{ name: 'current-user-principal', namespace: DAVNamespace.DAV }],
+    props: {
+      [`${DAVNamespaceShort.DAV}:current-user-principal`]: {},
+    },
     depth: '0',
     headers,
   });
@@ -75,8 +77,8 @@ export const fetchPrincipalUrl = async (params: {
       throw new Error('Invalid credentials');
     }
   }
-  debug(`Fetched principal url ${response.props?.currentUserPrincipal.href}`);
-  return new URL(response.props?.currentUserPrincipal.href ?? '', account.rootUrl).href;
+  debug(`Fetched principal url ${response.props?.currentUserPrincipal?.href}`);
+  return new URL(response.props?.currentUserPrincipal?.href ?? '', account.rootUrl).href;
 };
 
 export const fetchHomeUrl = async (params: {
@@ -94,11 +96,10 @@ export const fetchHomeUrl = async (params: {
   debug(`Fetch home url from ${account.principalUrl}`);
   const responses = await propfind({
     url: account.principalUrl,
-    props: [
+    props:
       account.accountType === 'caldav'
-        ? { name: 'calendar-home-set', namespace: DAVNamespace.CALDAV }
-        : { name: 'addressbook-home-set', namespace: DAVNamespace.CARDDAV },
-    ],
+        ? { [`${DAVNamespaceShort.CALDAV}:calendar-home-set`]: {} }
+        : { [`${DAVNamespaceShort.CARDDAV}:addressbook-home-set`]: {} },
     depth: '0',
     headers,
   });

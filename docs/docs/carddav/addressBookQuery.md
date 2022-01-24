@@ -16,7 +16,9 @@ resource data that matches the filter.
 ```ts
 const addressbooks = await addressBookQuery({
   url: 'https://contacts.icloud.com/123456/carddavhome/card/',
-  props: [{ name: 'getetag', namespace: DAVNamespace.DAV }],
+  props: {
+    [`${DAVNamespaceShort.DAV}:getetag`]: {},
+  },
   depth: '1',
   headers: {
     authorization: 'Basic x0C9uFWd9Vz8OwS0DEAtkAlj',
@@ -27,7 +29,8 @@ const addressbooks = await addressBookQuery({
 ### Arguments
 
 - `url` **required**, request target url
-- `props` **required**, array of [DAVProp](../types/DAVProp.md)
+- `props` **required**, [CARDDAV prop element](https://datatracker.ietf.org/doc/html/rfc6352#section-10.4.2) in [ElementCompact](../types/ElementCompact.md) form
+- `filters` [CARDDAV filter element](https://datatracker.ietf.org/doc/html/rfc6352#section-10.5) in [ElementCompact](../types/ElementCompact.md) form
 - `depth` [DAVDepth](../types/DAVDepth.md)
 - `headers` request headers
 

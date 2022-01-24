@@ -19,7 +19,7 @@ const [result] = await propfind({
 ### Arguments
 
 - `url` **required**, request url
-- `props` **required**, array of [DAVProp](../types/DAVProp.md) to find
+- `props` **required**, [ElementCompact](../types/ElementCompact.md) props to find
 - `depth` [DAVDepth](../types/DAVDepth.md)
 - `headers` request headers
 

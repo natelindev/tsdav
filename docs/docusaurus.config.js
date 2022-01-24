@@ -2,7 +2,7 @@
 module.exports = {
   title: 'tsdav',
   tagline: 'webdav request made easy',
-  url: 'https://your-docusaurus-test-site.com',
+  url: 'https://tsdav.vercel.app',
   baseUrl: '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'warn',
@@ -28,6 +28,11 @@ module.exports = {
           label: 'Docs',
         },
         {
+          type: 'docsVersionDropdown',
+          position: 'right',
+          dropdownActiveClassDisabled: true,
+        },
+        {
           href: 'https://github.com/natelindev/tsdav',
           label: 'GitHub',
           position: 'right',
@@ -38,14 +43,28 @@ module.exports = {
       style: 'dark',
       copyright: `© ${new Date().getFullYear()} Nathaniel Lin. MIT licensed.`,
     },
+    prism: {
+      theme: require('prism-react-renderer/themes/github'),
+      darkTheme: require('prism-react-renderer/themes/dracula'),
+    },
   },
   presets: [
     [
       '@docusaurus/preset-classic',
       {
         docs: {
+          path: 'docs',
           sidebarPath: require.resolve('./sidebars.js'),
           editUrl: 'https://github.com/natelindev/tsdav/edit/master/docs/',
+          lastVersion: 'current',
+          versions: {
+            current: {
+              label: '2.0.0-rc.0',
+            },
+            '1.1.6': {
+              label: '1.1.6',
+            },
+          },
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -60,5 +79,13 @@ module.exports = {
         hashed: true,
       },
     ],
+    [
+      '@docusaurus/plugin-sitemap',
+      {
+        changefreq: 'weekly',
+        priority: 0.5,
+      },
+    ],
+    require.resolve('./docusuarusWebpack5Plugin'),
   ],
 };

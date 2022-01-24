@@ -1,7 +1,7 @@
-
 # Constants
 
 ### DAVNamespace
+
 xml namespace enum for convenience
 
 | Name            | Value                          | Description                  |
@@ -12,20 +12,17 @@ xml namespace enum for convenience
 | CARDDAV         | urn:ietf:params:xml:ns:carddav | CARDDAV namespace            |
 | DAV             | DAV:                           | WEBDAV namespace             |
 
+### DAVNamespaceShort
 
-
-### DAVNamespaceShorthandMap
-
-map WEBDAV namespace to shorthands to allow better readability when dealing with raw xml data
+shortened xml namespace enum
 
 | Name            | Value |
 | --------------- | ----- |
-| CALDAV          | c     |
-| CARDDAV         | card  |
 | CALENDAR_SERVER | cs    |
 | CALDAV_APPLE    | ca    |
+| CALDAV          | c     |
+| CARDDAV         | card  |
 | DAV             | d     |
-
 
 ### DAVAttributeMap
 
@@ -38,4 +35,3 @@ map WEBDAV namespace to attributes to allow better readability when dealing with
 | CALENDAR_SERVER | xmlns:cs   |
 | CALDAV_APPLE    | xmlns:ca   |
 | DAV             | xmlns:d    |
-

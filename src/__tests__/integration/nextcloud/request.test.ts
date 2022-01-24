@@ -3,7 +3,7 @@ import fsp from 'fs/promises';
 
 import { createAccount } from '../../../account';
 import { fetchCalendarObjects, fetchCalendars } from '../../../calendar';
-import { DAVNamespace } from '../../../consts';
+import { DAVNamespaceShort } from '../../../consts';
 import { createObject, davRequest, deleteObject, propfind, updateObject } from '../../../request';
 import { DAVAccount, DAVCalendar } from '../../../types/models';
 import { getBasicAuthHeaders } from '../../../util/authHelpers';
@@ -110,7 +110,9 @@ test('davRequest should be able to get raw xml response', async () => {
 test('propfind should be able to find props', async () => {
   const [result] = await propfind({
     url: `${process.env.CREDENTIAL_NEXTCLOUD_SERVER_URL}/remote.php/dav`,
-    props: [{ name: 'current-user-principal', namespace: DAVNamespace.DAV }],
+    props: {
+      [`${DAVNamespaceShort.DAV}:current-user-principal`]: {},
+    },
     headers: authHeaders,
   });
   expect(result.href?.length).toBeTruthy();

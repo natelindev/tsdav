@@ -1,18 +1,3 @@
-import { DAVNamespace } from '../consts';
-
-export type DAVProp = {
-  name: string;
-  namespace?: DAVNamespace;
-  value?: string | number;
-};
-
-export type DAVFilter = {
-  type: string;
-  attributes: Record<string, string>;
-  value?: string | number;
-  children?: DAVFilter[];
-};
-
 export type DAVDepth = '0' | '1' | 'infinity';
 
 export type DAVMethods =

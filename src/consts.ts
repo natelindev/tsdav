@@ -14,13 +14,13 @@ export const DAVAttributeMap = {
   [DAVNamespace.DAV]: 'xmlns:d',
 };
 
-export const DAVNamespaceShorthandMap = {
-  [DAVNamespace.CALDAV]: 'c',
-  [DAVNamespace.CARDDAV]: 'card',
-  [DAVNamespace.CALENDAR_SERVER]: 'cs',
-  [DAVNamespace.CALDAV_APPLE]: 'ca',
-  [DAVNamespace.DAV]: 'd',
-};
+export enum DAVNamespaceShort {
+  CALDAV = 'c',
+  CARDDAV = 'card',
+  CALENDAR_SERVER = 'cs',
+  CALDAV_APPLE = 'ca',
+  DAV = 'd',
+}
 
 export enum ICALObjects {
   VEVENT = 'VEVENT',

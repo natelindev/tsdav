@@ -1,3 +1,31 @@
+## v2.0.0-rc.0
+
+**breaking**
+
+- removed `DAVFilter` and `DAVProp`, now all function uses `ElementCompact` as prop and filter directly generated from `xml-js` instead.
+- removed related `formatProp`, `formatFilter` and `mergeObjectDupKeyArray` function since they are not needed (These functions were marked as internal so they really shouldn't be causing breaking change).
+- removed `DAVNamespaceShorthandMap` and added `DAVNamespaceShort` as a replacement.
+- renamed parameter `vCardUrlFilter` of function `fetchVCards` to `urlFilter` for consistent naming.
+- collectionQuery now accepts `DAVNamespaceShort` instead of `DAVNamespace`.
+
+**features**
+
+- added `freeBusyQuery` for CALDAV, note this feature is not working with many caldav providers.
+- added `expand` for `fetchCalendarObjects` so it can now.
+- added `prop` and `filter` overriding feature to functions where overriding is possible.
+
+**improvements**
+
+- now fetchCalendar fetch `calendarColor` by default.
+
+**docs**
+
+- added a helper to convert `xml` between tsdav compatible `js` objects.
+- added migration helper to help convert old `DAVProp` and `DAVFilter` into new `ElementCompact`.
+- fixed theming issues to create a more consistent light theme.
+- added sitemap for docs for better seo.
+- archived version 1.x docs.
+
 ## v1.1.6
 
 **improvements**

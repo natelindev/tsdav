@@ -3,20 +3,12 @@ import * as addressBook from './addressBook';
 import * as calendar from './calendar';
 import * as client from './client';
 import * as collection from './collection';
-import { DAVAttributeMap, DAVNamespace, DAVNamespaceShorthandMap } from './consts';
+import { DAVAttributeMap, DAVNamespace, DAVNamespaceShort } from './consts';
 import * as request from './request';
 import * as authHelpers from './util/authHelpers';
 import * as requestHelpers from './util/requestHelpers';
 
-export type {
-  DAVProp,
-  DAVFilter,
-  DAVDepth,
-  DAVMethods,
-  DAVRequest,
-  DAVResponse,
-  DAVTokens,
-} from './types/DAVTypes';
+export type { DAVDepth, DAVMethods, DAVRequest, DAVResponse, DAVTokens } from './types/DAVTypes';
 export type {
   DAVAccount,
   DAVAddressBook,
@@ -52,6 +44,7 @@ export {
   updateCalendarObject,
   deleteCalendarObject,
   syncCalendars,
+  freeBusyQuery,
 } from './calendar';
 
 export {
@@ -69,19 +62,11 @@ export {
   fetchOauthTokens,
   refreshAccessToken,
 } from './util/authHelpers';
-export {
-  mergeObjectDupKeyArray,
-  urlContains,
-  urlEquals,
-  getDAVAttribute,
-  formatFilters,
-  formatProps,
-  cleanupFalsy,
-} from './util/requestHelpers';
-export { DAVNamespace, DAVNamespaceShorthandMap, DAVAttributeMap } from './consts';
+export { urlContains, urlEquals, getDAVAttribute, cleanupFalsy } from './util/requestHelpers';
+export { DAVNamespace, DAVAttributeMap, DAVNamespaceShort } from './consts';
 export default {
   DAVNamespace,
-  DAVNamespaceShorthandMap,
+  DAVNamespaceShort,
   DAVAttributeMap,
   ...client,
   ...request,

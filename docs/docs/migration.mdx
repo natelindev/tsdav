@@ -1,0 +1,32 @@
+---
+sidebar_position: 10
+---
+
+import { Converter } from '../src/components/Converter.tsx';
+
+# Migration
+
+### 1.1.x -> 2.x.x
+
+Auto prop/filter converter that can help you transition from 1.1.x to 1.2.x.
+
+<Converter
+  variant="prop"
+  content={[{ name: 'calendar-description', namespace: 'urn:ietf:params:xml:ns:caldav' }]}
+/>
+
+<Converter
+  variant="filter"
+  content={[
+    {
+      type: 'comp-filter',
+      attributes: { name: 'VCALENDAR' },
+      children: [
+        {
+          type: 'comp-filter',
+          attributes: { name: 'VEVENT' },
+        },
+      ],
+    },
+  ]}
+/>

@@ -18,7 +18,12 @@ const addressBooks = await fetchAddressBooks({
 ### Arguments
 
 - `account` [DAVAccount](../types/DAVAccount.md)
+- `props` [CARDDAV prop element](https://datatracker.ietf.org/doc/html/rfc6352#section-10.4.2) in [ElementCompact](../types/ElementCompact.md) form, overriding default props to fetch.
 - `headers` request headers
+
+:::caution
+when overriding props, resourcetype is required
+:::
 
 ### Return Value
 

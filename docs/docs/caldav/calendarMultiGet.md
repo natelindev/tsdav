@@ -12,10 +12,10 @@ If the Request-URI is a calendar object resource. This method is similar to the 
 // fetch 2 specific objects from one calendar
 const calendarObjects = await calendarMultiGet({
   url: 'https://caldav.icloud.com/1234567/calendars/personal/',
-  props: [
-    { name: 'getetag', namespace: DAVNamespace.DAV },
-    { name: 'calendar-data', namespace: DAVNamespace.CALDAV },
-  ],
+  props: {
+    [`${DAVNamespaceShort.DAV}:getetag`]: {},
+    [`${DAVNamespaceShort.CALDAV}:calendar-data`]: {},
+  },
   objectUrls: [
     'https://caldav.icloud.com/1234567/calendars/personal/1.ics',
     'https://caldav.icloud.com/1234567/calendars/personal/2.ics',
@@ -31,9 +31,9 @@ const calendarObjects = await calendarMultiGet({
 
 - `url` **required**, url of CALDAV server
 - `objectUrls` **required**, urls of calendar object to get
-- `props` [DAVProp](../types/DAVProp.md) the client needs
-- `filters` [DAVFilter](../types/DAVFilter.md) the filter on the calendar objects
 - `depth` **required**, [DAVDepth](../types/DAVDepth.md) of the request
+- `props` [CALDAV prop element](https://datatracker.ietf.org/doc/html/rfc4791#section-9.6.4) in [ElementCompact](../types/ElementCompact.md) form
+- `filters` [CALDAV filter element](https://datatracker.ietf.org/doc/html/rfc4791#section-9.7) in [ElementCompact](../types/ElementCompact.md) form
 - `timezone` timezone of the calendar
 - `headers` request headers
 

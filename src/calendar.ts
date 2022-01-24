@@ -1,27 +1,22 @@
 /* eslint-disable no-underscore-dangle */
 import getLogger from 'debug';
+import { ElementCompact } from 'xml-js';
 
 import { collectionQuery, smartCollectionSync, supportedReportSet } from './collection';
-import { DAVNamespace, DAVNamespaceShorthandMap, ICALObjects } from './consts';
+import { DAVNamespace, DAVNamespaceShort, ICALObjects } from './consts';
 import { createObject, davRequest, deleteObject, propfind, updateObject } from './request';
-import { DAVDepth, DAVFilter, DAVProp, DAVResponse } from './types/DAVTypes';
+import { DAVDepth, DAVResponse } from './types/DAVTypes';
 import { SyncCalendars } from './types/functionsOverloads';
 import { DAVAccount, DAVCalendar, DAVCalendarObject } from './types/models';
-import {
-  cleanupFalsy,
-  formatFilters,
-  formatProps,
-  getDAVAttribute,
-  urlContains,
-} from './util/requestHelpers';
+import { cleanupFalsy, getDAVAttribute, urlContains } from './util/requestHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelpers';
 
 const debug = getLogger('tsdav:calendar');
 
 export const calendarQuery = async (params: {
   url: string;
-  props: DAVProp[];
-  filters?: DAVFilter[];
+  props: ElementCompact;
+  filters?: ElementCompact;
   timezone?: string;
   depth?: DAVDepth;
   headers?: Record<string, string>;
@@ -37,12 +32,12 @@ export const calendarQuery = async (params: {
           DAVNamespace.CALDAV_APPLE,
           DAVNamespace.DAV,
         ]),
-        [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
-        filter: formatFilters(filters),
+        [`${DAVNamespaceShort.DAV}:prop`]: props,
+        filter: filters,
         timezone,
       }),
     },
-    defaultNamespace: DAVNamespace.CALDAV,
+    defaultNamespace: DAVNamespaceShort.CALDAV,
     depth,
     headers,
   });
@@ -50,9 +45,9 @@ export const calendarQuery = async (params: {
 
 export const calendarMultiGet = async (params: {
   url: string;
-  props: DAVProp[];
+  props: ElementCompact;
   objectUrls?: string[];
-  filters?: DAVFilter[];
+  filters?: ElementCompact;
   timezone?: string;
   depth: DAVDepth;
   headers?: Record<string, string>;
@@ -63,13 +58,13 @@ export const calendarMultiGet = async (params: {
     body: {
       'calendar-multiget': {
         _attributes: getDAVAttribute([DAVNamespace.DAV, DAVNamespace.CALDAV]),
-        [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:prop`]: formatProps(props),
-        [`${DAVNamespaceShorthandMap[DAVNamespace.DAV]}:href`]: objectUrls,
-        filter: formatFilters(filters),
+        [`${DAVNamespaceShort.DAV}:prop`]: props,
+        [`${DAVNamespaceShort.DAV}:href`]: objectUrls,
+        filter: filters,
         timezone,
       },
     },
-    defaultNamespace: DAVNamespace.CALDAV,
+    defaultNamespace: DAVNamespaceShort.CALDAV,
     depth,
     headers,
   });
@@ -77,7 +72,7 @@ export const calendarMultiGet = async (params: {
 
 export const makeCalendar = async (params: {
   url: string;
-  props: DAVProp[];
+  props: ElementCompact;
   depth?: DAVDepth;
   headers?: Record<string, string>;
 }): Promise<DAVResponse[]> => {
@@ -87,12 +82,12 @@ export const makeCalendar = async (params: {
     init: {
       method: 'MKCALENDAR',
       headers: cleanupFalsy({ ...headers, depth }),
-      namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
+      namespace: DAVNamespaceShort.DAV,
       body: {
-        [`${DAVNamespaceShorthandMap[DAVNamespace.CALDAV]}:mkcalendar`]: {
+        [`${DAVNamespaceShort.CALDAV}:mkcalendar`]: {
           _attributes: getDAVAttribute([DAVNamespace.DAV, DAVNamespace.CALDAV]),
           set: {
-            prop: formatProps(props),
+            prop: props,
           },
         },
       },
@@ -102,9 +97,10 @@ export const makeCalendar = async (params: {
 
 export const fetchCalendars = async (params?: {
   account?: DAVAccount;
+  props?: ElementCompact;
   headers?: Record<string, string>;
 }): Promise<DAVCalendar[]> => {
-  const { headers, account } = params ?? {};
+  const { headers, account, props: customProps } = params ?? {};
   const requiredFields: Array<'homeUrl' | 'rootUrl'> = ['homeUrl', 'rootUrl'];
   if (!account || !hasFields(account, requiredFields)) {
     if (!account) {
@@ -117,15 +113,16 @@ export const fetchCalendars = async (params?: {
 
   const res = await propfind({
     url: account.homeUrl,
-    props: [
-      { name: 'calendar-description', namespace: DAVNamespace.CALDAV },
-      { name: 'calendar-timezone', namespace: DAVNamespace.CALDAV },
-      { name: 'displayname', namespace: DAVNamespace.DAV },
-      { name: 'getctag', namespace: DAVNamespace.CALENDAR_SERVER },
-      { name: 'resourcetype', namespace: DAVNamespace.DAV },
-      { name: 'supported-calendar-component-set', namespace: DAVNamespace.CALDAV },
-      { name: 'sync-token', namespace: DAVNamespace.DAV },
-    ],
+    props: customProps ?? {
+      [`${DAVNamespaceShort.CALDAV}:calendar-description`]: {},
+      [`${DAVNamespaceShort.CALDAV}:calendar-timezone`]: {},
+      [`${DAVNamespaceShort.CALDAV}:displayname`]: {},
+      [`${DAVNamespaceShort.CALDAV_APPLE}:calendar-color`]: {},
+      [`${DAVNamespaceShort.CALDAV_APPLE}:getctag`]: {},
+      [`${DAVNamespaceShort.DAV}:resourcetype`]: {},
+      [`${DAVNamespaceShort.CALDAV}:supported-calendar-component-set`]: {},
+      [`${DAVNamespaceShort.DAV}:sync-token`]: {},
+    },
     depth: '1',
     headers,
   });
@@ -151,6 +148,7 @@ export const fetchCalendars = async (params?: {
           timezone: typeof timezone === 'string' ? timezone : '',
           url: new URL(rs.href ?? '', account.rootUrl ?? '').href,
           ctag: rs.props?.getctag,
+          calendarColor: rs.props?.calendarColor,
           displayName: rs.props?.displayname._cdata ?? rs.props?.displayname,
           components: Array.isArray(rs.props?.supportedCalendarComponentSet.comp)
             ? rs.props?.supportedCalendarComponentSet.comp.map((sc: any) => sc._attributes.name)
@@ -169,11 +167,21 @@ export const fetchCalendars = async (params?: {
 export const fetchCalendarObjects = async (params: {
   calendar: DAVCalendar;
   objectUrls?: string[];
-  filters?: DAVFilter[];
+  filters?: ElementCompact;
   timeRange?: { start: string; end: string };
+  expand?: boolean;
+  urlFilter?: (url: string) => boolean;
   headers?: Record<string, string>;
 }): Promise<DAVCalendarObject[]> => {
-  const { calendar, objectUrls, filters: defaultFilters, timeRange, headers } = params;
+  const {
+    calendar,
+    objectUrls,
+    filters: customFilters,
+    timeRange,
+    headers,
+    expand,
+    urlFilter,
+  } = params;
 
   if (timeRange) {
     // validate timeRange
@@ -201,19 +209,20 @@ export const fetchCalendarObjects = async (params: {
   }
 
   // default to fetch all
-  const filters: DAVFilter[] = defaultFilters ?? [
+  const filters: ElementCompact = customFilters ?? [
     {
-      type: 'comp-filter',
-      attributes: { name: 'VCALENDAR' },
-      children: [
-        {
-          type: 'comp-filter',
-          attributes: { name: 'VEVENT' },
-          children: timeRange
-            ? [
-                {
-                  type: 'time-range',
-                  attributes: {
+      'comp-filter': {
+        _attributes: {
+          name: 'VCALENDAR',
+        },
+        'comp-filter': {
+          _attributes: {
+            name: 'VEVENT',
+          },
+          ...(timeRange
+            ? {
+                'time-range': {
+                  _attributes: {
                     start: `${new Date(timeRange.start)
                       .toISOString()
                       .slice(0, 19)
@@ -224,10 +233,10 @@ export const fetchCalendarObjects = async (params: {
                       .replace(/[-:.]/g, '')}Z`,
                   },
                 },
-              ]
-            : undefined,
+              }
+            : {}),
         },
-      ],
+      },
     },
   ];
 
@@ -237,7 +246,9 @@ export const fetchCalendarObjects = async (params: {
     (
       await calendarQuery({
         url: calendar.url,
-        props: [{ name: 'getetag', namespace: DAVNamespace.DAV }],
+        props: {
+          [`${DAVNamespaceShort.DAV}:getetag`]: {},
+        },
         filters,
         depth: '1',
         headers,
@@ -246,14 +257,31 @@ export const fetchCalendarObjects = async (params: {
   )
     .map((url) => (url.startsWith('http') ? url : new URL(url, calendar.url).href)) // patch up to full url if url is not full
     .map((url) => new URL(url).pathname) // obtain pathname of the url
-    .filter((url): url is string => Boolean(url?.includes('.ics'))); // filter out non ics calendar objects since apple calendar might have those
+    .filter(urlFilter ?? ((url: string): url is string => Boolean(url?.includes('.ics')))); // filter out non ics calendar objects since apple calendar might have those
 
   const calendarObjectResults = await calendarMultiGet({
     url: calendar.url,
-    props: [
-      { name: 'getetag', namespace: DAVNamespace.DAV },
-      { name: 'calendar-data', namespace: DAVNamespace.CALDAV },
-    ],
+    props: {
+      [`${DAVNamespaceShort.DAV}:getetag`]: {},
+      [`${DAVNamespaceShort.CALDAV}:calendar-data`]: {
+        ...(expand && timeRange
+          ? {
+              [`${DAVNamespaceShort.CALDAV}:expand`]: {
+                _attributes: {
+                  start: `${new Date(timeRange.start)
+                    .toISOString()
+                    .slice(0, 19)
+                    .replace(/[-:.]/g, '')}Z`,
+                  end: `${new Date(timeRange.end)
+                    .toISOString()
+                    .slice(0, 19)
+                    .replace(/[-:.]/g, '')}Z`,
+                },
+              },
+            }
+          : {}),
+      },
+    },
     objectUrls: calendarObjectUrls,
     depth: '1',
     headers,
@@ -377,4 +405,46 @@ export const syncCalendars: SyncCalendars = async (params: {
         deleted,
       }
     : [...unchanged, ...created, ...updatedWithObjects];
+};
+
+export const freeBusyQuery = async (params: {
+  url: string;
+  timeRange: { start: string; end: string };
+  depth?: DAVDepth;
+  headers?: Record<string, string>;
+}): Promise<DAVResponse> => {
+  const { url, timeRange, depth, headers } = params;
+
+  if (timeRange) {
+    // validate timeRange
+    const ISO_8601 = /^\d{4}(-\d\d(-\d\d(T\d\d:\d\d(:\d\d)?(\.\d+)?(([+-]\d\d:\d\d)|Z)?)?)?)?$/i;
+    const ISO_8601_FULL = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?(([+-]\d\d:\d\d)|Z)?$/i;
+    if (
+      (!ISO_8601.test(timeRange.start) || !ISO_8601.test(timeRange.end)) &&
+      (!ISO_8601_FULL.test(timeRange.start) || !ISO_8601_FULL.test(timeRange.end))
+    ) {
+      throw new Error('invalid timeRange format, not in ISO8601');
+    }
+  } else {
+    throw new Error('timeRange is required');
+  }
+
+  const result = await collectionQuery({
+    url,
+    body: {
+      'free-busy-query': cleanupFalsy({
+        _attributes: getDAVAttribute([DAVNamespace.CALDAV]),
+        [`${DAVNamespaceShort.CALDAV}:time-range`]: {
+          _attributes: {
+            start: `${new Date(timeRange.start).toISOString().slice(0, 19).replace(/[-:.]/g, '')}Z`,
+            end: `${new Date(timeRange.end).toISOString().slice(0, 19).replace(/[-:.]/g, '')}Z`,
+          },
+        },
+      }),
+    },
+    defaultNamespace: DAVNamespaceShort.CALDAV,
+    depth,
+    headers,
+  });
+  return result[0];
 };

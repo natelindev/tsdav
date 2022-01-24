@@ -9,11 +9,11 @@ sidebar_position: 5
 ```ts
 const result = await syncCollection({
   url: 'https://caldav.icloud.com/12345676/calendars/c623f6be-a2d4-4c60-932a-043e67025dde/',
-  props: [
-    { name: 'getetag', namespace: DAVNamespace.DAV },
-    { name: 'calendar-data', namespace: DAVNamespace.CALDAV },
-    { name: 'displayname', namespace: DAVNamespace.DAV },
-  ],
+  props: {
+    [`${DAVNamespaceShort.DAV}:getetag`]: {},
+    [`${DAVNamespaceShort.CALDAV}:calendar-data`]: {},
+    [`${DAVNamespaceShort.DAV}:displayname`]: {},
+  },
   syncLevel: 1,
   syncToken: 'bb399205ff6ff07',
   headers: {
@@ -25,7 +25,7 @@ const result = await syncCollection({
 ### Arguments
 
 - `url` **required**, target collection url
-- `props` **required**, [DAVProp](../../types/DAVProp.md) of the request
+- `props` **required**, [ElementCompact](../types/ElementCompact.md)
 - `syncLevel` [Indicates the "scope" of the synchronization report request](https://datatracker.ietf.org/doc/html/rfc6578#section-6.3)
 - `syncToken` [The synchronization token provided by the server and returned by the client](https://datatracker.ietf.org/doc/html/rfc6578#section-6.2)
 - `headers` request headers

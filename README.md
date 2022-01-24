@@ -25,10 +25,10 @@ webdav request made easy
 - Easy to use, well documented JSON based WEBDAV API
 - Works in both `Browsers` and `Node.js`
 - Supports Both `commonjs` and `esm`
-- OAuth2 & Basic Auth helpers built-in
+- OAuth2 & basic auth helpers built-in
 - Native typescript, fully linted and well tested
 - Supports WEBDAV, CALDAV, CARDDAV
-- End to end tested with Apple & Google Cloud.
+- Tested with multiple cloud providers
 
 ### Install
 

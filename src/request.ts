@@ -1,12 +1,12 @@
 import { fetch } from 'cross-fetch';
 import getLogger from 'debug';
-import convert from 'xml-js';
+import convert, { ElementCompact } from 'xml-js';
 
-import { DAVNamespace, DAVNamespaceShorthandMap } from './consts';
-import { DAVDepth, DAVProp, DAVRequest, DAVResponse } from './types/DAVTypes';
+import { DAVNamespace, DAVNamespaceShort } from './consts';
+import { DAVDepth, DAVRequest, DAVResponse } from './types/DAVTypes';
 import { camelCase } from './util/camelCase';
 import { nativeType } from './util/nativeType';
-import { cleanupFalsy, formatProps, getDAVAttribute } from './util/requestHelpers';
+import { cleanupFalsy, getDAVAttribute } from './util/requestHelpers';
 
 const debug = getLogger('tsdav:request');
 
@@ -30,7 +30,11 @@ export const davRequest = async (params: {
   const { headers, body, namespace, method, attributes } = init;
   const xmlBody = convertIncoming
     ? convert.js2xml(
-        { ...body, _attributes: attributes },
+        {
+          _declaration: { _attributes: { version: '1.0', encoding: 'utf-8' } },
+          ...body,
+          _attributes: attributes,
+        },
         {
           compact: true,
           spaces: 2,
@@ -46,7 +50,19 @@ export const davRequest = async (params: {
     : body;
 
   // debug('outgoing xml:');
+  // debug(`${method} ${url}`);
+  // debug(
+  //   `headers: ${JSON.stringify(
+  //     {
+  //       'Content-Type': 'text/xml;charset=UTF-8',
+  //       ...cleanupFalsy(headers),
+  //     },
+  //     null,
+  //     2
+  //   )}`
+  // );
   // debug(xmlBody);
+
   const davResponse = await fetch(url, {
     headers: {
       'Content-Type': 'text/xml;charset=UTF-8',
@@ -151,7 +167,7 @@ export const davRequest = async (params: {
 
 export const propfind = async (params: {
   url: string;
-  props: DAVProp[];
+  props: ElementCompact;
   depth?: DAVDepth;
   headers?: Record<string, string>;
 }): Promise<DAVResponse[]> => {
@@ -161,7 +177,7 @@ export const propfind = async (params: {
     init: {
       method: 'PROPFIND',
       headers: cleanupFalsy({ ...headers, depth }),
-      namespace: DAVNamespaceShorthandMap[DAVNamespace.DAV],
+      namespace: DAVNamespaceShort.DAV,
       body: {
         propfind: {
           _attributes: getDAVAttribute([
@@ -171,7 +187,7 @@ export const propfind = async (params: {
             DAVNamespace.CARDDAV,
             DAVNamespace.DAV,
           ]),
-          prop: formatProps(props),
+          prop: props,
         },
       },
     },
