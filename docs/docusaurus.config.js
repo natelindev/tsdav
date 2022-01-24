@@ -69,6 +69,10 @@ module.exports = {
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
         },
+        sitemap: {
+          changefreq: 'weekly',
+          priority: 0.5,
+        },
       },
     ],
   ],
@@ -77,13 +81,6 @@ module.exports = {
       require.resolve('@easyops-cn/docusaurus-search-local'),
       {
         hashed: true,
-      },
-    ],
-    [
-      '@docusaurus/plugin-sitemap',
-      {
-        changefreq: 'weekly',
-        priority: 0.5,
       },
     ],
     require.resolve('./docusuarusWebpack5Plugin'),

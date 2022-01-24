@@ -25,7 +25,7 @@ const result = await syncCollection({
 ### Arguments
 
 - `url` **required**, target collection url
-- `props` **required**, [ElementCompact](../types/ElementCompact.md)
+- `props` **required**, [ElementCompact](../../types/ElementCompact.md)
 - `syncLevel` [Indicates the "scope" of the synchronization report request](https://datatracker.ietf.org/doc/html/rfc6578#section-6.3)
 - `syncToken` [The synchronization token provided by the server and returned by the client](https://datatracker.ietf.org/doc/html/rfc6578#section-6.2)
 - `headers` request headers

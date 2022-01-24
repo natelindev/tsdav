@@ -22,7 +22,7 @@ const response = await makeCollection({
 ### Arguments
 
 - `url` **required**, url of the collection to create
-- `props` [ElementCompact](../types/ElementCompact.md) prop for the collection
+- `props` [ElementCompact](../../types/ElementCompact.md) prop for the collection
 - `depth` [DAVDepth](../../types/DAVDepth.md)
 - `headers` request headers
 
