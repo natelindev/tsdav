@@ -772,7 +772,7 @@ const fetchCalendars = (params) => __awaiter(void 0, void 0, void 0, function* (
         props: customProps !== null && customProps !== void 0 ? customProps : {
             [`${exports.DAVNamespaceShort.CALDAV}:calendar-description`]: {},
             [`${exports.DAVNamespaceShort.CALDAV}:calendar-timezone`]: {},
-            [`${exports.DAVNamespaceShort.CALDAV}:displayname`]: {},
+            [`${exports.DAVNamespaceShort.DAV}:displayname`]: {},
             [`${exports.DAVNamespaceShort.CALDAV_APPLE}:calendar-color`]: {},
             [`${exports.DAVNamespaceShort.CALDAV_APPLE}:getctag`]: {},
             [`${exports.DAVNamespaceShort.DAV}:resourcetype`]: {},
