@@ -118,7 +118,7 @@ export const fetchCalendars = async (params?: {
       [`${DAVNamespaceShort.CALDAV}:calendar-timezone`]: {},
       [`${DAVNamespaceShort.DAV}:displayname`]: {},
       [`${DAVNamespaceShort.CALDAV_APPLE}:calendar-color`]: {},
-      [`${DAVNamespaceShort.CALDAV_APPLE}:getctag`]: {},
+      [`${DAVNamespaceShort.CALENDAR_SERVER}:getctag`]: {},
       [`${DAVNamespaceShort.DAV}:resourcetype`]: {},
       [`${DAVNamespaceShort.CALDAV}:supported-calendar-component-set`]: {},
       [`${DAVNamespaceShort.DAV}:sync-token`]: {},
