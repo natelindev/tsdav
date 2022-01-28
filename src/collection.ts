@@ -67,7 +67,7 @@ export const supportedReportSet = async (params: {
     props: {
       [`${DAVNamespaceShort.DAV}:supported-report-set`]: {},
     },
-    depth: '1',
+    depth: '0',
     headers,
   });
   return (

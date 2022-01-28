@@ -1,3 +1,21 @@
+## v2.0.0-rc.2
+
+**improvements**
+
+- fixed wrong namespace issue
+- fixed a bug where supportedReportSet was using incorrect depth, which resulted more data fetched than needed.
+- added tests for supportedReportSet
+
+**docs**
+
+- added doc for freeBusyQuery
+
+## v2.0.0-rc.1
+
+**improvements**
+
+- fixed wrong namespace issue
+
 ## v2.0.0-rc.0
 
 **breaking**

@@ -2,7 +2,7 @@ import fsp from 'fs/promises';
 
 import { createAccount } from '../../../account';
 import { fetchCalendars } from '../../../calendar';
-import { isCollectionDirty } from '../../../collection';
+import { isCollectionDirty, supportedReportSet } from '../../../collection';
 import { createObject, deleteObject } from '../../../request';
 import { DAVAccount, DAVCalendar } from '../../../types/models';
 import { getBasicAuthHeaders } from '../../../util/authHelpers';
@@ -61,4 +61,9 @@ test('isCollectionDirty should be able to tell if a collection have changed', as
   });
 
   expect(deleteResult.ok).toBe(true);
+});
+
+test('supportedReportSet should be able to list supported reports', async () => {
+  const reports = await supportedReportSet({ collection: calendars[0], headers: authHeaders });
+  expect(reports.length > 0).toBe(true);
 });
