@@ -127,6 +127,10 @@ export const davRequest = async (params: {
     },
     ignoreDeclaration: true,
   });
+  
+  if (typeof result.multistatus.response === 'undefined') {
+    return [];
+  }
 
   const responseBodies: RawResponse[] = Array.isArray(result.multistatus.response)
     ? result.multistatus.response
