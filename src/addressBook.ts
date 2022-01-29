@@ -145,20 +145,23 @@ export const fetchVCards = async (params: {
       })
     ).map((res) => res.href ?? '')
   )
-    .map((url) => (url.includes('http') ? url : new URL(url, addressBook.url).href))
-    .map((url) => new URL(url).pathname)
-    .filter(urlFilter ?? ((url: string): url is string => url !== addressBook.url));
+    .map((url) => (url.startsWith('http') || !url ? url : new URL(url, addressBook.url).href))
+    .filter(urlFilter ?? ((url) => url))
+    .map((url) => new URL(url).pathname);
 
-  const vCardResults = await addressBookMultiGet({
-    url: addressBook.url,
-    props: {
-      [`${DAVNamespaceShort.DAV}:getetag`]: {},
-      [`${DAVNamespaceShort.CARDDAV}:address-data`]: {},
-    },
-    objectUrls: vcardUrls,
-    depth: '1',
-    headers,
-  });
+  const vCardResults =
+    vcardUrls.length > 0
+      ? await addressBookMultiGet({
+          url: addressBook.url,
+          props: {
+            [`${DAVNamespaceShort.DAV}:getetag`]: {},
+            [`${DAVNamespaceShort.CARDDAV}:address-data`]: {},
+          },
+          objectUrls: vcardUrls,
+          depth: '1',
+          headers,
+        })
+      : [];
 
   return vCardResults.map((res) => ({
     url: new URL(res.href ?? '', addressBook.url).href,

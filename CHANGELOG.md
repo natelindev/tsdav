@@ -1,3 +1,8 @@
+## v2.0.0-rc.3
+
+- fixed `urlFilter` not really filtering the urls, only filtering on pathname of urls.
+- fixed a bug where fetching on empty calendars/addressBooks returning calendar/addressBook itself as result.
+
 ## v2.0.0-rc.2
 
 **improvements**

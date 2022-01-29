@@ -255,37 +255,40 @@ export const fetchCalendarObjects = async (params: {
       })
     ).map((res) => res.href ?? '')
   )
-    .map((url) => (url.startsWith('http') ? url : new URL(url, calendar.url).href)) // patch up to full url if url is not full
-    .map((url) => new URL(url).pathname) // obtain pathname of the url
-    .filter(urlFilter ?? ((url: string): url is string => Boolean(url?.includes('.ics')))); // filter out non ics calendar objects since apple calendar might have those
+    .map((url) => (url.startsWith('http') || !url ? url : new URL(url, calendar.url).href)) // patch up to full url if url is not full
+    .filter(urlFilter ?? ((url: string): url is string => Boolean(url?.includes('.ics')))) // filter out non ics calendar objects since apple calendar might have those
+    .map((url) => new URL(url).pathname); // obtain pathname of the url
 
-  const calendarObjectResults = await calendarMultiGet({
-    url: calendar.url,
-    props: {
-      [`${DAVNamespaceShort.DAV}:getetag`]: {},
-      [`${DAVNamespaceShort.CALDAV}:calendar-data`]: {
-        ...(expand && timeRange
-          ? {
-              [`${DAVNamespaceShort.CALDAV}:expand`]: {
-                _attributes: {
-                  start: `${new Date(timeRange.start)
-                    .toISOString()
-                    .slice(0, 19)
-                    .replace(/[-:.]/g, '')}Z`,
-                  end: `${new Date(timeRange.end)
-                    .toISOString()
-                    .slice(0, 19)
-                    .replace(/[-:.]/g, '')}Z`,
-                },
-              },
-            }
-          : {}),
-      },
-    },
-    objectUrls: calendarObjectUrls,
-    depth: '1',
-    headers,
-  });
+  const calendarObjectResults =
+    calendarObjectUrls.length > 0
+      ? await calendarMultiGet({
+          url: calendar.url,
+          props: {
+            [`${DAVNamespaceShort.DAV}:getetag`]: {},
+            [`${DAVNamespaceShort.CALDAV}:calendar-data`]: {
+              ...(expand && timeRange
+                ? {
+                    [`${DAVNamespaceShort.CALDAV}:expand`]: {
+                      _attributes: {
+                        start: `${new Date(timeRange.start)
+                          .toISOString()
+                          .slice(0, 19)
+                          .replace(/[-:.]/g, '')}Z`,
+                        end: `${new Date(timeRange.end)
+                          .toISOString()
+                          .slice(0, 19)
+                          .replace(/[-:.]/g, '')}Z`,
+                      },
+                    },
+                  }
+                : {}),
+            },
+          },
+          objectUrls: calendarObjectUrls,
+          depth: '1',
+          headers,
+        })
+      : [];
 
   return calendarObjectResults.map((res) => ({
     url: new URL(res.href ?? '', calendar.url).href,

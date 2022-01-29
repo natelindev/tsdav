@@ -639,19 +639,21 @@ const fetchVCards = (params) => __awaiter(void 0, void 0, void 0, function* () {
         depth: '1',
         headers,
     })).map((res) => { var _a; return (_a = res.href) !== null && _a !== void 0 ? _a : ''; }))
-        .map((url) => (url.includes('http') ? url : new URL(url, addressBook.url).href))
-        .map((url) => new URL(url).pathname)
-        .filter(urlFilter !== null && urlFilter !== void 0 ? urlFilter : ((url) => url !== addressBook.url));
-    const vCardResults = yield addressBookMultiGet({
-        url: addressBook.url,
-        props: {
-            [`${exports.DAVNamespaceShort.DAV}:getetag`]: {},
-            [`${exports.DAVNamespaceShort.CARDDAV}:address-data`]: {},
-        },
-        objectUrls: vcardUrls,
-        depth: '1',
-        headers,
-    });
+        .map((url) => (url.startsWith('http') || !url ? url : new URL(url, addressBook.url).href))
+        .filter(urlFilter !== null && urlFilter !== void 0 ? urlFilter : ((url) => url))
+        .map((url) => new URL(url).pathname);
+    const vCardResults = vcardUrls.length > 0
+        ? yield addressBookMultiGet({
+            url: addressBook.url,
+            props: {
+                [`${exports.DAVNamespaceShort.DAV}:getetag`]: {},
+                [`${exports.DAVNamespaceShort.CARDDAV}:address-data`]: {},
+            },
+            objectUrls: vcardUrls,
+            depth: '1',
+            headers,
+        })
+        : [];
     return vCardResults.map((res) => {
         var _a, _b, _c, _d, _e, _f;
         return ({
@@ -873,34 +875,36 @@ const fetchCalendarObjects = (params) => __awaiter(void 0, void 0, void 0, funct
         depth: '1',
         headers,
     })).map((res) => { var _a; return (_a = res.href) !== null && _a !== void 0 ? _a : ''; }))
-        .map((url) => (url.startsWith('http') ? url : new URL(url, calendar.url).href)) // patch up to full url if url is not full
-        .map((url) => new URL(url).pathname) // obtain pathname of the url
-        .filter(urlFilter !== null && urlFilter !== void 0 ? urlFilter : ((url) => Boolean(url === null || url === void 0 ? void 0 : url.includes('.ics')))); // filter out non ics calendar objects since apple calendar might have those
-    const calendarObjectResults = yield calendarMultiGet({
-        url: calendar.url,
-        props: {
-            [`${exports.DAVNamespaceShort.DAV}:getetag`]: {},
-            [`${exports.DAVNamespaceShort.CALDAV}:calendar-data`]: Object.assign({}, (expand && timeRange
-                ? {
-                    [`${exports.DAVNamespaceShort.CALDAV}:expand`]: {
-                        _attributes: {
-                            start: `${new Date(timeRange.start)
-                                .toISOString()
-                                .slice(0, 19)
-                                .replace(/[-:.]/g, '')}Z`,
-                            end: `${new Date(timeRange.end)
-                                .toISOString()
-                                .slice(0, 19)
-                                .replace(/[-:.]/g, '')}Z`,
+        .map((url) => (url.startsWith('http') || !url ? url : new URL(url, calendar.url).href)) // patch up to full url if url is not full
+        .filter(urlFilter !== null && urlFilter !== void 0 ? urlFilter : ((url) => Boolean(url === null || url === void 0 ? void 0 : url.includes('.ics')))) // filter out non ics calendar objects since apple calendar might have those
+        .map((url) => new URL(url).pathname); // obtain pathname of the url
+    const calendarObjectResults = calendarObjectUrls.length > 0
+        ? yield calendarMultiGet({
+            url: calendar.url,
+            props: {
+                [`${exports.DAVNamespaceShort.DAV}:getetag`]: {},
+                [`${exports.DAVNamespaceShort.CALDAV}:calendar-data`]: Object.assign({}, (expand && timeRange
+                    ? {
+                        [`${exports.DAVNamespaceShort.CALDAV}:expand`]: {
+                            _attributes: {
+                                start: `${new Date(timeRange.start)
+                                    .toISOString()
+                                    .slice(0, 19)
+                                    .replace(/[-:.]/g, '')}Z`,
+                                end: `${new Date(timeRange.end)
+                                    .toISOString()
+                                    .slice(0, 19)
+                                    .replace(/[-:.]/g, '')}Z`,
+                            },
                         },
-                    },
-                }
-                : {})),
-        },
-        objectUrls: calendarObjectUrls,
-        depth: '1',
-        headers,
-    });
+                    }
+                    : {})),
+            },
+            objectUrls: calendarObjectUrls,
+            depth: '1',
+            headers,
+        })
+        : [];
     return calendarObjectResults.map((res) => {
         var _a, _b, _c, _d, _e, _f;
         return ({
