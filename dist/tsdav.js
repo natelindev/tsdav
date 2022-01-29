@@ -6406,7 +6406,7 @@ const supportedReportSet = (params) => __awaiter(void 0, void 0, void 0, functio
         props: {
             [`${DAVNamespaceShort.DAV}:supported-report-set`]: {},
         },
-        depth: '1',
+        depth: '0',
         headers,
     });
     return ((_e = (_d = (_c = (_b = (_a = res[0]) === null || _a === void 0 ? void 0 : _a.props) === null || _b === void 0 ? void 0 : _b.supportedReportSet) === null || _c === void 0 ? void 0 : _c.supportedReport) === null || _d === void 0 ? void 0 : _d.map((sr) => Object.keys(sr.report)[0])) !== null && _e !== void 0 ? _e : []);
@@ -6816,7 +6816,7 @@ const fetchCalendars = (params) => __awaiter(void 0, void 0, void 0, function* (
             [`${DAVNamespaceShort.CALDAV}:calendar-timezone`]: {},
             [`${DAVNamespaceShort.DAV}:displayname`]: {},
             [`${DAVNamespaceShort.CALDAV_APPLE}:calendar-color`]: {},
-            [`${DAVNamespaceShort.CALDAV_APPLE}:getctag`]: {},
+            [`${DAVNamespaceShort.CALENDAR_SERVER}:getctag`]: {},
             [`${DAVNamespaceShort.DAV}:resourcetype`]: {},
             [`${DAVNamespaceShort.CALDAV}:supported-calendar-component-set`]: {},
             [`${DAVNamespaceShort.DAV}:sync-token`]: {},
