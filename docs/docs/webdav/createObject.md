@@ -29,4 +29,4 @@ const response = await createObject({
 
 ### Behavior
 
-send PUT request to target url with body of data
+send PUT request to target url with body of data, with `If-None-Match` header `*` to avoid accidental overwrite.

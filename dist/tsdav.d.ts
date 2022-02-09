@@ -333,7 +333,7 @@ declare const createObject: (params: {
 declare const updateObject: (params: {
     url: string;
     data: BodyInit;
-    etag: string;
+    etag?: string;
     headers?: Record<string, string>;
 }) => Promise<Response>;
 declare const deleteObject: (params: {
@@ -374,7 +374,7 @@ declare const createDAVClient: (params: {
     updateObject: (params: {
         url: string;
         data: BodyInit;
-        etag: string;
+        etag?: string | undefined;
         headers?: Record<string, string> | undefined;
     }) => Promise<Response>;
     deleteObject: (params: {
@@ -790,7 +790,7 @@ declare const _default: {
     updateObject: (params: {
         url: string;
         data: BodyInit;
-        etag: string;
+        etag?: string | undefined;
         headers?: Record<string, string> | undefined;
     }) => Promise<Response>;
     deleteObject: (params: {
@@ -830,7 +830,7 @@ declare const _default: {
         updateObject: (params: {
             url: string;
             data: BodyInit;
-            etag: string;
+            etag?: string | undefined;
             headers?: Record<string, string> | undefined;
         }) => Promise<Response>;
         deleteObject: (params: {

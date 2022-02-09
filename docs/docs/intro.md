@@ -10,13 +10,14 @@ It's very common to be used for cloud storage, as well as calendar, contacts inf
 
 ### Cloud provider support status
 
-| Provider name | Webdav | Caldav | Carddav |
+| Provider name | WEBDAV | CALDAV | CARDDAV |
 | ------------- | ------ | ------ | ------- |
 | iCloud        | ✅     | ✅     | ✅      |
 | Google cloud  | ✅     | ✅     | ✅      |
 | Fastmail      | ✅     | ✅     | ✅      |
 | Nextcloud     | ✅     | ✅     | ✅      |
 | Baikal        | ✅     | ✅     | ✅      |
+| ZOHO          | ✅     | ✅     | ❎      |
 
 For more information on cloud providers, go to [cloud providers](./cloud%20providers.md) for more information.
 

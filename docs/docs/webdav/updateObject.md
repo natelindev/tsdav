@@ -22,7 +22,7 @@ const response = await updateObject({
 
 - `url` **required**, url of object to update
 - `data` **required**, new object content
-- `etag` **required**, the version string of content, if [etag](https://tools.ietf.org/id/draft-reschke-http-etag-on-write-08.html) changed, `data` must have been changed.
+- `etag` the version string of content, if [etag](https://tools.ietf.org/id/draft-reschke-http-etag-on-write-08.html) changed, `data` must have been changed.
 - `headers` request headers
 
 ### Return Value

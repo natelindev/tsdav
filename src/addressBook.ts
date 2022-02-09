@@ -143,7 +143,7 @@ export const fetchVCards = async (params: {
         depth: '1',
         headers,
       })
-    ).map((res) => res.href ?? '')
+    ).map((res) => (res.ok ? res.href ?? '' : ''))
   )
     .map((url) => (url.startsWith('http') || !url ? url : new URL(url, addressBook.url).href))
     .filter(urlFilter ?? ((url) => url))
@@ -182,6 +182,7 @@ export const createVCard = async (params: {
     data: vCardString,
     headers: {
       'content-type': 'text/vcard; charset=utf-8',
+      'If-None-Match': '*',
       ...headers,
     },
   });

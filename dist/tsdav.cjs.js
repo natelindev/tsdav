@@ -268,7 +268,7 @@ const propfind = (params) => __awaiter(void 0, void 0, void 0, function* () {
         url,
         init: {
             method: 'PROPFIND',
-            headers: cleanupFalsy(Object.assign(Object.assign({}, headers), { depth })),
+            headers: cleanupFalsy(Object.assign({ depth }, headers)),
             namespace: exports.DAVNamespaceShort.DAV,
             body: {
                 propfind: {
@@ -294,14 +294,14 @@ const updateObject = (params) => __awaiter(void 0, void 0, void 0, function* () 
     return crossFetch.fetch(url, {
         method: 'PUT',
         body: data,
-        headers: cleanupFalsy(Object.assign(Object.assign({}, headers), { 'If-Match': etag })),
+        headers: cleanupFalsy(Object.assign({ 'If-Match': etag }, headers)),
     });
 });
 const deleteObject = (params) => __awaiter(void 0, void 0, void 0, function* () {
     const { url, headers, etag } = params;
     return crossFetch.fetch(url, {
         method: 'DELETE',
-        headers: cleanupFalsy(Object.assign(Object.assign({}, headers), { 'If-Match': etag })),
+        headers: cleanupFalsy(Object.assign({ 'If-Match': etag }, headers)),
     });
 });
 
@@ -326,15 +326,20 @@ const findMissingFieldNames = (obj, fields) => fields.reduce((prev, curr) => (ob
 const debug$4 = getLogger__default["default"]('tsdav:collection');
 const collectionQuery = (params) => __awaiter(void 0, void 0, void 0, function* () {
     const { url, body, depth, defaultNamespace = exports.DAVNamespaceShort.DAV, headers } = params;
-    return davRequest({
+    const queryResults = yield davRequest({
         url,
         init: {
             method: 'REPORT',
-            headers: cleanupFalsy(Object.assign(Object.assign({}, headers), { depth })),
+            headers: cleanupFalsy(Object.assign({ depth }, headers)),
             namespace: defaultNamespace,
             body,
         },
     });
+    // empty query result
+    if (queryResults.length === 1 && !queryResults[0].raw) {
+        return [];
+    }
+    return queryResults;
 });
 const makeCollection = (params) => __awaiter(void 0, void 0, void 0, function* () {
     const { url, props, depth, headers } = params;
@@ -342,7 +347,7 @@ const makeCollection = (params) => __awaiter(void 0, void 0, void 0, function* (
         url,
         init: {
             method: 'MKCOL',
-            headers: cleanupFalsy(Object.assign(Object.assign({}, headers), { depth })),
+            headers: cleanupFalsy(Object.assign({ depth }, headers)),
             namespace: exports.DAVNamespaceShort.DAV,
             body: props
                 ? {
@@ -638,7 +643,7 @@ const fetchVCards = (params) => __awaiter(void 0, void 0, void 0, function* () {
         props: { [`${exports.DAVNamespaceShort.DAV}:getetag`]: {} },
         depth: '1',
         headers,
-    })).map((res) => { var _a; return (_a = res.href) !== null && _a !== void 0 ? _a : ''; }))
+    })).map((res) => { var _a; return (res.ok ? (_a = res.href) !== null && _a !== void 0 ? _a : '' : ''); }))
         .map((url) => (url.startsWith('http') || !url ? url : new URL(url, addressBook.url).href))
         .filter(urlFilter !== null && urlFilter !== void 0 ? urlFilter : ((url) => url))
         .map((url) => new URL(url).pathname);
@@ -668,7 +673,7 @@ const createVCard = (params) => __awaiter(void 0, void 0, void 0, function* () {
     return createObject({
         url: new URL(filename, addressBook.url).href,
         data: vCardString,
-        headers: Object.assign({ 'content-type': 'text/vcard; charset=utf-8' }, headers),
+        headers: Object.assign({ 'content-type': 'text/vcard; charset=utf-8', 'If-None-Match': '*' }, headers),
     });
 });
 const updateVCard = (params) => __awaiter(void 0, void 0, void 0, function* () {
@@ -747,7 +752,7 @@ const makeCalendar = (params) => __awaiter(void 0, void 0, void 0, function* () 
         url,
         init: {
             method: 'MKCALENDAR',
-            headers: cleanupFalsy(Object.assign(Object.assign({}, headers), { depth })),
+            headers: cleanupFalsy(Object.assign({ depth }, headers)),
             namespace: exports.DAVNamespaceShort.DAV,
             body: {
                 [`${exports.DAVNamespaceShort.CALDAV}:mkcalendar`]: {
@@ -909,7 +914,7 @@ const fetchCalendarObjects = (params) => __awaiter(void 0, void 0, void 0, funct
         var _a, _b, _c, _d, _e, _f;
         return ({
             url: new URL((_a = res.href) !== null && _a !== void 0 ? _a : '', calendar.url).href,
-            etag: (_b = res.props) === null || _b === void 0 ? void 0 : _b.getetag,
+            etag: `${(_b = res.props) === null || _b === void 0 ? void 0 : _b.getetag}`,
             data: (_e = (_d = (_c = res.props) === null || _c === void 0 ? void 0 : _c.calendarData) === null || _d === void 0 ? void 0 : _d._cdata) !== null && _e !== void 0 ? _e : (_f = res.props) === null || _f === void 0 ? void 0 : _f.calendarData,
         });
     });
@@ -919,7 +924,7 @@ const createCalendarObject = (params) => __awaiter(void 0, void 0, void 0, funct
     return createObject({
         url: new URL(filename, calendar.url).href,
         data: iCalString,
-        headers: Object.assign({ 'content-type': 'text/calendar; charset=utf-8' }, headers),
+        headers: Object.assign({ 'content-type': 'text/calendar; charset=utf-8', 'If-None-Match': '*' }, headers),
     });
 });
 const updateCalendarObject = (params) => __awaiter(void 0, void 0, void 0, function* () {

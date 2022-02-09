@@ -1,6 +1,9 @@
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
+      CREDENTIAL_ZOHO_USERNAME: string;
+      CREDENTIAL_ZOHO_PASSWORD: string;
+      CREDENTIAL_ZOHO_SERVER_URL: string;
       CREDENTIAL_BAIKAL_USERNAME: string;
       CREDENTIAL_BAIKAL_PASSWORD: string;
       CREDENTIAL_BAIKAL_SERVER_URL: string;

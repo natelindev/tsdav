@@ -176,7 +176,7 @@ export const propfind = async (params: {
     url,
     init: {
       method: 'PROPFIND',
-      headers: cleanupFalsy({ ...headers, depth }),
+      headers: cleanupFalsy({ depth, ...headers }),
       namespace: DAVNamespaceShort.DAV,
       body: {
         propfind: {
@@ -206,14 +206,14 @@ export const createObject = async (params: {
 export const updateObject = async (params: {
   url: string;
   data: BodyInit;
-  etag: string;
+  etag?: string;
   headers?: Record<string, string>;
 }): Promise<Response> => {
   const { url, data, etag, headers } = params;
   return fetch(url, {
     method: 'PUT',
     body: data,
-    headers: cleanupFalsy({ ...headers, 'If-Match': etag }),
+    headers: cleanupFalsy({ 'If-Match': etag, ...headers }),
   });
 };
 
@@ -225,6 +225,6 @@ export const deleteObject = async (params: {
   const { url, headers, etag } = params;
   return fetch(url, {
     method: 'DELETE',
-    headers: cleanupFalsy({ ...headers, 'If-Match': etag }),
+    headers: cleanupFalsy({ 'If-Match': etag, ...headers }),
   });
 };

@@ -1,3 +1,16 @@
+## v2.0.0
+
+**features**
+
+- `etag` param on `updateObject` is now optional, since some caldav servers will throw error if we use `If-Match` headers.
+
+**improvements**
+
+- fixed collection query not handling empty result properly.
+- `createObject` requests now send `If-None-Match`: `*` to avoid accidental overwrite.
+- `depth` header and others are now able be to overwritten by user specified headers.
+- tested with zoho
+
 ## v2.0.0-rc.3
 
 - fixed `urlFilter` not really filtering the urls, only filtering on pathname of urls.

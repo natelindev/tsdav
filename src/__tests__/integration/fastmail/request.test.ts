@@ -113,6 +113,7 @@ test('propfind should be able to find props', async () => {
     props: {
       [`${DAVNamespaceShort.DAV}:current-user-principal`]: {},
     },
+    depth: '0',
     headers: authHeaders,
   });
   expect(result.href?.length).toBeTruthy();

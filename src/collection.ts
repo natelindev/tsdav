@@ -20,15 +20,22 @@ export const collectionQuery = async (params: {
   headers?: Record<string, string>;
 }): Promise<DAVResponse[]> => {
   const { url, body, depth, defaultNamespace = DAVNamespaceShort.DAV, headers } = params;
-  return davRequest({
+  const queryResults = await davRequest({
     url,
     init: {
       method: 'REPORT',
-      headers: cleanupFalsy({ ...headers, depth }),
+      headers: cleanupFalsy({ depth, ...headers }),
       namespace: defaultNamespace,
       body,
     },
   });
+
+  // empty query result
+  if (queryResults.length === 1 && !queryResults[0].raw) {
+    return [];
+  }
+
+  return queryResults;
 };
 
 export const makeCollection = async (params: {
@@ -42,7 +49,7 @@ export const makeCollection = async (params: {
     url,
     init: {
       method: 'MKCOL',
-      headers: cleanupFalsy({ ...headers, depth }),
+      headers: cleanupFalsy({ depth, ...headers }),
       namespace: DAVNamespaceShort.DAV,
       body: props
         ? {

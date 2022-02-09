@@ -81,7 +81,7 @@ export const makeCalendar = async (params: {
     url,
     init: {
       method: 'MKCALENDAR',
-      headers: cleanupFalsy({ ...headers, depth }),
+      headers: cleanupFalsy({ depth, ...headers }),
       namespace: DAVNamespaceShort.DAV,
       body: {
         [`${DAVNamespaceShort.CALDAV}:mkcalendar`]: {
@@ -256,7 +256,7 @@ export const fetchCalendarObjects = async (params: {
     ).map((res) => res.href ?? '')
   )
     .map((url) => (url.startsWith('http') || !url ? url : new URL(url, calendar.url).href)) // patch up to full url if url is not full
-    .filter(urlFilter ?? ((url: string): url is string => Boolean(url?.includes('.ics')))) // filter out non ics calendar objects since apple calendar might have those
+    .filter(urlFilter ?? ((url: string) => Boolean(url?.includes('.ics')))) // filter out non ics calendar objects since apple calendar might have those
     .map((url) => new URL(url).pathname); // obtain pathname of the url
 
   const calendarObjectResults =
@@ -292,7 +292,7 @@ export const fetchCalendarObjects = async (params: {
 
   return calendarObjectResults.map((res) => ({
     url: new URL(res.href ?? '', calendar.url).href,
-    etag: res.props?.getetag,
+    etag: `${res.props?.getetag}`,
     data: res.props?.calendarData?._cdata ?? res.props?.calendarData,
   }));
 };
@@ -309,6 +309,7 @@ export const createCalendarObject = async (params: {
     data: iCalString,
     headers: {
       'content-type': 'text/calendar; charset=utf-8',
+      'If-None-Match': '*',
       ...headers,
     },
   });
