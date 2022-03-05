@@ -85,7 +85,11 @@ export const makeCalendar = async (params: {
       namespace: DAVNamespaceShort.DAV,
       body: {
         [`${DAVNamespaceShort.CALDAV}:mkcalendar`]: {
-          _attributes: getDAVAttribute([DAVNamespace.DAV, DAVNamespace.CALDAV]),
+          _attributes: getDAVAttribute([
+            DAVNamespace.DAV,
+            DAVNamespace.CALDAV,
+            DAVNamespace.CALDAV_APPLE,
+          ]),
           set: {
             prop: props,
           },
