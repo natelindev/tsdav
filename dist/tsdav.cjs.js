@@ -756,7 +756,11 @@ const makeCalendar = (params) => __awaiter(void 0, void 0, void 0, function* () 
             namespace: exports.DAVNamespaceShort.DAV,
             body: {
                 [`${exports.DAVNamespaceShort.CALDAV}:mkcalendar`]: {
-                    _attributes: getDAVAttribute([exports.DAVNamespace.DAV, exports.DAVNamespace.CALDAV]),
+                    _attributes: getDAVAttribute([
+                        exports.DAVNamespace.DAV,
+                        exports.DAVNamespace.CALDAV,
+                        exports.DAVNamespace.CALDAV_APPLE,
+                    ]),
                     set: {
                         prop: props,
                     },

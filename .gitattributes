@@ -1,2 +1,13 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Don't allow people to merge changes to these generated files, because the result
+# may be invalid.
+pnpm-lock.yaml               merge=binary
+shrinkwrap.yaml              merge=binary
+npm-shrinkwrap.json          merge=binary
+yarn.lock                    merge=binary
+.yarn/releases/**            merge=binary
+.yarn/plugins/**             merge=binary
+schema.graphql               merge=binary
+persistedQueries.json        merge=binary

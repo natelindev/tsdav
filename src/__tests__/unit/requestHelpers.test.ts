@@ -1,7 +1,3 @@
-import convert from 'xml-js';
-
-import { camelCase } from '../../util/camelCase';
-import { nativeType } from '../../util/nativeType';
 import { cleanupFalsy, urlContains, urlEquals } from '../../util/requestHelpers';
 
 test('cleanupFalsy should clean undefined from object', () => {

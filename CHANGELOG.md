@@ -1,3 +1,10 @@
+## v2.0.1
+
+**improvements**
+
+- Add missing attribute to makeCalendar method #93, Thanks to @nibdo
+- updated dependencies
+
 ## v2.0.0
 
 **features**
