@@ -1,3 +1,10 @@
+## v2.0.2
+
+**improvements**
+
+- fixed dependency issues #103
+- updated deps
+
 ## v2.0.1
 
 **improvements**
