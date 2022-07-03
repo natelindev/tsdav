@@ -15,12 +15,12 @@ let account: DAVAccount;
 
 beforeAll(async () => {
   authHeaders = getBasicAuthHeaders({
-    username: process.env.CREDENTIAL_ZOHO_USERNAME,
-    password: process.env.CREDENTIAL_ZOHO_PASSWORD,
+    username: process.env.CREDENTIAL_DAVICAL_USERNAME,
+    password: process.env.CREDENTIAL_DAVICAL_PASSWORD,
   });
   account = await createAccount({
     account: {
-      serverUrl: `${process.env.CREDENTIAL_ZOHO_SERVER_URL}`,
+      serverUrl: `${process.env.CREDENTIAL_DAVICAL_SERVER_URL}`,
       accountType: 'caldav',
     },
     headers: authHeaders,

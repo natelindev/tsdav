@@ -227,6 +227,46 @@ test('fetchCalendarObjects should be able to fetch target calendar objects when 
   expect(deleteResult3.ok).toBe(true);
 });
 
+test('fetchCalendarObjects should return empty result when no objects fall in the range', async () => {
+  const iCalString1 = await fsp.readFile(`${__dirname}/../data/ical/13.ics`, 'utf-8');
+  const calendars = await fetchCalendars({
+    account,
+    headers: authHeaders,
+  });
+
+  const objectUrl1 = new URL('13.ics', calendars[0].url).href;
+
+  const response1 = await createObject({
+    url: objectUrl1,
+    data: iCalString1,
+    headers: {
+      'content-type': 'text/calendar; charset=utf-8',
+      ...authHeaders,
+    },
+  });
+
+  expect(response1.ok).toBe(true);
+
+  const objects = await fetchCalendarObjects({
+    calendar: calendars[0],
+    headers: authHeaders,
+    timeRange: {
+      start: '2022-03-11T10:00:00.000Z',
+      end: '2022-03-11T11:00:00.000Z',
+    },
+    expand: true,
+  });
+
+  expect(objects.length).toBe(0);
+
+  const deleteResult1 = await deleteObject({
+    url: objectUrl1,
+    headers: authHeaders,
+  });
+
+  expect(deleteResult1.ok).toBe(true);
+});
+
 test('fetchCalendarObjects should fail when passed timeRange is invalid', async () => {
   const calendars = await fetchCalendars({
     account,

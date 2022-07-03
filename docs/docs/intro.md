@@ -18,6 +18,7 @@ It's very common to be used for cloud storage, as well as calendar, contacts inf
 | Nextcloud     | ✅     | ✅     | ✅      |
 | Baikal        | ✅     | ✅     | ✅      |
 | ZOHO          | ✅     | ✅     | ❎      |
+| DAViCal       | ✅     | ✅     | ❎      |
 
 For more information on cloud providers, go to [cloud providers](./cloud%20providers.md) for more information.
 

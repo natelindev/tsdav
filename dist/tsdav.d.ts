@@ -183,10 +183,10 @@ declare const addressBookMultiGet: (params: {
     headers?: Record<string, string>;
 }) => Promise<DAVResponse[]>;
 declare const fetchAddressBooks: (params?: {
-    account?: DAVAccount | undefined;
-    props?: ElementCompact | undefined;
-    headers?: Record<string, string> | undefined;
-} | undefined) => Promise<DAVAddressBook[]>;
+    account?: DAVAccount;
+    props?: ElementCompact;
+    headers?: Record<string, string>;
+}) => Promise<DAVAddressBook[]>;
 declare const fetchVCards: (params: {
     addressBook: DAVAddressBook;
     headers?: Record<string, string> | undefined;
@@ -232,10 +232,10 @@ declare const makeCalendar: (params: {
     headers?: Record<string, string>;
 }) => Promise<DAVResponse[]>;
 declare const fetchCalendars: (params?: {
-    account?: DAVAccount | undefined;
-    props?: ElementCompact | undefined;
-    headers?: Record<string, string> | undefined;
-} | undefined) => Promise<DAVCalendar[]>;
+    account?: DAVAccount;
+    props?: ElementCompact;
+    headers?: Record<string, string>;
+}) => Promise<DAVCalendar[]>;
 declare const fetchCalendarObjects: (params: {
     calendar: DAVCalendar;
     objectUrls?: string[] | undefined;
@@ -588,8 +588,8 @@ declare const getOauthHeaders: (credentials: DAVCredentials) => Promise<{
     };
 }>;
 
-declare const urlEquals: (urlA?: string | undefined, urlB?: string | undefined) => boolean;
-declare const urlContains: (urlA?: string | undefined, urlB?: string | undefined) => boolean;
+declare const urlEquals: (urlA?: string, urlB?: string) => boolean;
+declare const urlContains: (urlA?: string, urlB?: string) => boolean;
 declare const getDAVAttribute: (nsArr: DAVNamespace[]) => {
     [key: string]: DAVNamespace;
 };

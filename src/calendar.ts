@@ -251,7 +251,24 @@ export const fetchCalendarObjects = async (params: {
       await calendarQuery({
         url: calendar.url,
         props: {
-          [`${DAVNamespaceShort.DAV}:getetag`]: {},
+          [`${DAVNamespaceShort.DAV}:getetag`]: {
+            ...(expand && timeRange
+              ? {
+                  [`${DAVNamespaceShort.CALDAV}:expand`]: {
+                    _attributes: {
+                      start: `${new Date(timeRange.start)
+                        .toISOString()
+                        .slice(0, 19)
+                        .replace(/[-:.]/g, '')}Z`,
+                      end: `${new Date(timeRange.end)
+                        .toISOString()
+                        .slice(0, 19)
+                        .replace(/[-:.]/g, '')}Z`,
+                    },
+                  },
+                }
+              : {}),
+          },
         },
         filters,
         depth: '1',
@@ -263,36 +280,67 @@ export const fetchCalendarObjects = async (params: {
     .filter(urlFilter ?? ((url: string) => Boolean(url?.includes('.ics')))) // filter out non ics calendar objects since apple calendar might have those
     .map((url) => new URL(url).pathname); // obtain pathname of the url
 
-  const calendarObjectResults =
-    calendarObjectUrls.length > 0
-      ? await calendarMultiGet({
-          url: calendar.url,
-          props: {
-            [`${DAVNamespaceShort.DAV}:getetag`]: {},
-            [`${DAVNamespaceShort.CALDAV}:calendar-data`]: {
-              ...(expand && timeRange
-                ? {
-                    [`${DAVNamespaceShort.CALDAV}:expand`]: {
-                      _attributes: {
-                        start: `${new Date(timeRange.start)
-                          .toISOString()
-                          .slice(0, 19)
-                          .replace(/[-:.]/g, '')}Z`,
-                        end: `${new Date(timeRange.end)
-                          .toISOString()
-                          .slice(0, 19)
-                          .replace(/[-:.]/g, '')}Z`,
-                      },
+  let calendarObjectResults: DAVResponse[] = [];
+
+  if (calendarObjectUrls.length > 0) {
+    if (expand) {
+      calendarObjectResults = await calendarQuery({
+        url: calendar.url,
+        props: {
+          [`${DAVNamespaceShort.DAV}:getetag`]: {},
+          [`${DAVNamespaceShort.CALDAV}:calendar-data`]: {
+            ...(expand && timeRange
+              ? {
+                  [`${DAVNamespaceShort.CALDAV}:expand`]: {
+                    _attributes: {
+                      start: `${new Date(timeRange.start)
+                        .toISOString()
+                        .slice(0, 19)
+                        .replace(/[-:.]/g, '')}Z`,
+                      end: `${new Date(timeRange.end)
+                        .toISOString()
+                        .slice(0, 19)
+                        .replace(/[-:.]/g, '')}Z`,
                     },
-                  }
-                : {}),
-            },
+                  },
+                }
+              : {}),
           },
-          objectUrls: calendarObjectUrls,
-          depth: '1',
-          headers,
-        })
-      : [];
+        },
+        filters,
+        depth: '1',
+        headers,
+      });
+    } else {
+      calendarObjectResults = await calendarMultiGet({
+        url: calendar.url,
+        props: {
+          [`${DAVNamespaceShort.DAV}:getetag`]: {},
+          [`${DAVNamespaceShort.CALDAV}:calendar-data`]: {
+            ...(expand && timeRange
+              ? {
+                  [`${DAVNamespaceShort.CALDAV}:expand`]: {
+                    _attributes: {
+                      start: `${new Date(timeRange.start)
+                        .toISOString()
+                        .slice(0, 19)
+                        .replace(/[-:.]/g, '')}Z`,
+                      end: `${new Date(timeRange.end)
+                        .toISOString()
+                        .slice(0, 19)
+                        .replace(/[-:.]/g, '')}Z`,
+                    },
+                  },
+                }
+              : {}),
+          },
+        },
+        objectUrls: calendarObjectUrls,
+        depth: '1',
+        headers,
+      });
+    }
+  }
 
   return calendarObjectResults.map((res) => ({
     url: new URL(res.href ?? '', calendar.url).href,

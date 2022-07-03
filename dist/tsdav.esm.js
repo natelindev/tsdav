@@ -312,7 +312,7 @@ function hasFields(obj, fields) {
     }
     return inObj(obj);
 }
-const findMissingFieldNames = (obj, fields) => fields.reduce((prev, curr) => (obj[curr] ? prev : `${prev.length ? `${prev},` : ''}${curr}`), '');
+const findMissingFieldNames = (obj, fields) => fields.reduce((prev, curr) => (obj[curr] ? prev : `${prev.length ? `${prev},` : ''}${curr.toString()}`), '');
 
 const debug$4 = getLogger('tsdav:collection');
 const collectionQuery = (params) => __awaiter(void 0, void 0, void 0, function* () {
@@ -869,7 +869,22 @@ const fetchCalendarObjects = (params) => __awaiter(void 0, void 0, void 0, funct
     (yield calendarQuery({
         url: calendar.url,
         props: {
-            [`${DAVNamespaceShort.DAV}:getetag`]: {},
+            [`${DAVNamespaceShort.DAV}:getetag`]: Object.assign({}, (expand && timeRange
+                ? {
+                    [`${DAVNamespaceShort.CALDAV}:expand`]: {
+                        _attributes: {
+                            start: `${new Date(timeRange.start)
+                                .toISOString()
+                                .slice(0, 19)
+                                .replace(/[-:.]/g, '')}Z`,
+                            end: `${new Date(timeRange.end)
+                                .toISOString()
+                                .slice(0, 19)
+                                .replace(/[-:.]/g, '')}Z`,
+                        },
+                    },
+                }
+                : {})),
         },
         filters,
         depth: '1',
@@ -878,33 +893,63 @@ const fetchCalendarObjects = (params) => __awaiter(void 0, void 0, void 0, funct
         .map((url) => (url.startsWith('http') || !url ? url : new URL(url, calendar.url).href)) // patch up to full url if url is not full
         .filter(urlFilter !== null && urlFilter !== void 0 ? urlFilter : ((url) => Boolean(url === null || url === void 0 ? void 0 : url.includes('.ics')))) // filter out non ics calendar objects since apple calendar might have those
         .map((url) => new URL(url).pathname); // obtain pathname of the url
-    const calendarObjectResults = calendarObjectUrls.length > 0
-        ? yield calendarMultiGet({
-            url: calendar.url,
-            props: {
-                [`${DAVNamespaceShort.DAV}:getetag`]: {},
-                [`${DAVNamespaceShort.CALDAV}:calendar-data`]: Object.assign({}, (expand && timeRange
-                    ? {
-                        [`${DAVNamespaceShort.CALDAV}:expand`]: {
-                            _attributes: {
-                                start: `${new Date(timeRange.start)
-                                    .toISOString()
-                                    .slice(0, 19)
-                                    .replace(/[-:.]/g, '')}Z`,
-                                end: `${new Date(timeRange.end)
-                                    .toISOString()
-                                    .slice(0, 19)
-                                    .replace(/[-:.]/g, '')}Z`,
+    let calendarObjectResults = [];
+    if (calendarObjectUrls.length > 0) {
+        if (expand) {
+            calendarObjectResults = yield calendarQuery({
+                url: calendar.url,
+                props: {
+                    [`${DAVNamespaceShort.DAV}:getetag`]: {},
+                    [`${DAVNamespaceShort.CALDAV}:calendar-data`]: Object.assign({}, (expand && timeRange
+                        ? {
+                            [`${DAVNamespaceShort.CALDAV}:expand`]: {
+                                _attributes: {
+                                    start: `${new Date(timeRange.start)
+                                        .toISOString()
+                                        .slice(0, 19)
+                                        .replace(/[-:.]/g, '')}Z`,
+                                    end: `${new Date(timeRange.end)
+                                        .toISOString()
+                                        .slice(0, 19)
+                                        .replace(/[-:.]/g, '')}Z`,
+                                },
                             },
-                        },
-                    }
-                    : {})),
-            },
-            objectUrls: calendarObjectUrls,
-            depth: '1',
-            headers,
-        })
-        : [];
+                        }
+                        : {})),
+                },
+                filters,
+                depth: '1',
+                headers,
+            });
+        }
+        else {
+            calendarObjectResults = yield calendarMultiGet({
+                url: calendar.url,
+                props: {
+                    [`${DAVNamespaceShort.DAV}:getetag`]: {},
+                    [`${DAVNamespaceShort.CALDAV}:calendar-data`]: Object.assign({}, (expand && timeRange
+                        ? {
+                            [`${DAVNamespaceShort.CALDAV}:expand`]: {
+                                _attributes: {
+                                    start: `${new Date(timeRange.start)
+                                        .toISOString()
+                                        .slice(0, 19)
+                                        .replace(/[-:.]/g, '')}Z`,
+                                    end: `${new Date(timeRange.end)
+                                        .toISOString()
+                                        .slice(0, 19)
+                                        .replace(/[-:.]/g, '')}Z`,
+                                },
+                            },
+                        }
+                        : {})),
+                },
+                objectUrls: calendarObjectUrls,
+                depth: '1',
+                headers,
+            });
+        }
+    }
     return calendarObjectResults.map((res) => {
         var _a, _b, _c, _d, _e, _f;
         return ({

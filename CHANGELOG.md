@@ -1,3 +1,11 @@
+## v2.0.3
+
+**improvements**
+
+- added support for davical
+- fixed a bug related to expand #116
+- updated deps
+
 ## v2.0.2
 
 **improvements**
