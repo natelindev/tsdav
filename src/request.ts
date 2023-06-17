@@ -27,7 +27,7 @@ export const davRequest = async (params: {
   parseOutgoing?: boolean;
 }): Promise<DAVResponse[]> => {
   const { url, init, convertIncoming = true, parseOutgoing = true } = params;
-  const { headers, body, namespace, method, attributes } = init;
+  const { headers = {}, body, namespace, method, attributes } = init;
   const xmlBody = convertIncoming
     ? convert.js2xml(
         {

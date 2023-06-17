@@ -176,6 +176,7 @@ export const fetchCalendarObjects = async (params: {
   expand?: boolean;
   urlFilter?: (url: string) => boolean;
   headers?: Record<string, string>;
+  useMultiGet?: boolean;
 }): Promise<DAVCalendarObject[]> => {
   const {
     calendar,
@@ -184,7 +185,8 @@ export const fetchCalendarObjects = async (params: {
     timeRange,
     headers,
     expand,
-    urlFilter,
+    urlFilter = (url: string) => Boolean(url?.includes('.ics')),
+    useMultiGet = true,
   } = params;
 
   if (timeRange) {
@@ -277,13 +279,13 @@ export const fetchCalendarObjects = async (params: {
     ).map((res) => res.href ?? '')
   )
     .map((url) => (url.startsWith('http') || !url ? url : new URL(url, calendar.url).href)) // patch up to full url if url is not full
-    .filter(urlFilter ?? ((url: string) => Boolean(url?.includes('.ics')))) // filter out non ics calendar objects since apple calendar might have those
+    .filter(urlFilter) // custom filter function on calendar objects
     .map((url) => new URL(url).pathname); // obtain pathname of the url
 
   let calendarObjectResults: DAVResponse[] = [];
 
   if (calendarObjectUrls.length > 0) {
-    if (expand) {
+    if (!useMultiGet || expand) {
       calendarObjectResults = await calendarQuery({
         url: calendar.url,
         props: {

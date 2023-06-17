@@ -1,10 +1,10 @@
 import * as xml_js from 'xml-js';
 import { ElementCompact } from 'xml-js';
 
-declare type DAVDepth = '0' | '1' | 'infinity';
-declare type DAVMethods = 'COPY' | 'LOCK' | 'MKCOL' | 'MOVE' | 'PROPFIND' | 'PROPPATCH' | 'UNLOCK' | 'REPORT' | 'SEARCH' | 'MKCALENDAR';
-declare type HTTPMethods = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'DELETE' | 'CONNECT' | 'OPTIONS' | 'TRACE' | 'PATCH';
-declare type DAVResponse = {
+type DAVDepth = '0' | '1' | 'infinity';
+type DAVMethods = 'COPY' | 'LOCK' | 'MKCOL' | 'MOVE' | 'PROPFIND' | 'PROPPATCH' | 'UNLOCK' | 'REPORT' | 'SEARCH' | 'MKCALENDAR';
+type HTTPMethods = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'DELETE' | 'CONNECT' | 'OPTIONS' | 'TRACE' | 'PATCH';
+type DAVResponse = {
     raw?: any;
     href?: string;
     status: number;
@@ -23,14 +23,14 @@ declare type DAVResponse = {
         } | any;
     };
 };
-declare type DAVRequest = {
+type DAVRequest = {
     headers?: Record<string, string>;
     method: DAVMethods | HTTPMethods;
     body: any;
     namespace?: string;
     attributes?: Record<string, string>;
 };
-declare type DAVTokens = {
+type DAVTokens = {
     access_token?: string;
     refresh_token?: string;
     expires_in?: number;
@@ -39,7 +39,7 @@ declare type DAVTokens = {
     scope?: string;
 };
 
-declare type DAVCollection = {
+type DAVCollection = {
     objects?: DAVObject[];
     ctag?: string;
     description?: string;
@@ -65,12 +65,12 @@ declare type DAVCollection = {
         headers?: Record<string, string>;
     }) => Promise<DAVResponse[]>;
 };
-declare type DAVObject = {
+type DAVObject = {
     data?: any;
     etag: string;
     url: string;
 };
-declare type DAVCredentials = {
+type DAVCredentials = {
     username?: string;
     password?: string;
     clientId?: string;
@@ -82,7 +82,7 @@ declare type DAVCredentials = {
     refreshToken?: string;
     expiration?: number;
 };
-declare type DAVAccount = {
+type DAVAccount = {
     accountType: 'caldav' | 'carddav';
     serverUrl: string;
     credentials?: DAVCredentials;
@@ -92,10 +92,10 @@ declare type DAVAccount = {
     calendars?: DAVCalendar[];
     addressBooks?: DAVAddressBook[];
 };
-declare type DAVVCard = DAVObject;
-declare type DAVCalendarObject = DAVObject;
-declare type DAVAddressBook = DAVCollection;
-declare type DAVCalendar = {
+type DAVVCard = DAVObject;
+type DAVCalendarObject = DAVObject;
+type DAVAddressBook = DAVCollection;
+type DAVCalendar = {
     components?: string[];
     timezone?: string;
 } & DAVCollection;
@@ -141,8 +141,8 @@ interface SyncCalendars {
     }): Promise<DAVCalendar[]>;
 }
 
-declare type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
-declare type NoUndefinedField<T> = {
+type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
+type NoUndefinedField<T> = {
     [P in keyof T]-?: NoUndefinedField<NonNullable<T[P]>>;
 };
 
@@ -192,6 +192,7 @@ declare const fetchVCards: (params: {
     headers?: Record<string, string> | undefined;
     objectUrls?: string[] | undefined;
     urlFilter?: ((url: string) => boolean) | undefined;
+    useMultiGet?: boolean | undefined;
 }) => Promise<DAVVCard[]>;
 declare const createVCard: (params: {
     addressBook: DAVAddressBook;
@@ -247,6 +248,7 @@ declare const fetchCalendarObjects: (params: {
     expand?: boolean | undefined;
     urlFilter?: ((url: string) => boolean) | undefined;
     headers?: Record<string, string> | undefined;
+    useMultiGet?: boolean | undefined;
 }) => Promise<DAVCalendarObject[]>;
 declare const createCalendarObject: (params: {
     calendar: DAVCalendar;
@@ -460,6 +462,7 @@ declare const createDAVClient: (params: {
         expand?: boolean | undefined;
         urlFilter?: ((url: string) => boolean) | undefined;
         headers?: Record<string, string> | undefined;
+        useMultiGet?: boolean | undefined;
     }) => Promise<DAVObject[]>;
     createCalendarObject: (params: {
         calendar: DAVCalendar;
@@ -493,6 +496,7 @@ declare const createDAVClient: (params: {
         headers?: Record<string, string> | undefined;
         objectUrls?: string[] | undefined;
         urlFilter?: ((url: string) => boolean) | undefined;
+        useMultiGet?: boolean | undefined;
     }) => Promise<DAVObject[]>;
     createVCard: (params: {
         addressBook: DAVCollection;
@@ -593,7 +597,7 @@ declare const urlContains: (urlA?: string, urlB?: string) => boolean;
 declare const getDAVAttribute: (nsArr: DAVNamespace[]) => {
     [key: string]: DAVNamespace;
 };
-declare const cleanupFalsy: <T = unknown>(obj: T) => NoUndefinedField<T>;
+declare const cleanupFalsy: <T extends object = object>(obj: T) => NoUndefinedField<T>;
 
 declare const _default: {
     urlEquals: (urlA?: string | undefined, urlB?: string | undefined) => boolean;
@@ -601,7 +605,7 @@ declare const _default: {
     getDAVAttribute: (nsArr: DAVNamespace[]) => {
         [key: string]: DAVNamespace;
     };
-    cleanupFalsy: <T = unknown>(obj: T) => NoUndefinedField<T>;
+    cleanupFalsy: <T extends object = object>(obj: T) => NoUndefinedField<T>;
     defaultParam: <F extends (...args: any[]) => any>(fn: F, params: Partial<Parameters<F>[0]>) => (...args: Parameters<F>) => ReturnType<F>;
     getBasicAuthHeaders: (credentials: DAVCredentials) => {
         authorization?: string | undefined;
@@ -656,6 +660,7 @@ declare const _default: {
         expand?: boolean | undefined;
         urlFilter?: ((url: string) => boolean) | undefined;
         headers?: Record<string, string> | undefined;
+        useMultiGet?: boolean | undefined;
     }) => Promise<DAVObject[]>;
     createCalendarObject: (params: {
         calendar: DAVCalendar;
@@ -705,6 +710,7 @@ declare const _default: {
         headers?: Record<string, string> | undefined;
         objectUrls?: string[] | undefined;
         urlFilter?: ((url: string) => boolean) | undefined;
+        useMultiGet?: boolean | undefined;
     }) => Promise<DAVObject[]>;
     createVCard: (params: {
         addressBook: DAVCollection;
@@ -916,6 +922,7 @@ declare const _default: {
             expand?: boolean | undefined;
             urlFilter?: ((url: string) => boolean) | undefined;
             headers?: Record<string, string> | undefined;
+            useMultiGet?: boolean | undefined;
         }) => Promise<DAVObject[]>;
         createCalendarObject: (params: {
             calendar: DAVCalendar;
@@ -949,6 +956,7 @@ declare const _default: {
             headers?: Record<string, string> | undefined;
             objectUrls?: string[] | undefined;
             urlFilter?: ((url: string) => boolean) | undefined;
+            useMultiGet?: boolean | undefined;
         }) => Promise<DAVObject[]>;
         createVCard: (params: {
             addressBook: DAVCollection;

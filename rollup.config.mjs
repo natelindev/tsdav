@@ -1,3 +1,4 @@
+/* eslint-disable import/no-extraneous-dependencies */
 import resolve from '@rollup/plugin-node-resolve';
 import cjs from '@rollup/plugin-commonjs';
 import ts from '@rollup/plugin-typescript';
@@ -16,6 +17,24 @@ export default [
       {
         file: 'dist/tsdav.esm.js',
         format: 'es',
+      },
+      {
+        file: 'dist/tsdav.cjs',
+        format: 'cjs',
+      },
+      {
+        file: 'dist/tsdav.mjs',
+        format: 'es',
+      },
+      {
+        file: 'dist/tsdav.min.cjs',
+        format: 'cjs',
+        plugins: [terser()],
+      },
+      {
+        file: 'dist/tsdav.min.mjs',
+        format: 'es',
+        plugins: [terser()],
       },
     ],
     plugins: [
