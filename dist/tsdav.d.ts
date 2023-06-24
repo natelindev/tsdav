@@ -81,6 +81,8 @@ type DAVCredentials = {
     accessToken?: string;
     refreshToken?: string;
     expiration?: number;
+    digestString?: string;
+    customData?: Record<string, unknown>;
 };
 type DAVAccount = {
     accountType: 'caldav' | 'carddav';
@@ -98,6 +100,7 @@ type DAVAddressBook = DAVCollection;
 type DAVCalendar = {
     components?: string[];
     timezone?: string;
+    projectedProps?: Record<string, unknown>;
 } & DAVCollection;
 
 interface SmartCollectionSync {
@@ -221,9 +224,9 @@ declare const calendarMultiGet: (params: {
     url: string;
     props: ElementCompact;
     objectUrls?: string[];
-    filters?: ElementCompact;
     timezone?: string;
     depth: DAVDepth;
+    filters?: ElementCompact;
     headers?: Record<string, string>;
 }) => Promise<DAVResponse[]>;
 declare const makeCalendar: (params: {
@@ -235,6 +238,7 @@ declare const makeCalendar: (params: {
 declare const fetchCalendars: (params?: {
     account?: DAVAccount;
     props?: ElementCompact;
+    projectedProps?: Record<string, boolean>;
     headers?: Record<string, string>;
 }) => Promise<DAVCalendar[]>;
 declare const fetchCalendarObjects: (params: {
@@ -347,7 +351,8 @@ declare const deleteObject: (params: {
 declare const createDAVClient: (params: {
     serverUrl: string;
     credentials: DAVCredentials;
-    authMethod?: 'Basic' | 'Oauth';
+    authMethod?: "Basic" | "Oauth" | "Digest" | "Custom" | undefined;
+    authFunction?: ((credentials: DAVCredentials) => Promise<Record<string, string>>) | undefined;
     defaultAccountType?: DAVAccount['accountType'] | undefined;
 }) => Promise<{
     davRequest: (params0: {
@@ -416,9 +421,9 @@ declare const createDAVClient: (params: {
         url: string;
         props: xml_js.ElementCompact;
         objectUrls?: string[] | undefined;
-        filters?: xml_js.ElementCompact | undefined;
         timezone?: string | undefined;
         depth: DAVDepth;
+        filters?: xml_js.ElementCompact | undefined;
         headers?: Record<string, string> | undefined;
     }) => Promise<DAVResponse[]>;
     makeCalendar: (params: {
@@ -449,6 +454,7 @@ declare const createDAVClient: (params: {
     fetchCalendars: (params?: {
         account?: DAVAccount | undefined;
         props?: xml_js.ElementCompact | undefined;
+        projectedProps?: Record<string, boolean> | undefined;
         headers?: Record<string, string> | undefined;
     } | undefined) => Promise<DAVCalendar[]>;
     fetchCalendarObjects: (params: {
@@ -516,14 +522,16 @@ declare const createDAVClient: (params: {
 declare class DAVClient {
     serverUrl: string;
     credentials: DAVCredentials;
-    authMethod: 'Basic' | 'Oauth';
+    authMethod: 'Basic' | 'Oauth' | 'Digest' | 'Custom';
     accountType: DAVAccount['accountType'];
     authHeaders?: Record<string, string>;
     account?: DAVAccount;
+    authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
     constructor(params: {
         serverUrl: string;
         credentials: DAVCredentials;
-        authMethod?: 'Basic' | 'Oauth';
+        authMethod?: 'Basic' | 'Oauth' | 'Digest' | 'Custom';
+        authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
         defaultAccountType?: DAVAccount['accountType'] | undefined;
     });
     login(): Promise<void>;
@@ -606,6 +614,9 @@ declare const _default: {
         [key: string]: DAVNamespace;
     };
     cleanupFalsy: <T extends object = object>(obj: T) => NoUndefinedField<T>;
+    conditionalParam: <T_1>(key: string, param: T_1) => {
+        [key: string]: T_1;
+    };
     defaultParam: <F extends (...args: any[]) => any>(fn: F, params: Partial<Parameters<F>[0]>) => (...args: Parameters<F>) => ReturnType<F>;
     getBasicAuthHeaders: (credentials: DAVCredentials) => {
         authorization?: string | undefined;
@@ -633,9 +644,9 @@ declare const _default: {
         url: string;
         props: xml_js.ElementCompact;
         objectUrls?: string[] | undefined;
-        filters?: xml_js.ElementCompact | undefined;
         timezone?: string | undefined;
         depth: DAVDepth;
+        filters?: xml_js.ElementCompact | undefined;
         headers?: Record<string, string> | undefined;
     }) => Promise<DAVResponse[]>;
     makeCalendar: (params: {
@@ -647,6 +658,7 @@ declare const _default: {
     fetchCalendars: (params?: {
         account?: DAVAccount | undefined;
         props?: xml_js.ElementCompact | undefined;
+        projectedProps?: Record<string, boolean> | undefined;
         headers?: Record<string, string> | undefined;
     } | undefined) => Promise<DAVCalendar[]>;
     fetchCalendarObjects: (params: {
@@ -807,7 +819,8 @@ declare const _default: {
     createDAVClient: (params: {
         serverUrl: string;
         credentials: DAVCredentials;
-        authMethod?: "Basic" | "Oauth" | undefined;
+        authMethod?: "Basic" | "Oauth" | "Digest" | "Custom" | undefined;
+        authFunction?: ((credentials: DAVCredentials) => Promise<Record<string, string>>) | undefined;
         defaultAccountType?: "caldav" | "carddav" | undefined;
     }) => Promise<{
         davRequest: (params0: {
@@ -876,9 +889,9 @@ declare const _default: {
             url: string;
             props: xml_js.ElementCompact;
             objectUrls?: string[] | undefined;
-            filters?: xml_js.ElementCompact | undefined;
             timezone?: string | undefined;
             depth: DAVDepth;
+            filters?: xml_js.ElementCompact | undefined;
             headers?: Record<string, string> | undefined;
         }) => Promise<DAVResponse[]>;
         makeCalendar: (params: {
@@ -909,6 +922,7 @@ declare const _default: {
         fetchCalendars: (params?: {
             account?: DAVAccount | undefined;
             props?: xml_js.ElementCompact | undefined;
+            projectedProps?: Record<string, boolean> | undefined;
             headers?: Record<string, string> | undefined;
         } | undefined) => Promise<DAVCalendar[]>;
         fetchCalendarObjects: (params: {

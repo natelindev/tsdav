@@ -8947,10 +8947,19 @@ const cleanupFalsy = (obj) => Object.entries(obj).reduce((prev, [key, value]) =>
         return Object.assign(Object.assign({}, prev), { [key]: value });
     return prev;
 }, {});
+const conditionalParam = (key, param) => {
+    if (param) {
+        return {
+            [key]: param,
+        };
+    }
+    return {};
+};
 
 var requestHelpers = /*#__PURE__*/Object.freeze({
     __proto__: null,
     cleanupFalsy: cleanupFalsy,
+    conditionalParam: conditionalParam,
     getDAVAttribute: getDAVAttribute,
     urlContains: urlContains,
     urlEquals: urlEquals
@@ -9560,13 +9569,7 @@ const calendarMultiGet = (params) => __awaiter(void 0, void 0, void 0, function*
     return collectionQuery({
         url,
         body: {
-            'calendar-multiget': {
-                _attributes: getDAVAttribute([DAVNamespace.DAV, DAVNamespace.CALDAV]),
-                [`${DAVNamespaceShort.DAV}:prop`]: props,
-                [`${DAVNamespaceShort.DAV}:href`]: objectUrls,
-                filter: filters,
-                timezone,
-            },
+            'calendar-multiget': Object.assign(Object.assign({ _attributes: getDAVAttribute([DAVNamespace.DAV, DAVNamespace.CALDAV]), [`${DAVNamespaceShort.DAV}:prop`]: props, [`${DAVNamespaceShort.DAV}:href`]: objectUrls }, conditionalParam('filter', filters)), { timezone }),
         },
         defaultNamespace: DAVNamespaceShort.CALDAV,
         depth,
@@ -9597,7 +9600,7 @@ const makeCalendar = (params) => __awaiter(void 0, void 0, void 0, function* () 
     });
 });
 const fetchCalendars = (params) => __awaiter(void 0, void 0, void 0, function* () {
-    const { headers, account, props: customProps } = params !== null && params !== void 0 ? params : {};
+    const { headers, account, props: customProps, projectedProps } = params !== null && params !== void 0 ? params : {};
     const requiredFields = ['homeUrl', 'rootUrl'];
     if (!account || !hasFields(account, requiredFields)) {
         if (!account) {
@@ -9631,23 +9634,13 @@ const fetchCalendars = (params) => __awaiter(void 0, void 0, void 0, function* (
         return components.some((c) => Object.values(ICALObjects).includes(c));
     })
         .map((rs) => {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
         // debug(`Found calendar ${rs.props?.displayname}`);
         const description = (_a = rs.props) === null || _a === void 0 ? void 0 : _a.calendarDescription;
         const timezone = (_b = rs.props) === null || _b === void 0 ? void 0 : _b.calendarTimezone;
-        return {
-            description: typeof description === 'string' ? description : '',
-            timezone: typeof timezone === 'string' ? timezone : '',
-            url: new URL((_c = rs.href) !== null && _c !== void 0 ? _c : '', (_d = account.rootUrl) !== null && _d !== void 0 ? _d : '').href,
-            ctag: (_e = rs.props) === null || _e === void 0 ? void 0 : _e.getctag,
-            calendarColor: (_f = rs.props) === null || _f === void 0 ? void 0 : _f.calendarColor,
-            displayName: (_h = (_g = rs.props) === null || _g === void 0 ? void 0 : _g.displayname._cdata) !== null && _h !== void 0 ? _h : (_j = rs.props) === null || _j === void 0 ? void 0 : _j.displayname,
-            components: Array.isArray((_k = rs.props) === null || _k === void 0 ? void 0 : _k.supportedCalendarComponentSet.comp)
+        return Object.assign({ description: typeof description === 'string' ? description : '', timezone: typeof timezone === 'string' ? timezone : '', url: new URL((_c = rs.href) !== null && _c !== void 0 ? _c : '', (_d = account.rootUrl) !== null && _d !== void 0 ? _d : '').href, ctag: (_e = rs.props) === null || _e === void 0 ? void 0 : _e.getctag, calendarColor: (_f = rs.props) === null || _f === void 0 ? void 0 : _f.calendarColor, displayName: (_h = (_g = rs.props) === null || _g === void 0 ? void 0 : _g.displayname._cdata) !== null && _h !== void 0 ? _h : (_j = rs.props) === null || _j === void 0 ? void 0 : _j.displayname, components: Array.isArray((_k = rs.props) === null || _k === void 0 ? void 0 : _k.supportedCalendarComponentSet.comp)
                 ? (_l = rs.props) === null || _l === void 0 ? void 0 : _l.supportedCalendarComponentSet.comp.map((sc) => sc._attributes.name)
-                : [(_m = rs.props) === null || _m === void 0 ? void 0 : _m.supportedCalendarComponentSet.comp._attributes.name],
-            resourcetype: Object.keys((_o = rs.props) === null || _o === void 0 ? void 0 : _o.resourcetype),
-            syncToken: (_p = rs.props) === null || _p === void 0 ? void 0 : _p.syncToken,
-        };
+                : [(_m = rs.props) === null || _m === void 0 ? void 0 : _m.supportedCalendarComponentSet.comp._attributes.name], resourcetype: Object.keys((_o = rs.props) === null || _o === void 0 ? void 0 : _o.resourcetype), syncToken: (_p = rs.props) === null || _p === void 0 ? void 0 : _p.syncToken }, conditionalParam('projectedProps', Object.fromEntries(Object.entries((_q = rs.props) !== null && _q !== void 0 ? _q : {}).filter(([key]) => projectedProps === null || projectedProps === void 0 ? void 0 : projectedProps[key]))));
     })
         .map((cal) => __awaiter(void 0, void 0, void 0, function* () {
         return (Object.assign(Object.assign({}, cal), { reports: yield supportedReportSet({ collection: cal, headers }) }));
@@ -10315,14 +10308,27 @@ var authHelpers = /*#__PURE__*/Object.freeze({
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 const createDAVClient = (params) => __awaiter(void 0, void 0, void 0, function* () {
-    const { serverUrl, credentials, authMethod, defaultAccountType } = params;
-    const authHeaders = 
-    // eslint-disable-next-line no-nested-ternary
-    authMethod === 'Basic'
-        ? getBasicAuthHeaders(credentials)
-        : authMethod === 'Oauth'
-            ? (yield getOauthHeaders(credentials)).headers
-            : {};
+    var _a;
+    const { serverUrl, credentials, authMethod, defaultAccountType, authFunction } = params;
+    let authHeaders = {};
+    switch (authMethod) {
+        case 'Basic':
+            authHeaders = getBasicAuthHeaders(credentials);
+            break;
+        case 'Oauth':
+            authHeaders = (yield getOauthHeaders(credentials)).headers;
+            break;
+        case 'Digest':
+            authHeaders = {
+                Authorization: `Digest ${credentials.digestString}`,
+            };
+            break;
+        case 'Custom':
+            authHeaders = (_a = (yield (authFunction === null || authFunction === void 0 ? void 0 : authFunction(credentials)))) !== null && _a !== void 0 ? _a : {};
+            break;
+        default:
+            throw new Error('Invalid auth method');
+    }
     const defaultAccount = defaultAccountType
         ? yield createAccount({
             account: { serverUrl, credentials, accountType: defaultAccountType },
@@ -10440,14 +10446,26 @@ class DAVClient {
         this.accountType = (_b = params.defaultAccountType) !== null && _b !== void 0 ? _b : 'caldav';
     }
     login() {
+        var _a;
         return __awaiter(this, void 0, void 0, function* () {
-            this.authHeaders =
-                // eslint-disable-next-line no-nested-ternary
-                this.authMethod === 'Basic'
-                    ? getBasicAuthHeaders(this.credentials)
-                    : this.authMethod === 'Oauth'
-                        ? (yield getOauthHeaders(this.credentials)).headers
-                        : {};
+            switch (this.authMethod) {
+                case 'Basic':
+                    this.authHeaders = getBasicAuthHeaders(this.credentials);
+                    break;
+                case 'Oauth':
+                    this.authHeaders = (yield getOauthHeaders(this.credentials)).headers;
+                    break;
+                case 'Digest':
+                    this.authHeaders = {
+                        Authorization: `Digest ${this.credentials.digestString}`,
+                    };
+                    break;
+                case 'Custom':
+                    this.authHeaders = yield ((_a = this.authFunction) === null || _a === void 0 ? void 0 : _a.call(this, this.credentials));
+                    break;
+                default:
+                    throw new Error('Invalid auth method');
+            }
             this.account = this.accountType
                 ? yield createAccount({
                     account: {
