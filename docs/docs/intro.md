@@ -6,7 +6,7 @@ sidebar_position: 1
 
 [WEBDAV](https://tools.ietf.org/html/rfc4918), `Web Distributed Authoring and Versioning`, is an extension of the HTTP to allow handling distributed authoring, versioning of various resources.
 
-It's very common to be used for cloud storage, as well as calendar, contacts information syncing.
+It's very common to be used for cloud storage(limited support), as well as calendar, contacts information syncing.
 
 ### Cloud provider support status
 
