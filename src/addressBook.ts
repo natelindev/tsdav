@@ -117,8 +117,9 @@ export const fetchVCards = async (params: {
   headers?: Record<string, string>;
   objectUrls?: string[];
   urlFilter?: (url: string) => boolean;
+  useMultiGet?: boolean;
 }): Promise<DAVVCard[]> => {
-  const { addressBook, headers, objectUrls, urlFilter } = params;
+  const { addressBook, headers, objectUrls, urlFilter = (url) => url, useMultiGet = true } = params;
   debug(`Fetching vcards from ${addressBook?.url}`);
   const requiredFields: Array<'url'> = ['url'];
   if (!addressBook || !hasFields(addressBook, requiredFields)) {
@@ -146,22 +147,34 @@ export const fetchVCards = async (params: {
     ).map((res) => (res.ok ? res.href ?? '' : ''))
   )
     .map((url) => (url.startsWith('http') || !url ? url : new URL(url, addressBook.url).href))
-    .filter(urlFilter ?? ((url) => url))
+    .filter(urlFilter)
     .map((url) => new URL(url).pathname);
 
-  const vCardResults =
-    vcardUrls.length > 0
-      ? await addressBookMultiGet({
-          url: addressBook.url,
-          props: {
-            [`${DAVNamespaceShort.DAV}:getetag`]: {},
-            [`${DAVNamespaceShort.CARDDAV}:address-data`]: {},
-          },
-          objectUrls: vcardUrls,
-          depth: '1',
-          headers,
-        })
-      : [];
+  let vCardResults: DAVResponse[] = [];
+  if (vcardUrls.length > 0) {
+    if (useMultiGet) {
+      vCardResults = await addressBookMultiGet({
+        url: addressBook.url,
+        props: {
+          [`${DAVNamespaceShort.DAV}:getetag`]: {},
+          [`${DAVNamespaceShort.CARDDAV}:address-data`]: {},
+        },
+        objectUrls: vcardUrls,
+        depth: '1',
+        headers,
+      });
+    } else {
+      vCardResults = await addressBookQuery({
+        url: addressBook.url,
+        props: {
+          [`${DAVNamespaceShort.DAV}:getetag`]: {},
+          [`${DAVNamespaceShort.CARDDAV}:address-data`]: {},
+        },
+        depth: '1',
+        headers,
+      });
+    }
+  }
 
   return vCardResults.map((res) => ({
     url: new URL(res.href ?? '', addressBook.url).href,

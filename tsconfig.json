@@ -17,6 +17,6 @@
     },
     "outDir": "./dist"
   },
-  "include": ["src/**/*", "env.d.ts", "rollup.config.js"],
+  "include": ["src/**/*", "env.d.ts", "rollup.config.mjs"],
   "exclude": ["node_modules"]
 }

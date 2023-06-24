@@ -41,7 +41,7 @@ export const urlContains = (urlA?: string, urlB?: string): boolean => {
 export const getDAVAttribute = (nsArr: DAVNamespace[]): { [key: string]: DAVNamespace } =>
   nsArr.reduce((prev, curr) => ({ ...prev, [DAVAttributeMap[curr]]: curr }), {});
 
-export const cleanupFalsy = <T = unknown>(obj: T): NoUndefinedField<T> =>
+export const cleanupFalsy = <T extends object = object>(obj: T): NoUndefinedField<T> =>
   Object.entries(obj).reduce((prev, [key, value]) => {
     if (value) return { ...prev, [key]: value };
     return prev;

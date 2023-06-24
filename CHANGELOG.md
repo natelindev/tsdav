@@ -1,3 +1,17 @@
+## v2.0.4
+
+**features**
+
+- new option `useMultiGet` for `fetchCalendarObjects` and `fetchVCards` which controls the underlying fetching function to
+  better support fetching from providers which does not support `multiGet` functions
+
+**improvements**
+
+- improved documentation
+- improved typescript types
+- updated deps
+- added `.mjs`,`.cjs`,`.min.mjs` and `.min.cjs` versions
+
 ## v2.0.3
 
 **improvements**

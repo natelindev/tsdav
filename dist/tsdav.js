@@ -1,4 +1,4 @@
-/*! *****************************************************************************
+/******************************************************************************
 Copyright (c) Microsoft Corporation.
 
 Permission to use, copy, modify, and/or distribute this software for any
@@ -12,6 +12,8 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
 OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 PERFORMANCE OF THIS SOFTWARE.
 ***************************************************************************** */
+/* global Reflect, Promise */
+
 
 function __rest(s, e) {
     var t = {};
@@ -37,10 +39,21 @@ function __awaiter(thisArg, _arguments, P, generator) {
 
 var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
 
+function getDefaultExportFromCjs (x) {
+	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
+}
+
 function getAugmentedNamespace(n) {
+  if (n.__esModule) return n;
   var f = n.default;
 	if (typeof f == "function") {
-		var a = function () {
+		var a = function a () {
+			if (this instanceof a) {
+				var args = [null];
+				args.push.apply(args, arguments);
+				var Ctor = Function.bind.apply(f, args);
+				return new Ctor();
+			}
 			return f.apply(this, arguments);
 		};
 		a.prototype = f.prototype;
@@ -614,8 +627,10 @@ var browserPonyfill = {exports: {}};
 	exports.Headers = ctx.Headers;
 	exports.Request = ctx.Request;
 	exports.Response = ctx.Response;
-	module.exports = exports;
+	module.exports = exports; 
 } (browserPonyfill, browserPonyfill.exports));
+
+var browserPonyfillExports = browserPonyfill.exports;
 
 var global$1 = (typeof global !== "undefined" ? global :
   typeof self !== "undefined" ? self :
@@ -1557,10 +1572,11 @@ var common = setup;
 		} catch (error) {
 			return '[UnexpectedJSONParseError]: ' + error.message;
 		}
-	};
+	}; 
 } (browser, browser.exports));
 
-var getLogger = browser.exports;
+var browserExports = browser.exports;
+var getLogger = /*@__PURE__*/getDefaultExportFromCjs(browserExports);
 
 var DAVNamespace;
 (function (DAVNamespace) {
@@ -1836,7 +1852,7 @@ Buffer.TYPED_ARRAY_SUPPORT = global$1.TYPED_ARRAY_SUPPORT !== undefined
 /*
  * Export kMaxLength after typed array support is determined.
  */
-var _kMaxLength = kMaxLength();
+kMaxLength();
 
 function kMaxLength () {
   return Buffer.TYPED_ARRAY_SUPPORT
@@ -1929,6 +1945,8 @@ Buffer.from = function (value, encodingOrOffset, length) {
 if (Buffer.TYPED_ARRAY_SUPPORT) {
   Buffer.prototype.__proto__ = Uint8Array.prototype;
   Buffer.__proto__ = Uint8Array;
+  if (typeof Symbol !== 'undefined' && Symbol.species &&
+      Buffer[Symbol.species] === Buffer) ;
 }
 
 function assertSize (size) {
@@ -2088,13 +2106,6 @@ function checked (length) {
                          'size: 0x' + kMaxLength().toString(16) + ' bytes')
   }
   return length | 0
-}
-
-function SlowBuffer (length) {
-  if (+length != length) { // eslint-disable-line eqeqeq
-    length = 0;
-  }
-  return Buffer.alloc(+length)
 }
 Buffer.isBuffer = isBuffer;
 function internalIsBuffer (b) {
@@ -3575,15 +3586,6 @@ function isSlowBuffer (obj) {
   return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isFastBuffer(obj.slice(0, 0))
 }
 
-var _polyfillNode_buffer = /*#__PURE__*/Object.freeze({
-    __proto__: null,
-    Buffer: Buffer,
-    INSPECT_MAX_BYTES: INSPECT_MAX_BYTES,
-    SlowBuffer: SlowBuffer,
-    isBuffer: isBuffer,
-    kMaxLength: _kMaxLength
-});
-
 var sax$1 = {};
 
 var domain;
@@ -4624,240 +4626,229 @@ BufferList.prototype.concat = function (n) {
   return ret;
 };
 
-var string_decoder = {};
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-var require$$0$1 = /*@__PURE__*/getAugmentedNamespace(_polyfillNode_buffer);
-
-var hasRequiredString_decoder;
-
-function requireString_decoder () {
-	if (hasRequiredString_decoder) return string_decoder;
-	hasRequiredString_decoder = 1;
-	// Copyright Joyent, Inc. and other Node contributors.
-	//
-	// Permission is hereby granted, free of charge, to any person obtaining a
-	// copy of this software and associated documentation files (the
-	// "Software"), to deal in the Software without restriction, including
-	// without limitation the rights to use, copy, modify, merge, publish,
-	// distribute, sublicense, and/or sell copies of the Software, and to permit
-	// persons to whom the Software is furnished to do so, subject to the
-	// following conditions:
-	//
-	// The above copyright notice and this permission notice shall be included
-	// in all copies or substantial portions of the Software.
-	//
-	// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-	// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-	// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-	// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-	// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-	// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-	// USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-	var Buffer = require$$0$1.Buffer;
-
-	var isBufferEncoding = Buffer.isEncoding
-	  || function(encoding) {
-	       switch (encoding && encoding.toLowerCase()) {
-	         case 'hex': case 'utf8': case 'utf-8': case 'ascii': case 'binary': case 'base64': case 'ucs2': case 'ucs-2': case 'utf16le': case 'utf-16le': case 'raw': return true;
-	         default: return false;
-	       }
-	     };
+var isBufferEncoding = Buffer.isEncoding
+  || function(encoding) {
+       switch (encoding && encoding.toLowerCase()) {
+         case 'hex': case 'utf8': case 'utf-8': case 'ascii': case 'binary': case 'base64': case 'ucs2': case 'ucs-2': case 'utf16le': case 'utf-16le': case 'raw': return true;
+         default: return false;
+       }
+     };
 
 
-	function assertEncoding(encoding) {
-	  if (encoding && !isBufferEncoding(encoding)) {
-	    throw new Error('Unknown encoding: ' + encoding);
-	  }
-	}
-
-	// StringDecoder provides an interface for efficiently splitting a series of
-	// buffers into a series of JS strings without breaking apart multi-byte
-	// characters. CESU-8 is handled as part of the UTF-8 encoding.
-	//
-	// @TODO Handling all encodings inside a single object makes it very difficult
-	// to reason about this code, so it should be split up in the future.
-	// @TODO There should be a utf8-strict encoding that rejects invalid UTF-8 code
-	// points as used by CESU-8.
-	var StringDecoder = string_decoder.StringDecoder = function(encoding) {
-	  this.encoding = (encoding || 'utf8').toLowerCase().replace(/[-_]/, '');
-	  assertEncoding(encoding);
-	  switch (this.encoding) {
-	    case 'utf8':
-	      // CESU-8 represents each of Surrogate Pair by 3-bytes
-	      this.surrogateSize = 3;
-	      break;
-	    case 'ucs2':
-	    case 'utf16le':
-	      // UTF-16 represents each of Surrogate Pair by 2-bytes
-	      this.surrogateSize = 2;
-	      this.detectIncompleteChar = utf16DetectIncompleteChar;
-	      break;
-	    case 'base64':
-	      // Base-64 stores 3 bytes in 4 chars, and pads the remainder.
-	      this.surrogateSize = 3;
-	      this.detectIncompleteChar = base64DetectIncompleteChar;
-	      break;
-	    default:
-	      this.write = passThroughWrite;
-	      return;
-	  }
-
-	  // Enough space to store all bytes of a single character. UTF-8 needs 4
-	  // bytes, but CESU-8 may require up to 6 (3 bytes per surrogate).
-	  this.charBuffer = new Buffer(6);
-	  // Number of bytes received for the current incomplete multi-byte character.
-	  this.charReceived = 0;
-	  // Number of bytes expected for the current incomplete multi-byte character.
-	  this.charLength = 0;
-	};
-
-
-	// write decodes the given buffer and returns it as JS string that is
-	// guaranteed to not contain any partial multi-byte characters. Any partial
-	// character found at the end of the buffer is buffered up, and will be
-	// returned when calling write again with the remaining bytes.
-	//
-	// Note: Converting a Buffer containing an orphan surrogate to a String
-	// currently works, but converting a String to a Buffer (via `new Buffer`, or
-	// Buffer#write) will replace incomplete surrogates with the unicode
-	// replacement character. See https://codereview.chromium.org/121173009/ .
-	StringDecoder.prototype.write = function(buffer) {
-	  var charStr = '';
-	  // if our last write ended with an incomplete multibyte character
-	  while (this.charLength) {
-	    // determine how many remaining bytes this buffer has to offer for this char
-	    var available = (buffer.length >= this.charLength - this.charReceived) ?
-	        this.charLength - this.charReceived :
-	        buffer.length;
-
-	    // add the new bytes to the char buffer
-	    buffer.copy(this.charBuffer, this.charReceived, 0, available);
-	    this.charReceived += available;
-
-	    if (this.charReceived < this.charLength) {
-	      // still not enough chars in this buffer? wait for more ...
-	      return '';
-	    }
-
-	    // remove bytes belonging to the current character from the buffer
-	    buffer = buffer.slice(available, buffer.length);
-
-	    // get the character that was split
-	    charStr = this.charBuffer.slice(0, this.charLength).toString(this.encoding);
-
-	    // CESU-8: lead surrogate (D800-DBFF) is also the incomplete character
-	    var charCode = charStr.charCodeAt(charStr.length - 1);
-	    if (charCode >= 0xD800 && charCode <= 0xDBFF) {
-	      this.charLength += this.surrogateSize;
-	      charStr = '';
-	      continue;
-	    }
-	    this.charReceived = this.charLength = 0;
-
-	    // if there are no more bytes in this buffer, just emit our char
-	    if (buffer.length === 0) {
-	      return charStr;
-	    }
-	    break;
-	  }
-
-	  // determine and set charLength / charReceived
-	  this.detectIncompleteChar(buffer);
-
-	  var end = buffer.length;
-	  if (this.charLength) {
-	    // buffer the incomplete character bytes we got
-	    buffer.copy(this.charBuffer, 0, buffer.length - this.charReceived, end);
-	    end -= this.charReceived;
-	  }
-
-	  charStr += buffer.toString(this.encoding, 0, end);
-
-	  var end = charStr.length - 1;
-	  var charCode = charStr.charCodeAt(end);
-	  // CESU-8: lead surrogate (D800-DBFF) is also the incomplete character
-	  if (charCode >= 0xD800 && charCode <= 0xDBFF) {
-	    var size = this.surrogateSize;
-	    this.charLength += size;
-	    this.charReceived += size;
-	    this.charBuffer.copy(this.charBuffer, size, 0, size);
-	    buffer.copy(this.charBuffer, 0, 0, size);
-	    return charStr.substring(0, end);
-	  }
-
-	  // or just emit the charStr
-	  return charStr;
-	};
-
-	// detectIncompleteChar determines if there is an incomplete UTF-8 character at
-	// the end of the given buffer. If so, it sets this.charLength to the byte
-	// length that character, and sets this.charReceived to the number of bytes
-	// that are available for this character.
-	StringDecoder.prototype.detectIncompleteChar = function(buffer) {
-	  // determine how many bytes we have to check at the end of this buffer
-	  var i = (buffer.length >= 3) ? 3 : buffer.length;
-
-	  // Figure out if one of the last i bytes of our buffer announces an
-	  // incomplete char.
-	  for (; i > 0; i--) {
-	    var c = buffer[buffer.length - i];
-
-	    // See http://en.wikipedia.org/wiki/UTF-8#Description
-
-	    // 110XXXXX
-	    if (i == 1 && c >> 5 == 0x06) {
-	      this.charLength = 2;
-	      break;
-	    }
-
-	    // 1110XXXX
-	    if (i <= 2 && c >> 4 == 0x0E) {
-	      this.charLength = 3;
-	      break;
-	    }
-
-	    // 11110XXX
-	    if (i <= 3 && c >> 3 == 0x1E) {
-	      this.charLength = 4;
-	      break;
-	    }
-	  }
-	  this.charReceived = i;
-	};
-
-	StringDecoder.prototype.end = function(buffer) {
-	  var res = '';
-	  if (buffer && buffer.length)
-	    res = this.write(buffer);
-
-	  if (this.charReceived) {
-	    var cr = this.charReceived;
-	    var buf = this.charBuffer;
-	    var enc = this.encoding;
-	    res += buf.slice(0, cr).toString(enc);
-	  }
-
-	  return res;
-	};
-
-	function passThroughWrite(buffer) {
-	  return buffer.toString(this.encoding);
-	}
-
-	function utf16DetectIncompleteChar(buffer) {
-	  this.charReceived = buffer.length % 2;
-	  this.charLength = this.charReceived ? 2 : 0;
-	}
-
-	function base64DetectIncompleteChar(buffer) {
-	  this.charReceived = buffer.length % 3;
-	  this.charLength = this.charReceived ? 3 : 0;
-	}
-	return string_decoder;
+function assertEncoding(encoding) {
+  if (encoding && !isBufferEncoding(encoding)) {
+    throw new Error('Unknown encoding: ' + encoding);
+  }
 }
 
-var string_decoderExports = requireString_decoder();
+// StringDecoder provides an interface for efficiently splitting a series of
+// buffers into a series of JS strings without breaking apart multi-byte
+// characters. CESU-8 is handled as part of the UTF-8 encoding.
+//
+// @TODO Handling all encodings inside a single object makes it very difficult
+// to reason about this code, so it should be split up in the future.
+// @TODO There should be a utf8-strict encoding that rejects invalid UTF-8 code
+// points as used by CESU-8.
+function StringDecoder(encoding) {
+  this.encoding = (encoding || 'utf8').toLowerCase().replace(/[-_]/, '');
+  assertEncoding(encoding);
+  switch (this.encoding) {
+    case 'utf8':
+      // CESU-8 represents each of Surrogate Pair by 3-bytes
+      this.surrogateSize = 3;
+      break;
+    case 'ucs2':
+    case 'utf16le':
+      // UTF-16 represents each of Surrogate Pair by 2-bytes
+      this.surrogateSize = 2;
+      this.detectIncompleteChar = utf16DetectIncompleteChar;
+      break;
+    case 'base64':
+      // Base-64 stores 3 bytes in 4 chars, and pads the remainder.
+      this.surrogateSize = 3;
+      this.detectIncompleteChar = base64DetectIncompleteChar;
+      break;
+    default:
+      this.write = passThroughWrite;
+      return;
+  }
+
+  // Enough space to store all bytes of a single character. UTF-8 needs 4
+  // bytes, but CESU-8 may require up to 6 (3 bytes per surrogate).
+  this.charBuffer = new Buffer(6);
+  // Number of bytes received for the current incomplete multi-byte character.
+  this.charReceived = 0;
+  // Number of bytes expected for the current incomplete multi-byte character.
+  this.charLength = 0;
+}
+
+// write decodes the given buffer and returns it as JS string that is
+// guaranteed to not contain any partial multi-byte characters. Any partial
+// character found at the end of the buffer is buffered up, and will be
+// returned when calling write again with the remaining bytes.
+//
+// Note: Converting a Buffer containing an orphan surrogate to a String
+// currently works, but converting a String to a Buffer (via `new Buffer`, or
+// Buffer#write) will replace incomplete surrogates with the unicode
+// replacement character. See https://codereview.chromium.org/121173009/ .
+StringDecoder.prototype.write = function(buffer) {
+  var charStr = '';
+  // if our last write ended with an incomplete multibyte character
+  while (this.charLength) {
+    // determine how many remaining bytes this buffer has to offer for this char
+    var available = (buffer.length >= this.charLength - this.charReceived) ?
+        this.charLength - this.charReceived :
+        buffer.length;
+
+    // add the new bytes to the char buffer
+    buffer.copy(this.charBuffer, this.charReceived, 0, available);
+    this.charReceived += available;
+
+    if (this.charReceived < this.charLength) {
+      // still not enough chars in this buffer? wait for more ...
+      return '';
+    }
+
+    // remove bytes belonging to the current character from the buffer
+    buffer = buffer.slice(available, buffer.length);
+
+    // get the character that was split
+    charStr = this.charBuffer.slice(0, this.charLength).toString(this.encoding);
+
+    // CESU-8: lead surrogate (D800-DBFF) is also the incomplete character
+    var charCode = charStr.charCodeAt(charStr.length - 1);
+    if (charCode >= 0xD800 && charCode <= 0xDBFF) {
+      this.charLength += this.surrogateSize;
+      charStr = '';
+      continue;
+    }
+    this.charReceived = this.charLength = 0;
+
+    // if there are no more bytes in this buffer, just emit our char
+    if (buffer.length === 0) {
+      return charStr;
+    }
+    break;
+  }
+
+  // determine and set charLength / charReceived
+  this.detectIncompleteChar(buffer);
+
+  var end = buffer.length;
+  if (this.charLength) {
+    // buffer the incomplete character bytes we got
+    buffer.copy(this.charBuffer, 0, buffer.length - this.charReceived, end);
+    end -= this.charReceived;
+  }
+
+  charStr += buffer.toString(this.encoding, 0, end);
+
+  var end = charStr.length - 1;
+  var charCode = charStr.charCodeAt(end);
+  // CESU-8: lead surrogate (D800-DBFF) is also the incomplete character
+  if (charCode >= 0xD800 && charCode <= 0xDBFF) {
+    var size = this.surrogateSize;
+    this.charLength += size;
+    this.charReceived += size;
+    this.charBuffer.copy(this.charBuffer, size, 0, size);
+    buffer.copy(this.charBuffer, 0, 0, size);
+    return charStr.substring(0, end);
+  }
+
+  // or just emit the charStr
+  return charStr;
+};
+
+// detectIncompleteChar determines if there is an incomplete UTF-8 character at
+// the end of the given buffer. If so, it sets this.charLength to the byte
+// length that character, and sets this.charReceived to the number of bytes
+// that are available for this character.
+StringDecoder.prototype.detectIncompleteChar = function(buffer) {
+  // determine how many bytes we have to check at the end of this buffer
+  var i = (buffer.length >= 3) ? 3 : buffer.length;
+
+  // Figure out if one of the last i bytes of our buffer announces an
+  // incomplete char.
+  for (; i > 0; i--) {
+    var c = buffer[buffer.length - i];
+
+    // See http://en.wikipedia.org/wiki/UTF-8#Description
+
+    // 110XXXXX
+    if (i == 1 && c >> 5 == 0x06) {
+      this.charLength = 2;
+      break;
+    }
+
+    // 1110XXXX
+    if (i <= 2 && c >> 4 == 0x0E) {
+      this.charLength = 3;
+      break;
+    }
+
+    // 11110XXX
+    if (i <= 3 && c >> 3 == 0x1E) {
+      this.charLength = 4;
+      break;
+    }
+  }
+  this.charReceived = i;
+};
+
+StringDecoder.prototype.end = function(buffer) {
+  var res = '';
+  if (buffer && buffer.length)
+    res = this.write(buffer);
+
+  if (this.charReceived) {
+    var cr = this.charReceived;
+    var buf = this.charBuffer;
+    var enc = this.encoding;
+    res += buf.slice(0, cr).toString(enc);
+  }
+
+  return res;
+};
+
+function passThroughWrite(buffer) {
+  return buffer.toString(this.encoding);
+}
+
+function utf16DetectIncompleteChar(buffer) {
+  this.charReceived = buffer.length % 2;
+  this.charLength = this.charReceived ? 2 : 0;
+}
+
+function base64DetectIncompleteChar(buffer) {
+  this.charReceived = buffer.length % 3;
+  this.charLength = this.charReceived ? 3 : 0;
+}
+
+var _polyfillNode_string_decoder = /*#__PURE__*/Object.freeze({
+    __proto__: null,
+    StringDecoder: StringDecoder
+});
 
 Readable.ReadableState = ReadableState;
 
@@ -4947,7 +4938,7 @@ function ReadableState(options, stream) {
   this.decoder = null;
   this.encoding = null;
   if (options.encoding) {
-    this.decoder = new string_decoderExports.StringDecoder(options.encoding);
+    this.decoder = new StringDecoder(options.encoding);
     this.encoding = options.encoding;
   }
 }
@@ -5054,7 +5045,7 @@ function needMoreData(state) {
 
 // backwards compatibility.
 Readable.prototype.setEncoding = function (enc) {
-  this._readableState.decoder = new string_decoderExports.StringDecoder(enc);
+  this._readableState.decoder = new StringDecoder(enc);
   this._readableState.encoding = enc;
   return this;
 };
@@ -5747,6 +5738,9 @@ function indexOf(xs, x) {
 }
 
 // A bit simpler than readable streams.
+// Implement an async ._write(chunk, encoding, cb), and it'll handle all
+// the drain event emission and buffering.
+
 Writable.WritableState = WritableState;
 inherits$1(Writable, EventEmitter);
 
@@ -6258,6 +6252,47 @@ function onEndNT(self) {
 }
 
 // a transform stream is a readable/writable stream where you do
+// something with the data.  Sometimes it's called a "filter",
+// but that's not a great name for it, since that implies a thing where
+// some bits pass through, and others are simply ignored.  (That would
+// be a valid example of a transform, of course.)
+//
+// While the output is causally related to the input, it's not a
+// necessarily symmetric or synchronous transformation.  For example,
+// a zlib stream might take multiple plain-text writes(), and then
+// emit a single compressed chunk some time in the future.
+//
+// Here's how this works:
+//
+// The Transform stream has all the aspects of the readable and writable
+// stream classes.  When you write(chunk), that calls _write(chunk,cb)
+// internally, and returns false if there's a lot of pending writes
+// buffered up.  When you call read(), that calls _read(n) until
+// there's enough pending readable data buffered up.
+//
+// In a transform stream, the written data is placed in a buffer.  When
+// _read(n) is called, it transforms the queued up data, calling the
+// buffered _write cb's as it consumes chunks.  If consuming a single
+// written chunk would result in multiple output chunks, then the first
+// outputted bit calls the readcb, and subsequent chunks just go into
+// the read buffer, and will cause it to emit 'readable' if necessary.
+//
+// This way, back-pressure is actually determined by the reading side,
+// since _read has to be called to start processing a new chunk.  However,
+// a pathological inflate type of transform can cause excessive buffering
+// here.  For example, imagine a stream where every byte of input is
+// interpreted as an integer from 0-255, and then results in that many
+// bytes of output.  Writing the 4 bytes {ff,ff,ff,ff} would result in
+// 1kb of data being output.  In this case, you could write a very small
+// amount of input, and end up with a very large amount of output.  In
+// such a pathological inflating mechanism, there'd be no way to tell
+// the system to stop doing the transform.  A single 4MB write could
+// cause the system to run out of memory.
+//
+// However, even in such a pathological case, only a single written chunk
+// would be consumed, and then the rest would wait (un-transformed) until
+// the results of the previous transformed chunk were consumed.
+
 inherits$1(Transform, Duplex);
 
 function TransformState(stream) {
@@ -6498,16 +6533,18 @@ Stream.prototype.pipe = function(dest, options) {
 
 var _polyfillNode_stream = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    'default': Stream,
-    Readable: Readable,
-    Writable: Writable,
     Duplex: Duplex,
-    Transform: Transform,
     PassThrough: PassThrough,
-    Stream: Stream
+    Readable: Readable,
+    Stream: Stream,
+    Transform: Transform,
+    Writable: Writable,
+    default: Stream
 });
 
 var require$$0 = /*@__PURE__*/getAugmentedNamespace(_polyfillNode_stream);
+
+var require$$1 = /*@__PURE__*/getAugmentedNamespace(_polyfillNode_string_decoder);
 
 (function (exports) {
 (function (sax) { // wrapper for non-node envs
@@ -6742,7 +6779,7 @@ var require$$0 = /*@__PURE__*/getAugmentedNamespace(_polyfillNode_stream);
 	      typeof Buffer.isBuffer === 'function' &&
 	      Buffer.isBuffer(data)) {
 	      if (!this._decoder) {
-	        var SD = requireString_decoder().StringDecoder;
+	        var SD = require$$1.StringDecoder;
 	        this._decoder = new SD('utf8');
 	      }
 	      data = this._decoder.write(data);
@@ -8072,7 +8109,7 @@ var require$$0 = /*@__PURE__*/getAugmentedNamespace(_polyfillNode_stream);
 	      }
 	    }());
 	  }
-	})(exports);
+	})(exports); 
 } (sax$1));
 
 var arrayHelper = {
@@ -8168,6 +8205,16 @@ function validateOptions$2(userOptions) {
   helper$2.ensureKeyExists('name', options);
   helper$2.ensureKeyExists('elements', options);
   helper$2.ensureKeyExists('parent', options);
+  helper$2.checkFnExists('doctype', options);
+  helper$2.checkFnExists('instruction', options);
+  helper$2.checkFnExists('cdata', options);
+  helper$2.checkFnExists('comment', options);
+  helper$2.checkFnExists('text', options);
+  helper$2.checkFnExists('instructionName', options);
+  helper$2.checkFnExists('elementName', options);
+  helper$2.checkFnExists('attributeName', options);
+  helper$2.checkFnExists('attributeValue', options);
+  helper$2.checkFnExists('attributes', options);
   return options;
 }
 
@@ -8527,6 +8574,17 @@ function validateOptions(userOptions) {
   helper.ensureKeyExists('type', options);
   helper.ensureKeyExists('name', options);
   helper.ensureKeyExists('elements', options);
+  helper.checkFnExists('doctype', options);
+  helper.checkFnExists('instruction', options);
+  helper.checkFnExists('cdata', options);
+  helper.checkFnExists('comment', options);
+  helper.checkFnExists('text', options);
+  helper.checkFnExists('instructionName', options);
+  helper.checkFnExists('elementName', options);
+  helper.checkFnExists('attributeName', options);
+  helper.checkFnExists('attributeValue', options);
+  helper.checkFnExists('attributes', options);
+  helper.checkFnExists('fullTagEmptyElement', options);
   return options;
 }
 
@@ -8835,6 +8893,8 @@ var lib = {
   json2xml: json2xml
 };
 
+var convert = /*@__PURE__*/getDefaultExportFromCjs(lib);
+
 const camelCase = (str) => str.replace(/([-_]\w)/g, (g) => g[1].toUpperCase());
 
 const nativeType = (value) => {
@@ -8890,19 +8950,19 @@ const cleanupFalsy = (obj) => Object.entries(obj).reduce((prev, [key, value]) =>
 
 var requestHelpers = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    urlEquals: urlEquals,
-    urlContains: urlContains,
+    cleanupFalsy: cleanupFalsy,
     getDAVAttribute: getDAVAttribute,
-    cleanupFalsy: cleanupFalsy
+    urlContains: urlContains,
+    urlEquals: urlEquals
 });
 
 const debug$5 = getLogger('tsdav:request');
 const davRequest = (params) => __awaiter(void 0, void 0, void 0, function* () {
     var _a;
     const { url, init, convertIncoming = true, parseOutgoing = true } = params;
-    const { headers, body, namespace, method, attributes } = init;
+    const { headers = {}, body, namespace, method, attributes } = init;
     const xmlBody = convertIncoming
-        ? lib.js2xml(Object.assign(Object.assign({ _declaration: { _attributes: { version: '1.0', encoding: 'utf-8' } } }, body), { _attributes: attributes }), {
+        ? convert.js2xml(Object.assign(Object.assign({ _declaration: { _attributes: { version: '1.0', encoding: 'utf-8' } } }, body), { _attributes: attributes }), {
             compact: true,
             spaces: 2,
             elementNameFn: (name) => {
@@ -8927,7 +8987,7 @@ const davRequest = (params) => __awaiter(void 0, void 0, void 0, function* () {
     //   )}`
     // );
     // debug(xmlBody);
-    const davResponse = yield browserPonyfill.exports.fetch(url, {
+    const davResponse = yield browserPonyfillExports.fetch(url, {
         headers: Object.assign({ 'Content-Type': 'text/xml;charset=UTF-8' }, cleanupFalsy(headers)),
         body: xmlBody,
         method,
@@ -8950,7 +9010,7 @@ const davRequest = (params) => __awaiter(void 0, void 0, void 0, function* () {
             },
         ];
     }
-    const result = lib.xml2js(resText, {
+    const result = convert.xml2js(resText, {
         compact: true,
         trim: true,
         textFn: (value, parentElement) => {
@@ -9040,11 +9100,11 @@ const propfind = (params) => __awaiter(void 0, void 0, void 0, function* () {
 });
 const createObject = (params) => __awaiter(void 0, void 0, void 0, function* () {
     const { url, data, headers } = params;
-    return browserPonyfill.exports.fetch(url, { method: 'PUT', body: data, headers });
+    return browserPonyfillExports.fetch(url, { method: 'PUT', body: data, headers });
 });
 const updateObject = (params) => __awaiter(void 0, void 0, void 0, function* () {
     const { url, data, etag, headers } = params;
-    return browserPonyfill.exports.fetch(url, {
+    return browserPonyfillExports.fetch(url, {
         method: 'PUT',
         body: data,
         headers: cleanupFalsy(Object.assign({ 'If-Match': etag }, headers)),
@@ -9052,7 +9112,7 @@ const updateObject = (params) => __awaiter(void 0, void 0, void 0, function* () 
 });
 const deleteObject = (params) => __awaiter(void 0, void 0, void 0, function* () {
     const { url, headers, etag } = params;
-    return browserPonyfill.exports.fetch(url, {
+    return browserPonyfillExports.fetch(url, {
         method: 'DELETE',
         headers: cleanupFalsy(Object.assign({ 'If-Match': etag }, headers)),
     });
@@ -9060,11 +9120,11 @@ const deleteObject = (params) => __awaiter(void 0, void 0, void 0, function* () 
 
 var request = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    davRequest: davRequest,
-    propfind: propfind,
     createObject: createObject,
-    updateObject: updateObject,
-    deleteObject: deleteObject
+    davRequest: davRequest,
+    deleteObject: deleteObject,
+    propfind: propfind,
+    updateObject: updateObject
 });
 
 function hasFields(obj, fields) {
@@ -9294,11 +9354,11 @@ const smartCollectionSync = (params) => __awaiter(void 0, void 0, void 0, functi
 var collection = /*#__PURE__*/Object.freeze({
     __proto__: null,
     collectionQuery: collectionQuery,
-    makeCollection: makeCollection,
-    supportedReportSet: supportedReportSet,
     isCollectionDirty: isCollectionDirty,
-    syncCollection: syncCollection,
-    smartCollectionSync: smartCollectionSync
+    makeCollection: makeCollection,
+    smartCollectionSync: smartCollectionSync,
+    supportedReportSet: supportedReportSet,
+    syncCollection: syncCollection
 });
 
 const debug$3 = getLogger('tsdav:addressBook');
@@ -9380,7 +9440,7 @@ const fetchAddressBooks = (params) => __awaiter(void 0, void 0, void 0, function
     })));
 });
 const fetchVCards = (params) => __awaiter(void 0, void 0, void 0, function* () {
-    const { addressBook, headers, objectUrls, urlFilter } = params;
+    const { addressBook, headers, objectUrls, urlFilter = (url) => url, useMultiGet = true } = params;
     debug$3(`Fetching vcards from ${addressBook === null || addressBook === void 0 ? void 0 : addressBook.url}`);
     const requiredFields = ['url'];
     if (!addressBook || !hasFields(addressBook, requiredFields)) {
@@ -9398,20 +9458,34 @@ const fetchVCards = (params) => __awaiter(void 0, void 0, void 0, function* () {
         headers,
     })).map((res) => { var _a; return (res.ok ? (_a = res.href) !== null && _a !== void 0 ? _a : '' : ''); }))
         .map((url) => (url.startsWith('http') || !url ? url : new URL(url, addressBook.url).href))
-        .filter(urlFilter !== null && urlFilter !== void 0 ? urlFilter : ((url) => url))
+        .filter(urlFilter)
         .map((url) => new URL(url).pathname);
-    const vCardResults = vcardUrls.length > 0
-        ? yield addressBookMultiGet({
-            url: addressBook.url,
-            props: {
-                [`${DAVNamespaceShort.DAV}:getetag`]: {},
-                [`${DAVNamespaceShort.CARDDAV}:address-data`]: {},
-            },
-            objectUrls: vcardUrls,
-            depth: '1',
-            headers,
-        })
-        : [];
+    let vCardResults = [];
+    if (vcardUrls.length > 0) {
+        if (useMultiGet) {
+            vCardResults = yield addressBookMultiGet({
+                url: addressBook.url,
+                props: {
+                    [`${DAVNamespaceShort.DAV}:getetag`]: {},
+                    [`${DAVNamespaceShort.CARDDAV}:address-data`]: {},
+                },
+                objectUrls: vcardUrls,
+                depth: '1',
+                headers,
+            });
+        }
+        else {
+            vCardResults = yield addressBookQuery({
+                url: addressBook.url,
+                props: {
+                    [`${DAVNamespaceShort.DAV}:getetag`]: {},
+                    [`${DAVNamespaceShort.CARDDAV}:address-data`]: {},
+                },
+                depth: '1',
+                headers,
+            });
+        }
+    }
     return vCardResults.map((res) => {
         var _a, _b, _c, _d, _e, _f;
         return ({
@@ -9449,13 +9523,13 @@ const deleteVCard = (params) => __awaiter(void 0, void 0, void 0, function* () {
 
 var addressBook = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    addressBookQuery: addressBookQuery,
     addressBookMultiGet: addressBookMultiGet,
+    addressBookQuery: addressBookQuery,
+    createVCard: createVCard,
+    deleteVCard: deleteVCard,
     fetchAddressBooks: fetchAddressBooks,
     fetchVCards: fetchVCards,
-    createVCard: createVCard,
-    updateVCard: updateVCard,
-    deleteVCard: deleteVCard
+    updateVCard: updateVCard
 });
 
 const debug$2 = getLogger('tsdav:calendar');
@@ -9580,7 +9654,7 @@ const fetchCalendars = (params) => __awaiter(void 0, void 0, void 0, function* (
     })));
 });
 const fetchCalendarObjects = (params) => __awaiter(void 0, void 0, void 0, function* () {
-    const { calendar, objectUrls, filters: customFilters, timeRange, headers, expand, urlFilter, } = params;
+    const { calendar, objectUrls, filters: customFilters, timeRange, headers, expand, urlFilter = (url) => Boolean(url === null || url === void 0 ? void 0 : url.includes('.ics')), useMultiGet = true, } = params;
     if (timeRange) {
         // validate timeRange
         const ISO_8601 = /^\d{4}(-\d\d(-\d\d(T\d\d:\d\d(:\d\d)?(\.\d+)?(([+-]\d\d:\d\d)|Z)?)?)?)?$/i;
@@ -9653,11 +9727,11 @@ const fetchCalendarObjects = (params) => __awaiter(void 0, void 0, void 0, funct
         headers,
     })).map((res) => { var _a; return (_a = res.href) !== null && _a !== void 0 ? _a : ''; }))
         .map((url) => (url.startsWith('http') || !url ? url : new URL(url, calendar.url).href)) // patch up to full url if url is not full
-        .filter(urlFilter !== null && urlFilter !== void 0 ? urlFilter : ((url) => Boolean(url === null || url === void 0 ? void 0 : url.includes('.ics')))) // filter out non ics calendar objects since apple calendar might have those
+        .filter(urlFilter) // custom filter function on calendar objects
         .map((url) => new URL(url).pathname); // obtain pathname of the url
     let calendarObjectResults = [];
     if (calendarObjectUrls.length > 0) {
-        if (expand) {
+        if (!useMultiGet || expand) {
             calendarObjectResults = yield calendarQuery({
                 url: calendar.url,
                 props: {
@@ -9826,16 +9900,16 @@ const freeBusyQuery = (params) => __awaiter(void 0, void 0, void 0, function* ()
 
 var calendar = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    calendarQuery: calendarQuery,
     calendarMultiGet: calendarMultiGet,
-    makeCalendar: makeCalendar,
-    fetchCalendars: fetchCalendars,
-    fetchCalendarObjects: fetchCalendarObjects,
+    calendarQuery: calendarQuery,
     createCalendarObject: createCalendarObject,
-    updateCalendarObject: updateCalendarObject,
     deleteCalendarObject: deleteCalendarObject,
+    fetchCalendarObjects: fetchCalendarObjects,
+    fetchCalendars: fetchCalendars,
+    freeBusyQuery: freeBusyQuery,
+    makeCalendar: makeCalendar,
     syncCalendars: syncCalendars,
-    freeBusyQuery: freeBusyQuery
+    updateCalendarObject: updateCalendarObject
 });
 
 const debug$1 = getLogger('tsdav:account');
@@ -9847,7 +9921,7 @@ const serviceDiscovery = (params) => __awaiter(void 0, void 0, void 0, function*
     const uri = new URL(`/.well-known/${account.accountType}`, endpoint);
     uri.protocol = (_a = endpoint.protocol) !== null && _a !== void 0 ? _a : 'http';
     try {
-        const response = yield browserPonyfill.exports.fetch(uri.href, {
+        const response = yield browserPonyfillExports.fetch(uri.href, {
             headers,
             method: 'PROPFIND',
             redirect: 'manual',
@@ -9954,15 +10028,16 @@ const createAccount = (params) => __awaiter(void 0, void 0, void 0, function* ()
 
 var account = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    serviceDiscovery: serviceDiscovery,
-    fetchPrincipalUrl: fetchPrincipalUrl,
+    createAccount: createAccount,
     fetchHomeUrl: fetchHomeUrl,
-    createAccount: createAccount
+    fetchPrincipalUrl: fetchPrincipalUrl,
+    serviceDiscovery: serviceDiscovery
 });
 
 var base64 = {exports: {}};
 
 /*! https://mths.be/base64 v1.0.0 by @mathias | MIT license */
+base64.exports;
 
 (function (module, exports) {
 (function(root) {
@@ -10119,8 +10194,10 @@ var base64 = {exports: {}};
 			root.base64 = base64;
 		}
 
-	}(commonjsGlobal));
+	}(commonjsGlobal)); 
 } (base64, base64.exports));
+
+var base64Exports = base64.exports;
 
 const debug = getLogger('tsdav:authHelper');
 /**
@@ -10133,9 +10210,9 @@ const defaultParam = (fn, params) => (...args) => {
     return fn(Object.assign(Object.assign({}, params), args[0]));
 };
 const getBasicAuthHeaders = (credentials) => {
-    debug(`Basic auth token generated: ${base64.exports.encode(`${credentials.username}:${credentials.password}`)}`);
+    debug(`Basic auth token generated: ${base64Exports.encode(`${credentials.username}:${credentials.password}`)}`);
     return {
-        authorization: `Basic ${base64.exports.encode(`${credentials.username}:${credentials.password}`)}`,
+        authorization: `Basic ${base64Exports.encode(`${credentials.username}:${credentials.password}`)}`,
     };
 };
 const fetchOauthTokens = (credentials) => __awaiter(void 0, void 0, void 0, function* () {
@@ -10158,7 +10235,7 @@ const fetchOauthTokens = (credentials) => __awaiter(void 0, void 0, void 0, func
     });
     debug(credentials.tokenUrl);
     debug(param.toString());
-    const response = yield browserPonyfill.exports.fetch(credentials.tokenUrl, {
+    const response = yield browserPonyfillExports.fetch(credentials.tokenUrl, {
         method: 'POST',
         body: param.toString(),
         headers: {
@@ -10189,7 +10266,7 @@ const refreshAccessToken = (credentials) => __awaiter(void 0, void 0, void 0, fu
         refresh_token: credentials.refreshToken,
         grant_type: 'refresh_token',
     });
-    const response = yield browserPonyfill.exports.fetch(credentials.tokenUrl, {
+    const response = yield browserPonyfillExports.fetch(credentials.tokenUrl, {
         method: 'POST',
         body: param.toString(),
         headers: {
@@ -10230,10 +10307,10 @@ const getOauthHeaders = (credentials) => __awaiter(void 0, void 0, void 0, funct
 var authHelpers = /*#__PURE__*/Object.freeze({
     __proto__: null,
     defaultParam: defaultParam,
-    getBasicAuthHeaders: getBasicAuthHeaders,
     fetchOauthTokens: fetchOauthTokens,
-    refreshAccessToken: refreshAccessToken,
-    getOauthHeaders: getOauthHeaders
+    getBasicAuthHeaders: getBasicAuthHeaders,
+    getOauthHeaders: getOauthHeaders,
+    refreshAccessToken: refreshAccessToken
 });
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
@@ -10544,8 +10621,8 @@ class DAVClient {
 
 var client = /*#__PURE__*/Object.freeze({
     __proto__: null,
-    createDAVClient: createDAVClient,
-    DAVClient: DAVClient
+    DAVClient: DAVClient,
+    createDAVClient: createDAVClient
 });
 
 var index = Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({ DAVNamespace,
