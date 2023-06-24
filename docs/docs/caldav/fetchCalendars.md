@@ -20,10 +20,10 @@ const calendars = await fetchCalendars({
 - `account` [DAVAccount](../types/DAVAccount.md)
 - `header` request headers
 - `props` [CALDAV prop element](https://datatracker.ietf.org/doc/html/rfc4791#section-9.6.4) in [ElementCompact](../types/ElementCompact.md) form, overriding default props to fetch
-
-:::caution
-when overriding props, supported-calendar-component-set and resourcetype are required
-:::
+- `projectedProps` custom props projection object, used as a map to map fetched custom props to values
+  :::caution
+  when overriding props, supported-calendar-component-set and resourcetype are required
+  :::
 
 ### Return Value
 

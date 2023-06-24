@@ -1,6 +1,6 @@
 {
   "name": "tsdav",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "WebDAV, CALDAV, and CARDDAV client for Nodejs and the Browser",
   "keywords": [
     "dav",
@@ -54,18 +54,18 @@
     "xml-js": "1.6.11"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "25.0.1",
+    "@rollup/plugin-commonjs": "25.0.2",
     "@rollup/plugin-node-resolve": "15.1.0",
     "@rollup/plugin-typescript": "11.1.1",
     "@types/base-64": "1.0.0",
     "@types/debug": "4.1.8",
     "@types/jest": "29.5.2",
     "@types/node": "20.3.1",
-    "@typescript-eslint/eslint-plugin": "5.59.11",
-    "@typescript-eslint/parser": "5.59.11",
+    "@typescript-eslint/eslint-plugin": "5.60.0",
+    "@typescript-eslint/parser": "5.60.0",
     "copyfiles": "2.4.1",
     "cross-env": "7.0.3",
-    "dotenv": "16.3.0",
+    "dotenv": "16.3.1",
     "eslint": "8.43.0",
     "eslint-config-airbnb": "19.0.4",
     "eslint-config-airbnb-typescript": "17.0.0",

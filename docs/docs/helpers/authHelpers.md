@@ -116,3 +116,24 @@ const fn1 = (params: { a?: number; b?: number }) => {
 };
 const fn2 = defaultParam(fn1, { b: 10 });
 ```
+
+### digest auth and custom auth
+
+for digest auth, you need to handle the auth process yourself, pass the final digest string like
+
+```
+username="Mufasa",
+realm="testrealm@host.com",
+nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093",
+uri="/dir/index.html",
+qop=auth,
+nc=00000001,
+cnonce="0a4f113b",
+response="6629fae49393a05397450978507c4ef1",
+opaque="5ccc069c403ebaf9f0171e9517f40e41
+```
+
+as `digestString` param in DAVCredentials
+
+for custom auth, you can pass additional data via `customData` prop to DAVCredentials,
+you can pass in your custom auth function as `authFunction` param and will have DAVCredentials available to it.

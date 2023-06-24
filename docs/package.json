@@ -9,6 +9,7 @@
     "docusaurus": "docusaurus",
     "serve": "docusaurus serve",
     "start": "docusaurus start",
+    "dev": "docusaurus start",
     "swizzle": "docusaurus swizzle",
     "write-heading-ids": "docusaurus write-heading-ids",
     "write-translations": "docusaurus write-translations"
@@ -26,26 +27,26 @@
     ]
   },
   "dependencies": {
-    "@docusaurus/core": "2.0.0-beta.18",
-    "@docusaurus/preset-classic": "2.0.0-beta.18",
-    "@easyops-cn/docusaurus-search-local": "0.23.0",
+    "@docusaurus/core": "2.4.1",
+    "@docusaurus/preset-classic": "2.4.1",
+    "@easyops-cn/docusaurus-search-local": "0.35.0",
     "@mdx-js/react": "1.6.22",
     "@svgr/webpack": "6.2.1",
     "buffer": "6.0.3",
-    "clsx": "1.1.1",
+    "clsx": "1.2.1",
     "file-loader": "6.2.0",
-    "react": "17.0.2",
-    "react-dom": "17.0.2",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
     "stream-browserify": "3.0.0",
     "url-loader": "4.1.1",
     "xml-js": "1.6.11"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "2.0.0-beta.18",
-    "@tsconfig/docusaurus": "1.0.5",
-    "@types/react": "17.0.43",
-    "@types/react-helmet": "6.1.5",
+    "@docusaurus/module-type-aliases": "2.4.1",
+    "@tsconfig/docusaurus": "1.0.7",
+    "@types/react": "18.2.14",
+    "@types/react-helmet": "6.1.6",
     "@types/react-router-dom": "5.3.3",
-    "typescript": "4.6.3"
+    "typescript": "5.1.3"
   }
 }

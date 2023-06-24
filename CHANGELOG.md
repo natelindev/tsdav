@@ -1,3 +1,20 @@
+## v2.0.5
+
+**features**
+
+DAVClient supports `digest` auth and `custom` auth, please go to `authHelpers` page in docs for more details.
+
+fetchCalendars now supports `projectedProps`, previously customProps passed in will not get projected to fetched result properly.
+with this object map you can map your custom prop to fetched result thanks to @m0dch3n
+
+**improvements**
+
+calendarMultiGet will not send `<filter/>` element if custom filters are null or undefined thanks to @jelmer
+
+docs improvement thanks to @MathisFrenais
+
+typescript type improvement thanks to @zomars
+
 ## v2.0.4
 
 **features**

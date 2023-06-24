@@ -51,17 +51,31 @@ import { Optional } from './util/typeHelpers';
 export const createDAVClient = async (params: {
   serverUrl: string;
   credentials: DAVCredentials;
-  authMethod?: 'Basic' | 'Oauth';
+  authMethod?: 'Basic' | 'Oauth' | 'Digest' | 'Custom';
+  authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
   defaultAccountType?: DAVAccount['accountType'] | undefined;
 }) => {
-  const { serverUrl, credentials, authMethod, defaultAccountType } = params;
-  const authHeaders: Record<string, string> =
-    // eslint-disable-next-line no-nested-ternary
-    authMethod === 'Basic'
-      ? getBasicAuthHeaders(credentials)
-      : authMethod === 'Oauth'
-      ? (await getOauthHeaders(credentials)).headers
-      : {};
+  const { serverUrl, credentials, authMethod, defaultAccountType, authFunction } = params;
+
+  let authHeaders: Record<string, string> = {};
+  switch (authMethod) {
+    case 'Basic':
+      authHeaders = getBasicAuthHeaders(credentials);
+      break;
+    case 'Oauth':
+      authHeaders = (await getOauthHeaders(credentials)).headers;
+      break;
+    case 'Digest':
+      authHeaders = {
+        Authorization: `Digest ${credentials.digestString}`,
+      };
+      break;
+    case 'Custom':
+      authHeaders = (await authFunction?.(credentials)) ?? {};
+      break;
+    default:
+      throw new Error('Invalid auth method');
+  }
 
   const defaultAccount = defaultAccountType
     ? await rawCreateAccount({
@@ -214,7 +228,7 @@ export class DAVClient {
 
   credentials: DAVCredentials;
 
-  authMethod: 'Basic' | 'Oauth';
+  authMethod: 'Basic' | 'Oauth' | 'Digest' | 'Custom';
 
   accountType: DAVAccount['accountType'];
 
@@ -222,10 +236,13 @@ export class DAVClient {
 
   account?: DAVAccount;
 
+  authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
+
   constructor(params: {
     serverUrl: string;
     credentials: DAVCredentials;
-    authMethod?: 'Basic' | 'Oauth';
+    authMethod?: 'Basic' | 'Oauth' | 'Digest' | 'Custom';
+    authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
     defaultAccountType?: DAVAccount['accountType'] | undefined;
   }) {
     this.serverUrl = params.serverUrl;
@@ -235,13 +252,24 @@ export class DAVClient {
   }
 
   async login(): Promise<void> {
-    this.authHeaders =
-      // eslint-disable-next-line no-nested-ternary
-      this.authMethod === 'Basic'
-        ? getBasicAuthHeaders(this.credentials)
-        : this.authMethod === 'Oauth'
-        ? (await getOauthHeaders(this.credentials)).headers
-        : {};
+    switch (this.authMethod) {
+      case 'Basic':
+        this.authHeaders = getBasicAuthHeaders(this.credentials);
+        break;
+      case 'Oauth':
+        this.authHeaders = (await getOauthHeaders(this.credentials)).headers;
+        break;
+      case 'Digest':
+        this.authHeaders = {
+          Authorization: `Digest ${this.credentials.digestString}`,
+        };
+        break;
+      case 'Custom':
+        this.authHeaders = await this.authFunction?.(this.credentials);
+        break;
+      default:
+        throw new Error('Invalid auth method');
+    }
 
     this.account = this.accountType
       ? await rawCreateAccount({

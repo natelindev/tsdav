@@ -46,3 +46,12 @@ export const cleanupFalsy = <T extends object = object>(obj: T): NoUndefinedFiel
     if (value) return { ...prev, [key]: value };
     return prev;
   }, {} as NoUndefinedField<T>);
+
+export const conditionalParam = <T>(key: string, param: T) => {
+  if (param) {
+    return {
+      [key]: param,
+    } as { [key: string]: T };
+  }
+  return {} as Record<string, never>;
+};

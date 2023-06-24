@@ -49,6 +49,8 @@ export type DAVCredentials = {
   accessToken?: string;
   refreshToken?: string;
   expiration?: number;
+  digestString?: string;
+  customData?: Record<string, unknown>; // for custom login
 };
 
 export type DAVAccount = {
@@ -69,4 +71,5 @@ export type DAVAddressBook = DAVCollection;
 export type DAVCalendar = {
   components?: string[];
   timezone?: string;
+  projectedProps?: Record<string, unknown>;
 } & DAVCollection;

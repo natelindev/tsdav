@@ -8,7 +8,12 @@ import { createObject, davRequest, deleteObject, propfind, updateObject } from '
 import { DAVDepth, DAVResponse } from './types/DAVTypes';
 import { SyncCalendars } from './types/functionsOverloads';
 import { DAVAccount, DAVCalendar, DAVCalendarObject } from './types/models';
-import { cleanupFalsy, getDAVAttribute, urlContains } from './util/requestHelpers';
+import {
+  cleanupFalsy,
+  conditionalParam,
+  getDAVAttribute,
+  urlContains,
+} from './util/requestHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelpers';
 
 const debug = getLogger('tsdav:calendar');
@@ -49,6 +54,7 @@ export const calendarMultiGet = async (params: {
   objectUrls?: string[];
   timezone?: string;
   depth: DAVDepth;
+  filters?: ElementCompact;
   headers?: Record<string, string>;
 }): Promise<DAVResponse[]> => {
   const { url, props, objectUrls, filters, timezone, depth, headers } = params;
@@ -59,6 +65,7 @@ export const calendarMultiGet = async (params: {
         _attributes: getDAVAttribute([DAVNamespace.DAV, DAVNamespace.CALDAV]),
         [`${DAVNamespaceShort.DAV}:prop`]: props,
         [`${DAVNamespaceShort.DAV}:href`]: objectUrls,
+        ...conditionalParam('filter', filters),
         timezone,
       },
     },
@@ -100,10 +107,10 @@ export const makeCalendar = async (params: {
 export const fetchCalendars = async (params?: {
   account?: DAVAccount;
   props?: ElementCompact;
-  headers?: Record<string, string>;
   projectedProps?: Record<string, boolean>;
+  headers?: Record<string, string>;
 }): Promise<DAVCalendar[]> => {
-  const { headers, account, props: customProps } = params ?? {};
+  const { headers, account, props: customProps, projectedProps } = params ?? {};
   const requiredFields: Array<'homeUrl' | 'rootUrl'> = ['homeUrl', 'rootUrl'];
   if (!account || !hasFields(account, requiredFields)) {
     if (!account) {
@@ -158,11 +165,12 @@ export const fetchCalendars = async (params?: {
             : [rs.props?.supportedCalendarComponentSet.comp._attributes.name],
           resourcetype: Object.keys(rs.props?.resourcetype),
           syncToken: rs.props?.syncToken,
-          ...(projectedProps && {
-            projectedProps: Object.fromEntries(
-              Object.entries(rs.props).filter(([key]) => projectedProps[key])
-            ),
-          }),
+          ...conditionalParam(
+            'projectedProps',
+            Object.fromEntries(
+              Object.entries(rs.props ?? {}).filter(([key]) => projectedProps?.[key])
+            )
+          ),
         };
       })
       .map(async (cal) => ({
