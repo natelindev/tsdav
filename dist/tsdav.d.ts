@@ -43,7 +43,7 @@ type DAVCollection = {
     objects?: DAVObject[];
     ctag?: string;
     description?: string;
-    displayName?: string;
+    displayName?: string | Record<string, unknown>;
     reports?: any;
     resourcetype?: any;
     syncToken?: string;
