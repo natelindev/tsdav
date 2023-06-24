@@ -103,6 +103,7 @@ export const fetchCalendars = async (params?: {
   account?: DAVAccount;
   props?: ElementCompact;
   headers?: Record<string, string>;
+  projectedProps?: Record<string, boolean>;
 }): Promise<DAVCalendar[]> => {
   const { headers, account, props: customProps } = params ?? {};
   const requiredFields: Array<'homeUrl' | 'rootUrl'> = ['homeUrl', 'rootUrl'];
@@ -159,6 +160,11 @@ export const fetchCalendars = async (params?: {
             : [rs.props?.supportedCalendarComponentSet.comp._attributes.name],
           resourcetype: Object.keys(rs.props?.resourcetype),
           syncToken: rs.props?.syncToken,
+          ...(projectedProps && {
+            projectedProps: Object.fromEntries(
+              Object.entries(rs.props).filter(([key]) => projectedProps[key])
+            ),
+          }),
         };
       })
       .map(async (cal) => ({
