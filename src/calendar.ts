@@ -47,7 +47,6 @@ export const calendarMultiGet = async (params: {
   url: string;
   props: ElementCompact;
   objectUrls?: string[];
-  filters?: ElementCompact;
   timezone?: string;
   depth: DAVDepth;
   headers?: Record<string, string>;
@@ -60,7 +59,6 @@ export const calendarMultiGet = async (params: {
         _attributes: getDAVAttribute([DAVNamespace.DAV, DAVNamespace.CALDAV]),
         [`${DAVNamespaceShort.DAV}:prop`]: props,
         [`${DAVNamespaceShort.DAV}:href`]: objectUrls,
-        filter: filters,
         timezone,
       },
     },
