@@ -54,7 +54,7 @@
     "xml-js": "1.6.11"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "25.0.1",
+    "@rollup/plugin-commonjs": "25.0.2",
     "@rollup/plugin-node-resolve": "15.1.0",
     "@rollup/plugin-typescript": "11.1.1",
     "@types/base-64": "1.0.0",
