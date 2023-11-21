@@ -8,13 +8,13 @@ export interface SmartCollectionSync {
     account?: DAVAccount;
     detailedResult: true;
   }): Promise<
-    | Omit<T, 'objects'> & {
-        objects: {
-          created: DAVObject[];
-          updated: DAVObject[];
-          deleted: DAVObject[];
-        };
-      }
+    Omit<T, 'objects'> & {
+      objects: {
+        created: DAVObject[];
+        updated: DAVObject[];
+        deleted: DAVObject[];
+      };
+    }
   >;
   <T extends DAVCollection>(param: {
     collection: T;

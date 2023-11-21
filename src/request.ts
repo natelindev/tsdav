@@ -45,7 +45,7 @@ export const davRequest = async (params: {
             }
             return name;
           },
-        }
+        },
       )
     : body;
 

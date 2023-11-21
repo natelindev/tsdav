@@ -37,7 +37,7 @@ export const fetchOauthTokens = async (credentials: DAVCredentials): Promise<DAV
   ];
   if (!hasFields(credentials, requireFields)) {
     throw new Error(
-      `Oauth credentials missing: ${findMissingFieldNames(credentials, requireFields)}`
+      `Oauth credentials missing: ${findMissingFieldNames(credentials, requireFields)}`,
     );
   }
 
@@ -74,7 +74,7 @@ export const fetchOauthTokens = async (credentials: DAVCredentials): Promise<DAV
 };
 
 export const refreshAccessToken = async (
-  credentials: DAVCredentials
+  credentials: DAVCredentials,
 ): Promise<{
   access_token?: string;
   expires_in?: number;
@@ -87,7 +87,7 @@ export const refreshAccessToken = async (
   ];
   if (!hasFields(credentials, requireFields)) {
     throw new Error(
-      `Oauth credentials missing: ${findMissingFieldNames(credentials, requireFields)}`
+      `Oauth credentials missing: ${findMissingFieldNames(credentials, requireFields)}`,
     );
   }
   const param = new URLSearchParams({
@@ -116,7 +116,7 @@ export const refreshAccessToken = async (
 };
 
 export const getOauthHeaders = async (
-  credentials: DAVCredentials
+  credentials: DAVCredentials,
 ): Promise<{ tokens: DAVTokens; headers: { authorization?: string } }> => {
   debug('Fetching oauth headers');
   let tokens: DAVTokens = {};

@@ -15,11 +15,11 @@ export type RequireAtLeastOne<T, Keys extends keyof T = keyof T> = Pick<T, Exclu
 
 export function hasFields<T, K extends keyof T>(
   obj: Array<T | RequireAndNotNullSome<T, K>>,
-  fields: K[]
+  fields: K[],
 ): obj is Array<RequireAndNotNullSome<T, K>>;
 export function hasFields<T, K extends keyof T>(
   obj: T | RequireAndNotNullSome<T, K>,
-  fields: K[]
+  fields: K[],
 ): obj is RequireAndNotNullSome<T, K>;
 export function hasFields<T, K extends keyof T>(obj: T | Array<T>, fields: K[]): boolean {
   const inObj: { (obj: T | RequireAndNotNullSome<T, K>): boolean } = (object) =>
@@ -34,5 +34,5 @@ export function hasFields<T, K extends keyof T>(obj: T | Array<T>, fields: K[]):
 export const findMissingFieldNames = <T>(obj: T, fields: Array<keyof T>): string =>
   fields.reduce(
     (prev, curr) => (obj[curr] ? prev : `${prev.length ? `${prev},` : ''}${curr.toString()}`),
-    ''
+    '',
   );

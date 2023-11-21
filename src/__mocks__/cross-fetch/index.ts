@@ -33,7 +33,7 @@ const appendJSON = async (filepath: string, keyData: string, valueData: string) 
 
 export const fetch = async (
   url: string,
-  init: { method: string; body: string; headers: Record<string, string> }
+  init: { method: string; body: string; headers: Record<string, string> },
 ) => {
   if (process.env.MOCK_FETCH === 'true' && fs.existsSync(dataPath)) {
     const data = JSON.parse(await fs.promises.readFile(dataPath, 'utf8'));
@@ -71,7 +71,7 @@ export const fetch = async (
         headers: Object.fromEntries(response?.headers.entries()),
         url: response?.url,
         text,
-      })
+      }),
     );
   }
 

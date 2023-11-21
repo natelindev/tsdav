@@ -117,7 +117,7 @@ export const fetchCalendars = async (params?: {
       throw new Error('no account for fetchCalendars');
     }
     throw new Error(
-      `account must have ${findMissingFieldNames(account, requiredFields)} before fetchCalendars`
+      `account must have ${findMissingFieldNames(account, requiredFields)} before fetchCalendars`,
     );
   }
 
@@ -143,7 +143,7 @@ export const fetchCalendars = async (params?: {
       .filter((rc) => {
         // filter out none iCal format calendars.
         const components: ICALObjects[] = Array.isArray(
-          rc.props?.supportedCalendarComponentSet.comp
+          rc.props?.supportedCalendarComponentSet.comp,
         )
           ? rc.props?.supportedCalendarComponentSet.comp.map((sc: any) => sc._attributes.name)
           : [rc.props?.supportedCalendarComponentSet.comp._attributes.name] || [];
@@ -168,15 +168,15 @@ export const fetchCalendars = async (params?: {
           ...conditionalParam(
             'projectedProps',
             Object.fromEntries(
-              Object.entries(rs.props ?? {}).filter(([key]) => projectedProps?.[key])
-            )
+              Object.entries(rs.props ?? {}).filter(([key]) => projectedProps?.[key]),
+            ),
           ),
         };
       })
       .map(async (cal) => ({
         ...cal,
         reports: await supportedReportSet({ collection: cal, headers }),
-      }))
+      })),
   );
 };
 
@@ -221,8 +221,8 @@ export const fetchCalendarObjects = async (params: {
     throw new Error(
       `calendar must have ${findMissingFieldNames(
         calendar,
-        requiredFields
-      )} before fetchCalendarObjects`
+        requiredFields,
+      )} before fetchCalendarObjects`,
     );
   }
 
@@ -424,7 +424,7 @@ export const syncCalendars: SyncCalendars = async (params: {
 
   // no existing url
   const created = remoteCalendars.filter((rc) =>
-    localCalendars.every((lc) => !urlContains(lc.url, rc.url))
+    localCalendars.every((lc) => !urlContains(lc.url, rc.url)),
   );
   debug(`new calendars: ${created.map((cc) => cc.displayName)}`);
 
@@ -451,11 +451,11 @@ export const syncCalendars: SyncCalendars = async (params: {
         account,
       });
       return result;
-    })
+    }),
   );
   // does not present in remote
   const deleted = localCalendars.filter((cal) =>
-    remoteCalendars.every((rc) => !urlContains(rc.url, cal.url))
+    remoteCalendars.every((rc) => !urlContains(rc.url, cal.url)),
   );
   debug(`deleted calendars: ${deleted.map((cc) => cc.displayName)}`);
 
@@ -463,8 +463,8 @@ export const syncCalendars: SyncCalendars = async (params: {
     remoteCalendars.some(
       (rc) =>
         urlContains(rc.url, cal.url) &&
-        ((rc.syncToken && rc.syncToken !== cal.syncToken) || (rc.ctag && rc.ctag !== cal.ctag))
-    )
+        ((rc.syncToken && rc.syncToken !== cal.syncToken) || (rc.ctag && rc.ctag !== cal.ctag)),
+    ),
   );
   // debug(`unchanged calendars: ${unchanged.map((cc) => cc.displayName)}`);
 

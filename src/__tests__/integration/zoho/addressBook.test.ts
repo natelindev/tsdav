@@ -55,7 +55,7 @@ test('createVCard should be able to create vcard', async () => {
     new URL(`5ddfa764-3583-4a00-bf9f-4c814ba48efa.vcf`, addressBooks[0].url).href,
     {
       headers: authHeaders,
-    }
+    },
   );
   const vcardUid = (await vcardInfo.text()).split('UID:')[1].split('\n')[0];
 
@@ -90,14 +90,14 @@ test('fetchVCards should be able to fetch vcards', async () => {
 
   expect(vcards.length > 0).toBe(true);
   expect(vcards.every((o) => o.data?.length > 0 && o.etag?.length > 0 && o.url?.length > 0)).toBe(
-    true
+    true,
   );
 
   const vcardInfoResponse = await fetch(
     new URL(`787cc01a-f93f-4917-b11a-3e842316e6d7.vcf`, addressBooks[0].url).href,
     {
       headers: authHeaders,
-    }
+    },
   );
   const vcardInfo = await vcardInfoResponse.text();
   const vcardUid = vcardInfo.split('UID:')[1].split('\n')[0];

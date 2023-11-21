@@ -71,7 +71,7 @@ test('createAccount should be able to create account', async () => {
   });
   expect(account.rootUrl).toEqual('https://apidata.googleusercontent.com/caldav/v2/');
   expect(account.principalUrl).toMatch(
-    /^https:\/\/apidata.googleusercontent.com\/caldav\/v2\/.+\/user$/
+    /^https:\/\/apidata.googleusercontent.com\/caldav\/v2\/.+\/user$/,
   );
   expect(account.homeUrl).toMatch(/https:\/\/apidata.googleusercontent.com\/caldav\/v2\/.+\//);
 });

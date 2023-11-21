@@ -63,9 +63,9 @@ test('createAccount should be able to create account', async () => {
   });
   expect(account.rootUrl).toEqual('https://caldav.messagingengine.com/dav/calendars');
   expect(account.principalUrl).toMatch(
-    /https:\/\/caldav.messagingengine.com\/dav\/principals\/user\/.+\//
+    /https:\/\/caldav.messagingengine.com\/dav\/principals\/user\/.+\//,
   );
   expect(account.homeUrl).toMatch(
-    /https:\/\/caldav.messagingengine.com\/dav\/calendars\/user\/.+\//
+    /https:\/\/caldav.messagingengine.com\/dav\/calendars\/user\/.+\//,
   );
 });

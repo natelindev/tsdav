@@ -1,3 +1,9 @@
+## v2.0.6
+
+**improvements**
+
+updated dependencies, fixing [#159](https://github.com/natelindev/tsdav/issues/159)
+
 ## v2.0.5
 
 **features**

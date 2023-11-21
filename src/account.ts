@@ -59,7 +59,10 @@ export const fetchPrincipalUrl = async (params: {
   const requiredFields: Array<'rootUrl'> = ['rootUrl'];
   if (!hasFields(account, requiredFields)) {
     throw new Error(
-      `account must have ${findMissingFieldNames(account, requiredFields)} before fetchPrincipalUrl`
+      `account must have ${findMissingFieldNames(
+        account,
+        requiredFields,
+      )} before fetchPrincipalUrl`,
     );
   }
   debug(`Fetching principal url from path ${account.rootUrl}`);
@@ -89,7 +92,7 @@ export const fetchHomeUrl = async (params: {
   const requiredFields: Array<'principalUrl' | 'rootUrl'> = ['principalUrl', 'rootUrl'];
   if (!hasFields(account, requiredFields)) {
     throw new Error(
-      `account must have ${findMissingFieldNames(account, requiredFields)} before fetchHomeUrl`
+      `account must have ${findMissingFieldNames(account, requiredFields)} before fetchHomeUrl`,
     );
   }
 
@@ -113,7 +116,7 @@ export const fetchHomeUrl = async (params: {
     account.accountType === 'caldav'
       ? matched?.props?.calendarHomeSet.href
       : matched?.props?.addressbookHomeSet.href,
-    account.rootUrl
+    account.rootUrl,
   ).href;
   debug(`Fetched home url ${result}`);
   return result;
@@ -144,14 +147,14 @@ export const createAccount = async (params: {
         newAccount.calendars.map(async (cal) => ({
           ...cal,
           objects: await fetchCalendarObjects({ calendar: cal, headers }),
-        }))
+        })),
       );
     } else if (account.accountType === 'carddav' && newAccount.addressBooks) {
       newAccount.addressBooks = await Promise.all(
         newAccount.addressBooks.map(async (addr) => ({
           ...addr,
           objects: await fetchVCards({ addressBook: addr, headers }),
-        }))
+        })),
       );
     }
   }

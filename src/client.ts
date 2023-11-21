@@ -312,13 +312,13 @@ export class DAVClient {
 
   async updateObject(...params: Parameters<typeof rawUpdateObject>): Promise<Response> {
     return defaultParam(rawUpdateObject, { headers: this.authHeaders, url: this.serverUrl })(
-      params[0]
+      params[0],
     );
   }
 
   async deleteObject(...params: Parameters<typeof rawDeleteObject>): Promise<Response> {
     return defaultParam(rawDeleteObject, { headers: this.authHeaders, url: this.serverUrl })(
-      params[0]
+      params[0],
     );
   }
 
@@ -391,7 +391,7 @@ export class DAVClient {
 
   async fetchCalendars(...params: Parameters<typeof rawFetchCalendars>): Promise<DAVCalendar[]> {
     return defaultParam(rawFetchCalendars, { headers: this.authHeaders, account: this.account })(
-      params?.[0]
+      params?.[0],
     );
   }
 
@@ -444,7 +444,7 @@ export class DAVClient {
     ...params: Parameters<typeof rawFetchAddressBooks>
   ): Promise<DAVAddressBook[]> {
     return defaultParam(rawFetchAddressBooks, { headers: this.authHeaders, account: this.account })(
-      params?.[0]
+      params?.[0],
     );
   }
 

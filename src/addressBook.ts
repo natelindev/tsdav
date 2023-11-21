@@ -76,7 +76,10 @@ export const fetchAddressBooks = async (params?: {
       throw new Error('no account for fetchAddressBooks');
     }
     throw new Error(
-      `account must have ${findMissingFieldNames(account, requiredFields)} before fetchAddressBooks`
+      `account must have ${findMissingFieldNames(
+        account,
+        requiredFields,
+      )} before fetchAddressBooks`,
     );
   }
   const res = await propfind({
@@ -108,7 +111,7 @@ export const fetchAddressBooks = async (params?: {
       .map(async (addr) => ({
         ...addr,
         reports: await supportedReportSet({ collection: addr, headers }),
-      }))
+      })),
   );
 };
 
@@ -129,8 +132,8 @@ export const fetchVCards = async (params: {
     throw new Error(
       `addressBook must have ${findMissingFieldNames(
         addressBook,
-        requiredFields
-      )} before fetchVCards`
+        requiredFields,
+      )} before fetchVCards`,
     );
   }
 

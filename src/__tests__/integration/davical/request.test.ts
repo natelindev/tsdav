@@ -112,7 +112,7 @@ test('davRequest should be able to get raw xml response', async () => {
   expect(result.statusText).toBe('Multi-Status');
   expect(result.ok).toBe(true);
   expect(result.raw).toMatch(
-    /<current-user-principal>\s+<href>\/caldav\.php\/.+\/<\/href>\s+<\/current-user-principal>/
+    /<current-user-principal>\s+<href>\/caldav\.php\/.+\/<\/href>\s+<\/current-user-principal>/,
   );
 });
 

@@ -79,7 +79,7 @@ export const supportedReportSet = async (params: {
   });
   return (
     res[0]?.props?.supportedReportSet?.supportedReport?.map(
-      (sr: { report: any }) => Object.keys(sr.report)[0]
+      (sr: { report: any }) => Object.keys(sr.report)[0],
     ) ?? []
   );
 };
@@ -160,8 +160,8 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
     throw new Error(
       `account must have ${findMissingFieldNames(
         account,
-        requiredFields
-      )} before smartCollectionSync`
+        requiredFields,
+      )} before smartCollectionSync`,
     );
   }
 
@@ -225,7 +225,7 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
 
     // no existing url
     const created: DAVObject[] = remoteObjects.filter((o) =>
-      localObjects.every((lo) => !urlContains(lo.url, o.url))
+      localObjects.every((lo) => !urlContains(lo.url, o.url)),
     );
     // debug(`created objects: ${created.map((o) => o.url).join('\n')}`);
 
@@ -245,7 +245,7 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
     }));
     // debug(`deleted objects: ${deleted.map((o) => o.url).join('\n')}`);
     const unchanged = localObjects.filter((lo) =>
-      remoteObjects.some((ro) => urlContains(lo.url, ro.url) && ro.etag === lo.etag)
+      remoteObjects.some((ro) => urlContains(lo.url, ro.url) && ro.etag === lo.etag),
     );
 
     return {
@@ -268,7 +268,7 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
 
     // no existing url
     const created = remoteObjects.filter((ro) =>
-      localObjects.every((lo) => !urlContains(lo.url, ro.url))
+      localObjects.every((lo) => !urlContains(lo.url, ro.url)),
     );
     // debug(`created objects: ${created.map((o) => o.url).join('\n')}`);
 
@@ -284,12 +284,12 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
 
     // does not present in remote
     const deleted = localObjects.filter((cal) =>
-      remoteObjects.every((ro) => !urlContains(ro.url, cal.url))
+      remoteObjects.every((ro) => !urlContains(ro.url, cal.url)),
     );
     // debug(`deleted objects: ${deleted.map((o) => o.url).join('\n')}`);
 
     const unchanged = localObjects.filter((lo) =>
-      remoteObjects.some((ro) => urlContains(lo.url, ro.url) && ro.etag === lo.etag)
+      remoteObjects.some((ro) => urlContains(lo.url, ro.url) && ro.etag === lo.etag),
     );
 
     if (isDirty) {

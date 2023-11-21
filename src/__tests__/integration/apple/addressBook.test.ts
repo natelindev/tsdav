@@ -81,7 +81,7 @@ test('fetchVCards should be able to fetch vcards', async () => {
 
   expect(vcards.length > 0).toBe(true);
   expect(vcards.every((o) => o.data.length > 0 && o.etag.length > 0 && o.url.length > 0)).toBe(
-    true
+    true,
   );
 
   const deleteResult = await deleteObject({
