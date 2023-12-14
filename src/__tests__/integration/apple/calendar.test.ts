@@ -246,7 +246,7 @@ test('fetchCalendarObjects should return empty result when no objects fall in th
     calendar: calendars[0],
     headers: authHeaders,
     timeRange: {
-      start: '2022-03-10T10:00:00.000Z',
+      start: '2022-03-10T10:01:00.000Z',
       end: '2022-03-10T11:00:00.000Z',
     },
     expand: true,

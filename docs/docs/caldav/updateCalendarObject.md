@@ -23,6 +23,7 @@ const result = updateCalendarObject({
 
 - `calendarObject` **required**, [DAVCalendarObject](../types/DAVCalendarObject.md) to update
 - `headers` request headers
+- `headersToExclude` array of keys of the headers you want to exclude
 
 ### Return Value
 

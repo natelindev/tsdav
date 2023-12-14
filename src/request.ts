@@ -6,7 +6,7 @@ import { DAVNamespace, DAVNamespaceShort } from './consts';
 import { DAVDepth, DAVRequest, DAVResponse } from './types/DAVTypes';
 import { camelCase } from './util/camelCase';
 import { nativeType } from './util/nativeType';
-import { cleanupFalsy, getDAVAttribute } from './util/requestHelpers';
+import { cleanupFalsy, excludeHeaders, getDAVAttribute } from './util/requestHelpers';
 
 const debug = getLogger('tsdav:request');
 
@@ -170,13 +170,14 @@ export const propfind = async (params: {
   props: ElementCompact;
   depth?: DAVDepth;
   headers?: Record<string, string>;
+  headersToExclude?: string[];
 }): Promise<DAVResponse[]> => {
-  const { url, props, depth, headers } = params;
+  const { url, props, depth, headers, headersToExclude } = params;
   return davRequest({
     url,
     init: {
       method: 'PROPFIND',
-      headers: cleanupFalsy({ depth, ...headers }),
+      headers: excludeHeaders(cleanupFalsy({ depth, ...headers }), headersToExclude),
       namespace: DAVNamespaceShort.DAV,
       body: {
         propfind: {
@@ -198,9 +199,14 @@ export const createObject = async (params: {
   url: string;
   data: BodyInit;
   headers?: Record<string, string>;
+  headersToExclude?: string[];
 }): Promise<Response> => {
-  const { url, data, headers } = params;
-  return fetch(url, { method: 'PUT', body: data, headers });
+  const { url, data, headers, headersToExclude } = params;
+  return fetch(url, {
+    method: 'PUT',
+    body: data,
+    headers: excludeHeaders(headers, headersToExclude),
+  });
 };
 
 export const updateObject = async (params: {
@@ -208,12 +214,13 @@ export const updateObject = async (params: {
   data: BodyInit;
   etag?: string;
   headers?: Record<string, string>;
+  headersToExclude?: string[];
 }): Promise<Response> => {
-  const { url, data, etag, headers } = params;
+  const { url, data, etag, headers, headersToExclude } = params;
   return fetch(url, {
     method: 'PUT',
     body: data,
-    headers: cleanupFalsy({ 'If-Match': etag, ...headers }),
+    headers: excludeHeaders(cleanupFalsy({ 'If-Match': etag, ...headers }), headersToExclude),
   });
 };
 
@@ -221,10 +228,11 @@ export const deleteObject = async (params: {
   url: string;
   etag?: string;
   headers?: Record<string, string>;
+  headersToExclude?: string[];
 }): Promise<Response> => {
-  const { url, headers, etag } = params;
+  const { url, headers, etag, headersToExclude } = params;
   return fetch(url, {
     method: 'DELETE',
-    headers: cleanupFalsy({ 'If-Match': etag, ...headers }),
+    headers: excludeHeaders(cleanupFalsy({ 'If-Match': etag, ...headers }), headersToExclude),
   });
 };

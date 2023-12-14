@@ -1,3 +1,11 @@
+## v2.0.7
+
+**features**
+new option `headersToExclude` on all possible functions, allow precise control on request headers, fixing [#166](https://github.com/natelindev/tsdav/issues/166)
+
+**improvements**
+updated dependencies
+
 ## v2.0.6
 
 **improvements**

@@ -21,6 +21,7 @@ const response = await deleteObject({
 - `url` **required**, url of object to delete
 - `etag` the version string of content, if [etag](https://tools.ietf.org/id/draft-reschke-http-etag-on-write-08.html) changed, `data` must have been changed.
 - `headers` request headers
+- `headersToExclude` array of keys of the headers you want to exclude
 
 ### Return Value
 

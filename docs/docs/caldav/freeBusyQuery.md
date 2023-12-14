@@ -33,6 +33,7 @@ const freeBusyQuery = await freeBusyQuery({
   - `end` end time in [ISO 8601 format](https://en.wikipedia.org/wiki/ISO_8601), format that's not in ISO 8601 will cause an error be thrown.
 - `depth` [DAVDepth](../types/DAVDepth.md)
 - `headers` request headers
+- `headersToExclude` array of keys of the headers you want to exclude
 
 ### Return Value
 

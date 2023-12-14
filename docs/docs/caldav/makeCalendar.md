@@ -25,6 +25,7 @@ const result = await makeCalendar({
 - `props` **required**, [CALDAV prop element](https://datatracker.ietf.org/doc/html/rfc4791#section-9.6.4) in [ElementCompact](../types/ElementCompact.md) form
 - `depth` [DAVDepth](../types/DAVDepth.md)
 - `headers` request headers
+- `headersToExclude` array of keys of the headers you want to exclude
 
 ### Return Value
 

@@ -19,6 +19,7 @@ const url = await serviceDiscovery({
 
 - `account` **required**, account with `serverUrl` and `accountType`
 - `headers` request headers
+- `headersToExclude` array of keys of the headers you want to exclude
 
 ### Return Value
 

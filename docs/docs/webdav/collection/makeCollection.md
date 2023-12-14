@@ -25,6 +25,7 @@ const response = await makeCollection({
 - `props` [ElementCompact](../../types/ElementCompact.md) prop for the collection
 - `depth` [DAVDepth](../../types/DAVDepth.md)
 - `headers` request headers
+- `headersToExclude` array of keys of the headers you want to exclude
 
 ### Return Value
 

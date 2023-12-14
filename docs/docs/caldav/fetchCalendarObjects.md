@@ -24,6 +24,7 @@ const objects = await fetchCalendarObjects({
   - `start` start time in [ISO 8601 format](https://en.wikipedia.org/wiki/ISO_8601), format that's not in ISO 8601 will cause an error be thrown.
   - `end` end time in [ISO 8601 format](https://en.wikipedia.org/wiki/ISO_8601), format that's not in ISO 8601 will cause an error be thrown.
 - `headers` request headers
+- `headersToExclude` array of keys of the headers you want to exclude
   :::info
   some calendar providers may return their objects with different suffix than .ics such as `http://api.xx/97ec5f81-5ecc-4505-9621-08806f6796a3` or `http://api.xx/calobj1.abc`
   in this case, you need to pass in your own calendar object name filter so that you can have results you need.

@@ -55,3 +55,19 @@ export const conditionalParam = <T>(key: string, param: T) => {
   }
   return {} as Record<string, never>;
 };
+
+export const excludeHeaders = (
+  headers: Record<string, string> | undefined,
+  headersToExclude: string[] | undefined,
+): Record<string, string> => {
+  if (!headers) {
+    return {};
+  }
+  if (!headersToExclude || headersToExclude.length === 0) {
+    return headers;
+  }
+
+  return Object.fromEntries(
+    Object.entries(headers).filter(([key]) => !headersToExclude.includes(key)),
+  );
+};

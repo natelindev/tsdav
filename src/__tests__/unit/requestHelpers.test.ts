@@ -1,4 +1,4 @@
-import { cleanupFalsy, urlContains, urlEquals } from '../../util/requestHelpers';
+import { cleanupFalsy, excludeHeaders, urlContains, urlEquals } from '../../util/requestHelpers';
 
 test('cleanupFalsy should clean undefined from object', () => {
   const objA = {
@@ -59,4 +59,32 @@ test('urlContains should handle almost substring of urls', () => {
   expect(urlContains(url, url5)).toBe(true);
   expect(urlContains(url, url6)).toBe(true);
   expect(urlContains(url, url7)).toBe(false);
+});
+
+test('excludeHeaders should exclude headers', () => {
+  const headers = {
+    test1: '123',
+    test2: 'abc',
+    test3: 'cde',
+  };
+
+  const headersToExclude = ['test1', 'test2'];
+
+  expect(excludeHeaders(headers, headersToExclude)).toEqual({ test3: 'cde' });
+});
+
+test('excludeHeaders should handle undefined headers and/or undefined/empty headersToExclude', () => {
+  const headers = {
+    test1: '123',
+    test2: 'abc',
+    test3: 'cde',
+  };
+
+  const headersToExclude = ['test1', 'test2'];
+
+  expect(excludeHeaders(undefined, headersToExclude)).toEqual({});
+  expect(excludeHeaders(headers, undefined)).toEqual(headers);
+  expect(excludeHeaders(headers, [])).toEqual(headers);
+  expect(excludeHeaders(undefined, undefined)).toEqual({});
+  expect(excludeHeaders({}, ['test1', 'test2', 'test3'])).toEqual({});
 });

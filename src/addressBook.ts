@@ -7,7 +7,7 @@ import { DAVNamespace, DAVNamespaceShort } from './consts';
 import { createObject, deleteObject, propfind, updateObject } from './request';
 import { DAVDepth, DAVResponse } from './types/DAVTypes';
 import { DAVAccount, DAVAddressBook, DAVVCard } from './types/models';
-import { getDAVAttribute } from './util/requestHelpers';
+import { excludeHeaders, getDAVAttribute } from './util/requestHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelpers';
 
 const debug = getLogger('tsdav:addressBook');
@@ -18,8 +18,9 @@ export const addressBookQuery = async (params: {
   filters?: ElementCompact;
   depth?: DAVDepth;
   headers?: Record<string, string>;
+  headersToExclude?: string[];
 }): Promise<DAVResponse[]> => {
-  const { url, props, filters, depth, headers } = params;
+  const { url, props, filters, depth, headers, headersToExclude } = params;
   return collectionQuery({
     url,
     body: {
@@ -37,7 +38,7 @@ export const addressBookQuery = async (params: {
     },
     defaultNamespace: DAVNamespaceShort.CARDDAV,
     depth,
-    headers,
+    headers: excludeHeaders(headers, headersToExclude),
   });
 };
 
@@ -68,8 +69,9 @@ export const fetchAddressBooks = async (params?: {
   account?: DAVAccount;
   props?: ElementCompact;
   headers?: Record<string, string>;
+  headersToExclude?: string[];
 }): Promise<DAVAddressBook[]> => {
-  const { account, headers, props: customProps } = params ?? {};
+  const { account, headers, props: customProps, headersToExclude } = params ?? {};
   const requiredFields: Array<keyof DAVAccount> = ['homeUrl', 'rootUrl'];
   if (!account || !hasFields(account, requiredFields)) {
     if (!account) {
@@ -91,7 +93,7 @@ export const fetchAddressBooks = async (params?: {
       [`${DAVNamespaceShort.DAV}:sync-token`]: {},
     },
     depth: '1',
-    headers,
+    headers: excludeHeaders(headers, headersToExclude),
   });
   return Promise.all(
     res
@@ -121,8 +123,16 @@ export const fetchVCards = async (params: {
   objectUrls?: string[];
   urlFilter?: (url: string) => boolean;
   useMultiGet?: boolean;
+  headersToExclude?: string[];
 }): Promise<DAVVCard[]> => {
-  const { addressBook, headers, objectUrls, urlFilter = (url) => url, useMultiGet = true } = params;
+  const {
+    addressBook,
+    headers,
+    objectUrls,
+    headersToExclude,
+    urlFilter = (url) => url,
+    useMultiGet = true,
+  } = params;
   debug(`Fetching vcards from ${addressBook?.url}`);
   const requiredFields: Array<'url'> = ['url'];
   if (!addressBook || !hasFields(addressBook, requiredFields)) {
@@ -145,7 +155,7 @@ export const fetchVCards = async (params: {
         url: addressBook.url,
         props: { [`${DAVNamespaceShort.DAV}:getetag`]: {} },
         depth: '1',
-        headers,
+        headers: excludeHeaders(headers, headersToExclude),
       })
     ).map((res) => (res.ok ? res.href ?? '' : ''))
   )
@@ -164,7 +174,7 @@ export const fetchVCards = async (params: {
         },
         objectUrls: vcardUrls,
         depth: '1',
-        headers,
+        headers: excludeHeaders(headers, headersToExclude),
       });
     } else {
       vCardResults = await addressBookQuery({
@@ -174,7 +184,7 @@ export const fetchVCards = async (params: {
           [`${DAVNamespaceShort.CARDDAV}:address-data`]: {},
         },
         depth: '1',
-        headers,
+        headers: excludeHeaders(headers, headersToExclude),
       });
     }
   }
@@ -191,43 +201,52 @@ export const createVCard = async (params: {
   vCardString: string;
   filename: string;
   headers?: Record<string, string>;
+  headersToExclude?: string[];
 }): Promise<Response> => {
-  const { addressBook, vCardString, filename, headers } = params;
+  const { addressBook, vCardString, filename, headers, headersToExclude } = params;
   return createObject({
     url: new URL(filename, addressBook.url).href,
     data: vCardString,
-    headers: {
-      'content-type': 'text/vcard; charset=utf-8',
-      'If-None-Match': '*',
-      ...headers,
-    },
+    headers: excludeHeaders(
+      {
+        'content-type': 'text/vcard; charset=utf-8',
+        'If-None-Match': '*',
+        ...headers,
+      },
+      headersToExclude,
+    ),
   });
 };
 
 export const updateVCard = async (params: {
   vCard: DAVVCard;
   headers?: Record<string, string>;
+  headersToExclude?: string[];
 }): Promise<Response> => {
-  const { vCard, headers } = params;
+  const { vCard, headers, headersToExclude } = params;
   return updateObject({
     url: vCard.url,
     data: vCard.data,
     etag: vCard.etag,
-    headers: {
-      'content-type': 'text/vcard; charset=utf-8',
-      ...headers,
-    },
+    headers: excludeHeaders(
+      {
+        'content-type': 'text/vcard; charset=utf-8',
+        ...headers,
+      },
+      headersToExclude,
+    ),
   });
 };
 
 export const deleteVCard = async (params: {
   vCard: DAVVCard;
   headers?: Record<string, string>;
+  headersToExclude?: string[];
 }): Promise<Response> => {
-  const { vCard, headers } = params;
+  const { vCard, headers, headersToExclude } = params;
   return deleteObject({
     url: vCard.url,
     etag: vCard.etag,
-    headers,
+    headers: excludeHeaders(headers, headersToExclude),
   });
 };

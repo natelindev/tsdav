@@ -43,6 +43,7 @@ const { created, updated, deleted } = (
 - `account` [DAVAccount](../../types/DAVAccount.md) to sync
 - `detailedResult` boolean indicate whether the return value should be detailed or not
 - `headers` request headers
+- `headersToExclude` array of keys of the headers you want to exclude
 
 :::info
 `objects` inside `collection` are not needed when `detailedResult` is `true`.

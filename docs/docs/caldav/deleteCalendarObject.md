@@ -22,6 +22,7 @@ const result = await deleteCalendarObject({
 
 - `calendarObject` **required**, [DAVCalendarObject](../types/DAVCalendarObject.md) to delete
 - `headers` request headers
+- `headersToExclude` array of keys of the headers you want to exclude
 
 ### Return Value
 

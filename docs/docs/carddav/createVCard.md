@@ -23,6 +23,7 @@ const result = await createVCard({
 - `filename` **required**, file name of the new vcard, should end in `.vcf`
 - `vCardString` **required**, vcard file data
 - `headers` request headers
+- `headersToExclude` array of keys of the headers you want to exclude
 
 ### Return Value
 

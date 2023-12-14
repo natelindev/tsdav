@@ -39,6 +39,7 @@ const results = await calendarQuery({
 - `depth` [DAVDepth](../types/DAVDepth.md)
 - `timezone` iana timezone name, like `America/Los_Angeles`
 - `headers` request headers
+- `headersToExclude` array of keys of the headers you want to exclude
 
 ### Return Value
 

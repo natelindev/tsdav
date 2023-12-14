@@ -22,6 +22,7 @@ const response = await createObject({
 - `url` **required**, object url
 - `data` **required**, object data
 - `headers` request headers
+- `headersToExclude` array of keys of the headers you want to exclude
 
 ### Return Value
 

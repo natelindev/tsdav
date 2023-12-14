@@ -7,7 +7,7 @@ import { davRequest, propfind } from './request';
 import { DAVDepth, DAVResponse } from './types/DAVTypes';
 import { SmartCollectionSync } from './types/functionsOverloads';
 import { DAVAccount, DAVCollection, DAVObject } from './types/models';
-import { cleanupFalsy, getDAVAttribute, urlContains } from './util/requestHelpers';
+import { cleanupFalsy, excludeHeaders, getDAVAttribute, urlContains } from './util/requestHelpers';
 import { findMissingFieldNames, hasFields, RequireAndNotNullSome } from './util/typeHelpers';
 
 const debug = getLogger('tsdav:collection');
@@ -18,13 +18,21 @@ export const collectionQuery = async (params: {
   depth?: DAVDepth;
   defaultNamespace?: DAVNamespaceShort;
   headers?: Record<string, string>;
+  headersToExclude?: string[];
 }): Promise<DAVResponse[]> => {
-  const { url, body, depth, defaultNamespace = DAVNamespaceShort.DAV, headers } = params;
+  const {
+    url,
+    body,
+    depth,
+    defaultNamespace = DAVNamespaceShort.DAV,
+    headers,
+    headersToExclude,
+  } = params;
   const queryResults = await davRequest({
     url,
     init: {
       method: 'REPORT',
-      headers: cleanupFalsy({ depth, ...headers }),
+      headers: excludeHeaders(cleanupFalsy({ depth, ...headers }), headersToExclude),
       namespace: defaultNamespace,
       body,
     },
@@ -43,13 +51,14 @@ export const makeCollection = async (params: {
   props?: ElementCompact;
   depth?: DAVDepth;
   headers?: Record<string, string>;
+  headersToExclude?: string[];
 }): Promise<DAVResponse[]> => {
-  const { url, props, depth, headers } = params;
+  const { url, props, depth, headers, headersToExclude } = params;
   return davRequest({
     url,
     init: {
       method: 'MKCOL',
-      headers: cleanupFalsy({ depth, ...headers }),
+      headers: excludeHeaders(cleanupFalsy({ depth, ...headers }), headersToExclude),
       namespace: DAVNamespaceShort.DAV,
       body: props
         ? {
@@ -67,15 +76,16 @@ export const makeCollection = async (params: {
 export const supportedReportSet = async (params: {
   collection: DAVCollection;
   headers?: Record<string, string>;
+  headersToExclude?: string[];
 }): Promise<string[]> => {
-  const { collection, headers } = params;
+  const { collection, headers, headersToExclude } = params;
   const res = await propfind({
     url: collection.url,
     props: {
       [`${DAVNamespaceShort.DAV}:supported-report-set`]: {},
     },
     depth: '0',
-    headers,
+    headers: excludeHeaders(headers, headersToExclude),
   });
   return (
     res[0]?.props?.supportedReportSet?.supportedReport?.map(
@@ -87,18 +97,19 @@ export const supportedReportSet = async (params: {
 export const isCollectionDirty = async (params: {
   collection: DAVCollection;
   headers?: Record<string, string>;
+  headersToExclude?: string[];
 }): Promise<{
   isDirty: boolean;
   newCtag: string;
 }> => {
-  const { collection, headers } = params;
+  const { collection, headers, headersToExclude } = params;
   const responses = await propfind({
     url: collection.url,
     props: {
       [`${DAVNamespaceShort.CALENDAR_SERVER}:getctag`]: {},
     },
     depth: '0',
-    headers,
+    headers: excludeHeaders(headers, headersToExclude),
   });
   const res = responses.filter((r) => urlContains(collection.url, r.href))[0];
   if (!res) {
@@ -117,16 +128,17 @@ export const syncCollection = (params: {
   url: string;
   props: ElementCompact;
   headers?: Record<string, string>;
+  headersToExclude?: string[];
   syncLevel?: number;
   syncToken?: string;
 }): Promise<DAVResponse[]> => {
-  const { url, props, headers, syncLevel, syncToken } = params;
+  const { url, props, headers, syncLevel, syncToken, headersToExclude } = params;
   return davRequest({
     url,
     init: {
       method: 'REPORT',
       namespace: DAVNamespaceShort.DAV,
-      headers: { ...headers },
+      headers: excludeHeaders({ ...headers }, headersToExclude),
       body: {
         'sync-collection': {
           _attributes: getDAVAttribute([
@@ -148,10 +160,11 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
   collection: T;
   method?: 'basic' | 'webdav';
   headers?: Record<string, string>;
+  headersToExclude?: string[];
   account?: DAVAccount;
   detailedResult?: boolean;
 }): Promise<any> => {
-  const { collection, method, headers, account, detailedResult } = params;
+  const { collection, method, headers, headersToExclude, account, detailedResult } = params;
   const requiredFields: Array<'accountType' | 'homeUrl'> = ['accountType', 'homeUrl'];
   if (!account || !hasFields(account, requiredFields)) {
     if (!account) {
@@ -181,7 +194,7 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
       },
       syncLevel: 1,
       syncToken: collection.syncToken,
-      headers,
+      headers: excludeHeaders(headers, headersToExclude),
     });
 
     const objectResponses = result.filter((r): r is RequireAndNotNullSome<DAVResponse, 'href'> => {
@@ -206,7 +219,7 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
           },
           objectUrls: changedObjectUrls,
           depth: '1',
-          headers,
+          headers: excludeHeaders(headers, headersToExclude),
         })) ?? []
       : [];
 
@@ -261,10 +274,14 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
   if (syncMethod === 'basic') {
     const { isDirty, newCtag } = await isCollectionDirty({
       collection,
-      headers,
+      headers: excludeHeaders(headers, headersToExclude),
     });
     const localObjects = collection.objects ?? [];
-    const remoteObjects = (await collection.fetchObjects?.({ collection, headers })) ?? [];
+    const remoteObjects =
+      (await collection.fetchObjects?.({
+        collection,
+        headers: excludeHeaders(headers, headersToExclude),
+      })) ?? [];
 
     // no existing url
     const created = remoteObjects.filter((ro) =>

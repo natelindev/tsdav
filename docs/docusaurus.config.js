@@ -44,8 +44,8 @@ module.exports = {
       copyright: `© ${new Date().getFullYear()} Nathaniel Lin. MIT licensed.`,
     },
     prism: {
-      theme: require('prism-react-renderer/themes/github'),
-      darkTheme: require('prism-react-renderer/themes/dracula'),
+      theme: require('prism-react-renderer').themes.github,
+      darkTheme: require('prism-react-renderer').themes.dracula,
     },
   },
   presets: [
@@ -59,7 +59,7 @@ module.exports = {
           lastVersion: 'current',
           versions: {
             current: {
-              label: '2.0.6',
+              label: '2.0.7',
             },
             '1.1.6': {
               label: '1.1.6',

@@ -23,6 +23,7 @@ const result = await createCalendarObject({
 - `filename` **required**, file name of the new calendar object, should end in `.ics`
 - `iCalString` **required**, calendar file data
 - `headers` request headers
+- `headersToExclude` array of keys of the headers you want to exclude
 
 ### Return Value
 

@@ -23,6 +23,7 @@ const result = updateVCard({
 
 - `vCard` **required**, [DAVVCard](../types/DAVVCard.md) to update
 - `headers` request headers
+- `headersToExclude` array of keys of the headers you want to exclude
 
 ### Return Value
 

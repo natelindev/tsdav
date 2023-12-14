@@ -36,6 +36,7 @@ const vcards = await addressBookMultiGet({
 - `filters` [CARDDAV filter element](https://datatracker.ietf.org/doc/html/rfc6352#section-10.5) in [ElementCompact](../types/ElementCompact.md) form, overriding default filters
 - `depth` **required**, [DAVDepth](../types/DAVDepth.md) of the request
 - `headers` request headers
+- `headersToExclude` array of keys of the headers you want to exclude
 
 ### Return Value
 

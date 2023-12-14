@@ -6,7 +6,7 @@ import { fetchCalendarObjects, fetchCalendars } from './calendar';
 import { DAVNamespaceShort } from './consts';
 import { propfind } from './request';
 import { DAVAccount } from './types/models';
-import { urlContains } from './util/requestHelpers';
+import { excludeHeaders, urlContains } from './util/requestHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelpers';
 
 const debug = getLogger('tsdav:account');
@@ -14,9 +14,10 @@ const debug = getLogger('tsdav:account');
 export const serviceDiscovery = async (params: {
   account: DAVAccount;
   headers?: Record<string, string>;
+  headersToExclude?: string[];
 }): Promise<string> => {
   debug('Service discovery...');
-  const { account, headers } = params;
+  const { account, headers, headersToExclude } = params;
   const endpoint = new URL(account.serverUrl);
 
   const uri = new URL(`/.well-known/${account.accountType}`, endpoint);
@@ -24,7 +25,7 @@ export const serviceDiscovery = async (params: {
 
   try {
     const response = await fetch(uri.href, {
-      headers,
+      headers: excludeHeaders(headers, headersToExclude),
       method: 'PROPFIND',
       redirect: 'manual',
     });
@@ -54,8 +55,9 @@ export const serviceDiscovery = async (params: {
 export const fetchPrincipalUrl = async (params: {
   account: DAVAccount;
   headers?: Record<string, string>;
+  headersToExclude?: string[];
 }): Promise<string> => {
-  const { account, headers } = params;
+  const { account, headers, headersToExclude } = params;
   const requiredFields: Array<'rootUrl'> = ['rootUrl'];
   if (!hasFields(account, requiredFields)) {
     throw new Error(
@@ -72,7 +74,7 @@ export const fetchPrincipalUrl = async (params: {
       [`${DAVNamespaceShort.DAV}:current-user-principal`]: {},
     },
     depth: '0',
-    headers,
+    headers: excludeHeaders(headers, headersToExclude),
   });
   if (!response.ok) {
     debug(`Fetch principal url failed: ${response.statusText}`);
@@ -87,8 +89,9 @@ export const fetchPrincipalUrl = async (params: {
 export const fetchHomeUrl = async (params: {
   account: DAVAccount;
   headers?: Record<string, string>;
+  headersToExclude?: string[];
 }): Promise<string> => {
-  const { account, headers } = params;
+  const { account, headers, headersToExclude } = params;
   const requiredFields: Array<'principalUrl' | 'rootUrl'> = ['principalUrl', 'rootUrl'];
   if (!hasFields(account, requiredFields)) {
     throw new Error(
@@ -104,7 +107,7 @@ export const fetchHomeUrl = async (params: {
         ? { [`${DAVNamespaceShort.CALDAV}:calendar-home-set`]: {} }
         : { [`${DAVNamespaceShort.CARDDAV}:addressbook-home-set`]: {} },
     depth: '0',
-    headers,
+    headers: excludeHeaders(headers, headersToExclude),
   });
 
   const matched = responses.find((r) => urlContains(account.principalUrl, r.href));
@@ -125,20 +128,42 @@ export const fetchHomeUrl = async (params: {
 export const createAccount = async (params: {
   account: DAVAccount;
   headers?: Record<string, string>;
+  headersToExclude?: string[];
   loadCollections?: boolean;
   loadObjects?: boolean;
 }): Promise<DAVAccount> => {
-  const { account, headers, loadCollections = false, loadObjects = false } = params;
+  const {
+    account,
+    headers,
+    loadCollections = false,
+    loadObjects = false,
+    headersToExclude,
+  } = params;
   const newAccount: DAVAccount = { ...account };
-  newAccount.rootUrl = await serviceDiscovery({ account, headers });
-  newAccount.principalUrl = await fetchPrincipalUrl({ account: newAccount, headers });
-  newAccount.homeUrl = await fetchHomeUrl({ account: newAccount, headers });
+  newAccount.rootUrl = await serviceDiscovery({
+    account,
+    headers: excludeHeaders(headers, headersToExclude),
+  });
+  newAccount.principalUrl = await fetchPrincipalUrl({
+    account: newAccount,
+    headers: excludeHeaders(headers, headersToExclude),
+  });
+  newAccount.homeUrl = await fetchHomeUrl({
+    account: newAccount,
+    headers: excludeHeaders(headers, headersToExclude),
+  });
   // to load objects you must first load collections
   if (loadCollections || loadObjects) {
     if (account.accountType === 'caldav') {
-      newAccount.calendars = await fetchCalendars({ headers, account: newAccount });
+      newAccount.calendars = await fetchCalendars({
+        headers: excludeHeaders(headers, headersToExclude),
+        account: newAccount,
+      });
     } else if (account.accountType === 'carddav') {
-      newAccount.addressBooks = await fetchAddressBooks({ headers, account: newAccount });
+      newAccount.addressBooks = await fetchAddressBooks({
+        headers: excludeHeaders(headers, headersToExclude),
+        account: newAccount,
+      });
     }
   }
   if (loadObjects) {
@@ -146,14 +171,20 @@ export const createAccount = async (params: {
       newAccount.calendars = await Promise.all(
         newAccount.calendars.map(async (cal) => ({
           ...cal,
-          objects: await fetchCalendarObjects({ calendar: cal, headers }),
+          objects: await fetchCalendarObjects({
+            calendar: cal,
+            headers: excludeHeaders(headers, headersToExclude),
+          }),
         })),
       );
     } else if (account.accountType === 'carddav' && newAccount.addressBooks) {
       newAccount.addressBooks = await Promise.all(
         newAccount.addressBooks.map(async (addr) => ({
           ...addr,
-          objects: await fetchVCards({ addressBook: addr, headers }),
+          objects: await fetchVCards({
+            addressBook: addr,
+            headers: excludeHeaders(headers, headersToExclude),
+          }),
         })),
       );
     }

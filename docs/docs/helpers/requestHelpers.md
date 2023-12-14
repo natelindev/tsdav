@@ -28,3 +28,9 @@ Convert `DAVNamespace` to intended format to be consumed by `xml-js` to be used 
 Clean up `falsy` values within an object, this is useful when sending headers,
 
 Where undefined object property will cause an error.
+
+### excludeHeaders
+
+Remove header value by its key value
+
+useful when sending headers
