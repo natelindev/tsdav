@@ -1,3 +1,8 @@
+## v2.0.8
+
+**improvements**
+`etag` of `DAVObject` is now optional fixing [#158](https://github.com/natelindev/tsdav/issues/158)
+
 ## v2.0.7
 
 **features**

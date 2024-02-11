@@ -136,7 +136,7 @@ test('fetchCalendarObjects should be able to fetch calendar objects', async () =
   });
 
   expect(objects.length > 0).toBe(true);
-  expect(objects.every((o) => o.data?.length > 0 && o.etag?.length > 0 && o.url?.length > 0)).toBe(
+  expect(objects.every((o) => o.data?.length > 0 && (o.etag?.length ?? 0) > 0 && o.url?.length > 0)).toBe(
     true,
   );
 

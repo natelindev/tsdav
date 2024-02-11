@@ -67,7 +67,7 @@ type DAVCollection = {
 };
 type DAVObject = {
     data?: any;
-    etag: string;
+    etag?: string;
     url: string;
 };
 type DAVCredentials = {

@@ -145,7 +145,7 @@ test('createObject should be able to create object', async () => {
 
   expect(response.ok).toBe(true);
   expect(calendarObject.url.length > 0).toBe(true);
-  expect(calendarObject.etag.length > 0).toBe(true);
+  expect((calendarObject.etag?.length ?? 0) > 0).toBe(true);
   expect(calendarObject.data.split('\r\n').join('\n')).toEqual(iCalString);
 
   const deleteResult = await deleteObject({

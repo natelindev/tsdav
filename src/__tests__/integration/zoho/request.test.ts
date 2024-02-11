@@ -154,7 +154,7 @@ test('createObject should be able to create object', async () => {
 
   expect(response.ok).toBe(true);
   expect(calendarObject.url.length > 0).toBe(true);
-  expect(calendarObject.etag.length > 0).toBe(true);
+  expect((calendarObject.etag?.length ?? 0) > 0).toBe(true);
   expect(calendarObject.data.split('DTSTART:')[1].split('\n')[0]).toEqual('20210307T090800Z');
   expect(calendarObject.data.split('DTEND:')[1].split('\n')[0]).toEqual('20210307T100800Z');
   expect(calendarObject.data.split('SUMMARY:')[1].split('\n')[0]).toEqual('9');
