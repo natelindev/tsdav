@@ -94,9 +94,9 @@ test('fetchVCards should be able to fetch vcards', async () => {
   });
 
   expect(vcards.length > 0).toBe(true);
-  expect(vcards.every((o) => o.data?.length > 0 && (o.etag?.length ?? 0) > 0 && o.url?.length > 0)).toBe(
-    true,
-  );
+  expect(
+    vcards.every((o) => o.data?.length > 0 && (o.etag?.length ?? 0) > 0 && o.url?.length > 0),
+  ).toBe(true);
 
   const vcardInfoResponse = await fetch(
     new URL(`787cc01a-f93f-4917-b11a-3e842316e6d7.vcf`, addressBooks[0].url).href,
