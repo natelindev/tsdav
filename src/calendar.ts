@@ -151,7 +151,7 @@ export const fetchCalendars = async (params?: {
           rc.props?.supportedCalendarComponentSet.comp,
         )
           ? rc.props?.supportedCalendarComponentSet.comp.map((sc: any) => sc._attributes.name)
-          : [rc.props?.supportedCalendarComponentSet.comp._attributes.name] || [];
+          : [rc.props?.supportedCalendarComponentSet.comp?._attributes.name] || [];
         return components.some((c) => Object.values(ICALObjects).includes(c));
       })
       .map((rs) => {
@@ -167,7 +167,7 @@ export const fetchCalendars = async (params?: {
           displayName: rs.props?.displayname._cdata ?? rs.props?.displayname,
           components: Array.isArray(rs.props?.supportedCalendarComponentSet.comp)
             ? rs.props?.supportedCalendarComponentSet.comp.map((sc: any) => sc._attributes.name)
-            : [rs.props?.supportedCalendarComponentSet.comp._attributes.name],
+            : [rs.props?.supportedCalendarComponentSet.comp?._attributes.name],
           resourcetype: Object.keys(rs.props?.resourcetype),
           syncToken: rs.props?.syncToken,
           ...conditionalParam(

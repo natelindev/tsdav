@@ -828,21 +828,21 @@ const fetchCalendars = (params) => __awaiter(void 0, void 0, void 0, function* (
     return Promise.all(res
         .filter((r) => { var _a, _b; return Object.keys((_b = (_a = r.props) === null || _a === void 0 ? void 0 : _a.resourcetype) !== null && _b !== void 0 ? _b : {}).includes('calendar'); })
         .filter((rc) => {
-        var _a, _b, _c;
+        var _a, _b, _c, _d;
         // filter out none iCal format calendars.
         const components = Array.isArray((_a = rc.props) === null || _a === void 0 ? void 0 : _a.supportedCalendarComponentSet.comp)
             ? (_b = rc.props) === null || _b === void 0 ? void 0 : _b.supportedCalendarComponentSet.comp.map((sc) => sc._attributes.name)
-            : [(_c = rc.props) === null || _c === void 0 ? void 0 : _c.supportedCalendarComponentSet.comp._attributes.name] || [];
+            : [(_d = (_c = rc.props) === null || _c === void 0 ? void 0 : _c.supportedCalendarComponentSet.comp) === null || _d === void 0 ? void 0 : _d._attributes.name] || [];
         return components.some((c) => Object.values(ICALObjects).includes(c));
     })
         .map((rs) => {
-        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q;
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r;
         // debug(`Found calendar ${rs.props?.displayname}`);
         const description = (_a = rs.props) === null || _a === void 0 ? void 0 : _a.calendarDescription;
         const timezone = (_b = rs.props) === null || _b === void 0 ? void 0 : _b.calendarTimezone;
         return Object.assign({ description: typeof description === 'string' ? description : '', timezone: typeof timezone === 'string' ? timezone : '', url: new URL((_c = rs.href) !== null && _c !== void 0 ? _c : '', (_d = account.rootUrl) !== null && _d !== void 0 ? _d : '').href, ctag: (_e = rs.props) === null || _e === void 0 ? void 0 : _e.getctag, calendarColor: (_f = rs.props) === null || _f === void 0 ? void 0 : _f.calendarColor, displayName: (_h = (_g = rs.props) === null || _g === void 0 ? void 0 : _g.displayname._cdata) !== null && _h !== void 0 ? _h : (_j = rs.props) === null || _j === void 0 ? void 0 : _j.displayname, components: Array.isArray((_k = rs.props) === null || _k === void 0 ? void 0 : _k.supportedCalendarComponentSet.comp)
                 ? (_l = rs.props) === null || _l === void 0 ? void 0 : _l.supportedCalendarComponentSet.comp.map((sc) => sc._attributes.name)
-                : [(_m = rs.props) === null || _m === void 0 ? void 0 : _m.supportedCalendarComponentSet.comp._attributes.name], resourcetype: Object.keys((_o = rs.props) === null || _o === void 0 ? void 0 : _o.resourcetype), syncToken: (_p = rs.props) === null || _p === void 0 ? void 0 : _p.syncToken }, conditionalParam('projectedProps', Object.fromEntries(Object.entries((_q = rs.props) !== null && _q !== void 0 ? _q : {}).filter(([key]) => projectedProps === null || projectedProps === void 0 ? void 0 : projectedProps[key]))));
+                : [(_o = (_m = rs.props) === null || _m === void 0 ? void 0 : _m.supportedCalendarComponentSet.comp) === null || _o === void 0 ? void 0 : _o._attributes.name], resourcetype: Object.keys((_p = rs.props) === null || _p === void 0 ? void 0 : _p.resourcetype), syncToken: (_q = rs.props) === null || _q === void 0 ? void 0 : _q.syncToken }, conditionalParam('projectedProps', Object.fromEntries(Object.entries((_r = rs.props) !== null && _r !== void 0 ? _r : {}).filter(([key]) => projectedProps === null || projectedProps === void 0 ? void 0 : projectedProps[key]))));
     })
         .map((cal) => __awaiter(void 0, void 0, void 0, function* () {
         return (Object.assign(Object.assign({}, cal), { reports: yield supportedReportSet({

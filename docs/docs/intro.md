@@ -126,22 +126,6 @@ const client = new DAVClient({
 });
 ```
 
-or
-
-```ts
-const client = new DAVClient({
-  serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
-  credentials: {
-    authorizationCode: 'AUTH_CODE_OBTAINED_FROM_OAUTH_CALLBACK',
-    tokenUrl: 'https://accounts.google.com/o/oauth2/token',
-    clientId: 'YOUR_CLIENT_ID',
-    clientSecret: 'YOUR_CLIENT_SECRET',
-  },
-  authMethod: 'Oauth',
-  defaultAccountType: 'caldav',
-});
-```
-
 For Apple
 
 ```ts
