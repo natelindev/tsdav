@@ -2,7 +2,7 @@
 
 **improvements**
 
-- fixed [#181](https://github.com/natelindev/tsdav/issues/181) where an option check is missing.
+- fixed [#181](https://github.com/natelindev/tsdav/issues/181) where a null check is missing.
 - fixed doc example, thanks to [#175](https://github.com/natelindev/tsdav/issues/175)
 - added docs related to smart calendar syncing [#138](https://github.com/natelindev/tsdav/issues/138)
 
