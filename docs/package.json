@@ -27,8 +27,8 @@
     ]
   },
   "dependencies": {
-    "@docusaurus/core": "3.0.1",
-    "@docusaurus/preset-classic": "3.0.1",
+    "@docusaurus/core": "3.4.0",
+    "@docusaurus/preset-classic": "3.4.0",
     "@easyops-cn/docusaurus-search-local": "0.38.1",
     "@mdx-js/react": "3.0.0",
     "@svgr/webpack": "8.1.0",
@@ -43,7 +43,7 @@
     "xml-js": "1.6.11"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "3.0.1",
+    "@docusaurus/module-type-aliases": "3.4.0",
     "@tsconfig/docusaurus": "2.0.2",
     "@types/react": "18.2.57",
     "@types/react-helmet": "6.1.11",
