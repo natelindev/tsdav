@@ -249,6 +249,7 @@ export class DAVClient {
     this.credentials = params.credentials;
     this.authMethod = params.authMethod ?? 'Basic';
     this.accountType = params.defaultAccountType ?? 'caldav';
+    this.authFunction = params.authFunction;
   }
 
   async login(): Promise<void> {

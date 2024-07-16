@@ -4180,7 +4180,6 @@ if (typeof Object.create === 'function'){
     ctor.prototype.constructor = ctor;
   };
 }
-var inherits$1 = inherits;
 
 var formatRegExp = /%[sdj%]/g;
 function format(f) {
@@ -4950,7 +4949,7 @@ var _polyfillNode_string_decoder = /*#__PURE__*/Object.freeze({
 Readable.ReadableState = ReadableState;
 
 var debug$6 = debuglog('stream');
-inherits$1(Readable, EventEmitter);
+inherits(Readable, EventEmitter);
 
 function prependListener(emitter, event, fn) {
   // Sadly this is not cacheable as some libraries bundle their own
@@ -5839,7 +5838,7 @@ function indexOf(xs, x) {
 // the drain event emission and buffering.
 
 Writable.WritableState = WritableState;
-inherits$1(Writable, EventEmitter);
+inherits(Writable, EventEmitter);
 
 function nop() {}
 
@@ -6310,7 +6309,7 @@ function CorkedRequest(state) {
   };
 }
 
-inherits$1(Duplex, Readable);
+inherits(Duplex, Readable);
 
 var keys = Object.keys(Writable.prototype);
 for (var v = 0; v < keys.length; v++) {
@@ -6390,7 +6389,7 @@ function onEndNT(self) {
 // would be consumed, and then the rest would wait (un-transformed) until
 // the results of the previous transformed chunk were consumed.
 
-inherits$1(Transform, Duplex);
+inherits(Transform, Duplex);
 
 function TransformState(stream) {
   this.afterTransform = function (er, data) {
@@ -6517,7 +6516,7 @@ function done(stream, er) {
   return stream.push(null);
 }
 
-inherits$1(PassThrough, Transform);
+inherits(PassThrough, Transform);
 function PassThrough(options) {
   if (!(this instanceof PassThrough)) return new PassThrough(options);
 
@@ -6528,7 +6527,7 @@ PassThrough.prototype._transform = function (chunk, encoding, cb) {
   cb(null, chunk);
 };
 
-inherits$1(Stream, EventEmitter);
+inherits(Stream, EventEmitter);
 Stream.Readable = Readable;
 Stream.Writable = Writable;
 Stream.Duplex = Duplex;
@@ -9308,7 +9307,7 @@ const supportedReportSet = (params) => __awaiter(void 0, void 0, void 0, functio
     return ((_e = (_d = (_c = (_b = (_a = res[0]) === null || _a === void 0 ? void 0 : _a.props) === null || _b === void 0 ? void 0 : _b.supportedReportSet) === null || _c === void 0 ? void 0 : _c.supportedReport) === null || _d === void 0 ? void 0 : _d.map((sr) => Object.keys(sr.report)[0])) !== null && _e !== void 0 ? _e : []);
 });
 const isCollectionDirty = (params) => __awaiter(void 0, void 0, void 0, function* () {
-    var _f, _g, _h;
+    var _a, _b, _c;
     const { collection, headers, headersToExclude } = params;
     const responses = yield propfind({
         url: collection.url,
@@ -9323,8 +9322,8 @@ const isCollectionDirty = (params) => __awaiter(void 0, void 0, void 0, function
         throw new Error('Collection does not exist on server');
     }
     return {
-        isDirty: collection.ctag !== ((_f = res.props) === null || _f === void 0 ? void 0 : _f.getctag),
-        newCtag: (_h = (_g = res.props) === null || _g === void 0 ? void 0 : _g.getctag) === null || _h === void 0 ? void 0 : _h.toString(),
+        isDirty: collection.ctag !== ((_a = res.props) === null || _a === void 0 ? void 0 : _a.getctag),
+        newCtag: (_c = (_b = res.props) === null || _b === void 0 ? void 0 : _b.getctag) === null || _c === void 0 ? void 0 : _c.toString(),
     };
 });
 /**
@@ -9355,7 +9354,7 @@ const syncCollection = (params) => {
 };
 /** remote collection to local */
 const smartCollectionSync = (params) => __awaiter(void 0, void 0, void 0, function* () {
-    var _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
     const { collection, method, headers, headersToExclude, account, detailedResult } = params;
     const requiredFields = ['accountType', 'homeUrl'];
     if (!account || !hasFields(account, requiredFields)) {
@@ -9364,7 +9363,7 @@ const smartCollectionSync = (params) => __awaiter(void 0, void 0, void 0, functi
         }
         throw new Error(`account must have ${findMissingFieldNames(account, requiredFields)} before smartCollectionSync`);
     }
-    const syncMethod = method !== null && method !== void 0 ? method : (((_j = collection.reports) === null || _j === void 0 ? void 0 : _j.includes('syncCollection')) ? 'webdav' : 'basic');
+    const syncMethod = method !== null && method !== void 0 ? method : (((_a = collection.reports) === null || _a === void 0 ? void 0 : _a.includes('syncCollection')) ? 'webdav' : 'basic');
     debug$4(`smart collection sync with type ${account.accountType} and method ${syncMethod}`);
     if (syncMethod === 'webdav') {
         const result = yield syncCollection({
@@ -9386,7 +9385,7 @@ const smartCollectionSync = (params) => __awaiter(void 0, void 0, void 0, functi
         const changedObjectUrls = objectResponses.filter((o) => o.status !== 404).map((r) => r.href);
         const deletedObjectUrls = objectResponses.filter((o) => o.status === 404).map((r) => r.href);
         const multiGetObjectResponse = changedObjectUrls.length
-            ? (_l = (yield ((_k = collection === null || collection === void 0 ? void 0 : collection.objectMultiGet) === null || _k === void 0 ? void 0 : _k.call(collection, {
+            ? (_c = (yield ((_b = collection === null || collection === void 0 ? void 0 : collection.objectMultiGet) === null || _b === void 0 ? void 0 : _b.call(collection, {
                 url: collection.url,
                 props: {
                     [`${DAVNamespaceShort.DAV}:getetag`]: {},
@@ -9397,7 +9396,7 @@ const smartCollectionSync = (params) => __awaiter(void 0, void 0, void 0, functi
                 objectUrls: changedObjectUrls,
                 depth: '1',
                 headers: excludeHeaders(headers, headersToExclude),
-            })))) !== null && _l !== void 0 ? _l : []
+            })))) !== null && _c !== void 0 ? _c : []
             : [];
         const remoteObjects = multiGetObjectResponse.map((res) => {
             var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
@@ -9409,7 +9408,7 @@ const smartCollectionSync = (params) => __awaiter(void 0, void 0, void 0, functi
                     : (_j = (_h = (_g = res.props) === null || _g === void 0 ? void 0 : _g.addressData) === null || _h === void 0 ? void 0 : _h._cdata) !== null && _j !== void 0 ? _j : (_k = res.props) === null || _k === void 0 ? void 0 : _k.addressData,
             };
         });
-        const localObjects = (_m = collection.objects) !== null && _m !== void 0 ? _m : [];
+        const localObjects = (_d = collection.objects) !== null && _d !== void 0 ? _d : [];
         // no existing url
         const created = remoteObjects.filter((o) => localObjects.every((lo) => !urlContains(lo.url, o.url)));
         // debug(`created objects: ${created.map((o) => o.url).join('\n')}`);
@@ -9432,18 +9431,18 @@ const smartCollectionSync = (params) => __awaiter(void 0, void 0, void 0, functi
                 ? { created, updated, deleted }
                 : [...unchanged, ...created, ...updated], 
             // all syncToken in the results are the same so we use the first one here
-            syncToken: (_r = (_q = (_p = (_o = result[0]) === null || _o === void 0 ? void 0 : _o.raw) === null || _p === void 0 ? void 0 : _p.multistatus) === null || _q === void 0 ? void 0 : _q.syncToken) !== null && _r !== void 0 ? _r : collection.syncToken });
+            syncToken: (_h = (_g = (_f = (_e = result[0]) === null || _e === void 0 ? void 0 : _e.raw) === null || _f === void 0 ? void 0 : _f.multistatus) === null || _g === void 0 ? void 0 : _g.syncToken) !== null && _h !== void 0 ? _h : collection.syncToken });
     }
     if (syncMethod === 'basic') {
         const { isDirty, newCtag } = yield isCollectionDirty({
             collection,
             headers: excludeHeaders(headers, headersToExclude),
         });
-        const localObjects = (_s = collection.objects) !== null && _s !== void 0 ? _s : [];
-        const remoteObjects = (_u = (yield ((_t = collection.fetchObjects) === null || _t === void 0 ? void 0 : _t.call(collection, {
+        const localObjects = (_j = collection.objects) !== null && _j !== void 0 ? _j : [];
+        const remoteObjects = (_l = (yield ((_k = collection.fetchObjects) === null || _k === void 0 ? void 0 : _k.call(collection, {
             collection,
             headers: excludeHeaders(headers, headersToExclude),
-        })))) !== null && _u !== void 0 ? _u : [];
+        })))) !== null && _l !== void 0 ? _l : [];
         // no existing url
         const created = remoteObjects.filter((ro) => localObjects.every((lo) => !urlContains(lo.url, ro.url)));
         // debug(`created objects: ${created.map((o) => o.url).join('\n')}`);
@@ -10063,7 +10062,7 @@ const serviceDiscovery = (params) => __awaiter(void 0, void 0, void 0, function*
     return endpoint.href;
 });
 const fetchPrincipalUrl = (params) => __awaiter(void 0, void 0, void 0, function* () {
-    var _c, _d, _e, _f, _g;
+    var _a, _b, _c, _d, _e;
     const { account, headers, headersToExclude } = params;
     const requiredFields = ['rootUrl'];
     if (!hasFields(account, requiredFields)) {
@@ -10084,11 +10083,11 @@ const fetchPrincipalUrl = (params) => __awaiter(void 0, void 0, void 0, function
             throw new Error('Invalid credentials');
         }
     }
-    debug$1(`Fetched principal url ${(_d = (_c = response.props) === null || _c === void 0 ? void 0 : _c.currentUserPrincipal) === null || _d === void 0 ? void 0 : _d.href}`);
-    return new URL((_g = (_f = (_e = response.props) === null || _e === void 0 ? void 0 : _e.currentUserPrincipal) === null || _f === void 0 ? void 0 : _f.href) !== null && _g !== void 0 ? _g : '', account.rootUrl).href;
+    debug$1(`Fetched principal url ${(_b = (_a = response.props) === null || _a === void 0 ? void 0 : _a.currentUserPrincipal) === null || _b === void 0 ? void 0 : _b.href}`);
+    return new URL((_e = (_d = (_c = response.props) === null || _c === void 0 ? void 0 : _c.currentUserPrincipal) === null || _d === void 0 ? void 0 : _d.href) !== null && _e !== void 0 ? _e : '', account.rootUrl).href;
 });
 const fetchHomeUrl = (params) => __awaiter(void 0, void 0, void 0, function* () {
-    var _h, _j;
+    var _a, _b;
     const { account, headers, headersToExclude } = params;
     const requiredFields = ['principalUrl', 'rootUrl'];
     if (!hasFields(account, requiredFields)) {
@@ -10108,8 +10107,8 @@ const fetchHomeUrl = (params) => __awaiter(void 0, void 0, void 0, function* () 
         throw new Error('cannot find homeUrl');
     }
     const result = new URL(account.accountType === 'caldav'
-        ? (_h = matched === null || matched === void 0 ? void 0 : matched.props) === null || _h === void 0 ? void 0 : _h.calendarHomeSet.href
-        : (_j = matched === null || matched === void 0 ? void 0 : matched.props) === null || _j === void 0 ? void 0 : _j.addressbookHomeSet.href, account.rootUrl).href;
+        ? (_a = matched === null || matched === void 0 ? void 0 : matched.props) === null || _a === void 0 ? void 0 : _a.calendarHomeSet.href
+        : (_b = matched === null || matched === void 0 ? void 0 : matched.props) === null || _b === void 0 ? void 0 : _b.addressbookHomeSet.href, account.rootUrl).href;
     debug$1(`Fetched home url ${result}`);
     return result;
 });
@@ -10589,10 +10588,11 @@ class DAVClient {
         this.credentials = params.credentials;
         this.authMethod = (_a = params.authMethod) !== null && _a !== void 0 ? _a : 'Basic';
         this.accountType = (_b = params.defaultAccountType) !== null && _b !== void 0 ? _b : 'caldav';
+        this.authFunction = params.authFunction;
     }
     login() {
-        var _a;
         return __awaiter(this, void 0, void 0, function* () {
+            var _a;
             switch (this.authMethod) {
                 case 'Basic':
                     this.authHeaders = getBasicAuthHeaders(this.credentials);

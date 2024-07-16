@@ -1,3 +1,9 @@
+## v2.0.10
+
+**improvements**
+- fixed [#191](https://github.com/natelindev/tsdav/issues/191) where `authFunction` is not properly assigned in constructor.
+- updated deps.
+
 ## v2.0.9
 
 **improvements**
