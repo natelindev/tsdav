@@ -1,3 +1,8 @@
+## v2.1.0
+
+**potential breaking changes**
+- typescript target changed to `es2018` due to named capturing groups errors
+
 ## v2.0.10
 
 **improvements**

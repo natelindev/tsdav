@@ -7,50 +7,6 @@ var getLogger = require('debug');
 var convert = require('xml-js');
 var base64 = require('base-64');
 
-/******************************************************************************
-Copyright (c) Microsoft Corporation.
-
-Permission to use, copy, modify, and/or distribute this software for any
-purpose with or without fee is hereby granted.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-PERFORMANCE OF THIS SOFTWARE.
-***************************************************************************** */
-/* global Reflect, Promise, SuppressedError, Symbol */
-
-
-function __rest(s, e) {
-    var t = {};
-    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-        t[p] = s[p];
-    if (s != null && typeof Object.getOwnPropertySymbols === "function")
-        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                t[p[i]] = s[p[i]];
-        }
-    return t;
-}
-
-function __awaiter(thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-}
-
-typeof SuppressedError === "function" ? SuppressedError : function (error, suppressed, message) {
-    var e = new Error(message);
-    return e.name = "SuppressedError", e.error = error, e.suppressed = suppressed, e;
-};
-
 exports.DAVNamespace = void 0;
 (function (DAVNamespace) {
     DAVNamespace["CALENDAR_SERVER"] = "http://calendarserver.org/ns/";
@@ -130,10 +86,10 @@ const urlContains = (urlA, urlB) => {
     const strippedUrlB = trimmedUrlB.slice(-1) === '/' ? trimmedUrlB.slice(0, -1) : trimmedUrlB;
     return urlA.includes(strippedUrlB) || urlB.includes(strippedUrlA);
 };
-const getDAVAttribute = (nsArr) => nsArr.reduce((prev, curr) => (Object.assign(Object.assign({}, prev), { [DAVAttributeMap[curr]]: curr })), {});
+const getDAVAttribute = (nsArr) => nsArr.reduce((prev, curr) => ({ ...prev, [DAVAttributeMap[curr]]: curr }), {});
 const cleanupFalsy = (obj) => Object.entries(obj).reduce((prev, [key, value]) => {
     if (value)
-        return Object.assign(Object.assign({}, prev), { [key]: value });
+        return { ...prev, [key]: value };
     return prev;
 }, {});
 const conditionalParam = (key, param) => {
@@ -165,12 +121,16 @@ var requestHelpers = /*#__PURE__*/Object.freeze({
 });
 
 const debug$5 = getLogger('tsdav:request');
-const davRequest = (params) => __awaiter(void 0, void 0, void 0, function* () {
+const davRequest = async (params) => {
     var _a;
     const { url, init, convertIncoming = true, parseOutgoing = true } = params;
     const { headers = {}, body, namespace, method, attributes } = init;
     const xmlBody = convertIncoming
-        ? convert.js2xml(Object.assign(Object.assign({ _declaration: { _attributes: { version: '1.0', encoding: 'utf-8' } } }, body), { _attributes: attributes }), {
+        ? convert.js2xml({
+            _declaration: { _attributes: { version: '1.0', encoding: 'utf-8' } },
+            ...body,
+            _attributes: attributes,
+        }, {
             compact: true,
             spaces: 2,
             elementNameFn: (name) => {
@@ -195,12 +155,15 @@ const davRequest = (params) => __awaiter(void 0, void 0, void 0, function* () {
     //   )}`
     // );
     // debug(xmlBody);
-    const davResponse = yield crossFetch.fetch(url, {
-        headers: Object.assign({ 'Content-Type': 'text/xml;charset=UTF-8' }, cleanupFalsy(headers)),
+    const davResponse = await crossFetch.fetch(url, {
+        headers: {
+            'Content-Type': 'text/xml;charset=UTF-8',
+            ...cleanupFalsy(headers),
+        },
         body: xmlBody,
         method,
     });
-    const resText = yield davResponse.text();
+    const resText = await davResponse.text();
     // filter out invalid responses
     // debug('response xml:');
     // debug(resText);
@@ -247,7 +210,7 @@ const davRequest = (params) => __awaiter(void 0, void 0, void 0, function* () {
         // remove namespace & camelCase
         elementNameFn: (attributeName) => camelCase(attributeName.replace(/^.+:/, '')),
         attributesFn: (value) => {
-            const newVal = Object.assign({}, value);
+            const newVal = { ...value };
             delete newVal.xmlns;
             return newVal;
         },
@@ -278,18 +241,21 @@ const davRequest = (params) => __awaiter(void 0, void 0, void 0, function* () {
             props: (Array.isArray(responseBody.propstat)
                 ? responseBody.propstat
                 : [responseBody.propstat]).reduce((prev, curr) => {
-                return Object.assign(Object.assign({}, prev), curr === null || curr === void 0 ? void 0 : curr.prop);
+                return {
+                    ...prev,
+                    ...curr === null || curr === void 0 ? void 0 : curr.prop,
+                };
             }, {}),
         };
     });
-});
-const propfind = (params) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const propfind = async (params) => {
     const { url, props, depth, headers, headersToExclude } = params;
     return davRequest({
         url,
         init: {
             method: 'PROPFIND',
-            headers: excludeHeaders(cleanupFalsy(Object.assign({ depth }, headers)), headersToExclude),
+            headers: excludeHeaders(cleanupFalsy({ depth, ...headers }), headersToExclude),
             namespace: exports.DAVNamespaceShort.DAV,
             body: {
                 propfind: {
@@ -305,30 +271,30 @@ const propfind = (params) => __awaiter(void 0, void 0, void 0, function* () {
             },
         },
     });
-});
-const createObject = (params) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const createObject = async (params) => {
     const { url, data, headers, headersToExclude } = params;
     return crossFetch.fetch(url, {
         method: 'PUT',
         body: data,
         headers: excludeHeaders(headers, headersToExclude),
     });
-});
-const updateObject = (params) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const updateObject = async (params) => {
     const { url, data, etag, headers, headersToExclude } = params;
     return crossFetch.fetch(url, {
         method: 'PUT',
         body: data,
-        headers: excludeHeaders(cleanupFalsy(Object.assign({ 'If-Match': etag }, headers)), headersToExclude),
+        headers: excludeHeaders(cleanupFalsy({ 'If-Match': etag, ...headers }), headersToExclude),
     });
-});
-const deleteObject = (params) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const deleteObject = async (params) => {
     const { url, headers, etag, headersToExclude } = params;
     return crossFetch.fetch(url, {
         method: 'DELETE',
-        headers: excludeHeaders(cleanupFalsy(Object.assign({ 'If-Match': etag }, headers)), headersToExclude),
+        headers: excludeHeaders(cleanupFalsy({ 'If-Match': etag, ...headers }), headersToExclude),
     });
-});
+};
 
 var request = /*#__PURE__*/Object.freeze({
     __proto__: null,
@@ -348,14 +314,15 @@ function hasFields(obj, fields) {
 }
 const findMissingFieldNames = (obj, fields) => fields.reduce((prev, curr) => (obj[curr] ? prev : `${prev.length ? `${prev},` : ''}${curr.toString()}`), '');
 
+/* eslint-disable no-underscore-dangle */
 const debug$4 = getLogger('tsdav:collection');
-const collectionQuery = (params) => __awaiter(void 0, void 0, void 0, function* () {
+const collectionQuery = async (params) => {
     const { url, body, depth, defaultNamespace = exports.DAVNamespaceShort.DAV, headers, headersToExclude, } = params;
-    const queryResults = yield davRequest({
+    const queryResults = await davRequest({
         url,
         init: {
             method: 'REPORT',
-            headers: excludeHeaders(cleanupFalsy(Object.assign({ depth }, headers)), headersToExclude),
+            headers: excludeHeaders(cleanupFalsy({ depth, ...headers }), headersToExclude),
             namespace: defaultNamespace,
             body,
         },
@@ -365,14 +332,14 @@ const collectionQuery = (params) => __awaiter(void 0, void 0, void 0, function* 
         return [];
     }
     return queryResults;
-});
-const makeCollection = (params) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const makeCollection = async (params) => {
     const { url, props, depth, headers, headersToExclude } = params;
     return davRequest({
         url,
         init: {
             method: 'MKCOL',
-            headers: excludeHeaders(cleanupFalsy(Object.assign({ depth }, headers)), headersToExclude),
+            headers: excludeHeaders(cleanupFalsy({ depth, ...headers }), headersToExclude),
             namespace: exports.DAVNamespaceShort.DAV,
             body: props
                 ? {
@@ -385,11 +352,11 @@ const makeCollection = (params) => __awaiter(void 0, void 0, void 0, function* (
                 : undefined,
         },
     });
-});
-const supportedReportSet = (params) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const supportedReportSet = async (params) => {
     var _a, _b, _c, _d, _e;
     const { collection, headers, headersToExclude } = params;
-    const res = yield propfind({
+    const res = await propfind({
         url: collection.url,
         props: {
             [`${exports.DAVNamespaceShort.DAV}:supported-report-set`]: {},
@@ -398,11 +365,11 @@ const supportedReportSet = (params) => __awaiter(void 0, void 0, void 0, functio
         headers: excludeHeaders(headers, headersToExclude),
     });
     return ((_e = (_d = (_c = (_b = (_a = res[0]) === null || _a === void 0 ? void 0 : _a.props) === null || _b === void 0 ? void 0 : _b.supportedReportSet) === null || _c === void 0 ? void 0 : _c.supportedReport) === null || _d === void 0 ? void 0 : _d.map((sr) => Object.keys(sr.report)[0])) !== null && _e !== void 0 ? _e : []);
-});
-const isCollectionDirty = (params) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const isCollectionDirty = async (params) => {
     var _a, _b, _c;
     const { collection, headers, headersToExclude } = params;
-    const responses = yield propfind({
+    const responses = await propfind({
         url: collection.url,
         props: {
             [`${exports.DAVNamespaceShort.CALENDAR_SERVER}:getctag`]: {},
@@ -418,7 +385,7 @@ const isCollectionDirty = (params) => __awaiter(void 0, void 0, void 0, function
         isDirty: collection.ctag !== ((_a = res.props) === null || _a === void 0 ? void 0 : _a.getctag),
         newCtag: (_c = (_b = res.props) === null || _b === void 0 ? void 0 : _b.getctag) === null || _c === void 0 ? void 0 : _c.toString(),
     };
-});
+};
 /**
  * This is for webdav sync-collection only
  */
@@ -429,7 +396,7 @@ const syncCollection = (params) => {
         init: {
             method: 'REPORT',
             namespace: exports.DAVNamespaceShort.DAV,
-            headers: excludeHeaders(Object.assign({}, headers), headersToExclude),
+            headers: excludeHeaders({ ...headers }, headersToExclude),
             body: {
                 'sync-collection': {
                     _attributes: getDAVAttribute([
@@ -446,7 +413,7 @@ const syncCollection = (params) => {
     });
 };
 /** remote collection to local */
-const smartCollectionSync = (params) => __awaiter(void 0, void 0, void 0, function* () {
+const smartCollectionSync = async (params) => {
     var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
     const { collection, method, headers, headersToExclude, account, detailedResult } = params;
     const requiredFields = ['accountType', 'homeUrl'];
@@ -459,7 +426,7 @@ const smartCollectionSync = (params) => __awaiter(void 0, void 0, void 0, functi
     const syncMethod = method !== null && method !== void 0 ? method : (((_a = collection.reports) === null || _a === void 0 ? void 0 : _a.includes('syncCollection')) ? 'webdav' : 'basic');
     debug$4(`smart collection sync with type ${account.accountType} and method ${syncMethod}`);
     if (syncMethod === 'webdav') {
-        const result = yield syncCollection({
+        const result = await syncCollection({
             url: collection.url,
             props: {
                 [`${exports.DAVNamespaceShort.DAV}:getetag`]: {},
@@ -478,7 +445,7 @@ const smartCollectionSync = (params) => __awaiter(void 0, void 0, void 0, functi
         const changedObjectUrls = objectResponses.filter((o) => o.status !== 404).map((r) => r.href);
         const deletedObjectUrls = objectResponses.filter((o) => o.status === 404).map((r) => r.href);
         const multiGetObjectResponse = changedObjectUrls.length
-            ? (_c = (yield ((_b = collection === null || collection === void 0 ? void 0 : collection.objectMultiGet) === null || _b === void 0 ? void 0 : _b.call(collection, {
+            ? (_c = (await ((_b = collection === null || collection === void 0 ? void 0 : collection.objectMultiGet) === null || _b === void 0 ? void 0 : _b.call(collection, {
                 url: collection.url,
                 props: {
                     [`${exports.DAVNamespaceShort.DAV}:getetag`]: {},
@@ -520,19 +487,22 @@ const smartCollectionSync = (params) => __awaiter(void 0, void 0, void 0, functi
         }));
         // debug(`deleted objects: ${deleted.map((o) => o.url).join('\n')}`);
         const unchanged = localObjects.filter((lo) => remoteObjects.some((ro) => urlContains(lo.url, ro.url) && ro.etag === lo.etag));
-        return Object.assign(Object.assign({}, collection), { objects: detailedResult
+        return {
+            ...collection,
+            objects: detailedResult
                 ? { created, updated, deleted }
-                : [...unchanged, ...created, ...updated], 
+                : [...unchanged, ...created, ...updated],
             // all syncToken in the results are the same so we use the first one here
-            syncToken: (_h = (_g = (_f = (_e = result[0]) === null || _e === void 0 ? void 0 : _e.raw) === null || _f === void 0 ? void 0 : _f.multistatus) === null || _g === void 0 ? void 0 : _g.syncToken) !== null && _h !== void 0 ? _h : collection.syncToken });
+            syncToken: (_h = (_g = (_f = (_e = result[0]) === null || _e === void 0 ? void 0 : _e.raw) === null || _f === void 0 ? void 0 : _f.multistatus) === null || _g === void 0 ? void 0 : _g.syncToken) !== null && _h !== void 0 ? _h : collection.syncToken,
+        };
     }
     if (syncMethod === 'basic') {
-        const { isDirty, newCtag } = yield isCollectionDirty({
+        const { isDirty, newCtag } = await isCollectionDirty({
             collection,
             headers: excludeHeaders(headers, headersToExclude),
         });
         const localObjects = (_j = collection.objects) !== null && _j !== void 0 ? _j : [];
-        const remoteObjects = (_l = (yield ((_k = collection.fetchObjects) === null || _k === void 0 ? void 0 : _k.call(collection, {
+        const remoteObjects = (_l = (await ((_k = collection.fetchObjects) === null || _k === void 0 ? void 0 : _k.call(collection, {
             collection,
             headers: excludeHeaders(headers, headersToExclude),
         })))) !== null && _l !== void 0 ? _l : [];
@@ -553,18 +523,26 @@ const smartCollectionSync = (params) => __awaiter(void 0, void 0, void 0, functi
         // debug(`deleted objects: ${deleted.map((o) => o.url).join('\n')}`);
         const unchanged = localObjects.filter((lo) => remoteObjects.some((ro) => urlContains(lo.url, ro.url) && ro.etag === lo.etag));
         if (isDirty) {
-            return Object.assign(Object.assign({}, collection), { objects: detailedResult
+            return {
+                ...collection,
+                objects: detailedResult
                     ? { created, updated, deleted }
-                    : [...unchanged, ...created, ...updated], ctag: newCtag });
+                    : [...unchanged, ...created, ...updated],
+                ctag: newCtag,
+            };
         }
     }
     return detailedResult
-        ? Object.assign(Object.assign({}, collection), { objects: {
+        ? {
+            ...collection,
+            objects: {
                 created: [],
                 updated: [],
                 deleted: [],
-            } }) : collection;
-});
+            },
+        }
+        : collection;
+};
 
 var collection = /*#__PURE__*/Object.freeze({
     __proto__: null,
@@ -576,8 +554,9 @@ var collection = /*#__PURE__*/Object.freeze({
     syncCollection: syncCollection
 });
 
+/* eslint-disable no-underscore-dangle */
 const debug$3 = getLogger('tsdav:addressBook');
-const addressBookQuery = (params) => __awaiter(void 0, void 0, void 0, function* () {
+const addressBookQuery = async (params) => {
     const { url, props, filters, depth, headers, headersToExclude } = params;
     return collectionQuery({
         url,
@@ -598,8 +577,8 @@ const addressBookQuery = (params) => __awaiter(void 0, void 0, void 0, function*
         depth,
         headers: excludeHeaders(headers, headersToExclude),
     });
-});
-const addressBookMultiGet = (params) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const addressBookMultiGet = async (params) => {
     const { url, props, objectUrls, depth, headers } = params;
     return collectionQuery({
         url,
@@ -614,8 +593,8 @@ const addressBookMultiGet = (params) => __awaiter(void 0, void 0, void 0, functi
         depth,
         headers,
     });
-});
-const fetchAddressBooks = (params) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const fetchAddressBooks = async (params) => {
     const { account, headers, props: customProps, headersToExclude } = params !== null && params !== void 0 ? params : {};
     const requiredFields = ['homeUrl', 'rootUrl'];
     if (!account || !hasFields(account, requiredFields)) {
@@ -624,7 +603,7 @@ const fetchAddressBooks = (params) => __awaiter(void 0, void 0, void 0, function
         }
         throw new Error(`account must have ${findMissingFieldNames(account, requiredFields)} before fetchAddressBooks`);
     }
-    const res = yield propfind({
+    const res = await propfind({
         url: account.homeUrl,
         props: customProps !== null && customProps !== void 0 ? customProps : {
             [`${exports.DAVNamespaceShort.DAV}:displayname`]: {},
@@ -650,11 +629,12 @@ const fetchAddressBooks = (params) => __awaiter(void 0, void 0, void 0, function
             syncToken: (_j = rs.props) === null || _j === void 0 ? void 0 : _j.syncToken,
         };
     })
-        .map((addr) => __awaiter(void 0, void 0, void 0, function* () {
-        return (Object.assign(Object.assign({}, addr), { reports: yield supportedReportSet({ collection: addr, headers }) }));
+        .map(async (addr) => ({
+        ...addr,
+        reports: await supportedReportSet({ collection: addr, headers }),
     })));
-});
-const fetchVCards = (params) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const fetchVCards = async (params) => {
     const { addressBook, headers, objectUrls, headersToExclude, urlFilter = (url) => url, useMultiGet = true, } = params;
     debug$3(`Fetching vcards from ${addressBook === null || addressBook === void 0 ? void 0 : addressBook.url}`);
     const requiredFields = ['url'];
@@ -666,7 +646,7 @@ const fetchVCards = (params) => __awaiter(void 0, void 0, void 0, function* () {
     }
     const vcardUrls = (objectUrls !== null && objectUrls !== void 0 ? objectUrls : 
     // fetch all objects of the calendar
-    (yield addressBookQuery({
+    (await addressBookQuery({
         url: addressBook.url,
         props: { [`${exports.DAVNamespaceShort.DAV}:getetag`]: {} },
         depth: '1',
@@ -678,7 +658,7 @@ const fetchVCards = (params) => __awaiter(void 0, void 0, void 0, function* () {
     let vCardResults = [];
     if (vcardUrls.length > 0) {
         if (useMultiGet) {
-            vCardResults = yield addressBookMultiGet({
+            vCardResults = await addressBookMultiGet({
                 url: addressBook.url,
                 props: {
                     [`${exports.DAVNamespaceShort.DAV}:getetag`]: {},
@@ -690,7 +670,7 @@ const fetchVCards = (params) => __awaiter(void 0, void 0, void 0, function* () {
             });
         }
         else {
-            vCardResults = yield addressBookQuery({
+            vCardResults = await addressBookQuery({
                 url: addressBook.url,
                 props: {
                     [`${exports.DAVNamespaceShort.DAV}:getetag`]: {},
@@ -709,32 +689,39 @@ const fetchVCards = (params) => __awaiter(void 0, void 0, void 0, function* () {
             data: (_e = (_d = (_c = res.props) === null || _c === void 0 ? void 0 : _c.addressData) === null || _d === void 0 ? void 0 : _d._cdata) !== null && _e !== void 0 ? _e : (_f = res.props) === null || _f === void 0 ? void 0 : _f.addressData,
         });
     });
-});
-const createVCard = (params) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const createVCard = async (params) => {
     const { addressBook, vCardString, filename, headers, headersToExclude } = params;
     return createObject({
         url: new URL(filename, addressBook.url).href,
         data: vCardString,
-        headers: excludeHeaders(Object.assign({ 'content-type': 'text/vcard; charset=utf-8', 'If-None-Match': '*' }, headers), headersToExclude),
+        headers: excludeHeaders({
+            'content-type': 'text/vcard; charset=utf-8',
+            'If-None-Match': '*',
+            ...headers,
+        }, headersToExclude),
     });
-});
-const updateVCard = (params) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const updateVCard = async (params) => {
     const { vCard, headers, headersToExclude } = params;
     return updateObject({
         url: vCard.url,
         data: vCard.data,
         etag: vCard.etag,
-        headers: excludeHeaders(Object.assign({ 'content-type': 'text/vcard; charset=utf-8' }, headers), headersToExclude),
+        headers: excludeHeaders({
+            'content-type': 'text/vcard; charset=utf-8',
+            ...headers,
+        }, headersToExclude),
     });
-});
-const deleteVCard = (params) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const deleteVCard = async (params) => {
     const { vCard, headers, headersToExclude } = params;
     return deleteObject({
         url: vCard.url,
         etag: vCard.etag,
         headers: excludeHeaders(headers, headersToExclude),
     });
-});
+};
 
 var addressBook = /*#__PURE__*/Object.freeze({
     __proto__: null,
@@ -747,8 +734,9 @@ var addressBook = /*#__PURE__*/Object.freeze({
     updateVCard: updateVCard
 });
 
+/* eslint-disable no-underscore-dangle */
 const debug$2 = getLogger('tsdav:calendar');
-const calendarQuery = (params) => __awaiter(void 0, void 0, void 0, function* () {
+const calendarQuery = async (params) => {
     const { url, props, filters, timezone, depth, headers, headersToExclude } = params;
     return collectionQuery({
         url,
@@ -769,26 +757,32 @@ const calendarQuery = (params) => __awaiter(void 0, void 0, void 0, function* ()
         depth,
         headers: excludeHeaders(headers, headersToExclude),
     });
-});
-const calendarMultiGet = (params) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const calendarMultiGet = async (params) => {
     const { url, props, objectUrls, filters, timezone, depth, headers, headersToExclude } = params;
     return collectionQuery({
         url,
         body: {
-            'calendar-multiget': Object.assign(Object.assign({ _attributes: getDAVAttribute([exports.DAVNamespace.DAV, exports.DAVNamespace.CALDAV]), [`${exports.DAVNamespaceShort.DAV}:prop`]: props, [`${exports.DAVNamespaceShort.DAV}:href`]: objectUrls }, conditionalParam('filter', filters)), { timezone }),
+            'calendar-multiget': {
+                _attributes: getDAVAttribute([exports.DAVNamespace.DAV, exports.DAVNamespace.CALDAV]),
+                [`${exports.DAVNamespaceShort.DAV}:prop`]: props,
+                [`${exports.DAVNamespaceShort.DAV}:href`]: objectUrls,
+                ...conditionalParam('filter', filters),
+                timezone,
+            },
         },
         defaultNamespace: exports.DAVNamespaceShort.CALDAV,
         depth,
         headers: excludeHeaders(headers, headersToExclude),
     });
-});
-const makeCalendar = (params) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const makeCalendar = async (params) => {
     const { url, props, depth, headers, headersToExclude } = params;
     return davRequest({
         url,
         init: {
             method: 'MKCALENDAR',
-            headers: excludeHeaders(cleanupFalsy(Object.assign({ depth }, headers)), headersToExclude),
+            headers: excludeHeaders(cleanupFalsy({ depth, ...headers }), headersToExclude),
             namespace: exports.DAVNamespaceShort.DAV,
             body: {
                 [`${exports.DAVNamespaceShort.CALDAV}:mkcalendar`]: {
@@ -804,8 +798,8 @@ const makeCalendar = (params) => __awaiter(void 0, void 0, void 0, function* () 
             },
         },
     });
-});
-const fetchCalendars = (params) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const fetchCalendars = async (params) => {
     const { headers, account, props: customProps, projectedProps, headersToExclude } = params !== null && params !== void 0 ? params : {};
     const requiredFields = ['homeUrl', 'rootUrl'];
     if (!account || !hasFields(account, requiredFields)) {
@@ -814,7 +808,7 @@ const fetchCalendars = (params) => __awaiter(void 0, void 0, void 0, function* (
         }
         throw new Error(`account must have ${findMissingFieldNames(account, requiredFields)} before fetchCalendars`);
     }
-    const res = yield propfind({
+    const res = await propfind({
         url: account.homeUrl,
         props: customProps !== null && customProps !== void 0 ? customProps : {
             [`${exports.DAVNamespaceShort.CALDAV}:calendar-description`]: {},
@@ -844,18 +838,30 @@ const fetchCalendars = (params) => __awaiter(void 0, void 0, void 0, function* (
         // debug(`Found calendar ${rs.props?.displayname}`);
         const description = (_a = rs.props) === null || _a === void 0 ? void 0 : _a.calendarDescription;
         const timezone = (_b = rs.props) === null || _b === void 0 ? void 0 : _b.calendarTimezone;
-        return Object.assign({ description: typeof description === 'string' ? description : '', timezone: typeof timezone === 'string' ? timezone : '', url: new URL((_c = rs.href) !== null && _c !== void 0 ? _c : '', (_d = account.rootUrl) !== null && _d !== void 0 ? _d : '').href, ctag: (_e = rs.props) === null || _e === void 0 ? void 0 : _e.getctag, calendarColor: (_f = rs.props) === null || _f === void 0 ? void 0 : _f.calendarColor, displayName: (_h = (_g = rs.props) === null || _g === void 0 ? void 0 : _g.displayname._cdata) !== null && _h !== void 0 ? _h : (_j = rs.props) === null || _j === void 0 ? void 0 : _j.displayname, components: Array.isArray((_k = rs.props) === null || _k === void 0 ? void 0 : _k.supportedCalendarComponentSet.comp)
+        return {
+            description: typeof description === 'string' ? description : '',
+            timezone: typeof timezone === 'string' ? timezone : '',
+            url: new URL((_c = rs.href) !== null && _c !== void 0 ? _c : '', (_d = account.rootUrl) !== null && _d !== void 0 ? _d : '').href,
+            ctag: (_e = rs.props) === null || _e === void 0 ? void 0 : _e.getctag,
+            calendarColor: (_f = rs.props) === null || _f === void 0 ? void 0 : _f.calendarColor,
+            displayName: (_h = (_g = rs.props) === null || _g === void 0 ? void 0 : _g.displayname._cdata) !== null && _h !== void 0 ? _h : (_j = rs.props) === null || _j === void 0 ? void 0 : _j.displayname,
+            components: Array.isArray((_k = rs.props) === null || _k === void 0 ? void 0 : _k.supportedCalendarComponentSet.comp)
                 ? (_l = rs.props) === null || _l === void 0 ? void 0 : _l.supportedCalendarComponentSet.comp.map((sc) => sc._attributes.name)
-                : [(_o = (_m = rs.props) === null || _m === void 0 ? void 0 : _m.supportedCalendarComponentSet.comp) === null || _o === void 0 ? void 0 : _o._attributes.name], resourcetype: Object.keys((_p = rs.props) === null || _p === void 0 ? void 0 : _p.resourcetype), syncToken: (_q = rs.props) === null || _q === void 0 ? void 0 : _q.syncToken }, conditionalParam('projectedProps', Object.fromEntries(Object.entries((_r = rs.props) !== null && _r !== void 0 ? _r : {}).filter(([key]) => projectedProps === null || projectedProps === void 0 ? void 0 : projectedProps[key]))));
+                : [(_o = (_m = rs.props) === null || _m === void 0 ? void 0 : _m.supportedCalendarComponentSet.comp) === null || _o === void 0 ? void 0 : _o._attributes.name],
+            resourcetype: Object.keys((_p = rs.props) === null || _p === void 0 ? void 0 : _p.resourcetype),
+            syncToken: (_q = rs.props) === null || _q === void 0 ? void 0 : _q.syncToken,
+            ...conditionalParam('projectedProps', Object.fromEntries(Object.entries((_r = rs.props) !== null && _r !== void 0 ? _r : {}).filter(([key]) => projectedProps === null || projectedProps === void 0 ? void 0 : projectedProps[key]))),
+        };
     })
-        .map((cal) => __awaiter(void 0, void 0, void 0, function* () {
-        return (Object.assign(Object.assign({}, cal), { reports: yield supportedReportSet({
-                collection: cal,
-                headers: excludeHeaders(headers, headersToExclude),
-            }) }));
+        .map(async (cal) => ({
+        ...cal,
+        reports: await supportedReportSet({
+            collection: cal,
+            headers: excludeHeaders(headers, headersToExclude),
+        }),
     })));
-});
-const fetchCalendarObjects = (params) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const fetchCalendarObjects = async (params) => {
     const { calendar, objectUrls, filters: customFilters, timeRange, headers, expand, urlFilter = (url) => Boolean(url === null || url === void 0 ? void 0 : url.includes('.ics')), useMultiGet = true, headersToExclude, } = params;
     if (timeRange) {
         // validate timeRange
@@ -881,11 +887,39 @@ const fetchCalendarObjects = (params) => __awaiter(void 0, void 0, void 0, funct
                 _attributes: {
                     name: 'VCALENDAR',
                 },
-                'comp-filter': Object.assign({ _attributes: {
+                'comp-filter': {
+                    _attributes: {
                         name: 'VEVENT',
-                    } }, (timeRange
+                    },
+                    ...(timeRange
+                        ? {
+                            'time-range': {
+                                _attributes: {
+                                    start: `${new Date(timeRange.start)
+                                        .toISOString()
+                                        .slice(0, 19)
+                                        .replace(/[-:.]/g, '')}Z`,
+                                    end: `${new Date(timeRange.end)
+                                        .toISOString()
+                                        .slice(0, 19)
+                                        .replace(/[-:.]/g, '')}Z`,
+                                },
+                            },
+                        }
+                        : {}),
+                },
+            },
+        },
+    ];
+    const calendarObjectUrls = (objectUrls !== null && objectUrls !== void 0 ? objectUrls : 
+    // fetch all objects of the calendar
+    (await calendarQuery({
+        url: calendar.url,
+        props: {
+            [`${exports.DAVNamespaceShort.DAV}:getetag`]: {
+                ...(expand && timeRange
                     ? {
-                        'time-range': {
+                        [`${exports.DAVNamespaceShort.CALDAV}:expand`]: {
                             _attributes: {
                                 start: `${new Date(timeRange.start)
                                     .toISOString()
@@ -898,31 +932,8 @@ const fetchCalendarObjects = (params) => __awaiter(void 0, void 0, void 0, funct
                             },
                         },
                     }
-                    : {})),
+                    : {}),
             },
-        },
-    ];
-    const calendarObjectUrls = (objectUrls !== null && objectUrls !== void 0 ? objectUrls : 
-    // fetch all objects of the calendar
-    (yield calendarQuery({
-        url: calendar.url,
-        props: {
-            [`${exports.DAVNamespaceShort.DAV}:getetag`]: Object.assign({}, (expand && timeRange
-                ? {
-                    [`${exports.DAVNamespaceShort.CALDAV}:expand`]: {
-                        _attributes: {
-                            start: `${new Date(timeRange.start)
-                                .toISOString()
-                                .slice(0, 19)
-                                .replace(/[-:.]/g, '')}Z`,
-                            end: `${new Date(timeRange.end)
-                                .toISOString()
-                                .slice(0, 19)
-                                .replace(/[-:.]/g, '')}Z`,
-                        },
-                    },
-                }
-                : {})),
         },
         filters,
         depth: '1',
@@ -934,26 +945,28 @@ const fetchCalendarObjects = (params) => __awaiter(void 0, void 0, void 0, funct
     let calendarObjectResults = [];
     if (calendarObjectUrls.length > 0) {
         if (!useMultiGet || expand) {
-            calendarObjectResults = yield calendarQuery({
+            calendarObjectResults = await calendarQuery({
                 url: calendar.url,
                 props: {
                     [`${exports.DAVNamespaceShort.DAV}:getetag`]: {},
-                    [`${exports.DAVNamespaceShort.CALDAV}:calendar-data`]: Object.assign({}, (expand && timeRange
-                        ? {
-                            [`${exports.DAVNamespaceShort.CALDAV}:expand`]: {
-                                _attributes: {
-                                    start: `${new Date(timeRange.start)
-                                        .toISOString()
-                                        .slice(0, 19)
-                                        .replace(/[-:.]/g, '')}Z`,
-                                    end: `${new Date(timeRange.end)
-                                        .toISOString()
-                                        .slice(0, 19)
-                                        .replace(/[-:.]/g, '')}Z`,
+                    [`${exports.DAVNamespaceShort.CALDAV}:calendar-data`]: {
+                        ...(expand && timeRange
+                            ? {
+                                [`${exports.DAVNamespaceShort.CALDAV}:expand`]: {
+                                    _attributes: {
+                                        start: `${new Date(timeRange.start)
+                                            .toISOString()
+                                            .slice(0, 19)
+                                            .replace(/[-:.]/g, '')}Z`,
+                                        end: `${new Date(timeRange.end)
+                                            .toISOString()
+                                            .slice(0, 19)
+                                            .replace(/[-:.]/g, '')}Z`,
+                                    },
                                 },
-                            },
-                        }
-                        : {})),
+                            }
+                            : {}),
+                    },
                 },
                 filters,
                 depth: '1',
@@ -961,26 +974,28 @@ const fetchCalendarObjects = (params) => __awaiter(void 0, void 0, void 0, funct
             });
         }
         else {
-            calendarObjectResults = yield calendarMultiGet({
+            calendarObjectResults = await calendarMultiGet({
                 url: calendar.url,
                 props: {
                     [`${exports.DAVNamespaceShort.DAV}:getetag`]: {},
-                    [`${exports.DAVNamespaceShort.CALDAV}:calendar-data`]: Object.assign({}, (expand && timeRange
-                        ? {
-                            [`${exports.DAVNamespaceShort.CALDAV}:expand`]: {
-                                _attributes: {
-                                    start: `${new Date(timeRange.start)
-                                        .toISOString()
-                                        .slice(0, 19)
-                                        .replace(/[-:.]/g, '')}Z`,
-                                    end: `${new Date(timeRange.end)
-                                        .toISOString()
-                                        .slice(0, 19)
-                                        .replace(/[-:.]/g, '')}Z`,
+                    [`${exports.DAVNamespaceShort.CALDAV}:calendar-data`]: {
+                        ...(expand && timeRange
+                            ? {
+                                [`${exports.DAVNamespaceShort.CALDAV}:expand`]: {
+                                    _attributes: {
+                                        start: `${new Date(timeRange.start)
+                                            .toISOString()
+                                            .slice(0, 19)
+                                            .replace(/[-:.]/g, '')}Z`,
+                                        end: `${new Date(timeRange.end)
+                                            .toISOString()
+                                            .slice(0, 19)
+                                            .replace(/[-:.]/g, '')}Z`,
+                                    },
                                 },
-                            },
-                        }
-                        : {})),
+                            }
+                            : {}),
+                    },
                 },
                 objectUrls: calendarObjectUrls,
                 depth: '1',
@@ -996,43 +1011,50 @@ const fetchCalendarObjects = (params) => __awaiter(void 0, void 0, void 0, funct
             data: (_e = (_d = (_c = res.props) === null || _c === void 0 ? void 0 : _c.calendarData) === null || _d === void 0 ? void 0 : _d._cdata) !== null && _e !== void 0 ? _e : (_f = res.props) === null || _f === void 0 ? void 0 : _f.calendarData,
         });
     });
-});
-const createCalendarObject = (params) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const createCalendarObject = async (params) => {
     const { calendar, iCalString, filename, headers, headersToExclude } = params;
     return createObject({
         url: new URL(filename, calendar.url).href,
         data: iCalString,
-        headers: excludeHeaders(Object.assign({ 'content-type': 'text/calendar; charset=utf-8', 'If-None-Match': '*' }, headers), headersToExclude),
+        headers: excludeHeaders({
+            'content-type': 'text/calendar; charset=utf-8',
+            'If-None-Match': '*',
+            ...headers,
+        }, headersToExclude),
     });
-});
-const updateCalendarObject = (params) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const updateCalendarObject = async (params) => {
     const { calendarObject, headers, headersToExclude } = params;
     return updateObject({
         url: calendarObject.url,
         data: calendarObject.data,
         etag: calendarObject.etag,
-        headers: excludeHeaders(Object.assign({ 'content-type': 'text/calendar; charset=utf-8' }, headers), headersToExclude),
+        headers: excludeHeaders({
+            'content-type': 'text/calendar; charset=utf-8',
+            ...headers,
+        }, headersToExclude),
     });
-});
-const deleteCalendarObject = (params) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const deleteCalendarObject = async (params) => {
     const { calendarObject, headers, headersToExclude } = params;
     return deleteObject({
         url: calendarObject.url,
         etag: calendarObject.etag,
         headers: excludeHeaders(headers, headersToExclude),
     });
-});
+};
 /**
  * Sync remote calendars to local
  */
-const syncCalendars = (params) => __awaiter(void 0, void 0, void 0, function* () {
+const syncCalendars = async (params) => {
     var _a;
     const { oldCalendars, account, detailedResult, headers, headersToExclude } = params;
     if (!account) {
         throw new Error('Must have account before syncCalendars');
     }
     const localCalendars = (_a = oldCalendars !== null && oldCalendars !== void 0 ? oldCalendars : account.calendars) !== null && _a !== void 0 ? _a : [];
-    const remoteCalendars = yield fetchCalendars({
+    const remoteCalendars = await fetchCalendars({
         account,
         headers: excludeHeaders(headers, headersToExclude),
     });
@@ -1050,15 +1072,15 @@ const syncCalendars = (params) => __awaiter(void 0, void 0, void 0, function* ()
         return prev;
     }, []);
     debug$2(`updated calendars: ${updated.map((cc) => cc.displayName)}`);
-    const updatedWithObjects = yield Promise.all(updated.map((u) => __awaiter(void 0, void 0, void 0, function* () {
-        const result = yield smartCollectionSync({
-            collection: Object.assign(Object.assign({}, u), { objectMultiGet: calendarMultiGet }),
+    const updatedWithObjects = await Promise.all(updated.map(async (u) => {
+        const result = await smartCollectionSync({
+            collection: { ...u, objectMultiGet: calendarMultiGet },
             method: 'webdav',
             headers: excludeHeaders(headers, headersToExclude),
             account,
         });
         return result;
-    })));
+    }));
     // does not present in remote
     const deleted = localCalendars.filter((cal) => remoteCalendars.every((rc) => !urlContains(rc.url, cal.url)));
     debug$2(`deleted calendars: ${deleted.map((cc) => cc.displayName)}`);
@@ -1072,8 +1094,8 @@ const syncCalendars = (params) => __awaiter(void 0, void 0, void 0, function* ()
             deleted,
         }
         : [...unchanged, ...created, ...updatedWithObjects];
-});
-const freeBusyQuery = (params) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const freeBusyQuery = async (params) => {
     const { url, timeRange, depth, headers, headersToExclude } = params;
     if (timeRange) {
         // validate timeRange
@@ -1087,7 +1109,7 @@ const freeBusyQuery = (params) => __awaiter(void 0, void 0, void 0, function* ()
     else {
         throw new Error('timeRange is required');
     }
-    const result = yield collectionQuery({
+    const result = await collectionQuery({
         url,
         body: {
             'free-busy-query': cleanupFalsy({
@@ -1105,7 +1127,7 @@ const freeBusyQuery = (params) => __awaiter(void 0, void 0, void 0, function* ()
         headers: excludeHeaders(headers, headersToExclude),
     });
     return result[0];
-});
+};
 
 var calendar = /*#__PURE__*/Object.freeze({
     __proto__: null,
@@ -1122,7 +1144,7 @@ var calendar = /*#__PURE__*/Object.freeze({
 });
 
 const debug$1 = getLogger('tsdav:account');
-const serviceDiscovery = (params) => __awaiter(void 0, void 0, void 0, function* () {
+const serviceDiscovery = async (params) => {
     var _a, _b;
     debug$1('Service discovery...');
     const { account, headers, headersToExclude } = params;
@@ -1130,7 +1152,7 @@ const serviceDiscovery = (params) => __awaiter(void 0, void 0, void 0, function*
     const uri = new URL(`/.well-known/${account.accountType}`, endpoint);
     uri.protocol = (_a = endpoint.protocol) !== null && _a !== void 0 ? _a : 'http';
     try {
-        const response = yield crossFetch.fetch(uri.href, {
+        const response = await crossFetch.fetch(uri.href, {
             headers: excludeHeaders(headers, headersToExclude),
             method: 'PROPFIND',
             redirect: 'manual',
@@ -1153,8 +1175,8 @@ const serviceDiscovery = (params) => __awaiter(void 0, void 0, void 0, function*
         debug$1(`Service discovery failed: ${err.stack}`);
     }
     return endpoint.href;
-});
-const fetchPrincipalUrl = (params) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const fetchPrincipalUrl = async (params) => {
     var _a, _b, _c, _d, _e;
     const { account, headers, headersToExclude } = params;
     const requiredFields = ['rootUrl'];
@@ -1162,7 +1184,7 @@ const fetchPrincipalUrl = (params) => __awaiter(void 0, void 0, void 0, function
         throw new Error(`account must have ${findMissingFieldNames(account, requiredFields)} before fetchPrincipalUrl`);
     }
     debug$1(`Fetching principal url from path ${account.rootUrl}`);
-    const [response] = yield propfind({
+    const [response] = await propfind({
         url: account.rootUrl,
         props: {
             [`${exports.DAVNamespaceShort.DAV}:current-user-principal`]: {},
@@ -1178,8 +1200,8 @@ const fetchPrincipalUrl = (params) => __awaiter(void 0, void 0, void 0, function
     }
     debug$1(`Fetched principal url ${(_b = (_a = response.props) === null || _a === void 0 ? void 0 : _a.currentUserPrincipal) === null || _b === void 0 ? void 0 : _b.href}`);
     return new URL((_e = (_d = (_c = response.props) === null || _c === void 0 ? void 0 : _c.currentUserPrincipal) === null || _d === void 0 ? void 0 : _d.href) !== null && _e !== void 0 ? _e : '', account.rootUrl).href;
-});
-const fetchHomeUrl = (params) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const fetchHomeUrl = async (params) => {
     var _a, _b;
     const { account, headers, headersToExclude } = params;
     const requiredFields = ['principalUrl', 'rootUrl'];
@@ -1187,7 +1209,7 @@ const fetchHomeUrl = (params) => __awaiter(void 0, void 0, void 0, function* () 
         throw new Error(`account must have ${findMissingFieldNames(account, requiredFields)} before fetchHomeUrl`);
     }
     debug$1(`Fetch home url from ${account.principalUrl}`);
-    const responses = yield propfind({
+    const responses = await propfind({
         url: account.principalUrl,
         props: account.accountType === 'caldav'
             ? { [`${exports.DAVNamespaceShort.CALDAV}:calendar-home-set`]: {} }
@@ -1204,32 +1226,32 @@ const fetchHomeUrl = (params) => __awaiter(void 0, void 0, void 0, function* () 
         : (_b = matched === null || matched === void 0 ? void 0 : matched.props) === null || _b === void 0 ? void 0 : _b.addressbookHomeSet.href, account.rootUrl).href;
     debug$1(`Fetched home url ${result}`);
     return result;
-});
-const createAccount = (params) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const createAccount = async (params) => {
     const { account, headers, loadCollections = false, loadObjects = false, headersToExclude, } = params;
-    const newAccount = Object.assign({}, account);
-    newAccount.rootUrl = yield serviceDiscovery({
+    const newAccount = { ...account };
+    newAccount.rootUrl = await serviceDiscovery({
         account,
         headers: excludeHeaders(headers, headersToExclude),
     });
-    newAccount.principalUrl = yield fetchPrincipalUrl({
+    newAccount.principalUrl = await fetchPrincipalUrl({
         account: newAccount,
         headers: excludeHeaders(headers, headersToExclude),
     });
-    newAccount.homeUrl = yield fetchHomeUrl({
+    newAccount.homeUrl = await fetchHomeUrl({
         account: newAccount,
         headers: excludeHeaders(headers, headersToExclude),
     });
     // to load objects you must first load collections
     if (loadCollections || loadObjects) {
         if (account.accountType === 'caldav') {
-            newAccount.calendars = yield fetchCalendars({
+            newAccount.calendars = await fetchCalendars({
                 headers: excludeHeaders(headers, headersToExclude),
                 account: newAccount,
             });
         }
         else if (account.accountType === 'carddav') {
-            newAccount.addressBooks = yield fetchAddressBooks({
+            newAccount.addressBooks = await fetchAddressBooks({
                 headers: excludeHeaders(headers, headersToExclude),
                 account: newAccount,
             });
@@ -1237,24 +1259,26 @@ const createAccount = (params) => __awaiter(void 0, void 0, void 0, function* ()
     }
     if (loadObjects) {
         if (account.accountType === 'caldav' && newAccount.calendars) {
-            newAccount.calendars = yield Promise.all(newAccount.calendars.map((cal) => __awaiter(void 0, void 0, void 0, function* () {
-                return (Object.assign(Object.assign({}, cal), { objects: yield fetchCalendarObjects({
-                        calendar: cal,
-                        headers: excludeHeaders(headers, headersToExclude),
-                    }) }));
+            newAccount.calendars = await Promise.all(newAccount.calendars.map(async (cal) => ({
+                ...cal,
+                objects: await fetchCalendarObjects({
+                    calendar: cal,
+                    headers: excludeHeaders(headers, headersToExclude),
+                }),
             })));
         }
         else if (account.accountType === 'carddav' && newAccount.addressBooks) {
-            newAccount.addressBooks = yield Promise.all(newAccount.addressBooks.map((addr) => __awaiter(void 0, void 0, void 0, function* () {
-                return (Object.assign(Object.assign({}, addr), { objects: yield fetchVCards({
-                        addressBook: addr,
-                        headers: excludeHeaders(headers, headersToExclude),
-                    }) }));
+            newAccount.addressBooks = await Promise.all(newAccount.addressBooks.map(async (addr) => ({
+                ...addr,
+                objects: await fetchVCards({
+                    addressBook: addr,
+                    headers: excludeHeaders(headers, headersToExclude),
+                }),
             })));
         }
     }
     return newAccount;
-});
+};
 
 var account = /*#__PURE__*/Object.freeze({
     __proto__: null,
@@ -1272,7 +1296,7 @@ const debug = getLogger('tsdav:authHelper');
  * params are shallow merged
  */
 const defaultParam = (fn, params) => (...args) => {
-    return fn(Object.assign(Object.assign({}, params), args[0]));
+    return fn({ ...params, ...args[0] });
 };
 const getBasicAuthHeaders = (credentials) => {
     debug(`Basic auth token generated: ${base64.encode(`${credentials.username}:${credentials.password}`)}`);
@@ -1280,7 +1304,7 @@ const getBasicAuthHeaders = (credentials) => {
         authorization: `Basic ${base64.encode(`${credentials.username}:${credentials.password}`)}`,
     };
 };
-const fetchOauthTokens = (credentials) => __awaiter(void 0, void 0, void 0, function* () {
+const fetchOauthTokens = async (credentials) => {
     const requireFields = [
         'authorizationCode',
         'redirectUrl',
@@ -1300,7 +1324,7 @@ const fetchOauthTokens = (credentials) => __awaiter(void 0, void 0, void 0, func
     });
     debug(credentials.tokenUrl);
     debug(param.toString());
-    const response = yield crossFetch.fetch(credentials.tokenUrl, {
+    const response = await crossFetch.fetch(credentials.tokenUrl, {
         method: 'POST',
         body: param.toString(),
         headers: {
@@ -1309,13 +1333,13 @@ const fetchOauthTokens = (credentials) => __awaiter(void 0, void 0, void 0, func
         },
     });
     if (response.ok) {
-        const tokens = yield response.json();
+        const tokens = await response.json();
         return tokens;
     }
-    debug(`Fetch Oauth tokens failed: ${yield response.text()}`);
+    debug(`Fetch Oauth tokens failed: ${await response.text()}`);
     return {};
-});
-const refreshAccessToken = (credentials) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const refreshAccessToken = async (credentials) => {
     const requireFields = [
         'refreshToken',
         'clientId',
@@ -1331,7 +1355,7 @@ const refreshAccessToken = (credentials) => __awaiter(void 0, void 0, void 0, fu
         refresh_token: credentials.refreshToken,
         grant_type: 'refresh_token',
     });
-    const response = yield crossFetch.fetch(credentials.tokenUrl, {
+    const response = await crossFetch.fetch(credentials.tokenUrl, {
         method: 'POST',
         body: param.toString(),
         headers: {
@@ -1339,25 +1363,25 @@ const refreshAccessToken = (credentials) => __awaiter(void 0, void 0, void 0, fu
         },
     });
     if (response.ok) {
-        const tokens = yield response.json();
+        const tokens = await response.json();
         return tokens;
     }
-    debug(`Refresh access token failed: ${yield response.text()}`);
+    debug(`Refresh access token failed: ${await response.text()}`);
     return {};
-});
-const getOauthHeaders = (credentials) => __awaiter(void 0, void 0, void 0, function* () {
+};
+const getOauthHeaders = async (credentials) => {
     var _a;
     debug('Fetching oauth headers');
     let tokens = {};
     if (!credentials.refreshToken) {
         // No refresh token, fetch new tokens
-        tokens = yield fetchOauthTokens(credentials);
+        tokens = await fetchOauthTokens(credentials);
     }
     else if ((credentials.refreshToken && !credentials.accessToken) ||
         Date.now() > ((_a = credentials.expiration) !== null && _a !== void 0 ? _a : 0)) {
         // have refresh token, but no accessToken, fetch access token only
         // or have both, but accessToken was expired
-        tokens = yield refreshAccessToken(credentials);
+        tokens = await refreshAccessToken(credentials);
     }
     // now we should have valid access token
     debug(`Oauth tokens fetched: ${tokens.access_token}`);
@@ -1367,7 +1391,7 @@ const getOauthHeaders = (credentials) => __awaiter(void 0, void 0, void 0, funct
             authorization: `Bearer ${tokens.access_token}`,
         },
     };
-});
+};
 
 var authHelpers = /*#__PURE__*/Object.freeze({
     __proto__: null,
@@ -1379,7 +1403,7 @@ var authHelpers = /*#__PURE__*/Object.freeze({
 });
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-const createDAVClient = (params) => __awaiter(void 0, void 0, void 0, function* () {
+const createDAVClient = async (params) => {
     var _a;
     const { serverUrl, credentials, authMethod, defaultAccountType, authFunction } = params;
     let authHeaders = {};
@@ -1388,7 +1412,7 @@ const createDAVClient = (params) => __awaiter(void 0, void 0, void 0, function* 
             authHeaders = getBasicAuthHeaders(credentials);
             break;
         case 'Oauth':
-            authHeaders = (yield getOauthHeaders(credentials)).headers;
+            authHeaders = (await getOauthHeaders(credentials)).headers;
             break;
         case 'Digest':
             authHeaders = {
@@ -1396,22 +1420,31 @@ const createDAVClient = (params) => __awaiter(void 0, void 0, void 0, function* 
             };
             break;
         case 'Custom':
-            authHeaders = (_a = (yield (authFunction === null || authFunction === void 0 ? void 0 : authFunction(credentials)))) !== null && _a !== void 0 ? _a : {};
+            authHeaders = (_a = (await (authFunction === null || authFunction === void 0 ? void 0 : authFunction(credentials)))) !== null && _a !== void 0 ? _a : {};
             break;
         default:
             throw new Error('Invalid auth method');
     }
     const defaultAccount = defaultAccountType
-        ? yield createAccount({
+        ? await createAccount({
             account: { serverUrl, credentials, accountType: defaultAccountType },
             headers: authHeaders,
         })
         : undefined;
-    const davRequest$1 = (params0) => __awaiter(void 0, void 0, void 0, function* () {
-        const { init } = params0, rest = __rest(params0, ["init"]);
-        const { headers } = init, restInit = __rest(init, ["headers"]);
-        return davRequest(Object.assign(Object.assign({}, rest), { init: Object.assign(Object.assign({}, restInit), { headers: Object.assign(Object.assign({}, authHeaders), headers) }) }));
-    });
+    const davRequest$1 = async (params0) => {
+        const { init, ...rest } = params0;
+        const { headers, ...restInit } = init;
+        return davRequest({
+            ...rest,
+            init: {
+                ...restInit,
+                headers: {
+                    ...authHeaders,
+                    ...headers,
+                },
+            },
+        });
+    };
     const createObject$1 = defaultParam(createObject, {
         url: serverUrl,
         headers: authHeaders,
@@ -1420,15 +1453,15 @@ const createDAVClient = (params) => __awaiter(void 0, void 0, void 0, function* 
     const deleteObject$1 = defaultParam(deleteObject, { headers: authHeaders, url: serverUrl });
     const propfind$1 = defaultParam(propfind, { headers: authHeaders });
     // account
-    const createAccount$1 = (params0) => __awaiter(void 0, void 0, void 0, function* () {
+    const createAccount$1 = async (params0) => {
         const { account, headers, loadCollections, loadObjects } = params0;
         return createAccount({
-            account: Object.assign({ serverUrl, credentials }, account),
-            headers: Object.assign(Object.assign({}, authHeaders), headers),
+            account: { serverUrl, credentials, ...account },
+            headers: { ...authHeaders, ...headers },
             loadCollections,
             loadObjects,
         });
-    });
+    };
     // collection
     const collectionQuery$1 = defaultParam(collectionQuery, { headers: authHeaders });
     const makeCollection$1 = defaultParam(makeCollection, { headers: authHeaders });
@@ -1508,7 +1541,7 @@ const createDAVClient = (params) => __awaiter(void 0, void 0, void 0, function* 
         updateVCard: updateVCard$1,
         deleteVCard: deleteVCard$1,
     };
-});
+};
 class DAVClient {
     constructor(params) {
         var _a, _b;
@@ -1518,195 +1551,146 @@ class DAVClient {
         this.accountType = (_b = params.defaultAccountType) !== null && _b !== void 0 ? _b : 'caldav';
         this.authFunction = params.authFunction;
     }
-    login() {
-        return __awaiter(this, void 0, void 0, function* () {
-            var _a;
-            switch (this.authMethod) {
-                case 'Basic':
-                    this.authHeaders = getBasicAuthHeaders(this.credentials);
-                    break;
-                case 'Oauth':
-                    this.authHeaders = (yield getOauthHeaders(this.credentials)).headers;
-                    break;
-                case 'Digest':
-                    this.authHeaders = {
-                        Authorization: `Digest ${this.credentials.digestString}`,
-                    };
-                    break;
-                case 'Custom':
-                    this.authHeaders = yield ((_a = this.authFunction) === null || _a === void 0 ? void 0 : _a.call(this, this.credentials));
-                    break;
-                default:
-                    throw new Error('Invalid auth method');
-            }
-            this.account = this.accountType
-                ? yield createAccount({
-                    account: {
-                        serverUrl: this.serverUrl,
-                        credentials: this.credentials,
-                        accountType: this.accountType,
-                    },
-                    headers: this.authHeaders,
-                })
-                : undefined;
-        });
-    }
-    davRequest(params0) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const { init } = params0, rest = __rest(params0, ["init"]);
-            const { headers } = init, restInit = __rest(init, ["headers"]);
-            return davRequest(Object.assign(Object.assign({}, rest), { init: Object.assign(Object.assign({}, restInit), { headers: Object.assign(Object.assign({}, this.authHeaders), headers) }) }));
-        });
-    }
-    createObject(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return defaultParam(createObject, {
-                url: this.serverUrl,
+    async login() {
+        var _a;
+        switch (this.authMethod) {
+            case 'Basic':
+                this.authHeaders = getBasicAuthHeaders(this.credentials);
+                break;
+            case 'Oauth':
+                this.authHeaders = (await getOauthHeaders(this.credentials)).headers;
+                break;
+            case 'Digest':
+                this.authHeaders = {
+                    Authorization: `Digest ${this.credentials.digestString}`,
+                };
+                break;
+            case 'Custom':
+                this.authHeaders = await ((_a = this.authFunction) === null || _a === void 0 ? void 0 : _a.call(this, this.credentials));
+                break;
+            default:
+                throw new Error('Invalid auth method');
+        }
+        this.account = this.accountType
+            ? await createAccount({
+                account: {
+                    serverUrl: this.serverUrl,
+                    credentials: this.credentials,
+                    accountType: this.accountType,
+                },
                 headers: this.authHeaders,
-            })(params[0]);
+            })
+            : undefined;
+    }
+    async davRequest(params0) {
+        const { init, ...rest } = params0;
+        const { headers, ...restInit } = init;
+        return davRequest({
+            ...rest,
+            init: {
+                ...restInit,
+                headers: {
+                    ...this.authHeaders,
+                    ...headers,
+                },
+            },
         });
     }
-    updateObject(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return defaultParam(updateObject, { headers: this.authHeaders, url: this.serverUrl })(params[0]);
+    async createObject(...params) {
+        return defaultParam(createObject, {
+            url: this.serverUrl,
+            headers: this.authHeaders,
+        })(params[0]);
+    }
+    async updateObject(...params) {
+        return defaultParam(updateObject, { headers: this.authHeaders, url: this.serverUrl })(params[0]);
+    }
+    async deleteObject(...params) {
+        return defaultParam(deleteObject, { headers: this.authHeaders, url: this.serverUrl })(params[0]);
+    }
+    async propfind(...params) {
+        return defaultParam(propfind, { headers: this.authHeaders })(params[0]);
+    }
+    async createAccount(params0) {
+        const { account, headers, loadCollections, loadObjects } = params0;
+        return createAccount({
+            account: { serverUrl: this.serverUrl, credentials: this.credentials, ...account },
+            headers: { ...this.authHeaders, ...headers },
+            loadCollections,
+            loadObjects,
         });
     }
-    deleteObject(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return defaultParam(deleteObject, { headers: this.authHeaders, url: this.serverUrl })(params[0]);
-        });
+    async collectionQuery(...params) {
+        return defaultParam(collectionQuery, { headers: this.authHeaders })(params[0]);
     }
-    propfind(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return defaultParam(propfind, { headers: this.authHeaders })(params[0]);
-        });
+    async makeCollection(...params) {
+        return defaultParam(makeCollection, { headers: this.authHeaders })(params[0]);
     }
-    createAccount(params0) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const { account, headers, loadCollections, loadObjects } = params0;
-            return createAccount({
-                account: Object.assign({ serverUrl: this.serverUrl, credentials: this.credentials }, account),
-                headers: Object.assign(Object.assign({}, this.authHeaders), headers),
-                loadCollections,
-                loadObjects,
-            });
-        });
+    async syncCollection(...params) {
+        return defaultParam(syncCollection, { headers: this.authHeaders })(params[0]);
     }
-    collectionQuery(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return defaultParam(collectionQuery, { headers: this.authHeaders })(params[0]);
-        });
+    async supportedReportSet(...params) {
+        return defaultParam(supportedReportSet, { headers: this.authHeaders })(params[0]);
     }
-    makeCollection(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return defaultParam(makeCollection, { headers: this.authHeaders })(params[0]);
-        });
+    async isCollectionDirty(...params) {
+        return defaultParam(isCollectionDirty, { headers: this.authHeaders })(params[0]);
     }
-    syncCollection(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return defaultParam(syncCollection, { headers: this.authHeaders })(params[0]);
-        });
+    async smartCollectionSync(...params) {
+        return defaultParam(smartCollectionSync, {
+            headers: this.authHeaders,
+            account: this.account,
+        })(params[0]);
     }
-    supportedReportSet(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return defaultParam(supportedReportSet, { headers: this.authHeaders })(params[0]);
-        });
+    async calendarQuery(...params) {
+        return defaultParam(calendarQuery, { headers: this.authHeaders })(params[0]);
     }
-    isCollectionDirty(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return defaultParam(isCollectionDirty, { headers: this.authHeaders })(params[0]);
-        });
+    async makeCalendar(...params) {
+        return defaultParam(makeCalendar, { headers: this.authHeaders })(params[0]);
     }
-    smartCollectionSync(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return defaultParam(smartCollectionSync, {
-                headers: this.authHeaders,
-                account: this.account,
-            })(params[0]);
-        });
+    async calendarMultiGet(...params) {
+        return defaultParam(calendarMultiGet, { headers: this.authHeaders })(params[0]);
     }
-    calendarQuery(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return defaultParam(calendarQuery, { headers: this.authHeaders })(params[0]);
-        });
+    async fetchCalendars(...params) {
+        return defaultParam(fetchCalendars, { headers: this.authHeaders, account: this.account })(params === null || params === void 0 ? void 0 : params[0]);
     }
-    makeCalendar(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return defaultParam(makeCalendar, { headers: this.authHeaders })(params[0]);
-        });
+    async fetchCalendarObjects(...params) {
+        return defaultParam(fetchCalendarObjects, { headers: this.authHeaders })(params[0]);
     }
-    calendarMultiGet(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return defaultParam(calendarMultiGet, { headers: this.authHeaders })(params[0]);
-        });
+    async createCalendarObject(...params) {
+        return defaultParam(createCalendarObject, { headers: this.authHeaders })(params[0]);
     }
-    fetchCalendars(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return defaultParam(fetchCalendars, { headers: this.authHeaders, account: this.account })(params === null || params === void 0 ? void 0 : params[0]);
-        });
+    async updateCalendarObject(...params) {
+        return defaultParam(updateCalendarObject, { headers: this.authHeaders })(params[0]);
     }
-    fetchCalendarObjects(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return defaultParam(fetchCalendarObjects, { headers: this.authHeaders })(params[0]);
-        });
+    async deleteCalendarObject(...params) {
+        return defaultParam(deleteCalendarObject, { headers: this.authHeaders })(params[0]);
     }
-    createCalendarObject(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return defaultParam(createCalendarObject, { headers: this.authHeaders })(params[0]);
-        });
+    async syncCalendars(...params) {
+        return defaultParam(syncCalendars, {
+            headers: this.authHeaders,
+            account: this.account,
+        })(params[0]);
     }
-    updateCalendarObject(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return defaultParam(updateCalendarObject, { headers: this.authHeaders })(params[0]);
-        });
+    async addressBookQuery(...params) {
+        return defaultParam(addressBookQuery, { headers: this.authHeaders })(params[0]);
     }
-    deleteCalendarObject(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return defaultParam(deleteCalendarObject, { headers: this.authHeaders })(params[0]);
-        });
+    async addressBookMultiGet(...params) {
+        return defaultParam(addressBookMultiGet, { headers: this.authHeaders })(params[0]);
     }
-    syncCalendars(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return defaultParam(syncCalendars, {
-                headers: this.authHeaders,
-                account: this.account,
-            })(params[0]);
-        });
+    async fetchAddressBooks(...params) {
+        return defaultParam(fetchAddressBooks, { headers: this.authHeaders, account: this.account })(params === null || params === void 0 ? void 0 : params[0]);
     }
-    addressBookQuery(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return defaultParam(addressBookQuery, { headers: this.authHeaders })(params[0]);
-        });
+    async fetchVCards(...params) {
+        return defaultParam(fetchVCards, { headers: this.authHeaders })(params[0]);
     }
-    addressBookMultiGet(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return defaultParam(addressBookMultiGet, { headers: this.authHeaders })(params[0]);
-        });
+    async createVCard(...params) {
+        return defaultParam(createVCard, { headers: this.authHeaders })(params[0]);
     }
-    fetchAddressBooks(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return defaultParam(fetchAddressBooks, { headers: this.authHeaders, account: this.account })(params === null || params === void 0 ? void 0 : params[0]);
-        });
+    async updateVCard(...params) {
+        return defaultParam(updateVCard, { headers: this.authHeaders })(params[0]);
     }
-    fetchVCards(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return defaultParam(fetchVCards, { headers: this.authHeaders })(params[0]);
-        });
-    }
-    createVCard(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return defaultParam(createVCard, { headers: this.authHeaders })(params[0]);
-        });
-    }
-    updateVCard(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return defaultParam(updateVCard, { headers: this.authHeaders })(params[0]);
-        });
-    }
-    deleteVCard(...params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return defaultParam(deleteVCard, { headers: this.authHeaders })(params[0]);
-        });
+    async deleteVCard(...params) {
+        return defaultParam(deleteVCard, { headers: this.authHeaders })(params[0]);
     }
 }
 
@@ -1716,9 +1700,19 @@ var client = /*#__PURE__*/Object.freeze({
     createDAVClient: createDAVClient
 });
 
-var index = Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({ DAVNamespace: exports.DAVNamespace,
+var index = {
+    DAVNamespace: exports.DAVNamespace,
     DAVNamespaceShort: exports.DAVNamespaceShort,
-    DAVAttributeMap }, client), request), collection), account), addressBook), calendar), authHelpers), requestHelpers);
+    DAVAttributeMap,
+    ...client,
+    ...request,
+    ...collection,
+    ...account,
+    ...addressBook,
+    ...calendar,
+    ...authHelpers,
+    ...requestHelpers,
+};
 
 exports.DAVAttributeMap = DAVAttributeMap;
 exports.DAVClient = DAVClient;
