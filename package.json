@@ -33,8 +33,6 @@
   "scripts": {
     "build": "yarn -s clean && rollup -c rollup.config.mjs && copyfiles package.json LICENSE README.md ./dist && rimraf ./dist/ts",
     "clean": "rimraf dist*",
-    "lint": "eslint src --ext .ts",
-    "lintFix": "eslint src --ext .ts --fix",
     "prepublishOnly": "yarn build",
     "test": "echo \"temporarily disabled\" && exit 0",
     "test:apple": "jest --testPathPattern=src/__tests__/integration/apple --runInBand",

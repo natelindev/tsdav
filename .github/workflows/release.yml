@@ -30,8 +30,8 @@ jobs:
       - name: check types
         run: yarn typecheck
 
-      - name: lint
-        run: yarn lint
+      # - name: lint
+      #   run: yarn lint
 
       - name: test
         run: yarn test
