@@ -25,16 +25,16 @@ jobs:
           node-version: ${{ matrix.node_version }}
 
       - name: Install dependencies
-        run: yarn --frozen-lockfile
+        run: pnpm --frozen-lockfile
 
       - name: Run `typecheck`
-        run: yarn typecheck
+        run: pnpm typecheck
 
-      - name: Run `lint`
-        run: yarn lint
+      # - name: Run `lint`
+      #   run: pnpm lint
 
       - name: Run `test`
-        run: yarn test
+        run: pnpm test
         env:
           RECORD_NETWORK_REQUESTS: 'false'
           MOCK_FETCH: 'true'

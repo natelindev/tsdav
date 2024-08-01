@@ -30,6 +30,10 @@ Other cloud providers not listed are not currently tested, in theory any cloud w
 
 Please follow [official guide](https://help.zoho.com/portal/en/kb/calendar/syncing-other-calendars/articles/setting-up-caldav-sync-in-zoho-calendar#Configuring_CalDAV_sync_between_Zoho_Calendar_and_your_device)
 
+##### Forward Email
+
+Please follow [offical guide](https://forwardemail.net/en/faq#do-you-support-calendars-caldav)
+
 ### Caveats
 
 Some cloud providers' APIs are not very standard, they might includes several quirks.

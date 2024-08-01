@@ -1,6 +1,6 @@
 {
   "name": "tsdav",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "WebDAV, CALDAV, and CARDDAV client for Nodejs and the Browser",
   "keywords": [
     "dav",
@@ -54,6 +54,7 @@
   "devDependencies": {
     "@rollup/plugin-commonjs": "25.0.7",
     "@rollup/plugin-node-resolve": "15.2.3",
+    "@rollup/plugin-terser": "0.4.4",
     "@rollup/plugin-typescript": "11.1.6",
     "@types/base-64": "1.0.2",
     "@types/debug": "4.1.12",
@@ -78,7 +79,6 @@
     "rollup-plugin-dts": "6.1.1",
     "rollup-plugin-node-builtins": "2.1.2",
     "rollup-plugin-polyfill-node": "0.13.0",
-    "rollup-plugin-terser": "7.0.2",
     "sort-package-json": "2.10.0",
     "ts-jest": "29.2.2",
     "tslib": "2.6.3",

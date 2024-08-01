@@ -25,16 +25,16 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: install dependencies
-        run: yarn --frozen-lockfile
+        run: pnpm --frozen-lockfile
 
       - name: check types
-        run: yarn typecheck
+        run: pnpm typecheck
 
       # - name: lint
-      #   run: yarn lint
+      #   run: pnpm lint
 
       - name: test
-        run: yarn test
+        run: pnpm test
         env:
           RECORD_NETWORK_REQUESTS: 'false'
           MOCK_FETCH: 'true'
@@ -51,6 +51,6 @@ jobs:
           CREDENTIAL_NEXTCLOUD_SERVER_URL: ${{secrets.CREDENTIAL_NEXTCLOUD_SERVER_URL}}
 
       - name: publish package
-        run: yarn publish
+        run: pnpm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}

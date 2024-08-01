@@ -6672,6 +6672,12 @@ var require$$1 = /*@__PURE__*/getAugmentedNamespace(_polyfillNode_string_decoder
 	      parser.ns = Object.create(rootNS);
 	    }
 
+	    // disallow unquoted attribute values if not otherwise configured
+	    // and strict mode is true
+	    if (parser.opt.unquotedAttributeValues === undefined) {
+	      parser.opt.unquotedAttributeValues = !strict;
+	    }
+
 	    // mostly just for error reporting
 	    parser.trackPosition = parser.opt.position !== false;
 	    if (parser.trackPosition) {
@@ -6765,6 +6771,7 @@ var require$$1 = /*@__PURE__*/getAugmentedNamespace(_polyfillNode_string_decoder
 	  } catch (ex) {
 	    Stream = function () {};
 	  }
+	  if (!Stream) Stream = function () {};
 
 	  var streamWraps = sax.EVENTS.filter(function (ev) {
 	    return ev !== 'error' && ev !== 'end'
@@ -7688,15 +7695,22 @@ var require$$1 = /*@__PURE__*/getAugmentedNamespace(_polyfillNode_string_decoder
 	          continue
 
 	        case S.SGML_DECL:
-	          if ((parser.sgmlDecl + c).toUpperCase() === CDATA) {
+	          if (parser.sgmlDecl + c === '--') {
+	            parser.state = S.COMMENT;
+	            parser.comment = '';
+	            parser.sgmlDecl = '';
+	            continue;
+	          }
+
+	          if (parser.doctype && parser.doctype !== true && parser.sgmlDecl) {
+	            parser.state = S.DOCTYPE_DTD;
+	            parser.doctype += '<!' + parser.sgmlDecl + c;
+	            parser.sgmlDecl = '';
+	          } else if ((parser.sgmlDecl + c).toUpperCase() === CDATA) {
 	            emitNode(parser, 'onopencdata');
 	            parser.state = S.CDATA;
 	            parser.sgmlDecl = '';
 	            parser.cdata = '';
-	          } else if (parser.sgmlDecl + c === '--') {
-	            parser.state = S.COMMENT;
-	            parser.comment = '';
-	            parser.sgmlDecl = '';
 	          } else if ((parser.sgmlDecl + c).toUpperCase() === DOCTYPE) {
 	            parser.state = S.DOCTYPE;
 	            if (parser.doctype || parser.sawRoot) {
@@ -7750,12 +7764,18 @@ var require$$1 = /*@__PURE__*/getAugmentedNamespace(_polyfillNode_string_decoder
 	          continue
 
 	        case S.DOCTYPE_DTD:
-	          parser.doctype += c;
 	          if (c === ']') {
+	            parser.doctype += c;
 	            parser.state = S.DOCTYPE;
+	          } else if (c === '<') {
+	            parser.state = S.OPEN_WAKA;
+	            parser.startTagPosition = parser.position;
 	          } else if (isQuote(c)) {
+	            parser.doctype += c;
 	            parser.state = S.DOCTYPE_DTD_QUOTED;
 	            parser.q = c;
+	          } else {
+	            parser.doctype += c;
 	          }
 	          continue
 
@@ -7796,6 +7816,8 @@ var require$$1 = /*@__PURE__*/getAugmentedNamespace(_polyfillNode_string_decoder
 	            // which is a comment of " blah -- bloo "
 	            parser.comment += '--' + c;
 	            parser.state = S.COMMENT;
+	          } else if (parser.doctype && parser.doctype !== true) {
+	            parser.state = S.DOCTYPE_DTD;
 	          } else {
 	            parser.state = S.TEXT;
 	          }
@@ -7963,7 +7985,9 @@ var require$$1 = /*@__PURE__*/getAugmentedNamespace(_polyfillNode_string_decoder
 	            parser.q = c;
 	            parser.state = S.ATTRIB_VALUE_QUOTED;
 	          } else {
-	            strictFail(parser, 'Unquoted attribute value');
+	            if (!parser.opt.unquotedAttributeValues) {
+	              error(parser, 'Unquoted attribute value');
+	            }
 	            parser.state = S.ATTRIB_VALUE_UNQUOTED;
 	            parser.attribValue = c;
 	          }
@@ -8081,9 +8105,16 @@ var require$$1 = /*@__PURE__*/getAugmentedNamespace(_polyfillNode_string_decoder
 	          }
 
 	          if (c === ';') {
-	            parser[buffer] += parseEntity(parser);
-	            parser.entity = '';
-	            parser.state = returnState;
+	            var parsedEntity = parseEntity(parser);
+	            if (parser.opt.unparsedEntities && !Object.values(sax.XML_ENTITIES).includes(parsedEntity)) {
+	              parser.entity = '';
+	              parser.state = returnState;
+	              parser.write(parsedEntity);
+	            } else {
+	              parser[buffer] += parsedEntity;
+	              parser.entity = '';
+	              parser.state = returnState;
+	            }
 	          } else if (isMatch(parser.entity.length ? entityBody : entityStart, c)) {
 	            parser.entity += c;
 	          } else {
@@ -8095,8 +8126,9 @@ var require$$1 = /*@__PURE__*/getAugmentedNamespace(_polyfillNode_string_decoder
 
 	          continue
 
-	        default:
+	        default: /* istanbul ignore next */ {
 	          throw new Error(parser, 'Unknown state: ' + parser.state)
+	        }
 	      }
 	    } // while
 
@@ -9289,7 +9321,7 @@ const isCollectionDirty = async (params) => {
         throw new Error('Collection does not exist on server');
     }
     return {
-        isDirty: collection.ctag !== ((_a = res.props) === null || _a === void 0 ? void 0 : _a.getctag),
+        isDirty: `${collection.ctag}` !== `${(_a = res.props) === null || _a === void 0 ? void 0 : _a.getctag}`,
         newCtag: (_c = (_b = res.props) === null || _b === void 0 ? void 0 : _b.getctag) === null || _c === void 0 ? void 0 : _c.toString(),
     };
 };
@@ -9352,7 +9384,7 @@ const smartCollectionSync = async (params) => {
         const changedObjectUrls = objectResponses.filter((o) => o.status !== 404).map((r) => r.href);
         const deletedObjectUrls = objectResponses.filter((o) => o.status === 404).map((r) => r.href);
         const multiGetObjectResponse = changedObjectUrls.length
-            ? (_c = (await ((_b = collection === null || collection === void 0 ? void 0 : collection.objectMultiGet) === null || _b === void 0 ? void 0 : _b.call(collection, {
+            ? ((_c = (await ((_b = collection === null || collection === void 0 ? void 0 : collection.objectMultiGet) === null || _b === void 0 ? void 0 : _b.call(collection, {
                 url: collection.url,
                 props: {
                     [`${DAVNamespaceShort.DAV}:getetag`]: {},
@@ -9363,7 +9395,7 @@ const smartCollectionSync = async (params) => {
                 objectUrls: changedObjectUrls,
                 depth: '1',
                 headers: excludeHeaders(headers, headersToExclude),
-            })))) !== null && _c !== void 0 ? _c : []
+            })))) !== null && _c !== void 0 ? _c : [])
             : [];
         const remoteObjects = multiGetObjectResponse.map((res) => {
             var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
@@ -9371,8 +9403,8 @@ const smartCollectionSync = async (params) => {
                 url: (_a = res.href) !== null && _a !== void 0 ? _a : '',
                 etag: (_b = res.props) === null || _b === void 0 ? void 0 : _b.getetag,
                 data: (account === null || account === void 0 ? void 0 : account.accountType) === 'caldav'
-                    ? (_e = (_d = (_c = res.props) === null || _c === void 0 ? void 0 : _c.calendarData) === null || _d === void 0 ? void 0 : _d._cdata) !== null && _e !== void 0 ? _e : (_f = res.props) === null || _f === void 0 ? void 0 : _f.calendarData
-                    : (_j = (_h = (_g = res.props) === null || _g === void 0 ? void 0 : _g.addressData) === null || _h === void 0 ? void 0 : _h._cdata) !== null && _j !== void 0 ? _j : (_k = res.props) === null || _k === void 0 ? void 0 : _k.addressData,
+                    ? ((_e = (_d = (_c = res.props) === null || _c === void 0 ? void 0 : _c.calendarData) === null || _d === void 0 ? void 0 : _d._cdata) !== null && _e !== void 0 ? _e : (_f = res.props) === null || _f === void 0 ? void 0 : _f.calendarData)
+                    : ((_j = (_h = (_g = res.props) === null || _g === void 0 ? void 0 : _g.addressData) === null || _h === void 0 ? void 0 : _h._cdata) !== null && _j !== void 0 ? _j : (_k = res.props) === null || _k === void 0 ? void 0 : _k.addressData),
             };
         });
         const localObjects = (_d = collection.objects) !== null && _d !== void 0 ? _d : [];
@@ -9972,8 +10004,8 @@ const syncCalendars = async (params) => {
     const updated = localCalendars.reduce((prev, curr) => {
         const found = remoteCalendars.find((rc) => urlContains(rc.url, curr.url));
         if (found &&
-            ((found.syncToken && found.syncToken !== curr.syncToken) ||
-                (found.ctag && found.ctag !== curr.ctag))) {
+            ((found.syncToken && `${found.syncToken}` !== `${curr.syncToken}`) ||
+                (found.ctag && `${found.ctag}` !== `${curr.ctag}`))) {
             return [...prev, found];
         }
         return prev;
@@ -9992,7 +10024,8 @@ const syncCalendars = async (params) => {
     const deleted = localCalendars.filter((cal) => remoteCalendars.every((rc) => !urlContains(rc.url, cal.url)));
     debug$2(`deleted calendars: ${deleted.map((cc) => cc.displayName)}`);
     const unchanged = localCalendars.filter((cal) => remoteCalendars.some((rc) => urlContains(rc.url, cal.url) &&
-        ((rc.syncToken && rc.syncToken !== cal.syncToken) || (rc.ctag && rc.ctag !== cal.ctag))));
+        ((rc.syncToken && `${rc.syncToken}` !== `${cal.syncToken}`) ||
+            (rc.ctag && `${rc.ctag}` !== `${cal.ctag}`))));
     // debug(`unchanged calendars: ${unchanged.map((cc) => cc.displayName)}`);
     return detailedResult
         ? {

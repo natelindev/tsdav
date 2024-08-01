@@ -382,7 +382,7 @@ const isCollectionDirty = async (params) => {
         throw new Error('Collection does not exist on server');
     }
     return {
-        isDirty: collection.ctag !== ((_a = res.props) === null || _a === void 0 ? void 0 : _a.getctag),
+        isDirty: `${collection.ctag}` !== `${(_a = res.props) === null || _a === void 0 ? void 0 : _a.getctag}`,
         newCtag: (_c = (_b = res.props) === null || _b === void 0 ? void 0 : _b.getctag) === null || _c === void 0 ? void 0 : _c.toString(),
     };
 };
@@ -445,7 +445,7 @@ const smartCollectionSync = async (params) => {
         const changedObjectUrls = objectResponses.filter((o) => o.status !== 404).map((r) => r.href);
         const deletedObjectUrls = objectResponses.filter((o) => o.status === 404).map((r) => r.href);
         const multiGetObjectResponse = changedObjectUrls.length
-            ? (_c = (await ((_b = collection === null || collection === void 0 ? void 0 : collection.objectMultiGet) === null || _b === void 0 ? void 0 : _b.call(collection, {
+            ? ((_c = (await ((_b = collection === null || collection === void 0 ? void 0 : collection.objectMultiGet) === null || _b === void 0 ? void 0 : _b.call(collection, {
                 url: collection.url,
                 props: {
                     [`${exports.DAVNamespaceShort.DAV}:getetag`]: {},
@@ -456,7 +456,7 @@ const smartCollectionSync = async (params) => {
                 objectUrls: changedObjectUrls,
                 depth: '1',
                 headers: excludeHeaders(headers, headersToExclude),
-            })))) !== null && _c !== void 0 ? _c : []
+            })))) !== null && _c !== void 0 ? _c : [])
             : [];
         const remoteObjects = multiGetObjectResponse.map((res) => {
             var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
@@ -464,8 +464,8 @@ const smartCollectionSync = async (params) => {
                 url: (_a = res.href) !== null && _a !== void 0 ? _a : '',
                 etag: (_b = res.props) === null || _b === void 0 ? void 0 : _b.getetag,
                 data: (account === null || account === void 0 ? void 0 : account.accountType) === 'caldav'
-                    ? (_e = (_d = (_c = res.props) === null || _c === void 0 ? void 0 : _c.calendarData) === null || _d === void 0 ? void 0 : _d._cdata) !== null && _e !== void 0 ? _e : (_f = res.props) === null || _f === void 0 ? void 0 : _f.calendarData
-                    : (_j = (_h = (_g = res.props) === null || _g === void 0 ? void 0 : _g.addressData) === null || _h === void 0 ? void 0 : _h._cdata) !== null && _j !== void 0 ? _j : (_k = res.props) === null || _k === void 0 ? void 0 : _k.addressData,
+                    ? ((_e = (_d = (_c = res.props) === null || _c === void 0 ? void 0 : _c.calendarData) === null || _d === void 0 ? void 0 : _d._cdata) !== null && _e !== void 0 ? _e : (_f = res.props) === null || _f === void 0 ? void 0 : _f.calendarData)
+                    : ((_j = (_h = (_g = res.props) === null || _g === void 0 ? void 0 : _g.addressData) === null || _h === void 0 ? void 0 : _h._cdata) !== null && _j !== void 0 ? _j : (_k = res.props) === null || _k === void 0 ? void 0 : _k.addressData),
             };
         });
         const localObjects = (_d = collection.objects) !== null && _d !== void 0 ? _d : [];
@@ -1065,8 +1065,8 @@ const syncCalendars = async (params) => {
     const updated = localCalendars.reduce((prev, curr) => {
         const found = remoteCalendars.find((rc) => urlContains(rc.url, curr.url));
         if (found &&
-            ((found.syncToken && found.syncToken !== curr.syncToken) ||
-                (found.ctag && found.ctag !== curr.ctag))) {
+            ((found.syncToken && `${found.syncToken}` !== `${curr.syncToken}`) ||
+                (found.ctag && `${found.ctag}` !== `${curr.ctag}`))) {
             return [...prev, found];
         }
         return prev;
@@ -1085,7 +1085,8 @@ const syncCalendars = async (params) => {
     const deleted = localCalendars.filter((cal) => remoteCalendars.every((rc) => !urlContains(rc.url, cal.url)));
     debug$2(`deleted calendars: ${deleted.map((cc) => cc.displayName)}`);
     const unchanged = localCalendars.filter((cal) => remoteCalendars.some((rc) => urlContains(rc.url, cal.url) &&
-        ((rc.syncToken && rc.syncToken !== cal.syncToken) || (rc.ctag && rc.ctag !== cal.ctag))));
+        ((rc.syncToken && `${rc.syncToken}` !== `${cal.syncToken}`) ||
+            (rc.ctag && `${rc.ctag}` !== `${cal.ctag}`))));
     // debug(`unchanged calendars: ${unchanged.map((cc) => cc.displayName)}`);
     return detailedResult
         ? {

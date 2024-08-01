@@ -12,13 +12,14 @@ It's very common to be used for cloud storage(limited support), as well as calen
 
 | Provider name | WEBDAV | CALDAV | CARDDAV |
 | ------------- | ------ | ------ | ------- |
-| iCloud        | ✅     | ✅     | ✅      |
-| Google cloud  | ✅     | ✅     | ✅      |
+| Apple    | ✅     | ✅     | ✅      |
+| Google  | ✅     | ✅     | ✅      |
 | Fastmail      | ✅     | ✅     | ✅      |
 | Nextcloud     | ✅     | ✅     | ✅      |
 | Baikal        | ✅     | ✅     | ✅      |
 | ZOHO          | ✅     | ✅     | ⛔️     |
 | DAViCal       | ✅     | ✅     | ⛔️     |
+| Forward Email | ⛔️ | ✅ | ⛔️ |
 
 For more information on cloud providers, go to [cloud providers](./cloud%20providers.md) for more information.
 

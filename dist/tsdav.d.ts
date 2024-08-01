@@ -751,7 +751,26 @@ declare class DAVClient {
         isDirty: boolean;
         newCtag: string;
     }>;
-    smartCollectionSync(...params: Parameters<SmartCollectionSync>): ReturnType<SmartCollectionSync>;
+    smartCollectionSync<T extends DAVCollection>(param: {
+        collection: T;
+        method?: 'basic' | 'webdav';
+        headers?: Record<string, string>;
+        account?: DAVAccount;
+        detailedResult?: false;
+    }): Promise<T>;
+    smartCollectionSync<T extends DAVCollection>(param: {
+        collection: T;
+        method?: 'basic' | 'webdav';
+        headers?: Record<string, string>;
+        account?: DAVAccount;
+        detailedResult: true;
+    }): Promise<Omit<T, 'objects'> & {
+        objects: {
+            created: DAVObject[];
+            updated: DAVObject[];
+            deleted: DAVObject[];
+        };
+    }>;
     calendarQuery(...params: Parameters<typeof calendarQuery>): Promise<DAVResponse[]>;
     makeCalendar(...params: Parameters<typeof makeCalendar>): Promise<DAVResponse[]>;
     calendarMultiGet(...params: Parameters<typeof calendarMultiGet>): Promise<DAVResponse[]>;

@@ -41,7 +41,9 @@ import {
   DAVAddressBook,
   DAVCalendar,
   DAVCalendarObject,
+  DAVCollection,
   DAVCredentials,
+  DAVObject,
   DAVVCard,
 } from './types/models';
 import { defaultParam, getBasicAuthHeaders, getOauthHeaders } from './util/authHelpers';
@@ -365,9 +367,29 @@ export class DAVClient {
     return defaultParam(rawIsCollectionDirty, { headers: this.authHeaders })(params[0]);
   }
 
-  async smartCollectionSync(
-    ...params: Parameters<SmartCollectionSync>
-  ): ReturnType<SmartCollectionSync> {
+  async smartCollectionSync<T extends DAVCollection>(param: {
+    collection: T;
+    method?: 'basic' | 'webdav';
+    headers?: Record<string, string>;
+    account?: DAVAccount;
+    detailedResult?: false;
+  }): Promise<T>;
+  async smartCollectionSync<T extends DAVCollection>(param: {
+    collection: T;
+    method?: 'basic' | 'webdav';
+    headers?: Record<string, string>;
+    account?: DAVAccount;
+    detailedResult: true;
+  }): Promise<
+    Omit<T, 'objects'> & {
+      objects: {
+        created: DAVObject[];
+        updated: DAVObject[];
+        deleted: DAVObject[];
+      };
+    }
+  >;
+  async smartCollectionSync(...params: any[]): Promise<any> {
     return (
       defaultParam(rawSmartCollectionSync, {
         headers: this.authHeaders,

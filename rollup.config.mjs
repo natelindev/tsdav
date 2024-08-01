@@ -4,7 +4,7 @@ import cjs from '@rollup/plugin-commonjs';
 import ts from '@rollup/plugin-typescript';
 import dts from 'rollup-plugin-dts';
 import nodePolyfills from 'rollup-plugin-polyfill-node';
-import { terser } from 'rollup-plugin-terser';
+import terser from '@rollup/plugin-terser';
 
 export default [
   {

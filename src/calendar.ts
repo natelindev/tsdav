@@ -461,8 +461,8 @@ export const syncCalendars: SyncCalendars = async (params: {
     const found = remoteCalendars.find((rc) => urlContains(rc.url, curr.url));
     if (
       found &&
-      ((found.syncToken && found.syncToken !== curr.syncToken) ||
-        (found.ctag && found.ctag !== curr.ctag))
+      ((found.syncToken && `${found.syncToken}` !== `${curr.syncToken}`) ||
+        (found.ctag && `${found.ctag}` !== `${curr.ctag}`))
     ) {
       return [...prev, found];
     }
@@ -491,7 +491,8 @@ export const syncCalendars: SyncCalendars = async (params: {
     remoteCalendars.some(
       (rc) =>
         urlContains(rc.url, cal.url) &&
-        ((rc.syncToken && rc.syncToken !== cal.syncToken) || (rc.ctag && rc.ctag !== cal.ctag)),
+        ((rc.syncToken && `${rc.syncToken}` !== `${cal.syncToken}`) ||
+          (rc.ctag && `${rc.ctag}` !== `${cal.ctag}`)),
     ),
   );
   // debug(`unchanged calendars: ${unchanged.map((cc) => cc.displayName)}`);
