@@ -82,7 +82,7 @@
     "sort-package-json": "2.10.0",
     "ts-jest": "29.2.2",
     "tslib": "2.6.3",
-    "typescript": "5.5.3"
+    "typescript": "5.5.4"
   },
   "engines": {
     "node": ">=10"
