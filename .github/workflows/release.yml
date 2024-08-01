@@ -25,7 +25,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: install dependencies
-        run: pnpm --frozen-lockfile
+        run: pnpm i --frozen-lockfile
 
       - name: check types
         run: pnpm typecheck
