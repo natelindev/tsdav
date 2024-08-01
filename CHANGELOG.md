@@ -1,3 +1,12 @@
+## v2.1.1
+
+##### improvements
+- fixed [#201](https://github.com/natelindev/tsdav/issues/201) where `client.smartCollectionSync` have incorrect type
+- fixed [#200](https://github.com/natelindev/tsdav/issues/200) where `syncCalendars` incorrectly mark calendars as updated due to type mismatch
+- updated docs
+- updated dependencies
+- use pnpm instead of yarn for package manager
+
 ## v2.1.0
 
 **potential breaking changes**
