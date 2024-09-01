@@ -80,7 +80,7 @@
     "rollup-plugin-node-builtins": "2.1.2",
     "rollup-plugin-polyfill-node": "0.13.0",
     "sort-package-json": "2.10.0",
-    "ts-jest": "29.2.2",
+    "ts-jest": "29.2.5",
     "tslib": "2.6.3",
     "typescript": "5.5.3"
   },
