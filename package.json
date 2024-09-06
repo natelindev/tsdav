@@ -48,7 +48,7 @@
   "dependencies": {
     "base-64": "1.0.0",
     "cross-fetch": "4.0.0",
-    "debug": "4.3.5",
+    "debug": "4.3.7",
     "xml-js": "1.6.11"
   },
   "devDependencies": {
