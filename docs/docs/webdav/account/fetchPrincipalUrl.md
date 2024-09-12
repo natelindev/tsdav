@@ -24,6 +24,7 @@ const url = await fetchPrincipalUrl({
 - `account` **required**, account with `rootUrl` and `accountType`
 - `headers` request headers
 - `headersToExclude` array of keys of the headers you want to exclude
+- `fetchOptions` options to pass to underlying fetch function
 
 ### Return Value
 

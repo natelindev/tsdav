@@ -20,6 +20,7 @@ const { isDirty, newCtag } = await isCollectionDirty({
 - `collection` **required**, [DAVCollection](../../types/DAVCollection.md) to detect
 - `headers` request headers
 - `headersToExclude` array of keys of the headers you want to exclude
+- `fetchOptions` options to pass to underlying fetch function
 
 ### Return Value
 

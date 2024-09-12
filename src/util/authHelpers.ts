@@ -27,7 +27,7 @@ export const getBasicAuthHeaders = (credentials: DAVCredentials): { authorizatio
   };
 };
 
-export const fetchOauthTokens = async (credentials: DAVCredentials): Promise<DAVTokens> => {
+export const fetchOauthTokens = async (credentials: DAVCredentials, fetchOptions?: RequestInit): Promise<DAVTokens> => {
   const requireFields: Array<keyof DAVCredentials> = [
     'authorizationCode',
     'redirectUrl',
@@ -59,6 +59,7 @@ export const fetchOauthTokens = async (credentials: DAVCredentials): Promise<DAV
       'content-length': `${param.toString().length}`,
       'content-type': 'application/x-www-form-urlencoded',
     },
+    ...(fetchOptions ?? {}),
   });
 
   if (response.ok) {
@@ -75,6 +76,7 @@ export const fetchOauthTokens = async (credentials: DAVCredentials): Promise<DAV
 
 export const refreshAccessToken = async (
   credentials: DAVCredentials,
+  fetchOptions?: RequestInit,
 ): Promise<{
   access_token?: string;
   expires_in?: number;
@@ -102,6 +104,7 @@ export const refreshAccessToken = async (
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
+    ...(fetchOptions ?? {}),
   });
 
   if (response.ok) {
@@ -117,19 +120,20 @@ export const refreshAccessToken = async (
 
 export const getOauthHeaders = async (
   credentials: DAVCredentials,
+  fetchOptions?: RequestInit,
 ): Promise<{ tokens: DAVTokens; headers: { authorization?: string } }> => {
   debug('Fetching oauth headers');
   let tokens: DAVTokens = {};
   if (!credentials.refreshToken) {
     // No refresh token, fetch new tokens
-    tokens = await fetchOauthTokens(credentials);
+    tokens = await fetchOauthTokens(credentials, fetchOptions);
   } else if (
     (credentials.refreshToken && !credentials.accessToken) ||
     Date.now() > (credentials.expiration ?? 0)
   ) {
     // have refresh token, but no accessToken, fetch access token only
     // or have both, but accessToken was expired
-    tokens = await refreshAccessToken(credentials);
+    tokens = await refreshAccessToken(credentials, fetchOptions);
   }
   // now we should have valid access token
   debug(`Oauth tokens fetched: ${tokens.access_token}`);

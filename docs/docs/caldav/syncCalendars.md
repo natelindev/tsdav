@@ -38,6 +38,7 @@ const { created, updated, deleted } = await syncCalendars({
 - `detailedResult` if falsy, the result would be latest version of the calendars of this account, otherwise they would be separated into three groups of `created`, `updated`, and `deleted`.
 - `headers` request headers
 - `headersToExclude` array of keys of the headers you want to exclude
+- `fetchOptions` options to pass to underlying fetch function
 
 :::info
 `objects` inside `oldCalendars` are not needed when `detailedResult` is `true`.

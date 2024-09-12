@@ -23,6 +23,7 @@ const result = await deleteCalendarObject({
 - `vCard` **required**, [DAVVCard](../types/DAVVCard.md) to delete
 - `headers` request headers
 - `headersToExclude` array of keys of the headers you want to exclude
+- `fetchOptions` options to pass to underlying fetch function
 
 ### Return Value
 

@@ -37,6 +37,7 @@ const vcards = await addressBookMultiGet({
 - `depth` **required**, [DAVDepth](../types/DAVDepth.md) of the request
 - `headers` request headers
 - `headersToExclude` array of keys of the headers you want to exclude
+- `fetchOptions` options to pass to underlying fetch function
 
 ### Return Value
 

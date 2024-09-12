@@ -12,6 +12,7 @@ export type DAVRequest = {
 
 - `headers` request headers
 - `headersToExclude` array of keys of the headers you want to exclude
+- `fetchOptions` options to pass to underlying fetch function
 - `method` request method
 - `body` request body
 - `namespace` default namespace for all xml nodes

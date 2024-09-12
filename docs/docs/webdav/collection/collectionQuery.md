@@ -38,6 +38,7 @@ const result = await collectionQuery({
 - `defaultNamespace` defaults to `DAVNamespaceShort.DAV`, default namespace for the the request body
 - `headers` request headers
 - `headersToExclude` array of keys of the headers you want to exclude
+- `fetchOptions` options to pass to underlying fetch function
 
 ### Return Value
 

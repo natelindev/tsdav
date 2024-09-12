@@ -26,6 +26,7 @@ const response = await makeCollection({
 - `depth` [DAVDepth](../../types/DAVDepth.md)
 - `headers` request headers
 - `headersToExclude` array of keys of the headers you want to exclude
+- `fetchOptions` options to pass to underlying fetch function
 
 ### Return Value
 

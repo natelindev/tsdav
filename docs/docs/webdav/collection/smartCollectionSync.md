@@ -44,6 +44,7 @@ const { created, updated, deleted } = (
 - `detailedResult` boolean indicate whether the return value should be detailed or not
 - `headers` request headers
 - `headersToExclude` array of keys of the headers you want to exclude
+- `fetchOptions` options to pass to underlying fetch function
 
 :::info
 `objects` inside `collection` are not needed when `detailedResult` is `true`.

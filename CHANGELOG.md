@@ -1,3 +1,12 @@
+## v2.1.2
+
+**features**
+new option `fetchOptions` on all possible functions, allow customizing fetch options
+
+##### improvements
+- updated docs
+- updated dependencies
+
 ## v2.1.1
 
 ##### improvements

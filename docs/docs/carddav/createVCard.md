@@ -24,6 +24,7 @@ const result = await createVCard({
 - `vCardString` **required**, vcard file data
 - `headers` request headers
 - `headersToExclude` array of keys of the headers you want to exclude
+- `fetchOptions` options to pass to underlying fetch function
 
 ### Return Value
 

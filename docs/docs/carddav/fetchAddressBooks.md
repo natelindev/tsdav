@@ -21,6 +21,7 @@ const addressBooks = await fetchAddressBooks({
 - `props` [CARDDAV prop element](https://datatracker.ietf.org/doc/html/rfc6352#section-10.4.2) in [ElementCompact](../types/ElementCompact.md) form, overriding default props to fetch.
 - `headers` request headers
 - `headersToExclude` array of keys of the headers you want to exclude
+- `fetchOptions` options to pass to underlying fetch function
 
 :::caution
 when overriding props, resourcetype is required

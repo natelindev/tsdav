@@ -11,15 +11,18 @@ export type DAVCollection = {
   resourcetype?: any;
   syncToken?: string;
   url: string;
+  fetchOptions?: RequestInit;
   // should only be used for smartCollectionSync
   fetchObjects?:
     | ((params?: {
         collection: DAVCalendar;
         headers?: Record<string, string>;
+        fetchOptions?: RequestInit;
       }) => Promise<DAVCalendarObject[]>)
     | ((params?: {
         collection: DAVAddressBook;
         headers?: Record<string, string>;
+        fetchOptions?: RequestInit;
       }) => Promise<DAVVCard[]>);
   objectMultiGet?: (params: {
     url: string;
@@ -28,6 +31,7 @@ export type DAVCollection = {
     filters?: ElementCompact;
     timezone?: string;
     depth: DAVDepth;
+    fetchOptions?: RequestInit;
     headers?: Record<string, string>;
   }) => Promise<DAVResponse[]>;
 };

@@ -238,6 +238,8 @@ export class DAVClient {
 
   account?: DAVAccount;
 
+  fetchOptions?: RequestInit;
+
   authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
 
   constructor(params: {
@@ -246,12 +248,14 @@ export class DAVClient {
     authMethod?: 'Basic' | 'Oauth' | 'Digest' | 'Custom';
     authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
     defaultAccountType?: DAVAccount['accountType'] | undefined;
+    fetchOptions?: RequestInit;
   }) {
     this.serverUrl = params.serverUrl;
     this.credentials = params.credentials;
     this.authMethod = params.authMethod ?? 'Basic';
     this.accountType = params.defaultAccountType ?? 'caldav';
     this.authFunction = params.authFunction;
+    this.fetchOptions = params.fetchOptions ?? {};
   }
 
   async login(): Promise<void> {
@@ -260,7 +264,7 @@ export class DAVClient {
         this.authHeaders = getBasicAuthHeaders(this.credentials);
         break;
       case 'Oauth':
-        this.authHeaders = (await getOauthHeaders(this.credentials)).headers;
+        this.authHeaders = (await getOauthHeaders(this.credentials, this.fetchOptions)).headers;
         break;
       case 'Digest':
         this.authHeaders = {
@@ -282,6 +286,7 @@ export class DAVClient {
             accountType: this.accountType,
           },
           headers: this.authHeaders,
+          fetchOptions: this.fetchOptions,
         })
       : undefined;
   }
@@ -291,6 +296,7 @@ export class DAVClient {
     init: DAVRequest;
     convertIncoming?: boolean;
     parseOutgoing?: boolean;
+    fetchOptions?: RequestInit;
   }): Promise<DAVResponse[]> {
     const { init, ...rest } = params0;
     const { headers, ...restInit } = init;
@@ -303,6 +309,7 @@ export class DAVClient {
           ...headers,
         },
       },
+      fetchOptions: this.fetchOptions,
     });
   }
 
@@ -310,23 +317,32 @@ export class DAVClient {
     return defaultParam(rawCreateObject, {
       url: this.serverUrl,
       headers: this.authHeaders,
+      fetchOptions: this.fetchOptions,
     })(params[0]);
   }
 
   async updateObject(...params: Parameters<typeof rawUpdateObject>): Promise<Response> {
-    return defaultParam(rawUpdateObject, { headers: this.authHeaders, url: this.serverUrl })(
+    return defaultParam(rawUpdateObject, {
+      url: this.serverUrl,
+      headers: this.authHeaders,
+      fetchOptions: this.fetchOptions,
+    })(
       params[0],
     );
   }
 
   async deleteObject(...params: Parameters<typeof rawDeleteObject>): Promise<Response> {
-    return defaultParam(rawDeleteObject, { headers: this.authHeaders, url: this.serverUrl })(
+    return defaultParam(rawDeleteObject, {
+      url: this.serverUrl,
+      headers: this.authHeaders,
+      fetchOptions: this.fetchOptions,
+    })(
       params[0],
     );
   }
 
   async propfind(...params: Parameters<typeof rawPropfind>): Promise<DAVResponse[]> {
-    return defaultParam(rawPropfind, { headers: this.authHeaders })(params[0]);
+    return defaultParam(rawPropfind, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
   }
 
   async createAccount(params0: {
@@ -334,43 +350,46 @@ export class DAVClient {
     headers?: Record<string, string>;
     loadCollections?: boolean;
     loadObjects?: boolean;
+    fetchOptions?: RequestInit;
   }): Promise<DAVAccount> {
-    const { account, headers, loadCollections, loadObjects } = params0;
+    const { account, headers, loadCollections, loadObjects, fetchOptions } = params0;
     return rawCreateAccount({
       account: { serverUrl: this.serverUrl, credentials: this.credentials, ...account },
       headers: { ...this.authHeaders, ...headers },
       loadCollections,
       loadObjects,
+      fetchOptions: fetchOptions ?? this.fetchOptions,
     });
   }
 
   async collectionQuery(...params: Parameters<typeof rawCollectionQuery>): Promise<DAVResponse[]> {
-    return defaultParam(rawCollectionQuery, { headers: this.authHeaders })(params[0]);
+    return defaultParam(rawCollectionQuery, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
   }
 
   async makeCollection(...params: Parameters<typeof rawMakeCollection>): Promise<DAVResponse[]> {
-    return defaultParam(rawMakeCollection, { headers: this.authHeaders })(params[0]);
+    return defaultParam(rawMakeCollection, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
   }
 
   async syncCollection(...params: Parameters<typeof rawSyncCollection>): Promise<DAVResponse[]> {
-    return defaultParam(rawSyncCollection, { headers: this.authHeaders })(params[0]);
+    return defaultParam(rawSyncCollection, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
   }
 
   async supportedReportSet(...params: Parameters<typeof rawSupportedReportSet>): Promise<string[]> {
-    return defaultParam(rawSupportedReportSet, { headers: this.authHeaders })(params[0]);
+    return defaultParam(rawSupportedReportSet, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
   }
 
   async isCollectionDirty(...params: Parameters<typeof rawIsCollectionDirty>): Promise<{
     isDirty: boolean;
     newCtag: string;
   }> {
-    return defaultParam(rawIsCollectionDirty, { headers: this.authHeaders })(params[0]);
+    return defaultParam(rawIsCollectionDirty, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
   }
 
   async smartCollectionSync<T extends DAVCollection>(param: {
     collection: T;
     method?: 'basic' | 'webdav';
     headers?: Record<string, string>;
+    fetchOptions?: RequestInit;
     account?: DAVAccount;
     detailedResult?: false;
   }): Promise<T>;
@@ -378,6 +397,7 @@ export class DAVClient {
     collection: T;
     method?: 'basic' | 'webdav';
     headers?: Record<string, string>;
+    fetchOptions?: RequestInit;
     account?: DAVAccount;
     detailedResult: true;
   }): Promise<
@@ -393,27 +413,28 @@ export class DAVClient {
     return (
       defaultParam(rawSmartCollectionSync, {
         headers: this.authHeaders,
+        fetchOptions: this.fetchOptions,
         account: this.account,
       }) as SmartCollectionSync
     )(params[0]);
   }
 
   async calendarQuery(...params: Parameters<typeof rawCalendarQuery>): Promise<DAVResponse[]> {
-    return defaultParam(rawCalendarQuery, { headers: this.authHeaders })(params[0]);
+    return defaultParam(rawCalendarQuery, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
   }
 
   async makeCalendar(...params: Parameters<typeof rawMakeCalendar>): Promise<DAVResponse[]> {
-    return defaultParam(rawMakeCalendar, { headers: this.authHeaders })(params[0]);
+    return defaultParam(rawMakeCalendar, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
   }
 
   async calendarMultiGet(
     ...params: Parameters<typeof rawCalendarMultiGet>
   ): Promise<DAVResponse[]> {
-    return defaultParam(rawCalendarMultiGet, { headers: this.authHeaders })(params[0]);
+    return defaultParam(rawCalendarMultiGet, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
   }
 
   async fetchCalendars(...params: Parameters<typeof rawFetchCalendars>): Promise<DAVCalendar[]> {
-    return defaultParam(rawFetchCalendars, { headers: this.authHeaders, account: this.account })(
+    return defaultParam(rawFetchCalendars, { headers: this.authHeaders, account: this.account, fetchOptions: this.fetchOptions })(
       params?.[0],
     );
   }
@@ -421,25 +442,25 @@ export class DAVClient {
   async fetchCalendarObjects(
     ...params: Parameters<typeof rawFetchCalendarObjects>
   ): Promise<DAVCalendarObject[]> {
-    return defaultParam(rawFetchCalendarObjects, { headers: this.authHeaders })(params[0]);
+    return defaultParam(rawFetchCalendarObjects, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
   }
 
   async createCalendarObject(
     ...params: Parameters<typeof rawCreateCalendarObject>
   ): Promise<Response> {
-    return defaultParam(rawCreateCalendarObject, { headers: this.authHeaders })(params[0]);
+    return defaultParam(rawCreateCalendarObject, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
   }
 
   async updateCalendarObject(
     ...params: Parameters<typeof rawUpdateCalendarObject>
   ): Promise<Response> {
-    return defaultParam(rawUpdateCalendarObject, { headers: this.authHeaders })(params[0]);
+    return defaultParam(rawUpdateCalendarObject, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
   }
 
   async deleteCalendarObject(
     ...params: Parameters<typeof rawDeleteCalendarObject>
   ): Promise<Response> {
-    return defaultParam(rawDeleteCalendarObject, { headers: this.authHeaders })(params[0]);
+    return defaultParam(rawDeleteCalendarObject, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
   }
 
   async syncCalendars(...params: Parameters<SyncCalendars>): Promise<ReturnType<SyncCalendars>> {
@@ -447,6 +468,7 @@ export class DAVClient {
       defaultParam(rawSyncCalendars, {
         headers: this.authHeaders,
         account: this.account,
+        fetchOptions: this.fetchOptions
       }) as SyncCalendars
     )(params[0]);
   }
@@ -454,36 +476,36 @@ export class DAVClient {
   async addressBookQuery(
     ...params: Parameters<typeof rawAddressBookQuery>
   ): Promise<DAVResponse[]> {
-    return defaultParam(rawAddressBookQuery, { headers: this.authHeaders })(params[0]);
+    return defaultParam(rawAddressBookQuery, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
   }
 
   async addressBookMultiGet(
     ...params: Parameters<typeof rawAddressBookMultiGet>
   ): Promise<DAVResponse[]> {
-    return defaultParam(rawAddressBookMultiGet, { headers: this.authHeaders })(params[0]);
+    return defaultParam(rawAddressBookMultiGet, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
   }
 
   async fetchAddressBooks(
     ...params: Parameters<typeof rawFetchAddressBooks>
   ): Promise<DAVAddressBook[]> {
-    return defaultParam(rawFetchAddressBooks, { headers: this.authHeaders, account: this.account })(
+    return defaultParam(rawFetchAddressBooks, { headers: this.authHeaders, account: this.account, fetchOptions: this.fetchOptions })(
       params?.[0],
     );
   }
 
   async fetchVCards(...params: Parameters<typeof rawFetchVCards>): Promise<DAVVCard[]> {
-    return defaultParam(rawFetchVCards, { headers: this.authHeaders })(params[0]);
+    return defaultParam(rawFetchVCards, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
   }
 
   async createVCard(...params: Parameters<typeof rawCreateVCard>): Promise<Response> {
-    return defaultParam(rawCreateVCard, { headers: this.authHeaders })(params[0]);
+    return defaultParam(rawCreateVCard, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
   }
 
   async updateVCard(...params: Parameters<typeof rawUpdateVCard>): Promise<Response> {
-    return defaultParam(rawUpdateVCard, { headers: this.authHeaders })(params[0]);
+    return defaultParam(rawUpdateVCard, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
   }
 
   async deleteVCard(...params: Parameters<typeof rawDeleteVCard>): Promise<Response> {
-    return defaultParam(rawDeleteVCard, { headers: this.authHeaders })(params[0]);
+    return defaultParam(rawDeleteVCard, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
   }
 }

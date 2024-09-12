@@ -21,6 +21,7 @@ const vcards = await fetchVCards({
 - `objectUrls` vcard urls to fetch
 - `headers` request headers
 - `headersToExclude` array of keys of the headers you want to exclude
+- `fetchOptions` options to pass to underlying fetch function
   :::info
   some providers may return their objects with different suffixes such as `http://api.xx/97ec5f81-5ecc-4505-9621-08806f6796a3` or `http://api.xx/calobj1.abc`
   in this case, you can pass in your own object name filter

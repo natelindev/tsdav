@@ -23,6 +23,7 @@ const account = await createAccount({
 - `account` **required**, account with `serverUrl` and `accountType`
 - `headers` request headers
 - `headersToExclude` array of keys of the headers you want to exclude
+- `fetchOptions` options to pass to underlying fetch function
 - `loadCollections` defaults to false, whether to load all collections of the account
 - `loadObjects` defaults to false, whether to load all objects of collections as well, must be used with `loadCollections` set to `true`
 

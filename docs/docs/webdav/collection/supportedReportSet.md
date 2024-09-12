@@ -20,6 +20,7 @@ const reports = await supportedReportSet({
 - `collection` **required**, [DAVCollection](../../types/DAVCollection.md) to query on
 - `headers` request headers
 - `headersToExclude` array of keys of the headers you want to exclude
+- `fetchOptions` options to pass to underlying fetch function
 
 ### Return Value
 

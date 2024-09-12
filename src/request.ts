@@ -25,8 +25,9 @@ export const davRequest = async (params: {
   init: DAVRequest;
   convertIncoming?: boolean;
   parseOutgoing?: boolean;
+  fetchOptions?: RequestInit;
 }): Promise<DAVResponse[]> => {
-  const { url, init, convertIncoming = true, parseOutgoing = true } = params;
+  const { url, init, convertIncoming = true, parseOutgoing = true, fetchOptions = {} } = params;
   const { headers = {}, body, namespace, method, attributes } = init;
   const xmlBody = convertIncoming
     ? convert.js2xml(
@@ -70,6 +71,7 @@ export const davRequest = async (params: {
     },
     body: xmlBody,
     method,
+    ...fetchOptions,
   });
 
   const resText = await davResponse.text();
@@ -171,8 +173,9 @@ export const propfind = async (params: {
   depth?: DAVDepth;
   headers?: Record<string, string>;
   headersToExclude?: string[];
+  fetchOptions?: RequestInit;
 }): Promise<DAVResponse[]> => {
-  const { url, props, depth, headers, headersToExclude } = params;
+  const { url, props, depth, headers, headersToExclude, fetchOptions = {} } = params;
   return davRequest({
     url,
     init: {
@@ -192,6 +195,7 @@ export const propfind = async (params: {
         },
       },
     },
+    fetchOptions,
   });
 };
 
@@ -200,12 +204,14 @@ export const createObject = async (params: {
   data: BodyInit;
   headers?: Record<string, string>;
   headersToExclude?: string[];
+  fetchOptions?: RequestInit;
 }): Promise<Response> => {
-  const { url, data, headers, headersToExclude } = params;
+  const { url, data, headers, headersToExclude, fetchOptions = {} } = params;
   return fetch(url, {
     method: 'PUT',
     body: data,
     headers: excludeHeaders(headers, headersToExclude),
+    ...fetchOptions,
   });
 };
 
@@ -215,12 +221,14 @@ export const updateObject = async (params: {
   etag?: string;
   headers?: Record<string, string>;
   headersToExclude?: string[];
+  fetchOptions?: RequestInit;
 }): Promise<Response> => {
-  const { url, data, etag, headers, headersToExclude } = params;
+  const { url, data, etag, headers, headersToExclude, fetchOptions = {} } = params;
   return fetch(url, {
     method: 'PUT',
     body: data,
     headers: excludeHeaders(cleanupFalsy({ 'If-Match': etag, ...headers }), headersToExclude),
+    ...fetchOptions,
   });
 };
 
@@ -229,10 +237,12 @@ export const deleteObject = async (params: {
   etag?: string;
   headers?: Record<string, string>;
   headersToExclude?: string[];
+  fetchOptions?: RequestInit;
 }): Promise<Response> => {
-  const { url, headers, etag, headersToExclude } = params;
+  const { url, headers, etag, headersToExclude, fetchOptions = {} } = params;
   return fetch(url, {
     method: 'DELETE',
     headers: excludeHeaders(cleanupFalsy({ 'If-Match': etag, ...headers }), headersToExclude),
+    ...fetchOptions
   });
 };

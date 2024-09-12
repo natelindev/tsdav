@@ -5,6 +5,7 @@ export interface SmartCollectionSync {
     collection: T;
     method?: 'basic' | 'webdav';
     headers?: Record<string, string>;
+    fetchOptions?: RequestInit;
     account?: DAVAccount;
     detailedResult: true;
   }): Promise<
@@ -20,6 +21,7 @@ export interface SmartCollectionSync {
     collection: T;
     method?: 'basic' | 'webdav';
     headers?: Record<string, string>;
+    fetchOptions?: RequestInit;
     account?: DAVAccount;
     detailedResult?: false;
   }): Promise<T>;
@@ -29,6 +31,7 @@ export interface SyncCalendars {
   (params: {
     oldCalendars: DAVCalendar[];
     headers?: Record<string, string>;
+    fetchOptions?: RequestInit;
     account?: DAVAccount;
     detailedResult: true;
   }): Promise<{
@@ -39,6 +42,7 @@ export interface SyncCalendars {
   (params: {
     oldCalendars: DAVCalendar[];
     headers?: Record<string, string>;
+    fetchOptions?: RequestInit;
     account?: DAVAccount;
     detailedResult?: false;
   }): Promise<DAVCalendar[]>;
