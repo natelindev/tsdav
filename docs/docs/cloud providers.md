@@ -14,7 +14,7 @@ For apple you want to go to [this page](https://support.apple.com/en-us/HT204397
 
 For google you want to go to Google Cloud Platform/Credentials page, then create a credential that suite your use case. You want `clientId` ,`client secret` and after this. Also you need to enable Google CALDAV/CARDDAV for your project.
 
-Also you need to setup oauth screen, add needed oauth2 scopes, use proper oauth2 grant flow and you might need to get your application verified by google in order to be able to use CALDAV/CARDDAV api. Refer to [this page](https://developers.google.com/identity/protocols/oauth2) for more details.
+Also you need to setup oauth screen, add needed oauth2 scopes (`https://www.googleapis.com/auth/calendar` for CalDAV), use proper oauth2 grant flow and you might need to get your application verified by google in order to be able to use CALDAV/CARDDAV api. Refer to [this page](https://developers.google.com/identity/protocols/oauth2) for more details.
 
 After the oauth2 offline grant you should be able to obtain oauth2 refresh token.
 
