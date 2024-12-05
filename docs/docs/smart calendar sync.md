@@ -131,13 +131,12 @@ you can use `syncCalendars` function from the lib with `detailedResult` set as `
 
 ```ts
 const { created, updated, deleted } = await client.syncCalendars({
-  oldCalendars: await Promise.all(
-    localCalendars.map(async (lc) => ({
+  oldCalendars: localCalendars.map((lc) => ({
       displayName: lc.name,
       syncToken: lc.syncToken,
       ctag: lc.ctag,
       url: lc.url,
-    }))
+    })
   ),
   detailedResult: true,
 });
