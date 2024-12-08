@@ -19,6 +19,40 @@ import { findMissingFieldNames, hasFields } from './util/typeHelpers';
 
 const debug = getLogger('tsdav:calendar');
 
+export const fetchCalendarUserAddresses = async (params: {
+  account: DAVAccount;
+  headers?: Record<string, string>;
+  headersToExclude?: string[];
+  fetchOptions?: RequestInit;
+}): Promise<string[]> => {
+  const { account, headers, headersToExclude, fetchOptions = {} } = params;
+  const requiredFields: Array<'principalUrl' | 'rootUrl'> = ['principalUrl', 'rootUrl'];
+  if (!hasFields(account, requiredFields)) {
+    throw new Error(
+      `account must have ${findMissingFieldNames(account, requiredFields)} before fetchUserAddresses`,
+    );
+  }
+
+  debug(`Fetch user addresses from ${account.principalUrl}`);
+  const responses = await propfind({
+    url: account.principalUrl,
+    props: { [`${DAVNamespaceShort.CALDAV}:calendar-user-address-set`]: {} },
+    depth: '0',
+    headers: excludeHeaders(headers, headersToExclude),
+    fetchOptions,
+  });
+
+  const matched = responses.find((r) => urlContains(account.principalUrl, r.href));
+  if (!matched || !matched.ok) {
+    throw new Error('cannot find calendarUserAddresses');
+  }
+
+  const addresses = matched?.props?.calendarUserAddressSet?.href?.filter(Boolean) || [];
+
+  debug(`Fetched calendar user addresses ${addresses}`);
+  return addresses;
+};
+
 export const calendarQuery = async (params: {
   url: string;
   props: ElementCompact;

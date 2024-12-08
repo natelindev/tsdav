@@ -234,6 +234,12 @@ declare const deleteVCard: (params: {
     fetchOptions?: RequestInit;
 }) => Promise<Response>;
 
+declare const fetchCalendarUserAddresses: (params: {
+    account: DAVAccount;
+    headers?: Record<string, string>;
+    headersToExclude?: string[];
+    fetchOptions?: RequestInit;
+}) => Promise<string[]>;
 declare const calendarQuery: (params: {
     url: string;
     props: ElementCompact;
@@ -544,6 +550,12 @@ declare const createDAVClient: (params: {
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
     } | undefined) => Promise<DAVCalendar[]>;
+    fetchCalendarUserAddresses: (params: {
+        account: DAVAccount;
+        headers?: Record<string, string>;
+        headersToExclude?: string[];
+        fetchOptions?: RequestInit;
+    }) => Promise<string[]>;
     fetchCalendarObjects: (params: {
         calendar: DAVCalendar;
         objectUrls?: string[];
@@ -696,6 +708,7 @@ declare class DAVClient {
     makeCalendar(...params: Parameters<typeof makeCalendar>): Promise<DAVResponse[]>;
     calendarMultiGet(...params: Parameters<typeof calendarMultiGet>): Promise<DAVResponse[]>;
     fetchCalendars(...params: Parameters<typeof fetchCalendars>): Promise<DAVCalendar[]>;
+    fetchCalendarUserAddresses(...params: Parameters<typeof fetchCalendarUserAddresses>): Promise<string[]>;
     fetchCalendarObjects(...params: Parameters<typeof fetchCalendarObjects>): Promise<DAVCalendarObject[]>;
     createCalendarObject(...params: Parameters<typeof createCalendarObject>): Promise<Response>;
     updateCalendarObject(...params: Parameters<typeof updateCalendarObject>): Promise<Response>;
@@ -767,6 +780,12 @@ declare const _default: {
             authorization?: string;
         };
     }>;
+    fetchCalendarUserAddresses: (params: {
+        account: DAVAccount;
+        headers?: Record<string, string>;
+        headersToExclude?: string[];
+        fetchOptions?: RequestInit;
+    }) => Promise<string[]>;
     calendarQuery: (params: {
         url: string;
         props: xml_js.ElementCompact;
@@ -1147,6 +1166,12 @@ declare const _default: {
             headersToExclude?: string[];
             fetchOptions?: RequestInit;
         } | undefined) => Promise<DAVCalendar[]>;
+        fetchCalendarUserAddresses: (params: {
+            account: DAVAccount;
+            headers?: Record<string, string>;
+            headersToExclude?: string[];
+            fetchOptions?: RequestInit;
+        }) => Promise<string[]>;
         fetchCalendarObjects: (params: {
             calendar: DAVCalendar;
             objectUrls?: string[];
@@ -1241,4 +1266,4 @@ declare const _default: {
     };
 };
 
-export { type DAVAccount, type DAVAddressBook, DAVAttributeMap, type DAVCalendar, type DAVCalendarObject, DAVClient, type DAVCollection, type DAVCredentials, type DAVDepth, type DAVMethods, DAVNamespace, DAVNamespaceShort, type DAVObject, type DAVRequest, type DAVResponse, type DAVTokens, type DAVVCard, addressBookQuery, calendarMultiGet, calendarQuery, cleanupFalsy, collectionQuery, createAccount, createCalendarObject, createDAVClient, createObject, createVCard, davRequest, _default as default, deleteCalendarObject, deleteObject, deleteVCard, fetchAddressBooks, fetchCalendarObjects, fetchCalendars, fetchOauthTokens, fetchVCards, freeBusyQuery, getBasicAuthHeaders, getDAVAttribute, getOauthHeaders, isCollectionDirty, makeCalendar, propfind, refreshAccessToken, smartCollectionSync, supportedReportSet, syncCalendars, syncCollection, updateCalendarObject, updateObject, updateVCard, urlContains, urlEquals };
+export { type DAVAccount, type DAVAddressBook, DAVAttributeMap, type DAVCalendar, type DAVCalendarObject, DAVClient, type DAVCollection, type DAVCredentials, type DAVDepth, type DAVMethods, DAVNamespace, DAVNamespaceShort, type DAVObject, type DAVRequest, type DAVResponse, type DAVTokens, type DAVVCard, addressBookQuery, calendarMultiGet, calendarQuery, cleanupFalsy, collectionQuery, createAccount, createCalendarObject, createDAVClient, createObject, createVCard, davRequest, _default as default, deleteCalendarObject, deleteObject, deleteVCard, fetchAddressBooks, fetchCalendarObjects, fetchCalendarUserAddresses, fetchCalendars, fetchOauthTokens, fetchVCards, freeBusyQuery, getBasicAuthHeaders, getDAVAttribute, getOauthHeaders, isCollectionDirty, makeCalendar, propfind, refreshAccessToken, smartCollectionSync, supportedReportSet, syncCalendars, syncCollection, updateCalendarObject, updateObject, updateVCard, urlContains, urlEquals };

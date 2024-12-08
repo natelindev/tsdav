@@ -755,6 +755,29 @@ var addressBook = /*#__PURE__*/Object.freeze({
 
 /* eslint-disable no-underscore-dangle */
 const debug$2 = getLogger('tsdav:calendar');
+const fetchCalendarUserAddresses = async (params) => {
+    var _a, _b, _c;
+    const { account, headers, headersToExclude, fetchOptions = {} } = params;
+    const requiredFields = ['principalUrl', 'rootUrl'];
+    if (!hasFields(account, requiredFields)) {
+        throw new Error(`account must have ${findMissingFieldNames(account, requiredFields)} before fetchUserAddresses`);
+    }
+    debug$2(`Fetch user addresses from ${account.principalUrl}`);
+    const responses = await propfind({
+        url: account.principalUrl,
+        props: { [`${DAVNamespaceShort.CALDAV}:calendar-user-address-set`]: {} },
+        depth: '0',
+        headers: excludeHeaders(headers, headersToExclude),
+        fetchOptions,
+    });
+    const matched = responses.find((r) => urlContains(account.principalUrl, r.href));
+    if (!matched || !matched.ok) {
+        throw new Error('cannot find calendarUserAddresses');
+    }
+    const addresses = ((_c = (_b = (_a = matched === null || matched === void 0 ? void 0 : matched.props) === null || _a === void 0 ? void 0 : _a.calendarUserAddressSet) === null || _b === void 0 ? void 0 : _b.href) === null || _c === void 0 ? void 0 : _c.filter(Boolean)) || [];
+    debug$2(`Fetched calendar user addresses ${addresses}`);
+    return addresses;
+};
 const calendarQuery = async (params) => {
     const { url, props, filters, timezone, depth, headers, headersToExclude, fetchOptions = {} } = params;
     return collectionQuery({
@@ -1170,6 +1193,7 @@ var calendar = /*#__PURE__*/Object.freeze({
     createCalendarObject: createCalendarObject,
     deleteCalendarObject: deleteCalendarObject,
     fetchCalendarObjects: fetchCalendarObjects,
+    fetchCalendarUserAddresses: fetchCalendarUserAddresses,
     fetchCalendars: fetchCalendars,
     freeBusyQuery: freeBusyQuery,
     makeCalendar: makeCalendar,
@@ -1530,6 +1554,10 @@ const createDAVClient = async (params) => {
         headers: authHeaders,
         account: defaultAccount,
     });
+    const fetchCalendarUserAddresses$1 = defaultParam(fetchCalendarUserAddresses, {
+        headers: authHeaders,
+        account: defaultAccount,
+    });
     const fetchCalendarObjects$1 = defaultParam(fetchCalendarObjects, {
         headers: authHeaders,
     });
@@ -1575,6 +1603,7 @@ const createDAVClient = async (params) => {
         isCollectionDirty: isCollectionDirty$1,
         smartCollectionSync: smartCollectionSync$1,
         fetchCalendars: fetchCalendars$1,
+        fetchCalendarUserAddresses: fetchCalendarUserAddresses$1,
         fetchCalendarObjects: fetchCalendarObjects$1,
         createCalendarObject: createCalendarObject$1,
         updateCalendarObject: updateCalendarObject$1,
@@ -1713,6 +1742,9 @@ class DAVClient {
     async fetchCalendars(...params) {
         return defaultParam(fetchCalendars, { headers: this.authHeaders, account: this.account, fetchOptions: this.fetchOptions })(params === null || params === void 0 ? void 0 : params[0]);
     }
+    async fetchCalendarUserAddresses(...params) {
+        return defaultParam(fetchCalendarUserAddresses, { headers: this.authHeaders, account: this.account, fetchOptions: this.fetchOptions })(params === null || params === void 0 ? void 0 : params[0]);
+    }
     async fetchCalendarObjects(...params) {
         return defaultParam(fetchCalendarObjects, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
     }
@@ -1775,4 +1807,4 @@ var index = {
     ...requestHelpers,
 };
 
-export { DAVAttributeMap, DAVClient, DAVNamespace, DAVNamespaceShort, addressBookQuery, calendarMultiGet, calendarQuery, cleanupFalsy, collectionQuery, createAccount, createCalendarObject, createDAVClient, createObject, createVCard, davRequest, index as default, deleteCalendarObject, deleteObject, deleteVCard, fetchAddressBooks, fetchCalendarObjects, fetchCalendars, fetchOauthTokens, fetchVCards, freeBusyQuery, getBasicAuthHeaders, getDAVAttribute, getOauthHeaders, isCollectionDirty, makeCalendar, propfind, refreshAccessToken, smartCollectionSync, supportedReportSet, syncCalendars, syncCollection, updateCalendarObject, updateObject, updateVCard, urlContains, urlEquals };
+export { DAVAttributeMap, DAVClient, DAVNamespace, DAVNamespaceShort, addressBookQuery, calendarMultiGet, calendarQuery, cleanupFalsy, collectionQuery, createAccount, createCalendarObject, createDAVClient, createObject, createVCard, davRequest, index as default, deleteCalendarObject, deleteObject, deleteVCard, fetchAddressBooks, fetchCalendarObjects, fetchCalendarUserAddresses, fetchCalendars, fetchOauthTokens, fetchVCards, freeBusyQuery, getBasicAuthHeaders, getDAVAttribute, getOauthHeaders, isCollectionDirty, makeCalendar, propfind, refreshAccessToken, smartCollectionSync, supportedReportSet, syncCalendars, syncCollection, updateCalendarObject, updateObject, updateVCard, urlContains, urlEquals };
