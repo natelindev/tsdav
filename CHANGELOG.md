@@ -1,3 +1,14 @@
+## v2.1.3
+
+**features**
+- new function `fetchCalendarUserAddresses` thanks to @pierreliefauche
+- new type `calendarColor` on `DAVCalendar`
+
+##### improvements
+- fetch updates, now use polyfill mode
+- updated dependencies
+- doc update by community
+
 ## v2.1.2
 
 **features**

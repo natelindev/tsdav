@@ -1,5 +1,6 @@
+import 'cross-fetch/polyfill';
+
 import { encode } from 'base-64';
-import { fetch } from 'cross-fetch';
 import getLogger from 'debug';
 
 import { DAVTokens } from '../types/DAVTypes';
@@ -27,7 +28,10 @@ export const getBasicAuthHeaders = (credentials: DAVCredentials): { authorizatio
   };
 };
 
-export const fetchOauthTokens = async (credentials: DAVCredentials, fetchOptions?: RequestInit): Promise<DAVTokens> => {
+export const fetchOauthTokens = async (
+  credentials: DAVCredentials,
+  fetchOptions?: RequestInit,
+): Promise<DAVTokens> => {
   const requireFields: Array<keyof DAVCredentials> = [
     'authorizationCode',
     'redirectUrl',

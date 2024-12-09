@@ -1,4 +1,5 @@
-import { fetch } from 'cross-fetch';
+import 'cross-fetch/polyfill';
+
 import getLogger from 'debug';
 import convert, { ElementCompact } from 'xml-js';
 
@@ -243,6 +244,6 @@ export const deleteObject = async (params: {
   return fetch(url, {
     method: 'DELETE',
     headers: excludeHeaders(cleanupFalsy({ 'If-Match': etag, ...headers }), headersToExclude),
-    ...fetchOptions
+    ...fetchOptions,
   });
 };

@@ -2,7 +2,7 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-var crossFetch = require('cross-fetch');
+require('cross-fetch/polyfill');
 var getLogger = require('debug');
 var convert = require('xml-js');
 var base64 = require('base-64');
@@ -155,7 +155,7 @@ const davRequest = async (params) => {
     //   )}`
     // );
     // debug(xmlBody);
-    const davResponse = await crossFetch.fetch(url, {
+    const davResponse = await fetch(url, {
         headers: {
             'Content-Type': 'text/xml;charset=UTF-8',
             ...cleanupFalsy(headers),
@@ -276,7 +276,7 @@ const propfind = async (params) => {
 };
 const createObject = async (params) => {
     const { url, data, headers, headersToExclude, fetchOptions = {} } = params;
-    return crossFetch.fetch(url, {
+    return fetch(url, {
         method: 'PUT',
         body: data,
         headers: excludeHeaders(headers, headersToExclude),
@@ -285,7 +285,7 @@ const createObject = async (params) => {
 };
 const updateObject = async (params) => {
     const { url, data, etag, headers, headersToExclude, fetchOptions = {} } = params;
-    return crossFetch.fetch(url, {
+    return fetch(url, {
         method: 'PUT',
         body: data,
         headers: excludeHeaders(cleanupFalsy({ 'If-Match': etag, ...headers }), headersToExclude),
@@ -294,10 +294,10 @@ const updateObject = async (params) => {
 };
 const deleteObject = async (params) => {
     const { url, headers, etag, headersToExclude, fetchOptions = {} } = params;
-    return crossFetch.fetch(url, {
+    return fetch(url, {
         method: 'DELETE',
         headers: excludeHeaders(cleanupFalsy({ 'If-Match': etag, ...headers }), headersToExclude),
-        ...fetchOptions
+        ...fetchOptions,
     });
 };
 
@@ -571,11 +571,11 @@ var collection = /*#__PURE__*/Object.freeze({
 /* eslint-disable no-underscore-dangle */
 const debug$3 = getLogger('tsdav:addressBook');
 const addressBookQuery = async (params) => {
-    const { url, props, filters, depth, headers, headersToExclude, fetchOptions = {}, } = params;
+    const { url, props, filters, depth, headers, headersToExclude, fetchOptions = {} } = params;
     return collectionQuery({
         url,
         body: {
-            'addressbook-query': {
+            'addressbook-query': cleanupFalsy({
                 _attributes: getDAVAttribute([exports.DAVNamespace.CARDDAV, exports.DAVNamespace.DAV]),
                 [`${exports.DAVNamespaceShort.DAV}:prop`]: props,
                 filter: filters !== null && filters !== void 0 ? filters : {
@@ -585,24 +585,24 @@ const addressBookQuery = async (params) => {
                         },
                     },
                 },
-            },
+            }),
         },
         defaultNamespace: exports.DAVNamespaceShort.CARDDAV,
         depth,
         headers: excludeHeaders(headers, headersToExclude),
-        fetchOptions
+        fetchOptions,
     });
 };
 const addressBookMultiGet = async (params) => {
-    const { url, props, objectUrls, depth, headers, headersToExclude, fetchOptions = {}, } = params;
+    const { url, props, objectUrls, depth, headers, headersToExclude, fetchOptions = {} } = params;
     return collectionQuery({
         url,
         body: {
-            'addressbook-multiget': {
+            'addressbook-multiget': cleanupFalsy({
                 _attributes: getDAVAttribute([exports.DAVNamespace.DAV, exports.DAVNamespace.CARDDAV]),
                 [`${exports.DAVNamespaceShort.DAV}:prop`]: props,
                 [`${exports.DAVNamespaceShort.DAV}:href`]: objectUrls,
-            },
+            }),
         },
         defaultNamespace: exports.DAVNamespaceShort.CARDDAV,
         depth,
@@ -611,7 +611,7 @@ const addressBookMultiGet = async (params) => {
     });
 };
 const fetchAddressBooks = async (params) => {
-    const { account, headers, props: customProps, headersToExclude, fetchOptions = {} } = params !== null && params !== void 0 ? params : {};
+    const { account, headers, props: customProps, headersToExclude, fetchOptions = {}, } = params !== null && params !== void 0 ? params : {};
     const requiredFields = ['homeUrl', 'rootUrl'];
     if (!account || !hasFields(account, requiredFields)) {
         if (!account) {
@@ -648,11 +648,15 @@ const fetchAddressBooks = async (params) => {
     })
         .map(async (addr) => ({
         ...addr,
-        reports: await supportedReportSet({ collection: addr, headers: excludeHeaders(headers, headersToExclude), fetchOptions }),
+        reports: await supportedReportSet({
+            collection: addr,
+            headers: excludeHeaders(headers, headersToExclude),
+            fetchOptions,
+        }),
     })));
 };
 const fetchVCards = async (params) => {
-    const { addressBook, headers, objectUrls, headersToExclude, urlFilter = (url) => url, useMultiGet = true, fetchOptions = {} } = params;
+    const { addressBook, headers, objectUrls, headersToExclude, urlFilter = (url) => url, useMultiGet = true, fetchOptions = {}, } = params;
     debug$3(`Fetching vcards from ${addressBook === null || addressBook === void 0 ? void 0 : addressBook.url}`);
     const requiredFields = ['url'];
     if (!addressBook || !hasFields(addressBook, requiredFields)) {
@@ -669,7 +673,7 @@ const fetchVCards = async (params) => {
         depth: '1',
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
-    })).map((res) => { var _a; return (res.ok ? (_a = res.href) !== null && _a !== void 0 ? _a : '' : ''); }))
+    })).map((res) => { var _a; return (res.ok ? ((_a = res.href) !== null && _a !== void 0 ? _a : '') : ''); }))
         .map((url) => (url.startsWith('http') || !url ? url : new URL(url, addressBook.url).href))
         .filter(urlFilter)
         .map((url) => new URL(url).pathname);
@@ -685,7 +689,7 @@ const fetchVCards = async (params) => {
                 objectUrls: vcardUrls,
                 depth: '1',
                 headers: excludeHeaders(headers, headersToExclude),
-                fetchOptions
+                fetchOptions,
             });
         }
         else {
@@ -697,7 +701,7 @@ const fetchVCards = async (params) => {
                 },
                 depth: '1',
                 headers: excludeHeaders(headers, headersToExclude),
-                fetchOptions
+                fetchOptions,
             });
         }
     }
@@ -711,7 +715,7 @@ const fetchVCards = async (params) => {
     });
 };
 const createVCard = async (params) => {
-    const { addressBook, vCardString, filename, headers, headersToExclude, fetchOptions = {} } = params;
+    const { addressBook, vCardString, filename, headers, headersToExclude, fetchOptions = {}, } = params;
     return createObject({
         url: new URL(filename, addressBook.url).href,
         data: vCardString,
@@ -720,7 +724,7 @@ const createVCard = async (params) => {
             'If-None-Match': '*',
             ...headers,
         }, headersToExclude),
-        fetchOptions
+        fetchOptions,
     });
 };
 const updateVCard = async (params) => {
@@ -742,7 +746,7 @@ const deleteVCard = async (params) => {
         url: vCard.url,
         etag: vCard.etag,
         headers: excludeHeaders(headers, headersToExclude),
-        fetchOptions
+        fetchOptions,
     });
 };
 
@@ -783,7 +787,7 @@ const fetchCalendarUserAddresses = async (params) => {
     return addresses;
 };
 const calendarQuery = async (params) => {
-    const { url, props, filters, timezone, depth, headers, headersToExclude, fetchOptions = {} } = params;
+    const { url, props, filters, timezone, depth, headers, headersToExclude, fetchOptions = {}, } = params;
     return collectionQuery({
         url,
         body: {
@@ -806,17 +810,17 @@ const calendarQuery = async (params) => {
     });
 };
 const calendarMultiGet = async (params) => {
-    const { url, props, objectUrls, filters, timezone, depth, headers, headersToExclude, fetchOptions = {} } = params;
+    const { url, props, objectUrls, filters, timezone, depth, headers, headersToExclude, fetchOptions = {}, } = params;
     return collectionQuery({
         url,
         body: {
-            'calendar-multiget': {
+            'calendar-multiget': cleanupFalsy({
                 _attributes: getDAVAttribute([exports.DAVNamespace.DAV, exports.DAVNamespace.CALDAV]),
                 [`${exports.DAVNamespaceShort.DAV}:prop`]: props,
                 [`${exports.DAVNamespaceShort.DAV}:href`]: objectUrls,
-                ...conditionalParam('filter', filters),
+                filter: filters,
                 timezone,
-            },
+            }),
         },
         defaultNamespace: exports.DAVNamespaceShort.CALDAV,
         depth,
@@ -845,11 +849,11 @@ const makeCalendar = async (params) => {
                 },
             },
         },
-        fetchOptions
+        fetchOptions,
     });
 };
 const fetchCalendars = async (params) => {
-    const { headers, account, props: customProps, projectedProps, headersToExclude, fetchOptions = {} } = params !== null && params !== void 0 ? params : {};
+    const { headers, account, props: customProps, projectedProps, headersToExclude, fetchOptions = {}, } = params !== null && params !== void 0 ? params : {};
     const requiredFields = ['homeUrl', 'rootUrl'];
     if (!account || !hasFields(account, requiredFields)) {
         if (!account) {
@@ -989,7 +993,7 @@ const fetchCalendarObjects = async (params) => {
         filters,
         depth: '1',
         headers: excludeHeaders(headers, headersToExclude),
-        fetchOptions
+        fetchOptions,
     })).map((res) => { var _a; return (_a = res.href) !== null && _a !== void 0 ? _a : ''; }))
         .map((url) => (url.startsWith('http') || !url ? url : new URL(url, calendar.url).href)) // patch up to full url if url is not full
         .filter(urlFilter) // custom filter function on calendar objects
@@ -1023,7 +1027,7 @@ const fetchCalendarObjects = async (params) => {
                 filters,
                 depth: '1',
                 headers: excludeHeaders(headers, headersToExclude),
-                fetchOptions
+                fetchOptions,
             });
         }
         else {
@@ -1053,7 +1057,7 @@ const fetchCalendarObjects = async (params) => {
                 objectUrls: calendarObjectUrls,
                 depth: '1',
                 headers: excludeHeaders(headers, headersToExclude),
-                fetchOptions
+                fetchOptions,
             });
         }
     }
@@ -1076,7 +1080,7 @@ const createCalendarObject = async (params) => {
             'If-None-Match': '*',
             ...headers,
         }, headersToExclude),
-        fetchOptions
+        fetchOptions,
     });
 };
 const updateCalendarObject = async (params) => {
@@ -1089,7 +1093,7 @@ const updateCalendarObject = async (params) => {
             'content-type': 'text/calendar; charset=utf-8',
             ...headers,
         }, headersToExclude),
-        fetchOptions
+        fetchOptions,
     });
 };
 const deleteCalendarObject = async (params) => {
@@ -1098,7 +1102,7 @@ const deleteCalendarObject = async (params) => {
         url: calendarObject.url,
         etag: calendarObject.etag,
         headers: excludeHeaders(headers, headersToExclude),
-        fetchOptions
+        fetchOptions,
     });
 };
 /**
@@ -1106,7 +1110,7 @@ const deleteCalendarObject = async (params) => {
  */
 const syncCalendars = async (params) => {
     var _a;
-    const { oldCalendars, account, detailedResult, headers, headersToExclude, fetchOptions = {} } = params;
+    const { oldCalendars, account, detailedResult, headers, headersToExclude, fetchOptions = {}, } = params;
     if (!account) {
         throw new Error('Must have account before syncCalendars');
     }
@@ -1114,7 +1118,7 @@ const syncCalendars = async (params) => {
     const remoteCalendars = await fetchCalendars({
         account,
         headers: excludeHeaders(headers, headersToExclude),
-        fetchOptions
+        fetchOptions,
     });
     // no existing url
     const created = remoteCalendars.filter((rc) => localCalendars.every((lc) => !urlContains(lc.url, rc.url)));
@@ -1185,7 +1189,7 @@ const freeBusyQuery = async (params) => {
         defaultNamespace: exports.DAVNamespaceShort.CALDAV,
         depth,
         headers: excludeHeaders(headers, headersToExclude),
-        fetchOptions
+        fetchOptions,
     });
     return result[0];
 };
@@ -1214,7 +1218,7 @@ const serviceDiscovery = async (params) => {
     const uri = new URL(`/.well-known/${account.accountType}`, endpoint);
     uri.protocol = (_a = endpoint.protocol) !== null && _a !== void 0 ? _a : 'http';
     try {
-        const response = await crossFetch.fetch(uri.href, {
+        const response = await fetch(uri.href, {
             headers: excludeHeaders(headers, headersToExclude),
             method: 'PROPFIND',
             redirect: 'manual',
@@ -1396,7 +1400,7 @@ const fetchOauthTokens = async (credentials, fetchOptions) => {
     });
     debug(credentials.tokenUrl);
     debug(param.toString());
-    const response = await crossFetch.fetch(credentials.tokenUrl, {
+    const response = await fetch(credentials.tokenUrl, {
         method: 'POST',
         body: param.toString(),
         headers: {
@@ -1428,7 +1432,7 @@ const refreshAccessToken = async (credentials, fetchOptions) => {
         refresh_token: credentials.refreshToken,
         grant_type: 'refresh_token',
     });
-    const response = await crossFetch.fetch(credentials.tokenUrl, {
+    const response = await fetch(credentials.tokenUrl, {
         method: 'POST',
         body: param.toString(),
         headers: {

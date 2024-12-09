@@ -63,7 +63,16 @@ export const calendarQuery = async (params: {
   headersToExclude?: string[];
   fetchOptions?: RequestInit;
 }): Promise<DAVResponse[]> => {
-  const { url, props, filters, timezone, depth, headers, headersToExclude, fetchOptions = {} } = params;
+  const {
+    url,
+    props,
+    filters,
+    timezone,
+    depth,
+    headers,
+    headersToExclude,
+    fetchOptions = {},
+  } = params;
   return collectionQuery({
     url,
     body: {
@@ -97,17 +106,27 @@ export const calendarMultiGet = async (params: {
   headersToExclude?: string[];
   fetchOptions?: RequestInit;
 }): Promise<DAVResponse[]> => {
-  const { url, props, objectUrls, filters, timezone, depth, headers, headersToExclude, fetchOptions = {} } = params;
+  const {
+    url,
+    props,
+    objectUrls,
+    filters,
+    timezone,
+    depth,
+    headers,
+    headersToExclude,
+    fetchOptions = {},
+  } = params;
   return collectionQuery({
     url,
     body: {
-      'calendar-multiget': {
+      'calendar-multiget': cleanupFalsy({
         _attributes: getDAVAttribute([DAVNamespace.DAV, DAVNamespace.CALDAV]),
         [`${DAVNamespaceShort.DAV}:prop`]: props,
         [`${DAVNamespaceShort.DAV}:href`]: objectUrls,
-        ...conditionalParam('filter', filters),
+        filter: filters,
         timezone,
-      },
+      }),
     },
     defaultNamespace: DAVNamespaceShort.CALDAV,
     depth,
@@ -144,7 +163,7 @@ export const makeCalendar = async (params: {
         },
       },
     },
-    fetchOptions
+    fetchOptions,
   });
 };
 
@@ -156,7 +175,14 @@ export const fetchCalendars = async (params?: {
   headersToExclude?: string[];
   fetchOptions?: RequestInit;
 }): Promise<DAVCalendar[]> => {
-  const { headers, account, props: customProps, projectedProps, headersToExclude, fetchOptions = {} } = params ?? {};
+  const {
+    headers,
+    account,
+    props: customProps,
+    projectedProps,
+    headersToExclude,
+    fetchOptions = {},
+  } = params ?? {};
   const requiredFields: Array<'homeUrl' | 'rootUrl'> = ['homeUrl', 'rootUrl'];
   if (!account || !hasFields(account, requiredFields)) {
     if (!account) {
@@ -342,7 +368,7 @@ export const fetchCalendarObjects = async (params: {
         filters,
         depth: '1',
         headers: excludeHeaders(headers, headersToExclude),
-        fetchOptions
+        fetchOptions,
       })
     ).map((res) => res.href ?? '')
   )
@@ -380,7 +406,7 @@ export const fetchCalendarObjects = async (params: {
         filters,
         depth: '1',
         headers: excludeHeaders(headers, headersToExclude),
-        fetchOptions
+        fetchOptions,
       });
     } else {
       calendarObjectResults = await calendarMultiGet({
@@ -409,7 +435,7 @@ export const fetchCalendarObjects = async (params: {
         objectUrls: calendarObjectUrls,
         depth: '1',
         headers: excludeHeaders(headers, headersToExclude),
-        fetchOptions
+        fetchOptions,
       });
     }
   }
@@ -442,7 +468,7 @@ export const createCalendarObject = async (params: {
       },
       headersToExclude,
     ),
-    fetchOptions
+    fetchOptions,
   });
 };
 
@@ -464,7 +490,7 @@ export const updateCalendarObject = async (params: {
       },
       headersToExclude,
     ),
-    fetchOptions
+    fetchOptions,
   });
 };
 
@@ -479,7 +505,7 @@ export const deleteCalendarObject = async (params: {
     url: calendarObject.url,
     etag: calendarObject.etag,
     headers: excludeHeaders(headers, headersToExclude),
-    fetchOptions
+    fetchOptions,
   });
 };
 
@@ -494,7 +520,14 @@ export const syncCalendars: SyncCalendars = async (params: {
   detailedResult?: boolean;
   fetchOptions?: RequestInit;
 }): Promise<any> => {
-  const { oldCalendars, account, detailedResult, headers, headersToExclude, fetchOptions = {} } = params;
+  const {
+    oldCalendars,
+    account,
+    detailedResult,
+    headers,
+    headersToExclude,
+    fetchOptions = {},
+  } = params;
   if (!account) {
     throw new Error('Must have account before syncCalendars');
   }
@@ -503,7 +536,7 @@ export const syncCalendars: SyncCalendars = async (params: {
   const remoteCalendars = await fetchCalendars({
     account,
     headers: excludeHeaders(headers, headersToExclude),
-    fetchOptions
+    fetchOptions,
   });
 
   // no existing url
@@ -603,7 +636,7 @@ export const freeBusyQuery = async (params: {
     defaultNamespace: DAVNamespaceShort.CALDAV,
     depth,
     headers: excludeHeaders(headers, headersToExclude),
-    fetchOptions
+    fetchOptions,
   });
   return result[0];
 };

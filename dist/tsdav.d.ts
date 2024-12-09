@@ -105,6 +105,7 @@ type DAVCalendar = {
     components?: string[];
     timezone?: string;
     projectedProps?: Record<string, unknown>;
+    calendarColor?: string;
 } & DAVCollection;
 
 interface SmartCollectionSync {
