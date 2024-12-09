@@ -39,6 +39,7 @@ export {
   calendarMultiGet,
   makeCalendar,
   fetchCalendars,
+  fetchCalendarUserAddresses,
   fetchCalendarObjects,
   createCalendarObject,
   updateCalendarObject,

@@ -1,7 +1,7 @@
 import fsp from 'fs/promises';
 
 import { createAccount } from '../../../account';
-import { calendarMultiGet, fetchCalendarObjects, fetchCalendars } from '../../../calendar';
+import { calendarMultiGet, fetchCalendarObjects, fetchCalendars, fetchCalendarUserAddresses } from '../../../calendar';
 import { DAVNamespace } from '../../../consts';
 import { createObject, deleteObject } from '../../../request';
 import { DAVAccount } from '../../../types/models';
@@ -34,6 +34,15 @@ test('fetchCalendars should be able to fetch calendars', async () => {
   });
   expect(calendars.length > 0).toBe(true);
   expect(calendars.every((c) => c.url.length > 0)).toBe(true);
+});
+
+test('fetchCalendarUserAddresses should be able to fetch calendar user addresses', async () => {
+  const addresses = await fetchCalendarUserAddresses({
+    account,
+    headers: authHeaders,
+  });
+  expect(addresses.length > 0).toBe(true);
+  expect(addresses.every((c) => c.length > 0)).toBe(true);
 });
 
 test('calendarMultiGet should be able to get information about multiple calendar objects', async () => {

@@ -18,6 +18,7 @@ import {
   makeCalendar as rawMakeCalendar,
   syncCalendars as rawSyncCalendars,
   updateCalendarObject as rawUpdateCalendarObject,
+  fetchCalendarUserAddresses as rawFetchCalendarUserAddresses,
 } from './calendar';
 import {
   collectionQuery as rawCollectionQuery,
@@ -159,6 +160,11 @@ export const createDAVClient = async (params: {
     account: defaultAccount,
   });
 
+  const fetchCalendarUserAddresses = defaultParam(rawFetchCalendarUserAddresses, {
+    headers: authHeaders,
+    account: defaultAccount,
+  });
+
   const fetchCalendarObjects = defaultParam(rawFetchCalendarObjects, {
     headers: authHeaders,
   });
@@ -211,6 +217,7 @@ export const createDAVClient = async (params: {
     isCollectionDirty,
     smartCollectionSync,
     fetchCalendars,
+    fetchCalendarUserAddresses,
     fetchCalendarObjects,
     createCalendarObject,
     updateCalendarObject,
@@ -435,6 +442,12 @@ export class DAVClient {
 
   async fetchCalendars(...params: Parameters<typeof rawFetchCalendars>): Promise<DAVCalendar[]> {
     return defaultParam(rawFetchCalendars, { headers: this.authHeaders, account: this.account, fetchOptions: this.fetchOptions })(
+      params?.[0],
+    );
+  }
+
+  async fetchCalendarUserAddresses(...params: Parameters<typeof rawFetchCalendarUserAddresses>): Promise<string[]> {
+    return defaultParam(rawFetchCalendarUserAddresses, { headers: this.authHeaders, account: this.account, fetchOptions: this.fetchOptions })(
       params?.[0],
     );
   }
