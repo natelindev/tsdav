@@ -52,7 +52,7 @@
     "xml-js": "1.6.11"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "26.0.1",
+    "@rollup/plugin-commonjs": "26.0.3",
     "@rollup/plugin-node-resolve": "15.2.3",
     "@rollup/plugin-terser": "0.4.4",
     "@rollup/plugin-typescript": "11.1.6",
