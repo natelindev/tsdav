@@ -64,7 +64,7 @@
     "@typescript-eslint/parser": "8.5.0",
     "copyfiles": "2.4.1",
     "cross-env": "7.0.3",
-    "dotenv": "16.4.5",
+    "dotenv": "16.4.7",
     "eslint": "9.10.0",
     "eslint-config-airbnb": "19.0.4",
     "eslint-config-airbnb-typescript": "18.0.0",
