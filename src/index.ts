@@ -50,6 +50,7 @@ export {
 
 export {
   addressBookQuery,
+  addressBookMultiGet,
   fetchAddressBooks,
   fetchVCards,
   createVCard,
