@@ -216,10 +216,10 @@ export const fetchCalendars = async (params?: {
       .filter((rc) => {
         // filter out none iCal format calendars.
         const components: ICALObjects[] = Array.isArray(
-          rc.props?.supportedCalendarComponentSet.comp,
+          rc.props?.supportedCalendarComponentSet?.comp,
         )
           ? rc.props?.supportedCalendarComponentSet.comp.map((sc: any) => sc._attributes.name)
-          : [rc.props?.supportedCalendarComponentSet.comp?._attributes.name];
+          : [rc.props?.supportedCalendarComponentSet?.comp?._attributes.name];
         return components.some((c) => Object.values(ICALObjects).includes(c));
       })
       .map((rs) => {
