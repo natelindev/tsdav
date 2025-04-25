@@ -8,7 +8,7 @@ export { createAccount } from './account';
 export { davRequest, propfind, createObject, updateObject, deleteObject } from './request';
 export { collectionQuery, supportedReportSet, isCollectionDirty, syncCollection, smartCollectionSync, } from './collection';
 export { calendarQuery, calendarMultiGet, makeCalendar, fetchCalendars, fetchCalendarUserAddresses, fetchCalendarObjects, createCalendarObject, updateCalendarObject, deleteCalendarObject, syncCalendars, freeBusyQuery, } from './calendar';
-export { addressBookQuery, fetchAddressBooks, fetchVCards, createVCard, updateVCard, deleteVCard, } from './addressBook';
+export { addressBookQuery, addressBookMultiGet, fetchAddressBooks, fetchVCards, createVCard, updateVCard, deleteVCard, } from './addressBook';
 export { getBasicAuthHeaders, getOauthHeaders, fetchOauthTokens, refreshAccessToken, } from './util/authHelpers';
 export { urlContains, urlEquals, getDAVAttribute, cleanupFalsy } from './util/requestHelpers';
 export { DAVNamespace, DAVAttributeMap, DAVNamespaceShort } from './consts';

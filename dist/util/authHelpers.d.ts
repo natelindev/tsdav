@@ -1,4 +1,3 @@
-import 'cross-fetch/polyfill';
 import { DAVTokens } from '../types/DAVTypes';
 import { DAVCredentials } from '../types/models';
 /**

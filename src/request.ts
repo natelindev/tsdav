@@ -1,5 +1,4 @@
-import 'cross-fetch/polyfill';
-
+import { fetch } from 'cross-fetch';
 import getLogger from 'debug';
 import convert, { ElementCompact } from 'xml-js';
 
@@ -64,15 +63,20 @@ export const davRequest = async (params: {
   //   )}`
   // );
   // debug(xmlBody);
+  const fetchOptionsWithoutHeaders = {
+    ...fetchOptions
+  }
+  delete fetchOptionsWithoutHeaders.headers;
 
   const davResponse = await fetch(url, {
     headers: {
       'Content-Type': 'text/xml;charset=UTF-8',
       ...cleanupFalsy(headers),
+      ...fetchOptions.headers
     },
     body: xmlBody,
     method,
-    ...fetchOptions,
+    ...fetchOptionsWithoutHeaders,
   });
 
   const resText = await davResponse.text();

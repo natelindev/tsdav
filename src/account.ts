@@ -1,5 +1,4 @@
-import 'cross-fetch/polyfill';
-
+import { fetch } from 'cross-fetch';
 import getLogger from 'debug';
 
 import { fetchAddressBooks, fetchVCards } from './addressBook';

@@ -2,7 +2,7 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-require('cross-fetch/polyfill');
+var crossFetch = require('cross-fetch');
 var getLogger = require('debug');
 var convert = require('xml-js');
 var base64 = require('base-64');
@@ -155,14 +155,19 @@ const davRequest = async (params) => {
     //   )}`
     // );
     // debug(xmlBody);
-    const davResponse = await fetch(url, {
+    const fetchOptionsWithoutHeaders = {
+        ...fetchOptions
+    };
+    delete fetchOptionsWithoutHeaders.headers;
+    const davResponse = await crossFetch.fetch(url, {
         headers: {
             'Content-Type': 'text/xml;charset=UTF-8',
             ...cleanupFalsy(headers),
+            ...fetchOptions.headers
         },
         body: xmlBody,
         method,
-        ...fetchOptions,
+        ...fetchOptionsWithoutHeaders,
     });
     const resText = await davResponse.text();
     // filter out invalid responses
@@ -276,7 +281,7 @@ const propfind = async (params) => {
 };
 const createObject = async (params) => {
     const { url, data, headers, headersToExclude, fetchOptions = {} } = params;
-    return fetch(url, {
+    return crossFetch.fetch(url, {
         method: 'PUT',
         body: data,
         headers: excludeHeaders(headers, headersToExclude),
@@ -285,7 +290,7 @@ const createObject = async (params) => {
 };
 const updateObject = async (params) => {
     const { url, data, etag, headers, headersToExclude, fetchOptions = {} } = params;
-    return fetch(url, {
+    return crossFetch.fetch(url, {
         method: 'PUT',
         body: data,
         headers: excludeHeaders(cleanupFalsy({ 'If-Match': etag, ...headers }), headersToExclude),
@@ -294,7 +299,7 @@ const updateObject = async (params) => {
 };
 const deleteObject = async (params) => {
     const { url, headers, etag, headersToExclude, fetchOptions = {} } = params;
-    return fetch(url, {
+    return crossFetch.fetch(url, {
         method: 'DELETE',
         headers: excludeHeaders(cleanupFalsy({ 'If-Match': etag, ...headers }), headersToExclude),
         ...fetchOptions,
@@ -880,11 +885,11 @@ const fetchCalendars = async (params) => {
     return Promise.all(res
         .filter((r) => { var _a, _b; return Object.keys((_b = (_a = r.props) === null || _a === void 0 ? void 0 : _a.resourcetype) !== null && _b !== void 0 ? _b : {}).includes('calendar'); })
         .filter((rc) => {
-        var _a, _b, _c, _d;
+        var _a, _b, _c, _d, _e, _f;
         // filter out none iCal format calendars.
-        const components = Array.isArray((_a = rc.props) === null || _a === void 0 ? void 0 : _a.supportedCalendarComponentSet.comp)
-            ? (_b = rc.props) === null || _b === void 0 ? void 0 : _b.supportedCalendarComponentSet.comp.map((sc) => sc._attributes.name)
-            : [(_d = (_c = rc.props) === null || _c === void 0 ? void 0 : _c.supportedCalendarComponentSet.comp) === null || _d === void 0 ? void 0 : _d._attributes.name];
+        const components = Array.isArray((_b = (_a = rc.props) === null || _a === void 0 ? void 0 : _a.supportedCalendarComponentSet) === null || _b === void 0 ? void 0 : _b.comp)
+            ? (_c = rc.props) === null || _c === void 0 ? void 0 : _c.supportedCalendarComponentSet.comp.map((sc) => sc._attributes.name)
+            : [(_f = (_e = (_d = rc.props) === null || _d === void 0 ? void 0 : _d.supportedCalendarComponentSet) === null || _e === void 0 ? void 0 : _e.comp) === null || _f === void 0 ? void 0 : _f._attributes.name];
         return components.some((c) => Object.values(ICALObjects).includes(c));
     })
         .map((rs) => {
@@ -1218,7 +1223,7 @@ const serviceDiscovery = async (params) => {
     const uri = new URL(`/.well-known/${account.accountType}`, endpoint);
     uri.protocol = (_a = endpoint.protocol) !== null && _a !== void 0 ? _a : 'http';
     try {
-        const response = await fetch(uri.href, {
+        const response = await crossFetch.fetch(uri.href, {
             headers: excludeHeaders(headers, headersToExclude),
             method: 'PROPFIND',
             redirect: 'manual',
@@ -1400,7 +1405,7 @@ const fetchOauthTokens = async (credentials, fetchOptions) => {
     });
     debug(credentials.tokenUrl);
     debug(param.toString());
-    const response = await fetch(credentials.tokenUrl, {
+    const response = await crossFetch.fetch(credentials.tokenUrl, {
         method: 'POST',
         body: param.toString(),
         headers: {
@@ -1432,7 +1437,7 @@ const refreshAccessToken = async (credentials, fetchOptions) => {
         refresh_token: credentials.refreshToken,
         grant_type: 'refresh_token',
     });
-    const response = await fetch(credentials.tokenUrl, {
+    const response = await crossFetch.fetch(credentials.tokenUrl, {
         method: 'POST',
         body: param.toString(),
         headers: {
@@ -1817,6 +1822,7 @@ var index = {
 
 exports.DAVAttributeMap = DAVAttributeMap;
 exports.DAVClient = DAVClient;
+exports.addressBookMultiGet = addressBookMultiGet;
 exports.addressBookQuery = addressBookQuery;
 exports.calendarMultiGet = calendarMultiGet;
 exports.calendarQuery = calendarQuery;

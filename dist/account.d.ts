@@ -1,4 +1,3 @@
-import 'cross-fetch/polyfill';
 import { DAVAccount } from './types/models';
 export declare const serviceDiscovery: (params: {
     account: DAVAccount;

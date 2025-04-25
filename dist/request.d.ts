@@ -1,4 +1,3 @@
-import 'cross-fetch/polyfill';
 import { ElementCompact } from 'xml-js';
 import { DAVDepth, DAVRequest, DAVResponse } from './types/DAVTypes';
 export declare const davRequest: (params: {

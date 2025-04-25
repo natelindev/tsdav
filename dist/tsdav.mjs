@@ -1,4 +1,4 @@
-import 'cross-fetch/polyfill';
+import { fetch } from 'cross-fetch';
 import getLogger from 'debug';
 import convert from 'xml-js';
 import { encode } from 'base-64';
@@ -151,14 +151,19 @@ const davRequest = async (params) => {
     //   )}`
     // );
     // debug(xmlBody);
+    const fetchOptionsWithoutHeaders = {
+        ...fetchOptions
+    };
+    delete fetchOptionsWithoutHeaders.headers;
     const davResponse = await fetch(url, {
         headers: {
             'Content-Type': 'text/xml;charset=UTF-8',
             ...cleanupFalsy(headers),
+            ...fetchOptions.headers
         },
         body: xmlBody,
         method,
-        ...fetchOptions,
+        ...fetchOptionsWithoutHeaders,
     });
     const resText = await davResponse.text();
     // filter out invalid responses
@@ -876,11 +881,11 @@ const fetchCalendars = async (params) => {
     return Promise.all(res
         .filter((r) => { var _a, _b; return Object.keys((_b = (_a = r.props) === null || _a === void 0 ? void 0 : _a.resourcetype) !== null && _b !== void 0 ? _b : {}).includes('calendar'); })
         .filter((rc) => {
-        var _a, _b, _c, _d;
+        var _a, _b, _c, _d, _e, _f;
         // filter out none iCal format calendars.
-        const components = Array.isArray((_a = rc.props) === null || _a === void 0 ? void 0 : _a.supportedCalendarComponentSet.comp)
-            ? (_b = rc.props) === null || _b === void 0 ? void 0 : _b.supportedCalendarComponentSet.comp.map((sc) => sc._attributes.name)
-            : [(_d = (_c = rc.props) === null || _c === void 0 ? void 0 : _c.supportedCalendarComponentSet.comp) === null || _d === void 0 ? void 0 : _d._attributes.name];
+        const components = Array.isArray((_b = (_a = rc.props) === null || _a === void 0 ? void 0 : _a.supportedCalendarComponentSet) === null || _b === void 0 ? void 0 : _b.comp)
+            ? (_c = rc.props) === null || _c === void 0 ? void 0 : _c.supportedCalendarComponentSet.comp.map((sc) => sc._attributes.name)
+            : [(_f = (_e = (_d = rc.props) === null || _d === void 0 ? void 0 : _d.supportedCalendarComponentSet) === null || _e === void 0 ? void 0 : _e.comp) === null || _f === void 0 ? void 0 : _f._attributes.name];
         return components.some((c) => Object.values(ICALObjects).includes(c));
     })
         .map((rs) => {
@@ -1811,4 +1816,4 @@ var index = {
     ...requestHelpers,
 };
 
-export { DAVAttributeMap, DAVClient, DAVNamespace, DAVNamespaceShort, addressBookQuery, calendarMultiGet, calendarQuery, cleanupFalsy, collectionQuery, createAccount, createCalendarObject, createDAVClient, createObject, createVCard, davRequest, index as default, deleteCalendarObject, deleteObject, deleteVCard, fetchAddressBooks, fetchCalendarObjects, fetchCalendarUserAddresses, fetchCalendars, fetchOauthTokens, fetchVCards, freeBusyQuery, getBasicAuthHeaders, getDAVAttribute, getOauthHeaders, isCollectionDirty, makeCalendar, propfind, refreshAccessToken, smartCollectionSync, supportedReportSet, syncCalendars, syncCollection, updateCalendarObject, updateObject, updateVCard, urlContains, urlEquals };
+export { DAVAttributeMap, DAVClient, DAVNamespace, DAVNamespaceShort, addressBookMultiGet, addressBookQuery, calendarMultiGet, calendarQuery, cleanupFalsy, collectionQuery, createAccount, createCalendarObject, createDAVClient, createObject, createVCard, davRequest, index as default, deleteCalendarObject, deleteObject, deleteVCard, fetchAddressBooks, fetchCalendarObjects, fetchCalendarUserAddresses, fetchCalendars, fetchOauthTokens, fetchVCards, freeBusyQuery, getBasicAuthHeaders, getDAVAttribute, getOauthHeaders, isCollectionDirty, makeCalendar, propfind, refreshAccessToken, smartCollectionSync, supportedReportSet, syncCalendars, syncCollection, updateCalendarObject, updateObject, updateVCard, urlContains, urlEquals };

@@ -1,6 +1,5 @@
-import 'cross-fetch/polyfill';
-
 import { encode } from 'base-64';
+import { fetch } from 'cross-fetch';
 import getLogger from 'debug';
 
 import { DAVTokens } from '../types/DAVTypes';

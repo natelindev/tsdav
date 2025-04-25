@@ -1,3 +1,11 @@
+## v2.1.4
+**features**
+- now exports addressBookMultiGet thanks to @lepirlouit
+
+##### improvements
+- fixed [#244](https://github.com/natelindev/tsdav/issues/244) cannot read properties of undefined (reading 'comp')
+- fixed [#238](https://github.com/natelindev/tsdav/issues/238) which blocked icloud principal calendar fetching.
+
 ## v2.1.3
 
 **features**
