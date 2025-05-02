@@ -5,7 +5,6 @@ sidebar_position: 1
 ## `davRequest`
 
 core request function of the library,
-based on `cross-fetch`, so the api should work across browser and Node.js
 using `xml-js` so that js objects can be passed as request.
 
 ```ts

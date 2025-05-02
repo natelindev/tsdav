@@ -1,4 +1,3 @@
-import { fetch } from 'cross-fetch';
 import getLogger from 'debug';
 import convert, { ElementCompact } from 'xml-js';
 

@@ -1,5 +1,4 @@
-import { encode } from 'base-64';
-import { fetch } from 'cross-fetch';
+import base64 from 'base-64';
 import getLogger from 'debug';
 
 import { DAVTokens } from '../types/DAVTypes';
@@ -21,13 +20,18 @@ export const defaultParam =
   };
 
 export const getBasicAuthHeaders = (credentials: DAVCredentials): { authorization?: string } => {
-  debug(`Basic auth token generated: ${encode(`${credentials.username}:${credentials.password}`)}`);
+  debug(
+    `Basic auth token generated: ${base64.encode(`${credentials.username}:${credentials.password}`)}`,
+  );
   return {
-    authorization: `Basic ${encode(`${credentials.username}:${credentials.password}`)}`,
+    authorization: `Basic ${base64.encode(`${credentials.username}:${credentials.password}`)}`,
   };
 };
 
-export const fetchOauthTokens = async (credentials: DAVCredentials, fetchOptions?: RequestInit): Promise<DAVTokens> => {
+export const fetchOauthTokens = async (
+  credentials: DAVCredentials,
+  fetchOptions?: RequestInit,
+): Promise<DAVTokens> => {
   const requireFields: Array<keyof DAVCredentials> = [
     'authorizationCode',
     'redirectUrl',

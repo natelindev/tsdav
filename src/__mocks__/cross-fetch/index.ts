@@ -1,4 +1,3 @@
-import { fetch as realFetch, Headers } from 'cross-fetch';
 import { createHash } from 'crypto';
 import fs from 'fs';
 
@@ -57,7 +56,7 @@ export const fetch = async (
       json: async () => JSON.parse(valueData.text),
     };
   }
-  const response = await realFetch(url, init);
+  const response = await globalThis.fetch(url, init);
   const text = await response?.text();
 
   if (process.env.RECORD_NETWORK_REQUESTS === 'true') {

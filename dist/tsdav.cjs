@@ -2,7 +2,6 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-var crossFetch = require('cross-fetch');
 var getLogger = require('debug');
 var convert = require('xml-js');
 var base64 = require('base-64');
@@ -155,7 +154,7 @@ const davRequest = async (params) => {
     //   )}`
     // );
     // debug(xmlBody);
-    const davResponse = await crossFetch.fetch(url, {
+    const davResponse = await fetch(url, {
         headers: {
             'Content-Type': 'text/xml;charset=UTF-8',
             ...cleanupFalsy(headers),
@@ -276,7 +275,7 @@ const propfind = async (params) => {
 };
 const createObject = async (params) => {
     const { url, data, headers, headersToExclude, fetchOptions = {} } = params;
-    return crossFetch.fetch(url, {
+    return fetch(url, {
         method: 'PUT',
         body: data,
         headers: excludeHeaders(headers, headersToExclude),
@@ -285,7 +284,7 @@ const createObject = async (params) => {
 };
 const updateObject = async (params) => {
     const { url, data, etag, headers, headersToExclude, fetchOptions = {} } = params;
-    return crossFetch.fetch(url, {
+    return fetch(url, {
         method: 'PUT',
         body: data,
         headers: excludeHeaders(cleanupFalsy({ 'If-Match': etag, ...headers }), headersToExclude),
@@ -294,7 +293,7 @@ const updateObject = async (params) => {
 };
 const deleteObject = async (params) => {
     const { url, headers, etag, headersToExclude, fetchOptions = {} } = params;
-    return crossFetch.fetch(url, {
+    return fetch(url, {
         method: 'DELETE',
         headers: excludeHeaders(cleanupFalsy({ 'If-Match': etag, ...headers }), headersToExclude),
         ...fetchOptions
@@ -1190,7 +1189,7 @@ const serviceDiscovery = async (params) => {
     const uri = new URL(`/.well-known/${account.accountType}`, endpoint);
     uri.protocol = (_a = endpoint.protocol) !== null && _a !== void 0 ? _a : 'http';
     try {
-        const response = await crossFetch.fetch(uri.href, {
+        const response = await fetch(uri.href, {
             headers: excludeHeaders(headers, headersToExclude),
             method: 'PROPFIND',
             redirect: 'manual',
@@ -1372,7 +1371,7 @@ const fetchOauthTokens = async (credentials, fetchOptions) => {
     });
     debug(credentials.tokenUrl);
     debug(param.toString());
-    const response = await crossFetch.fetch(credentials.tokenUrl, {
+    const response = await fetch(credentials.tokenUrl, {
         method: 'POST',
         body: param.toString(),
         headers: {
@@ -1404,7 +1403,7 @@ const refreshAccessToken = async (credentials, fetchOptions) => {
         refresh_token: credentials.refreshToken,
         grant_type: 'refresh_token',
     });
-    const response = await crossFetch.fetch(credentials.tokenUrl, {
+    const response = await fetch(credentials.tokenUrl, {
         method: 'POST',
         body: param.toString(),
         headers: {

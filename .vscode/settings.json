@@ -49,5 +49,6 @@
     "**/.settings": true,
     "**/.factorypath": true,
     "**/node_modules": true
-  }
+},
+"npm.packageManager": "pnpm"
 }

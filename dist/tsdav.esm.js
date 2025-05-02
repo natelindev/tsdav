@@ -1,7 +1,6 @@
-import { fetch } from 'cross-fetch';
 import getLogger from 'debug';
 import convert from 'xml-js';
-import { encode } from 'base-64';
+import base64 from 'base-64';
 
 var DAVNamespace;
 (function (DAVNamespace) {
@@ -1343,9 +1342,9 @@ const defaultParam = (fn, params) => (...args) => {
     return fn({ ...params, ...args[0] });
 };
 const getBasicAuthHeaders = (credentials) => {
-    debug(`Basic auth token generated: ${encode(`${credentials.username}:${credentials.password}`)}`);
+    debug(`Basic auth token generated: ${base64.encode(`${credentials.username}:${credentials.password}`)}`);
     return {
-        authorization: `Basic ${encode(`${credentials.username}:${credentials.password}`)}`,
+        authorization: `Basic ${base64.encode(`${credentials.username}:${credentials.password}`)}`,
     };
 };
 const fetchOauthTokens = async (credentials, fetchOptions) => {
