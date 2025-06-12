@@ -19,7 +19,7 @@ It's very common to be used for cloud storage(limited support), as well as calen
 | Baikal        | ✅     | ✅     | ✅      |
 | ZOHO          | ✅     | ✅     | ⛔️     |
 | DAViCal       | ✅     | ✅     | ⛔️     |
-| Forward Email | ⛔️ | ✅ | ⛔️ |
+| Forward Email | ⛔️ | ✅ | ✅ |
 
 For more information on cloud providers, go to [cloud providers](./cloud%20providers.md) for more information.
 
