@@ -72,7 +72,7 @@ export const davRequest = async (params: {
     headers: {
       'Content-Type': 'text/xml;charset=UTF-8',
       ...cleanupFalsy(headers),
-      ...fetchOptions.headers
+      ...(fetchOptions.headers || {})
     },
     body: xmlBody,
     method,
