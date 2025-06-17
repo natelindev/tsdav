@@ -118,6 +118,7 @@ export const fetchHomeUrl = async (params: {
 
   const matched = responses.find((r) => urlContains(account.principalUrl, r.href));
   if (!matched || !matched.ok) {
+    debug(`Fetch home url failed with status ${matched?.statusText} and error ${JSON.stringify(responses.map((r) => r.error))}`);
     throw new Error('cannot find homeUrl');
   }
 
