@@ -1,3 +1,9 @@
+## v2.1.5
+
+##### improvements
+- fixed [#251](https://github.com/natelindev/tsdav/issues/251) thanks to @titanism
+- logging improvements
+
 ## v2.1.4
 **features**
 - now exports addressBookMultiGet thanks to @lepirlouit

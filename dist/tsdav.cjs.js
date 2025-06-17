@@ -163,7 +163,7 @@ const davRequest = async (params) => {
         headers: {
             'Content-Type': 'text/xml;charset=UTF-8',
             ...cleanupFalsy(headers),
-            ...fetchOptions.headers
+            ...(fetchOptions.headers || {})
         },
         body: xmlBody,
         method,
@@ -1293,6 +1293,7 @@ const fetchHomeUrl = async (params) => {
     });
     const matched = responses.find((r) => urlContains(account.principalUrl, r.href));
     if (!matched || !matched.ok) {
+        debug$1(`Fetch home url failed with status ${matched === null || matched === void 0 ? void 0 : matched.statusText} and error ${JSON.stringify(responses.map((r) => r.error))}`);
         throw new Error('cannot find homeUrl');
     }
     const result = new URL(account.accountType === 'caldav'
