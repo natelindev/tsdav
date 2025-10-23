@@ -55,7 +55,7 @@
     "@rollup/plugin-commonjs": "28.0.5",
     "@rollup/plugin-node-resolve": "16.0.1",
     "@rollup/plugin-terser": "0.4.4",
-    "@rollup/plugin-typescript": "12.1.2",
+    "@rollup/plugin-typescript": "12.3.0",
     "@types/base-64": "1.0.2",
     "@types/debug": "4.1.12",
     "@types/jest": "30.0.0",
