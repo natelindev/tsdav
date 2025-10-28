@@ -59,7 +59,7 @@
     "@types/base-64": "1.0.2",
     "@types/debug": "4.1.12",
     "@types/jest": "30.0.0",
-    "@types/node": "24.0.3",
+    "@types/node": "24.9.2",
     "@typescript-eslint/eslint-plugin": "8.34.1",
     "@typescript-eslint/parser": "8.34.1",
     "copyfiles": "2.4.1",
