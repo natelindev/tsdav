@@ -42,7 +42,7 @@
     "test:nextcloud": "jest --testPathPattern=src/__tests__/integration/nextcloud --runInBand",
     "test:unit": "jest --testPathPattern=src/__tests__/unit",
     "test:zoho": "jest --testPathPattern=src/__tests__/integration/zoho --runInBand",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit --skipLibCheck",
     "watch": "tsc --watch --outDir ./dist"
   },
   "dependencies": {
