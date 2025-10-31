@@ -5,7 +5,11 @@ module.exports = {
   url: 'https://tsdav.vercel.app',
   baseUrl: '/',
   onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
+  markdown: {
+    hooks: {
+      onBrokenMarkdownLinks: 'warn',
+    },
+  },
   favicon: 'img/favicon.ico',
   organizationName: 'natelindev', // Usually your GitHub org/user name.
   projectName: 'tsdav', // Usually your repo name.
@@ -77,12 +81,7 @@ module.exports = {
     ],
   ],
   plugins: [
-    [
-      require.resolve('@easyops-cn/docusaurus-search-local'),
-      {
-        hashed: true,
-      },
-    ],
+    "@cmfcmf/docusaurus-search-local",
     require.resolve('./docusuarusWebpack5Plugin'),
   ],
 };

@@ -1,3 +1,10 @@
+## v2.1.6
+
+##### improvements
+- added AGENTS.md
+- updated dependencies
+- fixed docs build issues
+
 ## v2.1.5
 
 ##### improvements
