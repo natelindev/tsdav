@@ -88,7 +88,8 @@ export const davRequest = async (params: {
   if (
     !davResponse.ok ||
     !davResponse.headers.get('content-type')?.includes('xml') ||
-    !parseOutgoing
+    !parseOutgoing ||
+    !resText
   ) {
     return [
       {
