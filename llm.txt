@@ -1,0 +1,191 @@
+# tsdav - TypeScript WebDAV Client
+
+## Project Overview
+
+tsdav is a TypeScript WebDAV client library that wraps CalDAV and CardDAV workflows for browsers and Node.js. It provides an easy-to-use, JSON-based API for interacting with WebDAV servers, supporting both CommonJS and ESM modules.
+
+## Project Structure
+
+- **Source Code**: `src/` - TypeScript source files
+  - `client.ts` - Main DAVClient class and createDAVClient function
+  - `account.ts` - Account discovery and creation
+  - `calendar.ts` - CalDAV operations
+  - `addressBook.ts` - CardDAV operations
+  - `collection.ts` - Collection management and sync
+  - `request.ts` - Low-level WebDAV request handling
+  - `types/` - TypeScript type definitions
+  - `util/` - Helper utilities (auth, request helpers, etc.)
+
+- **Build Output**: `dist/` - Compiled JavaScript bundles (CJS, ESM, minified)
+
+- **Documentation**: `docs/docs/` - Docusaurus documentation site
+  - API reference for all functions
+  - Type definitions
+  - Cloud provider guides
+  - Examples and tutorials
+
+- **Tests**: `src/__tests__/`
+  - `unit/` - Unit tests
+  - `integration/` - Integration tests for various providers (Apple, Google, Fastmail, Nextcloud, Zoho, Baikal, DAViCal)
+
+## Key Entry Points
+
+### Main Exports (from `src/index.ts`)
+
+**Client Creation:**
+- `createDAVClient(options)` - Factory function that returns a configured client
+- `DAVClient` - Class-based API (requires `client.login()` before use)
+
+**WebDAV Core:**
+- `davRequest(url, init)` - Low-level request function using cross-fetch and xml-js
+- `propfind(url, init)` - PROPFIND request helper
+- `createObject(url, init)` - PUT request helper
+- `updateObject(url, init)` - PATCH request helper
+- `deleteObject(url, init)` - DELETE request helper
+
+**Account Management:**
+- `createAccount(options)` - Discover and create DAVAccount with calendars/address books
+
+**Collection Operations:**
+- `collectionQuery(url, init)` - Query collection properties
+- `syncCollection(url, init)` - Sync collection using sync-token
+- `smartCollectionSync(options)` - Smart sync with delta detection
+- `isCollectionDirty(collection)` - Check if collection has changes
+- `makeCollection(url, init)` - Create a new collection
+- `supportedReportSet(url, init)` - Get supported report types
+
+**CalDAV Operations:**
+- `fetchCalendars(account)` - Enumerate calendars
+- `fetchCalendarObjects(options)` - Get calendar objects (events/todos)
+- `calendarMultiGet(options)` - Batch fetch calendar objects
+- `calendarQuery(options)` - Query calendar objects with filters
+- `createCalendarObject(options)` - Create new calendar object
+- `updateCalendarObject(options)` - Update existing calendar object
+- `deleteCalendarObject(options)` - Delete calendar object
+- `syncCalendars(options)` - Sync multiple calendars
+- `makeCalendar(options)` - Create new calendar
+- `fetchCalendarUserAddresses(options)` - Get calendar user addresses
+- `freeBusyQuery(options)` - Query free/busy information
+
+**CardDAV Operations:**
+- `fetchAddressBooks(account)` - Enumerate address books
+- `fetchVCards(options)` - Get vCard objects
+- `addressBookMultiGet(options)` - Batch fetch vCards
+- `addressBookQuery(options)` - Query vCards with filters
+- `createVCard(options)` - Create new vCard
+- `updateVCard(options)` - Update existing vCard
+- `deleteVCard(options)` - Delete vCard
+
+**Auth Helpers:**
+- `getBasicAuthHeaders(credentials)` - Generate Basic auth headers
+- `getOauthHeaders(credentials)` - Generate OAuth headers
+- `fetchOauthTokens(options)` - Fetch OAuth tokens
+- `refreshAccessToken(options)` - Refresh OAuth access token
+
+**Request Helpers:**
+- `urlContains(url, substring)` - URL matching helper
+- `urlEquals(url1, url2)` - URL comparison helper
+- `getDAVAttribute(element, attribute)` - Extract DAV attribute
+- `cleanupFalsy(object)` - Remove falsy values from object
+
+## Key Types
+
+- `DAVAccount` - Account information with discovered URLs
+- `DAVCalendar` - Calendar collection metadata
+- `DAVCalendarObject` - Calendar event/todo object
+- `DAVAddressBook` - Address book collection metadata
+- `DAVVCard` - vCard contact object
+- `DAVCollection` - Generic collection metadata
+- `DAVCredentials` - Authentication credentials (Basic or OAuth)
+- `DAVRequest` - Request configuration object
+- `DAVResponse` - Response object with parsed XML
+- `ElementCompact` - XML element representation as JS object
+
+## Build & Development
+
+**Install dependencies:**
+```bash
+pnpm install
+```
+
+**Build:**
+```bash
+pnpm build
+```
+Builds TypeScript to JavaScript, generates bundles (CJS, ESM, minified), and copies package files to `dist/`.
+
+**Type checking:**
+```bash
+pnpm typecheck
+```
+
+**Tests:**
+```bash
+pnpm test              # Unit tests only
+pnpm test:unit         # Unit tests
+pnpm test:apple        # Apple integration tests
+pnpm test:google       # Google integration tests
+pnpm test:fastmail     # Fastmail integration tests
+pnpm test:nextcloud    # Nextcloud integration tests
+pnpm test:zoho         # Zoho integration tests
+pnpm test:baikal       # Baikal integration tests
+```
+
+Integration tests require provider credentials in `.env` file (see `.env.example`).
+
+**Debug:**
+Set `DEBUG=tsdav:*` environment variable to enable debug logs for HTTP traffic.
+
+## Core Concepts
+
+### WebDAV Basics
+- WebDAV uses XML for all communication
+- Basic elements: `object` (resource), `collection` (container)
+- Accounts have a `principal` resource and `home set` where actual resources live
+- `syncToken` and `ctag` are like hashes - they change when collection/object changes
+
+### Authentication
+- **Basic Auth**: Username/password (e.g., Apple, Fastmail)
+- **OAuth2**: Token-based with refresh tokens (e.g., Google)
+- Credentials are passed to client creation and used automatically for requests
+
+### CalDAV
+- Calendar data is in RFC5545 iCal format
+- Objects are `.ics` files containing events/todos
+- Use `syncCalendars` or `smartCollectionSync` for incremental sync
+
+### CardDAV
+- Contact data is in vCard format
+- Objects are `.vcf` files containing contacts
+- Similar CRUD operations as CalDAV
+
+### Sync Strategy
+- Use `syncToken`/`ctag` for incremental syncs
+- `smartCollectionSync` provides created/updated/deleted deltas
+- Fall back to full fetch when sync tokens are unavailable
+
+## Cloud Provider Support
+
+| Provider | WebDAV | CalDAV | CardDAV |
+|----------|--------|--------|---------|
+| Apple    | ✅     | ✅     | ✅      |
+| Google   | ✅     | ✅     | ✅      |
+| Fastmail | ✅     | ✅     | ✅      |
+| Nextcloud| ✅     | ✅     | ✅      |
+| Baikal   | ✅     | ✅     | ✅      |
+| Zoho     | ✅     | ✅     | ⛔️     |
+| DAViCal  | ✅     | ✅     | ⛔️     |
+| Forward Email | ⛔️ | ✅ | ✅ |
+
+See `docs/docs/cloud providers.md` for provider-specific setup and quirks.
+
+## Important Notes
+
+- Always normalize calendar object URLs using `URL.resolve` when combining parent collection URLs with relative paths
+- When overriding CalDAV/CardDAV `props`, keep required fields (`supported-calendar-component-set`, `resourcetype`) to prevent server errors
+- Some providers have quirks (Google renames objects to UID-based filenames, Zoho prevents duplicate UIDs, Nextcloud renames on delete)
+- Integration tests hit live services - guard credentials via environment variables
+
+## Documentation
+
+Full API documentation is available in `docs/docs/` directory and online at https://tsdav.vercel.app/
