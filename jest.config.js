@@ -5,4 +5,6 @@ module.exports = {
   },
   setupFiles: ['dotenv/config'],
   testTimeout: 120000,
+  testPathIgnorePatterns: ['/node_modules/', '/dist/'],
+  modulePathIgnorePatterns: ['/dist/'],
 };
