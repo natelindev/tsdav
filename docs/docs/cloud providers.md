@@ -22,6 +22,14 @@ After the oauth2 offline grant you should be able to obtain oauth2 refresh token
 
 Generate an app specific password just like apple, follow [this guide](https://www.fastmail.help/hc/en-us/articles/360058752834) for more information.
 
+##### Nextcloud
+
+Nextcloud supports CalDAV/CardDAV with Basic auth (username + app password). For browser
+clients, you may need to use a server-side proxy or trusted domain configuration to
+avoid CORS issues. A common server URL is:
+
+`https://<your-nextcloud-host>/remote.php/dav`
+
 :::info
 Other cloud providers not listed are not currently tested, in theory any cloud with basic auth and oauth2 should work, stay tuned for updates.
 :::

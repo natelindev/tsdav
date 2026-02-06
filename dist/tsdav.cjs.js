@@ -176,7 +176,8 @@ const davRequest = async (params) => {
     // debug(davResponse);
     if (!davResponse.ok ||
         !((_a = davResponse.headers.get('content-type')) === null || _a === void 0 ? void 0 : _a.includes('xml')) ||
-        !parseOutgoing) {
+        !parseOutgoing ||
+        !resText) {
         return [
             {
                 href: davResponse.url,

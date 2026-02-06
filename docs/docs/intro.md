@@ -12,14 +12,14 @@ It's very common to be used for cloud storage(limited support), as well as calen
 
 | Provider name | WEBDAV | CALDAV | CARDDAV |
 | ------------- | ------ | ------ | ------- |
-| Apple    | ✅     | ✅     | ✅      |
-| Google  | ✅     | ✅     | ✅      |
+| Apple         | ✅     | ✅     | ✅      |
+| Google        | ✅     | ✅     | ✅      |
 | Fastmail      | ✅     | ✅     | ✅      |
 | Nextcloud     | ✅     | ✅     | ✅      |
 | Baikal        | ✅     | ✅     | ✅      |
-| ZOHO          | ✅     | ✅     | ⛔️     |
-| DAViCal       | ✅     | ✅     | ⛔️     |
-| Forward Email | ⛔️ | ✅ | ✅ |
+| ZOHO          | ✅     | ✅     | ⛔️      |
+| DAViCal       | ✅     | ✅     | ⛔️      |
+| Forward Email | ⛔️     | ✅     | ✅      |
 
 For more information on cloud providers, go to [cloud providers](./cloud%20providers.md) for more information.
 
@@ -34,6 +34,32 @@ or
 ```bash
 npm install tsdav
 ```
+
+### Browser usage
+
+Use the ESM bundle in modern browsers:
+
+```html
+<script type="module">
+  import { createDAVClient } from 'https://unpkg.com/tsdav/dist/tsdav.esm.js';
+
+  const client = await createDAVClient({
+    serverUrl: 'https://caldav.icloud.com',
+    credentials: {
+      username: 'YOUR_APPLE_ID',
+      password: 'YOUR_APP_SPECIFIC_PASSWORD',
+    },
+    authMethod: 'Basic',
+    defaultAccountType: 'caldav',
+  });
+
+  const calendars = await client.fetchCalendars();
+  console.log(calendars);
+</script>
+```
+
+Browser requests to CalDAV/CardDAV endpoints are often blocked by CORS. Prefer running
+tsdav in a server environment or proxying requests through your backend.
 
 ### Basic usage
 
@@ -102,6 +128,9 @@ const client = await createDAVClient({
 });
 ```
 
+Need help generating app-specific passwords? See the
+[Apple app-specific password guide](https://support.apple.com/en-us/HT204397).
+
 After `v1.1.0`, you have a new way of creating clients.
 
 :::info
@@ -142,6 +171,9 @@ const client = new DAVClient({
 ```
 
 #### Get calendars
+
+If you are using the class-based `DAVClient`, call `await client.login()` once before
+fetching calendars or other resources.
 
 ```ts
 const calendars = await client.fetchCalendars();

@@ -1,6 +1,14 @@
+## v2.1.7
+
+##### improvements
+
+- docs: add browser usage example and clarify class-based login
+- docs: add Nextcloud connection guidance and Apple password reference
+
 ## v2.1.6
 
 ##### improvements
+
 - added AGENTS.md
 - updated dependencies
 - fixed docs build issues
@@ -8,24 +16,30 @@
 ## v2.1.5
 
 ##### improvements
+
 - fixed [#251](https://github.com/natelindev/tsdav/issues/251) thanks to @titanism
 - logging improvements
 
 ## v2.1.4
+
 **features**
+
 - now exports addressBookMultiGet thanks to @lepirlouit
 
 ##### improvements
+
 - fixed [#244](https://github.com/natelindev/tsdav/issues/244) cannot read properties of undefined (reading 'comp')
 - fixed [#238](https://github.com/natelindev/tsdav/issues/238) which blocked icloud principal calendar fetching.
 
 ## v2.1.3
 
 **features**
+
 - new function `fetchCalendarUserAddresses` thanks to @pierreliefauche
 - new type `calendarColor` on `DAVCalendar`
 
 ##### improvements
+
 - fetch updates, now use polyfill mode
 - updated dependencies
 - doc update by community
@@ -36,12 +50,14 @@
 new option `fetchOptions` on all possible functions, allow customizing fetch options
 
 ##### improvements
+
 - updated docs
 - updated dependencies
 
 ## v2.1.1
 
 ##### improvements
+
 - fixed [#201](https://github.com/natelindev/tsdav/issues/201) where `client.smartCollectionSync` have incorrect type
 - fixed [#200](https://github.com/natelindev/tsdav/issues/200) where `syncCalendars` incorrectly mark calendars as updated due to type mismatch
 - updated docs
@@ -51,11 +67,13 @@ new option `fetchOptions` on all possible functions, allow customizing fetch opt
 ## v2.1.0
 
 **potential breaking changes**
+
 - typescript target changed to `es2018` due to named capturing groups errors
 
 ## v2.0.10
 
 **improvements**
+
 - fixed [#191](https://github.com/natelindev/tsdav/issues/191) where `authFunction` is not properly assigned in constructor.
 - updated deps.
 
