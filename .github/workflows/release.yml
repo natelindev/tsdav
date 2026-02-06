@@ -59,5 +59,10 @@ jobs:
           CREDENTIAL_NEXTCLOUD_PASSWORD: ${{secrets.CREDENTIAL_NEXTCLOUD_PASSWORD}}
           CREDENTIAL_NEXTCLOUD_SERVER_URL: ${{secrets.CREDENTIAL_NEXTCLOUD_SERVER_URL}}
 
+      # Publish to npm with provenance statements
+      # Requires NPM_TOKEN secret to be configured in repository secrets
+      # or in the Production environment secrets
       - name: publish package
         run: npm publish --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
