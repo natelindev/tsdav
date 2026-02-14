@@ -1,5 +1,5 @@
-import { fetch } from 'cross-fetch';
 import { DAVAccount } from './types/models';
+import { fetch } from './util/fetch';
 export declare const serviceDiscovery: (params: {
     account: DAVAccount;
     headers?: Record<string, string>;

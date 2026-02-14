@@ -2,9 +2,9 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
-var crossFetch = require('cross-fetch');
 var getLogger = require('debug');
 var convert = require('xml-js');
+var crossFetch = require('cross-fetch');
 var base64 = require('base-64');
 
 exports.DAVNamespace = void 0;
@@ -41,6 +41,19 @@ var ICALObjects;
 })(ICALObjects || (ICALObjects = {}));
 
 const camelCase = (str) => str.replace(/([-_]\w)/g, (g) => g[1].toUpperCase());
+
+/**
+ * Cloudflare Workers and some modern environments have a native fetch on globalThis.
+ * We prefer it over cross-fetch to avoid compatibility issues with the polyfill.
+ */
+const getFetch = () => {
+    if (typeof globalThis !== 'undefined' && typeof globalThis.fetch === 'function') {
+        return globalThis.fetch.bind(globalThis);
+    }
+    // Fallback to cross-fetch
+    return crossFetch;
+};
+const fetch = getFetch();
 
 const nativeType = (value) => {
     const nValue = Number(value);
@@ -124,7 +137,7 @@ const debug$5 = getLogger('tsdav:request');
 const davRequest = async (params) => {
     var _a;
     const { url, init, convertIncoming = true, parseOutgoing = true, fetchOptions = {}, fetch: fetchOverride, } = params;
-    const requestFetch = fetchOverride !== null && fetchOverride !== void 0 ? fetchOverride : crossFetch.fetch;
+    const requestFetch = fetchOverride !== null && fetchOverride !== void 0 ? fetchOverride : fetch;
     const { headers = {}, body, namespace, method, attributes } = init;
     const xmlBody = convertIncoming
         ? convert.js2xml({
@@ -284,7 +297,7 @@ const propfind = async (params) => {
 };
 const createObject = async (params) => {
     const { url, data, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
-    const requestFetch = fetchOverride !== null && fetchOverride !== void 0 ? fetchOverride : crossFetch.fetch;
+    const requestFetch = fetchOverride !== null && fetchOverride !== void 0 ? fetchOverride : fetch;
     return requestFetch(url, {
         method: 'PUT',
         body: data,
@@ -294,7 +307,7 @@ const createObject = async (params) => {
 };
 const updateObject = async (params) => {
     const { url, data, etag, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride, } = params;
-    const requestFetch = fetchOverride !== null && fetchOverride !== void 0 ? fetchOverride : crossFetch.fetch;
+    const requestFetch = fetchOverride !== null && fetchOverride !== void 0 ? fetchOverride : fetch;
     return requestFetch(url, {
         method: 'PUT',
         body: data,
@@ -304,7 +317,7 @@ const updateObject = async (params) => {
 };
 const deleteObject = async (params) => {
     const { url, headers, etag, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
-    const requestFetch = fetchOverride !== null && fetchOverride !== void 0 ? fetchOverride : crossFetch.fetch;
+    const requestFetch = fetchOverride !== null && fetchOverride !== void 0 ? fetchOverride : fetch;
     return requestFetch(url, {
         method: 'DELETE',
         headers: excludeHeaders(cleanupFalsy({ 'If-Match': etag, ...headers }), headersToExclude),
@@ -1278,7 +1291,7 @@ const serviceDiscovery = async (params) => {
     var _a, _b;
     debug$1('Service discovery...');
     const { account, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
-    const requestFetch = fetchOverride !== null && fetchOverride !== void 0 ? fetchOverride : crossFetch.fetch;
+    const requestFetch = fetchOverride !== null && fetchOverride !== void 0 ? fetchOverride : fetch;
     const endpoint = new URL(account.serverUrl);
     const uri = new URL(`/.well-known/${account.accountType}`, endpoint);
     uri.protocol = (_a = endpoint.protocol) !== null && _a !== void 0 ? _a : 'http';
@@ -1489,7 +1502,7 @@ const fetchOauthTokens = async (credentials, fetchOptions, fetchOverride) => {
     });
     debug(credentials.tokenUrl);
     debug(param.toString());
-    const requestFetch = fetchOverride !== null && fetchOverride !== void 0 ? fetchOverride : crossFetch.fetch;
+    const requestFetch = fetchOverride !== null && fetchOverride !== void 0 ? fetchOverride : fetch;
     const response = await requestFetch(credentials.tokenUrl, {
         method: 'POST',
         body: param.toString(),
@@ -1522,7 +1535,7 @@ const refreshAccessToken = async (credentials, fetchOptions, fetchOverride) => {
         refresh_token: credentials.refreshToken,
         grant_type: 'refresh_token',
     });
-    const requestFetch = fetchOverride !== null && fetchOverride !== void 0 ? fetchOverride : crossFetch.fetch;
+    const requestFetch = fetchOverride !== null && fetchOverride !== void 0 ? fetchOverride : fetch;
     const response = await requestFetch(credentials.tokenUrl, {
         method: 'POST',
         body: param.toString(),

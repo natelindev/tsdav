@@ -1,10 +1,10 @@
-import { fetch } from 'cross-fetch';
 import getLogger from 'debug';
 import convert, { ElementCompact } from 'xml-js';
 
 import { DAVNamespace, DAVNamespaceShort } from './consts';
 import { DAVDepth, DAVRequest, DAVResponse } from './types/DAVTypes';
 import { camelCase } from './util/camelCase';
+import { fetch } from './util/fetch';
 import { nativeType } from './util/nativeType';
 import { cleanupFalsy, excludeHeaders, getDAVAttribute } from './util/requestHelpers';
 

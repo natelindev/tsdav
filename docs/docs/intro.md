@@ -61,6 +61,35 @@ Use the ESM bundle in modern browsers:
 Browser requests to CalDAV/CardDAV endpoints are often blocked by CORS. Prefer running
 tsdav in a server environment, proxying requests through your backend, or using a [custom transport](#custom-transport-electroncors).
 
+### Cloudflare Workers
+
+`tsdav` is compatible with Cloudflare Workers. It automatically detects and uses the native `fetch` provided by the Workers runtime.
+
+Example (using standard Worker syntax):
+
+```ts
+import { createDAVClient } from 'tsdav';
+
+export default {
+  async fetch(request, env) {
+    const client = await createDAVClient({
+      serverUrl: 'https://caldav.icloud.com',
+      credentials: {
+        username: env.APPLE_ID,
+        password: env.APPLE_PASSWORD,
+      },
+      authMethod: 'Basic',
+      defaultAccountType: 'caldav',
+    });
+
+    const calendars = await client.fetchCalendars();
+    return new Response(JSON.stringify(calendars), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  },
+};
+```
+
 ### Custom Transport (Electron/CORS)
 
 If you are using `tsdav` in an environment like an Electron renderer process where `fetch` is restricted by CORS (especially for providers like iCloud or Gmail), you can provide a custom `fetch` implementation to route requests through a proxy or Electron's main process.

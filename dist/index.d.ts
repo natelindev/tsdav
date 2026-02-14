@@ -30,12 +30,12 @@ declare const _default: {
     getBearerAuthHeaders: (credentials: import("./types/models").DAVCredentials) => {
         authorization?: string;
     };
-    fetchOauthTokens: (credentials: import("./types/models").DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof import("cross-fetch").fetch) => Promise<import("./types/DAVTypes").DAVTokens>;
-    refreshAccessToken: (credentials: import("./types/models").DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof import("cross-fetch").fetch) => Promise<{
+    fetchOauthTokens: (credentials: import("./types/models").DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof import("./util/fetch").fetch) => Promise<import("./types/DAVTypes").DAVTokens>;
+    refreshAccessToken: (credentials: import("./types/models").DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof import("./util/fetch").fetch) => Promise<{
         access_token?: string;
         expires_in?: number;
     }>;
-    getOauthHeaders: (credentials: import("./types/models").DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof import("cross-fetch").fetch) => Promise<{
+    getOauthHeaders: (credentials: import("./types/models").DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof import("./util/fetch").fetch) => Promise<{
         tokens: import("./types/DAVTypes").DAVTokens;
         headers: {
             authorization?: string;
@@ -207,21 +207,21 @@ declare const _default: {
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
-        fetch?: typeof import("cross-fetch").fetch;
+        fetch?: typeof import("./util/fetch").fetch;
     }) => Promise<string>;
     fetchPrincipalUrl: (params: {
         account: import("./types/models").DAVAccount;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
-        fetch?: typeof import("cross-fetch").fetch;
+        fetch?: typeof import("./util/fetch").fetch;
     }) => Promise<string>;
     fetchHomeUrl: (params: {
         account: import("./types/models").DAVAccount;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
-        fetch?: typeof import("cross-fetch").fetch;
+        fetch?: typeof import("./util/fetch").fetch;
     }) => Promise<string>;
     createAccount: (params: {
         account: import("./types/models").DAVAccount;
@@ -230,7 +230,7 @@ declare const _default: {
         loadCollections?: boolean;
         loadObjects?: boolean;
         fetchOptions?: RequestInit;
-        fetch?: typeof import("cross-fetch").fetch;
+        fetch?: typeof import("./util/fetch").fetch;
     }) => Promise<import("./types/models").DAVAccount>;
     collectionQuery: (params: {
         url: string;
@@ -285,7 +285,7 @@ declare const _default: {
         convertIncoming?: boolean;
         parseOutgoing?: boolean;
         fetchOptions?: RequestInit;
-        fetch?: typeof import("cross-fetch").fetch;
+        fetch?: typeof import("./util/fetch").fetch;
     }) => Promise<import("./types/DAVTypes").DAVResponse[]>;
     propfind: (params: {
         url: string;
@@ -294,7 +294,7 @@ declare const _default: {
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
-        fetch?: typeof import("cross-fetch").fetch;
+        fetch?: typeof import("./util/fetch").fetch;
     }) => Promise<import("./types/DAVTypes").DAVResponse[]>;
     createObject: (params: {
         url: string;
@@ -302,7 +302,7 @@ declare const _default: {
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
-        fetch?: typeof import("cross-fetch").fetch;
+        fetch?: typeof import("./util/fetch").fetch;
     }) => Promise<Response>;
     updateObject: (params: {
         url: string;
@@ -311,7 +311,7 @@ declare const _default: {
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
-        fetch?: typeof import("cross-fetch").fetch;
+        fetch?: typeof import("./util/fetch").fetch;
     }) => Promise<Response>;
     deleteObject: (params: {
         url: string;
@@ -319,7 +319,7 @@ declare const _default: {
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
-        fetch?: typeof import("cross-fetch").fetch;
+        fetch?: typeof import("./util/fetch").fetch;
     }) => Promise<Response>;
     createDAVClient: (params: {
         serverUrl: string;
@@ -343,7 +343,7 @@ declare const _default: {
             headers?: Record<string, string>;
             headersToExclude?: string[];
             fetchOptions?: RequestInit;
-            fetch?: typeof import("cross-fetch").fetch;
+            fetch?: typeof import("./util/fetch").fetch;
         }) => Promise<import("./types/DAVTypes").DAVResponse[]>;
         createAccount: (params0: {
             account: import("./util/typeHelpers").Optional<import("./types/models").DAVAccount, "serverUrl">;
@@ -358,7 +358,7 @@ declare const _default: {
             headers?: Record<string, string>;
             headersToExclude?: string[];
             fetchOptions?: RequestInit;
-            fetch?: typeof import("cross-fetch").fetch;
+            fetch?: typeof import("./util/fetch").fetch;
         }) => Promise<Response>;
         updateObject: (params: {
             url: string;
@@ -367,7 +367,7 @@ declare const _default: {
             headers?: Record<string, string>;
             headersToExclude?: string[];
             fetchOptions?: RequestInit;
-            fetch?: typeof import("cross-fetch").fetch;
+            fetch?: typeof import("./util/fetch").fetch;
         }) => Promise<Response>;
         deleteObject: (params: {
             url: string;
@@ -375,7 +375,7 @@ declare const _default: {
             headers?: Record<string, string>;
             headersToExclude?: string[];
             fetchOptions?: RequestInit;
-            fetch?: typeof import("cross-fetch").fetch;
+            fetch?: typeof import("./util/fetch").fetch;
         }) => Promise<Response>;
         calendarQuery: (params: {
             url: string;

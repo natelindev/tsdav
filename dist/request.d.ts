@@ -1,6 +1,6 @@
-import { fetch } from 'cross-fetch';
 import { ElementCompact } from 'xml-js';
 import { DAVDepth, DAVRequest, DAVResponse } from './types/DAVTypes';
+import { fetch } from './util/fetch';
 export declare const davRequest: (params: {
     url: string;
     init: DAVRequest;

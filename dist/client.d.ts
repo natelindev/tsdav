@@ -28,7 +28,7 @@ export declare const createDAVClient: (params: {
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
-        fetch?: typeof import("cross-fetch").fetch;
+        fetch?: typeof import("./util/fetch").fetch;
     }) => Promise<DAVResponse[]>;
     createAccount: (params0: {
         account: Optional<DAVAccount, "serverUrl">;
@@ -43,7 +43,7 @@ export declare const createDAVClient: (params: {
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
-        fetch?: typeof import("cross-fetch").fetch;
+        fetch?: typeof import("./util/fetch").fetch;
     }) => Promise<Response>;
     updateObject: (params: {
         url: string;
@@ -52,7 +52,7 @@ export declare const createDAVClient: (params: {
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
-        fetch?: typeof import("cross-fetch").fetch;
+        fetch?: typeof import("./util/fetch").fetch;
     }) => Promise<Response>;
     deleteObject: (params: {
         url: string;
@@ -60,7 +60,7 @@ export declare const createDAVClient: (params: {
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
-        fetch?: typeof import("cross-fetch").fetch;
+        fetch?: typeof import("./util/fetch").fetch;
     }) => Promise<Response>;
     calendarQuery: (params: {
         url: string;

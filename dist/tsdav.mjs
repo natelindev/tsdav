@@ -1,6 +1,6 @@
-import { fetch } from 'cross-fetch';
 import getLogger from 'debug';
 import convert from 'xml-js';
+import crossFetch from 'cross-fetch';
 import { encode } from 'base-64';
 
 var DAVNamespace;
@@ -37,6 +37,19 @@ var ICALObjects;
 })(ICALObjects || (ICALObjects = {}));
 
 const camelCase = (str) => str.replace(/([-_]\w)/g, (g) => g[1].toUpperCase());
+
+/**
+ * Cloudflare Workers and some modern environments have a native fetch on globalThis.
+ * We prefer it over cross-fetch to avoid compatibility issues with the polyfill.
+ */
+const getFetch = () => {
+    if (typeof globalThis !== 'undefined' && typeof globalThis.fetch === 'function') {
+        return globalThis.fetch.bind(globalThis);
+    }
+    // Fallback to cross-fetch
+    return crossFetch;
+};
+const fetch = getFetch();
 
 const nativeType = (value) => {
     const nValue = Number(value);

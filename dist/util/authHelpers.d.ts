@@ -1,6 +1,6 @@
-import { fetch } from 'cross-fetch';
 import { DAVTokens } from '../types/DAVTypes';
 import { DAVCredentials } from '../types/models';
+import { fetch } from './fetch';
 /**
  * Provide given params as default params to given function with optional params.
  *
