@@ -675,8 +675,9 @@ const fetchVCards = async (params) => {
         depth: '1',
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
-    })).map((res) => { var _a; return (res.ok ? ((_a = res.href) !== null && _a !== void 0 ? _a : '') : ''); }))
+    })).map((res) => { var _a; return (_a = res.href) !== null && _a !== void 0 ? _a : ''; }))
         .map((url) => (url.startsWith('http') || !url ? url : new URL(url, addressBook.url).href))
+        .filter((url) => url && !urlEquals(url, addressBook.url))
         .filter(urlFilter)
         .map((url) => new URL(url).pathname);
     let vCardResults = [];
@@ -968,14 +969,16 @@ const fetchCalendarObjects = async (params) => {
             },
         },
     ];
+    let initialResponses = [];
     const calendarObjectUrls = (objectUrls !== null && objectUrls !== void 0 ? objectUrls : 
     // fetch all objects of the calendar
-    (await calendarQuery({
+    (initialResponses = await calendarQuery({
         url: calendar.url,
         props: {
-            [`${DAVNamespaceShort.DAV}:getetag`]: {
-                ...(expand && timeRange
-                    ? {
+            [`${DAVNamespaceShort.DAV}:getetag`]: {},
+            ...(expand && timeRange
+                ? {
+                    [`${DAVNamespaceShort.CALDAV}:calendar-data`]: {
                         [`${DAVNamespaceShort.CALDAV}:expand`]: {
                             _attributes: {
                                 start: `${new Date(timeRange.start)
@@ -988,9 +991,9 @@ const fetchCalendarObjects = async (params) => {
                                     .replace(/[-:.]/g, '')}Z`,
                             },
                         },
-                    }
-                    : {}),
-            },
+                    },
+                }
+                : {}),
         },
         filters,
         depth: '1',
@@ -1002,7 +1005,16 @@ const fetchCalendarObjects = async (params) => {
         .map((url) => new URL(url).pathname); // obtain pathname of the url
     let calendarObjectResults = [];
     if (calendarObjectUrls.length > 0) {
-        if (!useMultiGet || expand) {
+        if (expand && !objectUrls) {
+            calendarObjectResults = initialResponses.filter((res) => {
+                var _a, _b;
+                const fullUrl = ((_a = res.href) !== null && _a !== void 0 ? _a : '').startsWith('http')
+                    ? res.href
+                    : new URL((_b = res.href) !== null && _b !== void 0 ? _b : '', calendar.url).href;
+                return urlFilter(fullUrl !== null && fullUrl !== void 0 ? fullUrl : '');
+            });
+        }
+        else if (!useMultiGet) {
             calendarObjectResults = await calendarQuery({
                 url: calendar.url,
                 props: {
@@ -1221,8 +1233,17 @@ const serviceDiscovery = async (params) => {
     uri.protocol = (_a = endpoint.protocol) !== null && _a !== void 0 ? _a : 'http';
     try {
         const response = await fetch(uri.href, {
-            headers: excludeHeaders(headers, headersToExclude),
+            headers: {
+                ...excludeHeaders(headers, headersToExclude),
+                'Content-Type': 'text/xml;charset=UTF-8',
+            },
             method: 'PROPFIND',
+            body: `<?xml version="1.0" encoding="utf-8" ?>
+<d:propfind xmlns:d="DAV:">
+  <d:prop>
+    <d:resourcetype/>
+  </d:prop>
+</d:propfind>`,
             redirect: 'manual',
             ...fetchOptions,
         });
@@ -1383,6 +1404,11 @@ const getBasicAuthHeaders = (credentials) => {
         authorization: `Basic ${encode(`${credentials.username}:${credentials.password}`)}`,
     };
 };
+const getBearerAuthHeaders = (credentials) => {
+    return {
+        authorization: `Bearer ${credentials.accessToken}`,
+    };
+};
 const fetchOauthTokens = async (credentials, fetchOptions) => {
     const requireFields = [
         'authorizationCode',
@@ -1479,6 +1505,7 @@ var authHelpers = /*#__PURE__*/Object.freeze({
     defaultParam: defaultParam,
     fetchOauthTokens: fetchOauthTokens,
     getBasicAuthHeaders: getBasicAuthHeaders,
+    getBearerAuthHeaders: getBearerAuthHeaders,
     getOauthHeaders: getOauthHeaders,
     refreshAccessToken: refreshAccessToken
 });
@@ -1491,6 +1518,9 @@ const createDAVClient = async (params) => {
     switch (authMethod) {
         case 'Basic':
             authHeaders = getBasicAuthHeaders(credentials);
+            break;
+        case 'Bearer':
+            authHeaders = getBearerAuthHeaders(credentials);
             break;
         case 'Oauth':
             authHeaders = (await getOauthHeaders(credentials)).headers;
@@ -1644,6 +1674,9 @@ class DAVClient {
             case 'Basic':
                 this.authHeaders = getBasicAuthHeaders(this.credentials);
                 break;
+            case 'Bearer':
+                this.authHeaders = getBearerAuthHeaders(this.credentials);
+                break;
             case 'Oauth':
                 this.authHeaders = (await getOauthHeaders(this.credentials, this.fetchOptions)).headers;
                 break;
@@ -1707,7 +1740,10 @@ class DAVClient {
         })(params[0]);
     }
     async propfind(...params) {
-        return defaultParam(propfind, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(propfind, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+        })(params[0]);
     }
     async createAccount(params0) {
         const { account, headers, loadCollections, loadObjects, fetchOptions } = params0;
@@ -1720,19 +1756,34 @@ class DAVClient {
         });
     }
     async collectionQuery(...params) {
-        return defaultParam(collectionQuery, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(collectionQuery, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+        })(params[0]);
     }
     async makeCollection(...params) {
-        return defaultParam(makeCollection, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(makeCollection, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+        })(params[0]);
     }
     async syncCollection(...params) {
-        return defaultParam(syncCollection, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(syncCollection, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+        })(params[0]);
     }
     async supportedReportSet(...params) {
-        return defaultParam(supportedReportSet, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(supportedReportSet, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+        })(params[0]);
     }
     async isCollectionDirty(...params) {
-        return defaultParam(isCollectionDirty, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(isCollectionDirty, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+        })(params[0]);
     }
     async smartCollectionSync(...params) {
         return defaultParam(smartCollectionSync, {
@@ -1742,59 +1793,110 @@ class DAVClient {
         })(params[0]);
     }
     async calendarQuery(...params) {
-        return defaultParam(calendarQuery, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(calendarQuery, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+        })(params[0]);
     }
     async makeCalendar(...params) {
-        return defaultParam(makeCalendar, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(makeCalendar, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+        })(params[0]);
     }
     async calendarMultiGet(...params) {
-        return defaultParam(calendarMultiGet, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(calendarMultiGet, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+        })(params[0]);
     }
     async fetchCalendars(...params) {
-        return defaultParam(fetchCalendars, { headers: this.authHeaders, account: this.account, fetchOptions: this.fetchOptions })(params === null || params === void 0 ? void 0 : params[0]);
+        return defaultParam(fetchCalendars, {
+            headers: this.authHeaders,
+            account: this.account,
+            fetchOptions: this.fetchOptions,
+        })(params === null || params === void 0 ? void 0 : params[0]);
     }
     async fetchCalendarUserAddresses(...params) {
-        return defaultParam(fetchCalendarUserAddresses, { headers: this.authHeaders, account: this.account, fetchOptions: this.fetchOptions })(params === null || params === void 0 ? void 0 : params[0]);
+        return defaultParam(fetchCalendarUserAddresses, {
+            headers: this.authHeaders,
+            account: this.account,
+            fetchOptions: this.fetchOptions,
+        })(params === null || params === void 0 ? void 0 : params[0]);
     }
     async fetchCalendarObjects(...params) {
-        return defaultParam(fetchCalendarObjects, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(fetchCalendarObjects, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+        })(params[0]);
     }
     async createCalendarObject(...params) {
-        return defaultParam(createCalendarObject, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(createCalendarObject, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+        })(params[0]);
     }
     async updateCalendarObject(...params) {
-        return defaultParam(updateCalendarObject, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(updateCalendarObject, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+        })(params[0]);
     }
     async deleteCalendarObject(...params) {
-        return defaultParam(deleteCalendarObject, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(deleteCalendarObject, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+        })(params[0]);
     }
     async syncCalendars(...params) {
         return defaultParam(syncCalendars, {
             headers: this.authHeaders,
             account: this.account,
-            fetchOptions: this.fetchOptions
+            fetchOptions: this.fetchOptions,
         })(params[0]);
     }
     async addressBookQuery(...params) {
-        return defaultParam(addressBookQuery, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(addressBookQuery, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+        })(params[0]);
     }
     async addressBookMultiGet(...params) {
-        return defaultParam(addressBookMultiGet, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(addressBookMultiGet, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+        })(params[0]);
     }
     async fetchAddressBooks(...params) {
-        return defaultParam(fetchAddressBooks, { headers: this.authHeaders, account: this.account, fetchOptions: this.fetchOptions })(params === null || params === void 0 ? void 0 : params[0]);
+        return defaultParam(fetchAddressBooks, {
+            headers: this.authHeaders,
+            account: this.account,
+            fetchOptions: this.fetchOptions,
+        })(params === null || params === void 0 ? void 0 : params[0]);
     }
     async fetchVCards(...params) {
-        return defaultParam(fetchVCards, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(fetchVCards, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+        })(params[0]);
     }
     async createVCard(...params) {
-        return defaultParam(createVCard, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(createVCard, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+        })(params[0]);
     }
     async updateVCard(...params) {
-        return defaultParam(updateVCard, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(updateVCard, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+        })(params[0]);
     }
     async deleteVCard(...params) {
-        return defaultParam(deleteVCard, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(deleteVCard, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+        })(params[0]);
     }
 }
 

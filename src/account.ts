@@ -26,8 +26,17 @@ export const serviceDiscovery = async (params: {
 
   try {
     const response = await fetch(uri.href, {
-      headers: excludeHeaders(headers, headersToExclude),
+      headers: {
+        ...excludeHeaders(headers, headersToExclude),
+        'Content-Type': 'text/xml;charset=UTF-8',
+      },
       method: 'PROPFIND',
+      body: `<?xml version="1.0" encoding="utf-8" ?>
+<d:propfind xmlns:d="DAV:">
+  <d:prop>
+    <d:resourcetype/>
+  </d:prop>
+</d:propfind>`,
       redirect: 'manual',
       ...fetchOptions,
     });
@@ -118,7 +127,9 @@ export const fetchHomeUrl = async (params: {
 
   const matched = responses.find((r) => urlContains(account.principalUrl, r.href));
   if (!matched || !matched.ok) {
-    debug(`Fetch home url failed with status ${matched?.statusText} and error ${JSON.stringify(responses.map((r) => r.error))}`);
+    debug(
+      `Fetch home url failed with status ${matched?.statusText} and error ${JSON.stringify(responses.map((r) => r.error))}`,
+    );
     throw new Error('cannot find homeUrl');
   }
 

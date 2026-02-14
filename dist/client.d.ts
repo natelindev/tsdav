@@ -9,7 +9,7 @@ import { Optional } from './util/typeHelpers';
 export declare const createDAVClient: (params: {
     serverUrl: string;
     credentials: DAVCredentials;
-    authMethod?: "Basic" | "Oauth" | "Digest" | "Custom";
+    authMethod?: "Basic" | "Oauth" | "Digest" | "Custom" | "Bearer";
     authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
     defaultAccountType?: DAVAccount["accountType"] | undefined;
 }) => Promise<{
@@ -234,7 +234,7 @@ export declare const createDAVClient: (params: {
 export declare class DAVClient {
     serverUrl: string;
     credentials: DAVCredentials;
-    authMethod: 'Basic' | 'Oauth' | 'Digest' | 'Custom';
+    authMethod: 'Basic' | 'Oauth' | 'Digest' | 'Custom' | 'Bearer';
     accountType: DAVAccount['accountType'];
     authHeaders?: Record<string, string>;
     account?: DAVAccount;
@@ -243,7 +243,7 @@ export declare class DAVClient {
     constructor(params: {
         serverUrl: string;
         credentials: DAVCredentials;
-        authMethod?: 'Basic' | 'Oauth' | 'Digest' | 'Custom';
+        authMethod?: 'Basic' | 'Oauth' | 'Digest' | 'Custom' | 'Bearer';
         authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
         defaultAccountType?: DAVAccount['accountType'] | undefined;
         fetchOptions?: RequestInit;

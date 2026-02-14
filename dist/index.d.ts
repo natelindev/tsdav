@@ -27,6 +27,9 @@ declare const _default: {
     getBasicAuthHeaders: (credentials: import("./types/models").DAVCredentials) => {
         authorization?: string;
     };
+    getBearerAuthHeaders: (credentials: import("./types/models").DAVCredentials) => {
+        authorization?: string;
+    };
     fetchOauthTokens: (credentials: import("./types/models").DAVCredentials, fetchOptions?: RequestInit) => Promise<import("./types/DAVTypes").DAVTokens>;
     refreshAccessToken: (credentials: import("./types/models").DAVCredentials, fetchOptions?: RequestInit) => Promise<{
         access_token?: string;
@@ -290,7 +293,7 @@ declare const _default: {
     createDAVClient: (params: {
         serverUrl: string;
         credentials: import("./types/models").DAVCredentials;
-        authMethod?: "Basic" | "Oauth" | "Digest" | "Custom";
+        authMethod?: "Basic" | "Oauth" | "Digest" | "Custom" | "Bearer";
         authFunction?: (credentials: import("./types/models").DAVCredentials) => Promise<Record<string, string>>;
         defaultAccountType?: import("./types/models").DAVAccount["accountType"] | undefined;
     }) => Promise<{

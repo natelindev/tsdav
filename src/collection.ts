@@ -28,7 +28,7 @@ export const collectionQuery = async (params: {
     defaultNamespace = DAVNamespaceShort.DAV,
     headers,
     headersToExclude,
-    fetchOptions = {}
+    fetchOptions = {},
   } = params;
   const queryResults = await davRequest({
     url,
@@ -40,6 +40,15 @@ export const collectionQuery = async (params: {
     },
     fetchOptions,
   });
+
+  const errorResponse = queryResults.find((res) => !res.ok);
+  if (errorResponse) {
+    throw new Error(
+      `Collection query failed: ${errorResponse.status} ${errorResponse.statusText}. ${
+        errorResponse.raw ? `Raw response: ${errorResponse.raw}` : ''
+      }`,
+    );
+  }
 
   // empty query result
   if (queryResults.length === 1 && !queryResults[0].raw) {
@@ -74,7 +83,7 @@ export const makeCollection = async (params: {
           }
         : undefined,
     },
-    fetchOptions
+    fetchOptions,
   });
 };
 
@@ -92,7 +101,7 @@ export const supportedReportSet = async (params: {
     },
     depth: '0',
     headers: excludeHeaders(headers, headersToExclude),
-    fetchOptions
+    fetchOptions,
   });
   return (
     res[0]?.props?.supportedReportSet?.supportedReport?.map(
@@ -118,7 +127,7 @@ export const isCollectionDirty = async (params: {
     },
     depth: '0',
     headers: excludeHeaders(headers, headersToExclude),
-    fetchOptions
+    fetchOptions,
   });
   const res = responses.filter((r) => urlContains(collection.url, r.href))[0];
   if (!res) {
@@ -162,7 +171,7 @@ export const syncCollection = (params: {
         },
       },
     },
-    fetchOptions
+    fetchOptions,
   });
 };
 
@@ -176,7 +185,15 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
   detailedResult?: boolean;
   fetchOptions?: RequestInit;
 }): Promise<any> => {
-  const { collection, method, headers, headersToExclude, account, detailedResult, fetchOptions = {} } = params;
+  const {
+    collection,
+    method,
+    headers,
+    headersToExclude,
+    account,
+    detailedResult,
+    fetchOptions = {},
+  } = params;
   const requiredFields: Array<'accountType' | 'homeUrl'> = ['accountType', 'homeUrl'];
   if (!account || !hasFields(account, requiredFields)) {
     if (!account) {
@@ -207,7 +224,7 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
       syncLevel: 1,
       syncToken: collection.syncToken,
       headers: excludeHeaders(headers, headersToExclude),
-      fetchOptions
+      fetchOptions,
     });
 
     const objectResponses = result.filter((r): r is RequireAndNotNullSome<DAVResponse, 'href'> => {
@@ -233,7 +250,7 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
           objectUrls: changedObjectUrls,
           depth: '1',
           headers: excludeHeaders(headers, headersToExclude),
-          fetchOptions
+          fetchOptions,
         })) ?? [])
       : [];
 
@@ -289,14 +306,14 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
     const { isDirty, newCtag } = await isCollectionDirty({
       collection,
       headers: excludeHeaders(headers, headersToExclude),
-      fetchOptions
+      fetchOptions,
     });
     const localObjects = collection.objects ?? [];
     const remoteObjects =
       (await collection.fetchObjects?.({
         collection,
         headers: excludeHeaders(headers, headersToExclude),
-        fetchOptions
+        fetchOptions,
       })) ?? [];
 
     // no existing url

@@ -10,6 +10,9 @@ export declare const defaultParam: <F extends (...args: any[]) => any>(fn: F, pa
 export declare const getBasicAuthHeaders: (credentials: DAVCredentials) => {
     authorization?: string;
 };
+export declare const getBearerAuthHeaders: (credentials: DAVCredentials) => {
+    authorization?: string;
+};
 export declare const fetchOauthTokens: (credentials: DAVCredentials, fetchOptions?: RequestInit) => Promise<DAVTokens>;
 export declare const refreshAccessToken: (credentials: DAVCredentials, fetchOptions?: RequestInit) => Promise<{
     access_token?: string;

@@ -7,7 +7,7 @@ import { DAVNamespace, DAVNamespaceShort } from './consts';
 import { createObject, deleteObject, propfind, updateObject } from './request';
 import { DAVDepth, DAVResponse } from './types/DAVTypes';
 import { DAVAccount, DAVAddressBook, DAVVCard } from './types/models';
-import { cleanupFalsy, excludeHeaders, getDAVAttribute } from './util/requestHelpers';
+import { cleanupFalsy, excludeHeaders, getDAVAttribute, urlEquals } from './util/requestHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelpers';
 
 const debug = getLogger('tsdav:addressBook');
@@ -177,9 +177,10 @@ export const fetchVCards = async (params: {
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
       })
-    ).map((res) => (res.ok ? (res.href ?? '') : ''))
+    ).map((res) => res.href ?? '')
   )
     .map((url) => (url.startsWith('http') || !url ? url : new URL(url, addressBook.url).href))
+    .filter((url) => url && !urlEquals(url, addressBook.url))
     .filter(urlFilter)
     .map((url) => new URL(url).pathname);
 

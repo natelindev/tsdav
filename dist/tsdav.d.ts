@@ -417,7 +417,7 @@ declare const deleteObject: (params: {
 declare const createDAVClient: (params: {
     serverUrl: string;
     credentials: DAVCredentials;
-    authMethod?: "Basic" | "Oauth" | "Digest" | "Custom";
+    authMethod?: "Basic" | "Oauth" | "Digest" | "Custom" | "Bearer";
     authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
     defaultAccountType?: DAVAccount["accountType"] | undefined;
 }) => Promise<{
@@ -642,7 +642,7 @@ declare const createDAVClient: (params: {
 declare class DAVClient {
     serverUrl: string;
     credentials: DAVCredentials;
-    authMethod: 'Basic' | 'Oauth' | 'Digest' | 'Custom';
+    authMethod: 'Basic' | 'Oauth' | 'Digest' | 'Custom' | 'Bearer';
     accountType: DAVAccount['accountType'];
     authHeaders?: Record<string, string>;
     account?: DAVAccount;
@@ -651,7 +651,7 @@ declare class DAVClient {
     constructor(params: {
         serverUrl: string;
         credentials: DAVCredentials;
-        authMethod?: 'Basic' | 'Oauth' | 'Digest' | 'Custom';
+        authMethod?: 'Basic' | 'Oauth' | 'Digest' | 'Custom' | 'Bearer';
         authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
         defaultAccountType?: DAVAccount['accountType'] | undefined;
         fetchOptions?: RequestInit;
@@ -768,6 +768,9 @@ declare const _default: {
     excludeHeaders: (headers: Record<string, string> | undefined, headersToExclude: string[] | undefined) => Record<string, string>;
     defaultParam: <F extends (...args: any[]) => any>(fn: F, params: Partial<Parameters<F>[0]>) => (...args: Parameters<F>) => ReturnType<F>;
     getBasicAuthHeaders: (credentials: DAVCredentials) => {
+        authorization?: string;
+    };
+    getBearerAuthHeaders: (credentials: DAVCredentials) => {
         authorization?: string;
     };
     fetchOauthTokens: (credentials: DAVCredentials, fetchOptions?: RequestInit) => Promise<DAVTokens>;
@@ -1033,7 +1036,7 @@ declare const _default: {
     createDAVClient: (params: {
         serverUrl: string;
         credentials: DAVCredentials;
-        authMethod?: "Basic" | "Oauth" | "Digest" | "Custom";
+        authMethod?: "Basic" | "Oauth" | "Digest" | "Custom" | "Bearer";
         authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
         defaultAccountType?: DAVAccount["accountType"] | undefined;
     }) => Promise<{
