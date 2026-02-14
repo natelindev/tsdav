@@ -46,4 +46,12 @@ array of [DAVResponse](../../types/DAVResponse.md)
 
 ### Behavior
 
-send REPORT request on the target collection, parse response xml into array of [DAVResponse](../../types/DAVResponse.md)
+Sends a REPORT request to the target collection and parses the response XML into an array of [DAVResponse](../../types/DAVResponse.md).
+
+### Error Handling
+
+`collectionQuery` will reject with an error if:
+
+- The server returns a non-OK response (e.g., 504 Gateway Timeout, 401 Unauthorized).
+- Any individual response within a Multi-Status payload has a status code >= 400.
+- The server response is not valid XML when a Multi-Status response is expected.
