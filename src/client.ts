@@ -62,8 +62,16 @@ export const createDAVClient = async (params: {
   authMethod?: 'Basic' | 'Oauth' | 'Digest' | 'Custom' | 'Bearer';
   authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
   defaultAccountType?: DAVAccount['accountType'] | undefined;
+  fetch?: typeof fetch;
 }) => {
-  const { serverUrl, credentials, authMethod, defaultAccountType, authFunction } = params;
+  const {
+    serverUrl,
+    credentials,
+    authMethod,
+    defaultAccountType,
+    authFunction,
+    fetch: fetchOverride,
+  } = params;
 
   let authHeaders: Record<string, string> = {};
   switch (authMethod) {
@@ -74,7 +82,7 @@ export const createDAVClient = async (params: {
       authHeaders = getBearerAuthHeaders(credentials);
       break;
     case 'Oauth':
-      authHeaders = (await getOauthHeaders(credentials)).headers;
+      authHeaders = (await getOauthHeaders(credentials, undefined, fetchOverride)).headers;
       break;
     case 'Digest':
       authHeaders = {
@@ -100,8 +108,9 @@ export const createDAVClient = async (params: {
     init: DAVRequest;
     convertIncoming?: boolean;
     parseOutgoing?: boolean;
+    fetch?: typeof fetch;
   }): Promise<DAVResponse[]> => {
-    const { init, ...rest } = params0;
+    const { init, fetch: fetchOverride2, ...rest } = params0;
     const { headers, ...restInit } = init;
     return rawDavRequest({
       ...rest,
@@ -112,17 +121,27 @@ export const createDAVClient = async (params: {
           ...headers,
         },
       },
+      fetch: fetchOverride2 ?? fetchOverride,
     });
   };
 
   const createObject = defaultParam(rawCreateObject, {
     url: serverUrl,
     headers: authHeaders,
+    fetch: fetchOverride,
   });
-  const updateObject = defaultParam(rawUpdateObject, { headers: authHeaders, url: serverUrl });
-  const deleteObject = defaultParam(rawDeleteObject, { headers: authHeaders, url: serverUrl });
+  const updateObject = defaultParam(rawUpdateObject, {
+    headers: authHeaders,
+    url: serverUrl,
+    fetch: fetchOverride,
+  });
+  const deleteObject = defaultParam(rawDeleteObject, {
+    headers: authHeaders,
+    url: serverUrl,
+    fetch: fetchOverride,
+  });
 
-  const propfind = defaultParam(rawPropfind, { headers: authHeaders });
+  const propfind = defaultParam(rawPropfind, { headers: authHeaders, fetch: fetchOverride });
 
   // account
   const createAccount = async (params0: {
@@ -255,6 +274,8 @@ export class DAVClient {
 
   fetchOptions?: RequestInit;
 
+  fetchOverride?: typeof fetch;
+
   authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
 
   constructor(params: {
@@ -264,6 +285,7 @@ export class DAVClient {
     authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
     defaultAccountType?: DAVAccount['accountType'] | undefined;
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
   }) {
     this.serverUrl = params.serverUrl;
     this.credentials = params.credentials;
@@ -271,6 +293,7 @@ export class DAVClient {
     this.accountType = params.defaultAccountType ?? 'caldav';
     this.authFunction = params.authFunction;
     this.fetchOptions = params.fetchOptions ?? {};
+    this.fetchOverride = params.fetch;
   }
 
   async login(): Promise<void> {
@@ -282,7 +305,9 @@ export class DAVClient {
         this.authHeaders = getBearerAuthHeaders(this.credentials);
         break;
       case 'Oauth':
-        this.authHeaders = (await getOauthHeaders(this.credentials, this.fetchOptions)).headers;
+        this.authHeaders = (
+          await getOauthHeaders(this.credentials, this.fetchOptions, this.fetchOverride)
+        ).headers;
         break;
       case 'Digest':
         this.authHeaders = {
@@ -305,7 +330,8 @@ export class DAVClient {
           },
           headers: this.authHeaders,
           fetchOptions: this.fetchOptions,
-        })
+          fetch: this.fetchOverride,
+        } as any)
       : undefined;
   }
 

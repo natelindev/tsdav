@@ -7,6 +7,7 @@ export declare const fetchCalendarUserAddresses: (params: {
     headers?: Record<string, string>;
     headersToExclude?: string[];
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<string[]>;
 export declare const calendarQuery: (params: {
     url: string;
@@ -17,6 +18,7 @@ export declare const calendarQuery: (params: {
     headers?: Record<string, string>;
     headersToExclude?: string[];
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<DAVResponse[]>;
 export declare const calendarMultiGet: (params: {
     url: string;
@@ -28,6 +30,7 @@ export declare const calendarMultiGet: (params: {
     headers?: Record<string, string>;
     headersToExclude?: string[];
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<DAVResponse[]>;
 export declare const makeCalendar: (params: {
     url: string;
@@ -36,6 +39,7 @@ export declare const makeCalendar: (params: {
     headers?: Record<string, string>;
     headersToExclude?: string[];
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<DAVResponse[]>;
 export declare const fetchCalendars: (params?: {
     account?: DAVAccount;
@@ -44,6 +48,7 @@ export declare const fetchCalendars: (params?: {
     headers?: Record<string, string>;
     headersToExclude?: string[];
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<DAVCalendar[]>;
 export declare const fetchCalendarObjects: (params: {
     calendar: DAVCalendar;
@@ -59,6 +64,7 @@ export declare const fetchCalendarObjects: (params: {
     headersToExclude?: string[];
     useMultiGet?: boolean;
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<DAVCalendarObject[]>;
 export declare const createCalendarObject: (params: {
     calendar: DAVCalendar;
@@ -67,18 +73,21 @@ export declare const createCalendarObject: (params: {
     headers?: Record<string, string>;
     headersToExclude?: string[];
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<Response>;
 export declare const updateCalendarObject: (params: {
     calendarObject: DAVCalendarObject;
     headers?: Record<string, string>;
     headersToExclude?: string[];
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<Response>;
 export declare const deleteCalendarObject: (params: {
     calendarObject: DAVCalendarObject;
     headers?: Record<string, string>;
     headersToExclude?: string[];
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<Response>;
 /**
  * Sync remote calendars to local
@@ -94,4 +103,5 @@ export declare const freeBusyQuery: (params: {
     headers?: Record<string, string>;
     headersToExclude?: string[];
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<DAVResponse>;

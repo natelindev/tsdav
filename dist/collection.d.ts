@@ -11,6 +11,7 @@ export declare const collectionQuery: (params: {
     headers?: Record<string, string>;
     headersToExclude?: string[];
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<DAVResponse[]>;
 export declare const makeCollection: (params: {
     url: string;
@@ -19,18 +20,21 @@ export declare const makeCollection: (params: {
     headers?: Record<string, string>;
     headersToExclude?: string[];
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<DAVResponse[]>;
 export declare const supportedReportSet: (params: {
     collection: DAVCollection;
     headers?: Record<string, string>;
     headersToExclude?: string[];
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<string[]>;
 export declare const isCollectionDirty: (params: {
     collection: DAVCollection;
     headers?: Record<string, string>;
     headersToExclude?: string[];
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<{
     isDirty: boolean;
     newCtag: string;
@@ -46,6 +50,7 @@ export declare const syncCollection: (params: {
     syncLevel?: number;
     syncToken?: string;
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<DAVResponse[]>;
 /** remote collection to local */
 export declare const smartCollectionSync: SmartCollectionSync;

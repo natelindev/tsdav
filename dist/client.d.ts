@@ -12,12 +12,14 @@ export declare const createDAVClient: (params: {
     authMethod?: "Basic" | "Oauth" | "Digest" | "Custom" | "Bearer";
     authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
     defaultAccountType?: DAVAccount["accountType"] | undefined;
+    fetch?: typeof fetch;
 }) => Promise<{
     davRequest: (params0: {
         url: string;
         init: DAVRequest;
         convertIncoming?: boolean;
         parseOutgoing?: boolean;
+        fetch?: typeof fetch;
     }) => Promise<DAVResponse[]>;
     propfind: (params: {
         url: string;
@@ -26,6 +28,7 @@ export declare const createDAVClient: (params: {
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
+        fetch?: typeof import("cross-fetch").fetch;
     }) => Promise<DAVResponse[]>;
     createAccount: (params0: {
         account: Optional<DAVAccount, "serverUrl">;
@@ -39,6 +42,7 @@ export declare const createDAVClient: (params: {
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
+        fetch?: typeof import("cross-fetch").fetch;
     }) => Promise<Response>;
     updateObject: (params: {
         url: string;
@@ -47,6 +51,7 @@ export declare const createDAVClient: (params: {
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
+        fetch?: typeof import("cross-fetch").fetch;
     }) => Promise<Response>;
     deleteObject: (params: {
         url: string;
@@ -54,6 +59,7 @@ export declare const createDAVClient: (params: {
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
+        fetch?: typeof import("cross-fetch").fetch;
     }) => Promise<Response>;
     calendarQuery: (params: {
         url: string;
@@ -64,6 +70,7 @@ export declare const createDAVClient: (params: {
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
+        fetch?: typeof fetch;
     }) => Promise<DAVResponse[]>;
     addressBookQuery: (params: {
         url: string;
@@ -73,6 +80,7 @@ export declare const createDAVClient: (params: {
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
+        fetch?: typeof fetch;
     }) => Promise<DAVResponse[]>;
     collectionQuery: (params: {
         url: string;
@@ -82,6 +90,7 @@ export declare const createDAVClient: (params: {
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
+        fetch?: typeof fetch;
     }) => Promise<DAVResponse[]>;
     makeCollection: (params: {
         url: string;
@@ -90,6 +99,7 @@ export declare const createDAVClient: (params: {
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
+        fetch?: typeof fetch;
     }) => Promise<DAVResponse[]>;
     calendarMultiGet: (params: {
         url: string;
@@ -101,6 +111,7 @@ export declare const createDAVClient: (params: {
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
+        fetch?: typeof fetch;
     }) => Promise<DAVResponse[]>;
     makeCalendar: (params: {
         url: string;
@@ -109,6 +120,7 @@ export declare const createDAVClient: (params: {
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
+        fetch?: typeof fetch;
     }) => Promise<DAVResponse[]>;
     syncCollection: (params: {
         url: string;
@@ -118,18 +130,21 @@ export declare const createDAVClient: (params: {
         syncLevel?: number;
         syncToken?: string;
         fetchOptions?: RequestInit;
+        fetch?: typeof fetch;
     }) => Promise<DAVResponse[]>;
     supportedReportSet: (params: {
         collection: DAVCollection;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
+        fetch?: typeof fetch;
     }) => Promise<string[]>;
     isCollectionDirty: (params: {
         collection: DAVCollection;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
+        fetch?: typeof fetch;
     }) => Promise<{
         isDirty: boolean;
         newCtag: string;
@@ -142,12 +157,14 @@ export declare const createDAVClient: (params: {
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
+        fetch?: typeof fetch;
     } | undefined) => Promise<DAVCalendar[]>;
     fetchCalendarUserAddresses: (params: {
         account: DAVAccount;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
+        fetch?: typeof fetch;
     }) => Promise<string[]>;
     fetchCalendarObjects: (params: {
         calendar: DAVCalendar;
@@ -163,6 +180,7 @@ export declare const createDAVClient: (params: {
         headersToExclude?: string[];
         useMultiGet?: boolean;
         fetchOptions?: RequestInit;
+        fetch?: typeof fetch;
     }) => Promise<DAVObject[]>;
     createCalendarObject: (params: {
         calendar: DAVCalendar;
@@ -171,18 +189,21 @@ export declare const createDAVClient: (params: {
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
+        fetch?: typeof fetch;
     }) => Promise<Response>;
     updateCalendarObject: (params: {
         calendarObject: DAVCalendarObject;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
+        fetch?: typeof fetch;
     }) => Promise<Response>;
     deleteCalendarObject: (params: {
         calendarObject: DAVCalendarObject;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
+        fetch?: typeof fetch;
     }) => Promise<Response>;
     syncCalendars: SyncCalendars;
     fetchAddressBooks: (params?: {
@@ -191,6 +212,7 @@ export declare const createDAVClient: (params: {
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
+        fetch?: typeof fetch;
     } | undefined) => Promise<DAVCollection[]>;
     addressBookMultiGet: (params: {
         url: string;
@@ -200,6 +222,7 @@ export declare const createDAVClient: (params: {
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
+        fetch?: typeof fetch;
     }) => Promise<DAVResponse[]>;
     fetchVCards: (params: {
         addressBook: DAVAddressBook;
@@ -209,6 +232,7 @@ export declare const createDAVClient: (params: {
         useMultiGet?: boolean;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
+        fetch?: typeof fetch;
     }) => Promise<DAVObject[]>;
     createVCard: (params: {
         addressBook: DAVAddressBook;
@@ -217,18 +241,21 @@ export declare const createDAVClient: (params: {
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
+        fetch?: typeof fetch;
     }) => Promise<Response>;
     updateVCard: (params: {
         vCard: DAVVCard;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
+        fetch?: typeof fetch;
     }) => Promise<Response>;
     deleteVCard: (params: {
         vCard: DAVVCard;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
+        fetch?: typeof fetch;
     }) => Promise<Response>;
 }>;
 export declare class DAVClient {
@@ -239,6 +266,7 @@ export declare class DAVClient {
     authHeaders?: Record<string, string>;
     account?: DAVAccount;
     fetchOptions?: RequestInit;
+    fetchOverride?: typeof fetch;
     authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
     constructor(params: {
         serverUrl: string;
@@ -247,6 +275,7 @@ export declare class DAVClient {
         authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
         defaultAccountType?: DAVAccount['accountType'] | undefined;
         fetchOptions?: RequestInit;
+        fetch?: typeof fetch;
     });
     login(): Promise<void>;
     davRequest(params0: {

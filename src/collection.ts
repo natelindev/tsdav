@@ -20,6 +20,7 @@ export const collectionQuery = async (params: {
   headers?: Record<string, string>;
   headersToExclude?: string[];
   fetchOptions?: RequestInit;
+  fetch?: typeof fetch;
 }): Promise<DAVResponse[]> => {
   const {
     url,
@@ -29,6 +30,7 @@ export const collectionQuery = async (params: {
     headers,
     headersToExclude,
     fetchOptions = {},
+    fetch: fetchOverride,
   } = params;
   const queryResults = await davRequest({
     url,
@@ -39,6 +41,7 @@ export const collectionQuery = async (params: {
       body,
     },
     fetchOptions,
+    fetch: fetchOverride,
   });
 
   const errorResponse = queryResults.find((res) => !res.ok);
@@ -65,8 +68,17 @@ export const makeCollection = async (params: {
   headers?: Record<string, string>;
   headersToExclude?: string[];
   fetchOptions?: RequestInit;
+  fetch?: typeof fetch;
 }): Promise<DAVResponse[]> => {
-  const { url, props, depth, headers, headersToExclude, fetchOptions = {} } = params;
+  const {
+    url,
+    props,
+    depth,
+    headers,
+    headersToExclude,
+    fetchOptions = {},
+    fetch: fetchOverride,
+  } = params;
   return davRequest({
     url,
     init: {
@@ -84,6 +96,7 @@ export const makeCollection = async (params: {
         : undefined,
     },
     fetchOptions,
+    fetch: fetchOverride,
   });
 };
 
@@ -92,8 +105,9 @@ export const supportedReportSet = async (params: {
   headers?: Record<string, string>;
   headersToExclude?: string[];
   fetchOptions?: RequestInit;
+  fetch?: typeof fetch;
 }): Promise<string[]> => {
-  const { collection, headers, headersToExclude, fetchOptions = {} } = params;
+  const { collection, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
   const res = await propfind({
     url: collection.url,
     props: {
@@ -102,6 +116,7 @@ export const supportedReportSet = async (params: {
     depth: '0',
     headers: excludeHeaders(headers, headersToExclude),
     fetchOptions,
+    fetch: fetchOverride,
   });
   return (
     res[0]?.props?.supportedReportSet?.supportedReport?.map(
@@ -115,11 +130,12 @@ export const isCollectionDirty = async (params: {
   headers?: Record<string, string>;
   headersToExclude?: string[];
   fetchOptions?: RequestInit;
+  fetch?: typeof fetch;
 }): Promise<{
   isDirty: boolean;
   newCtag: string;
 }> => {
-  const { collection, headers, headersToExclude, fetchOptions = {} } = params;
+  const { collection, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
   const responses = await propfind({
     url: collection.url,
     props: {
@@ -128,6 +144,7 @@ export const isCollectionDirty = async (params: {
     depth: '0',
     headers: excludeHeaders(headers, headersToExclude),
     fetchOptions,
+    fetch: fetchOverride,
   });
   const res = responses.filter((r) => urlContains(collection.url, r.href))[0];
   if (!res) {
@@ -150,8 +167,18 @@ export const syncCollection = (params: {
   syncLevel?: number;
   syncToken?: string;
   fetchOptions?: RequestInit;
+  fetch?: typeof fetch;
 }): Promise<DAVResponse[]> => {
-  const { url, props, headers, syncLevel, syncToken, headersToExclude, fetchOptions } = params;
+  const {
+    url,
+    props,
+    headers,
+    syncLevel,
+    syncToken,
+    headersToExclude,
+    fetchOptions,
+    fetch: fetchOverride,
+  } = params;
   return davRequest({
     url,
     init: {
@@ -172,6 +199,7 @@ export const syncCollection = (params: {
       },
     },
     fetchOptions,
+    fetch: fetchOverride,
   });
 };
 
@@ -184,6 +212,7 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
   account?: DAVAccount;
   detailedResult?: boolean;
   fetchOptions?: RequestInit;
+  fetch?: typeof fetch;
 }): Promise<any> => {
   const {
     collection,
@@ -193,6 +222,7 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
     account,
     detailedResult,
     fetchOptions = {},
+    fetch: fetchOverride,
   } = params;
   const requiredFields: Array<'accountType' | 'homeUrl'> = ['accountType', 'homeUrl'];
   if (!account || !hasFields(account, requiredFields)) {
@@ -225,6 +255,7 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
       syncToken: collection.syncToken,
       headers: excludeHeaders(headers, headersToExclude),
       fetchOptions,
+      fetch: fetchOverride,
     });
 
     const objectResponses = result.filter((r): r is RequireAndNotNullSome<DAVResponse, 'href'> => {
@@ -237,7 +268,7 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
     const deletedObjectUrls = objectResponses.filter((o) => o.status === 404).map((r) => r.href);
 
     const multiGetObjectResponse = changedObjectUrls.length
-      ? ((await collection?.objectMultiGet?.({
+      ? ((await (collection as any)?.objectMultiGet?.({
           url: collection.url,
           props: {
             [`${DAVNamespaceShort.DAV}:getetag`]: {},
@@ -251,7 +282,8 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
           depth: '1',
           headers: excludeHeaders(headers, headersToExclude),
           fetchOptions,
-        })) ?? [])
+          fetch: fetchOverride,
+        } as any)) ?? [])
       : [];
 
     const remoteObjects = multiGetObjectResponse.map((res) => {
@@ -307,14 +339,16 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
       collection,
       headers: excludeHeaders(headers, headersToExclude),
       fetchOptions,
+      fetch: fetchOverride,
     });
     const localObjects = collection.objects ?? [];
     const remoteObjects =
-      (await collection.fetchObjects?.({
+      (await (collection as any).fetchObjects?.({
         collection,
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
-      })) ?? [];
+        fetch: fetchOverride,
+      } as any)) ?? [];
 
     // no existing url
     const created = remoteObjects.filter((ro) =>

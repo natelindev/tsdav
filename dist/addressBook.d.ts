@@ -9,6 +9,7 @@ export declare const addressBookQuery: (params: {
     headers?: Record<string, string>;
     headersToExclude?: string[];
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<DAVResponse[]>;
 export declare const addressBookMultiGet: (params: {
     url: string;
@@ -18,6 +19,7 @@ export declare const addressBookMultiGet: (params: {
     headers?: Record<string, string>;
     headersToExclude?: string[];
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<DAVResponse[]>;
 export declare const fetchAddressBooks: (params?: {
     account?: DAVAccount;
@@ -25,6 +27,7 @@ export declare const fetchAddressBooks: (params?: {
     headers?: Record<string, string>;
     headersToExclude?: string[];
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<DAVAddressBook[]>;
 export declare const fetchVCards: (params: {
     addressBook: DAVAddressBook;
@@ -34,6 +37,7 @@ export declare const fetchVCards: (params: {
     useMultiGet?: boolean;
     headersToExclude?: string[];
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<DAVVCard[]>;
 export declare const createVCard: (params: {
     addressBook: DAVAddressBook;
@@ -42,16 +46,19 @@ export declare const createVCard: (params: {
     headers?: Record<string, string>;
     headersToExclude?: string[];
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<Response>;
 export declare const updateVCard: (params: {
     vCard: DAVVCard;
     headers?: Record<string, string>;
     headersToExclude?: string[];
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<Response>;
 export declare const deleteVCard: (params: {
     vCard: DAVVCard;
     headers?: Record<string, string>;
     headersToExclude?: string[];
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<Response>;

@@ -1,3 +1,4 @@
+import { fetch } from 'cross-fetch';
 import { ElementCompact } from 'xml-js';
 import { DAVDepth, DAVRequest, DAVResponse } from './types/DAVTypes';
 export declare const davRequest: (params: {
@@ -6,6 +7,7 @@ export declare const davRequest: (params: {
     convertIncoming?: boolean;
     parseOutgoing?: boolean;
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<DAVResponse[]>;
 export declare const propfind: (params: {
     url: string;
@@ -14,6 +16,7 @@ export declare const propfind: (params: {
     headers?: Record<string, string>;
     headersToExclude?: string[];
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<DAVResponse[]>;
 export declare const createObject: (params: {
     url: string;
@@ -21,6 +24,7 @@ export declare const createObject: (params: {
     headers?: Record<string, string>;
     headersToExclude?: string[];
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<Response>;
 export declare const updateObject: (params: {
     url: string;
@@ -29,6 +33,7 @@ export declare const updateObject: (params: {
     headers?: Record<string, string>;
     headersToExclude?: string[];
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<Response>;
 export declare const deleteObject: (params: {
     url: string;
@@ -36,4 +41,5 @@ export declare const deleteObject: (params: {
     headers?: Record<string, string>;
     headersToExclude?: string[];
     fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
 }) => Promise<Response>;
