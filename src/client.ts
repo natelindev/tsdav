@@ -62,7 +62,7 @@ export const createDAVClient = async (params: {
   authMethod?: 'Basic' | 'Oauth' | 'Digest' | 'Custom' | 'Bearer';
   authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
   defaultAccountType?: DAVAccount['accountType'] | undefined;
-  fetch?: typeof fetch;
+  fetch?: any;
 }) => {
   const {
     serverUrl,
@@ -100,6 +100,7 @@ export const createDAVClient = async (params: {
     ? await rawCreateAccount({
         account: { serverUrl, credentials, accountType: defaultAccountType },
         headers: authHeaders,
+        fetch: fetchOverride,
       })
     : undefined;
 
@@ -108,7 +109,7 @@ export const createDAVClient = async (params: {
     init: DAVRequest;
     convertIncoming?: boolean;
     parseOutgoing?: boolean;
-    fetch?: typeof fetch;
+    fetch?: any;
   }): Promise<DAVResponse[]> => {
     const { init, fetch: fetchOverride2, ...rest } = params0;
     const { headers, ...restInit } = init;
@@ -149,82 +150,131 @@ export const createDAVClient = async (params: {
     headers?: Record<string, string>;
     loadCollections?: boolean;
     loadObjects?: boolean;
+    fetch?: any;
   }): Promise<DAVAccount> => {
-    const { account, headers, loadCollections, loadObjects } = params0;
+    const { account, headers, loadCollections, loadObjects, fetch: fetchOverride2 } = params0;
     return rawCreateAccount({
       account: { serverUrl, credentials, ...account },
       headers: { ...authHeaders, ...headers },
       loadCollections,
       loadObjects,
+      fetch: fetchOverride2 ?? fetchOverride,
     });
   };
 
   // collection
-  const collectionQuery = defaultParam(rawCollectionQuery, { headers: authHeaders });
-  const makeCollection = defaultParam(rawMakeCollection, { headers: authHeaders });
-  const syncCollection = defaultParam(rawSyncCollection, { headers: authHeaders });
+  const collectionQuery = defaultParam(rawCollectionQuery, {
+    headers: authHeaders,
+    fetch: fetchOverride,
+  });
+  const makeCollection = defaultParam(rawMakeCollection, {
+    headers: authHeaders,
+    fetch: fetchOverride,
+  });
+  const syncCollection = defaultParam(rawSyncCollection, {
+    headers: authHeaders,
+    fetch: fetchOverride,
+  });
 
   const supportedReportSet = defaultParam(rawSupportedReportSet, {
     headers: authHeaders,
+    fetch: fetchOverride,
   });
 
   const isCollectionDirty = defaultParam(rawIsCollectionDirty, {
     headers: authHeaders,
+    fetch: fetchOverride,
   });
 
   const smartCollectionSync = defaultParam(rawSmartCollectionSync, {
     headers: authHeaders,
     account: defaultAccount,
+    fetch: fetchOverride,
   }) as SmartCollectionSync;
 
   // calendar
-  const calendarQuery = defaultParam(rawCalendarQuery, { headers: authHeaders });
-  const calendarMultiGet = defaultParam(rawCalendarMultiGet, { headers: authHeaders });
-  const makeCalendar = defaultParam(rawMakeCalendar, { headers: authHeaders });
+  const calendarQuery = defaultParam(rawCalendarQuery, {
+    headers: authHeaders,
+    fetch: fetchOverride,
+  });
+  const calendarMultiGet = defaultParam(rawCalendarMultiGet, {
+    headers: authHeaders,
+    fetch: fetchOverride,
+  });
+  const makeCalendar = defaultParam(rawMakeCalendar, {
+    headers: authHeaders,
+    fetch: fetchOverride,
+  });
 
   const fetchCalendars = defaultParam(rawFetchCalendars, {
     headers: authHeaders,
     account: defaultAccount,
+    fetch: fetchOverride,
   });
 
   const fetchCalendarUserAddresses = defaultParam(rawFetchCalendarUserAddresses, {
     headers: authHeaders,
     account: defaultAccount,
+    fetch: fetchOverride,
   });
 
   const fetchCalendarObjects = defaultParam(rawFetchCalendarObjects, {
     headers: authHeaders,
+    fetch: fetchOverride,
   });
 
   const createCalendarObject = defaultParam(rawCreateCalendarObject, {
     headers: authHeaders,
+    fetch: fetchOverride,
   });
 
   const updateCalendarObject = defaultParam(rawUpdateCalendarObject, {
     headers: authHeaders,
+    fetch: fetchOverride,
   });
 
   const deleteCalendarObject = defaultParam(rawDeleteCalendarObject, {
     headers: authHeaders,
+    fetch: fetchOverride,
   });
 
   const syncCalendars = defaultParam(rawSyncCalendars, {
     account: defaultAccount,
     headers: authHeaders,
+    fetch: fetchOverride,
   }) as SyncCalendars;
 
   // addressBook
-  const addressBookQuery = defaultParam(rawAddressBookQuery, { headers: authHeaders });
-  const addressBookMultiGet = defaultParam(rawAddressBookMultiGet, { headers: authHeaders });
+  const addressBookQuery = defaultParam(rawAddressBookQuery, {
+    headers: authHeaders,
+    fetch: fetchOverride,
+  });
+  const addressBookMultiGet = defaultParam(rawAddressBookMultiGet, {
+    headers: authHeaders,
+    fetch: fetchOverride,
+  });
   const fetchAddressBooks = defaultParam(rawFetchAddressBooks, {
     account: defaultAccount,
     headers: authHeaders,
+    fetch: fetchOverride,
   });
 
-  const fetchVCards = defaultParam(rawFetchVCards, { headers: authHeaders });
-  const createVCard = defaultParam(rawCreateVCard, { headers: authHeaders });
-  const updateVCard = defaultParam(rawUpdateVCard, { headers: authHeaders });
-  const deleteVCard = defaultParam(rawDeleteVCard, { headers: authHeaders });
+  const fetchVCards = defaultParam(rawFetchVCards, {
+    headers: authHeaders,
+    fetch: fetchOverride,
+  });
+  const createVCard = defaultParam(rawCreateVCard, {
+    headers: authHeaders,
+    fetch: fetchOverride,
+  });
+  const updateVCard = defaultParam(rawUpdateVCard, {
+    headers: authHeaders,
+    fetch: fetchOverride,
+  });
+  const deleteVCard = defaultParam(rawDeleteVCard, {
+    headers: authHeaders,
+    fetch: fetchOverride,
+  });
 
   return {
     davRequest,
@@ -274,7 +324,7 @@ export class DAVClient {
 
   fetchOptions?: RequestInit;
 
-  fetchOverride?: typeof fetch;
+  fetchOverride?: any;
 
   authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
 
@@ -285,7 +335,7 @@ export class DAVClient {
     authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
     defaultAccountType?: DAVAccount['accountType'] | undefined;
     fetchOptions?: RequestInit;
-    fetch?: typeof fetch;
+    fetch?: any;
   }) {
     this.serverUrl = params.serverUrl;
     this.credentials = params.credentials;
@@ -341,8 +391,9 @@ export class DAVClient {
     convertIncoming?: boolean;
     parseOutgoing?: boolean;
     fetchOptions?: RequestInit;
+    fetch?: any;
   }): Promise<DAVResponse[]> {
-    const { init, ...rest } = params0;
+    const { init, fetch: fetchOverride2, ...rest } = params0;
     const { headers, ...restInit } = init;
     return rawDavRequest({
       ...rest,
@@ -354,6 +405,7 @@ export class DAVClient {
         },
       },
       fetchOptions: this.fetchOptions,
+      fetch: fetchOverride2 ?? this.fetchOverride,
     });
   }
 
@@ -362,6 +414,7 @@ export class DAVClient {
       url: this.serverUrl,
       headers: this.authHeaders,
       fetchOptions: this.fetchOptions,
+      fetch: this.fetchOverride,
     })(params[0]);
   }
 
@@ -370,6 +423,7 @@ export class DAVClient {
       url: this.serverUrl,
       headers: this.authHeaders,
       fetchOptions: this.fetchOptions,
+      fetch: this.fetchOverride,
     })(params[0]);
   }
 
@@ -378,6 +432,7 @@ export class DAVClient {
       url: this.serverUrl,
       headers: this.authHeaders,
       fetchOptions: this.fetchOptions,
+      fetch: this.fetchOverride,
     })(params[0]);
   }
 
@@ -385,6 +440,7 @@ export class DAVClient {
     return defaultParam(rawPropfind, {
       headers: this.authHeaders,
       fetchOptions: this.fetchOptions,
+      fetch: this.fetchOverride,
     })(params[0]);
   }
 
@@ -394,14 +450,16 @@ export class DAVClient {
     loadCollections?: boolean;
     loadObjects?: boolean;
     fetchOptions?: RequestInit;
+    fetch?: any;
   }): Promise<DAVAccount> {
-    const { account, headers, loadCollections, loadObjects, fetchOptions } = params0;
+    const { account, headers, loadCollections, loadObjects, fetchOptions, fetch } = params0;
     return rawCreateAccount({
       account: { serverUrl: this.serverUrl, credentials: this.credentials, ...account },
       headers: { ...this.authHeaders, ...headers },
       loadCollections,
       loadObjects,
       fetchOptions: fetchOptions ?? this.fetchOptions,
+      fetch: fetch ?? this.fetchOverride,
     });
   }
 
@@ -409,6 +467,7 @@ export class DAVClient {
     return defaultParam(rawCollectionQuery, {
       headers: this.authHeaders,
       fetchOptions: this.fetchOptions,
+      fetch: this.fetchOverride,
     })(params[0]);
   }
 
@@ -416,6 +475,7 @@ export class DAVClient {
     return defaultParam(rawMakeCollection, {
       headers: this.authHeaders,
       fetchOptions: this.fetchOptions,
+      fetch: this.fetchOverride,
     })(params[0]);
   }
 
@@ -423,6 +483,7 @@ export class DAVClient {
     return defaultParam(rawSyncCollection, {
       headers: this.authHeaders,
       fetchOptions: this.fetchOptions,
+      fetch: this.fetchOverride,
     })(params[0]);
   }
 
@@ -430,6 +491,7 @@ export class DAVClient {
     return defaultParam(rawSupportedReportSet, {
       headers: this.authHeaders,
       fetchOptions: this.fetchOptions,
+      fetch: this.fetchOverride,
     })(params[0]);
   }
 
@@ -440,6 +502,7 @@ export class DAVClient {
     return defaultParam(rawIsCollectionDirty, {
       headers: this.authHeaders,
       fetchOptions: this.fetchOptions,
+      fetch: this.fetchOverride,
     })(params[0]);
   }
 
@@ -448,6 +511,7 @@ export class DAVClient {
     method?: 'basic' | 'webdav';
     headers?: Record<string, string>;
     fetchOptions?: RequestInit;
+    fetch?: any;
     account?: DAVAccount;
     detailedResult?: false;
   }): Promise<T>;
@@ -456,6 +520,7 @@ export class DAVClient {
     method?: 'basic' | 'webdav';
     headers?: Record<string, string>;
     fetchOptions?: RequestInit;
+    fetch?: any;
     account?: DAVAccount;
     detailedResult: true;
   }): Promise<
@@ -472,6 +537,7 @@ export class DAVClient {
       defaultParam(rawSmartCollectionSync, {
         headers: this.authHeaders,
         fetchOptions: this.fetchOptions,
+        fetch: this.fetchOverride,
         account: this.account,
       }) as SmartCollectionSync
     )(params[0]);
@@ -481,6 +547,7 @@ export class DAVClient {
     return defaultParam(rawCalendarQuery, {
       headers: this.authHeaders,
       fetchOptions: this.fetchOptions,
+      fetch: this.fetchOverride,
     })(params[0]);
   }
 
@@ -488,6 +555,7 @@ export class DAVClient {
     return defaultParam(rawMakeCalendar, {
       headers: this.authHeaders,
       fetchOptions: this.fetchOptions,
+      fetch: this.fetchOverride,
     })(params[0]);
   }
 
@@ -497,6 +565,7 @@ export class DAVClient {
     return defaultParam(rawCalendarMultiGet, {
       headers: this.authHeaders,
       fetchOptions: this.fetchOptions,
+      fetch: this.fetchOverride,
     })(params[0]);
   }
 
@@ -505,6 +574,7 @@ export class DAVClient {
       headers: this.authHeaders,
       account: this.account,
       fetchOptions: this.fetchOptions,
+      fetch: this.fetchOverride,
     })(params?.[0]);
   }
 
@@ -515,6 +585,7 @@ export class DAVClient {
       headers: this.authHeaders,
       account: this.account,
       fetchOptions: this.fetchOptions,
+      fetch: this.fetchOverride,
     })(params?.[0]);
   }
 
@@ -524,6 +595,7 @@ export class DAVClient {
     return defaultParam(rawFetchCalendarObjects, {
       headers: this.authHeaders,
       fetchOptions: this.fetchOptions,
+      fetch: this.fetchOverride,
     })(params[0]);
   }
 
@@ -533,6 +605,7 @@ export class DAVClient {
     return defaultParam(rawCreateCalendarObject, {
       headers: this.authHeaders,
       fetchOptions: this.fetchOptions,
+      fetch: this.fetchOverride,
     })(params[0]);
   }
 
@@ -542,6 +615,7 @@ export class DAVClient {
     return defaultParam(rawUpdateCalendarObject, {
       headers: this.authHeaders,
       fetchOptions: this.fetchOptions,
+      fetch: this.fetchOverride,
     })(params[0]);
   }
 
@@ -551,6 +625,7 @@ export class DAVClient {
     return defaultParam(rawDeleteCalendarObject, {
       headers: this.authHeaders,
       fetchOptions: this.fetchOptions,
+      fetch: this.fetchOverride,
     })(params[0]);
   }
 
@@ -560,6 +635,7 @@ export class DAVClient {
         headers: this.authHeaders,
         account: this.account,
         fetchOptions: this.fetchOptions,
+        fetch: this.fetchOverride,
       }) as SyncCalendars
     )(params[0]);
   }
@@ -570,6 +646,7 @@ export class DAVClient {
     return defaultParam(rawAddressBookQuery, {
       headers: this.authHeaders,
       fetchOptions: this.fetchOptions,
+      fetch: this.fetchOverride,
     })(params[0]);
   }
 
@@ -579,6 +656,7 @@ export class DAVClient {
     return defaultParam(rawAddressBookMultiGet, {
       headers: this.authHeaders,
       fetchOptions: this.fetchOptions,
+      fetch: this.fetchOverride,
     })(params[0]);
   }
 
@@ -589,6 +667,7 @@ export class DAVClient {
       headers: this.authHeaders,
       account: this.account,
       fetchOptions: this.fetchOptions,
+      fetch: this.fetchOverride,
     })(params?.[0]);
   }
 
@@ -596,6 +675,7 @@ export class DAVClient {
     return defaultParam(rawFetchVCards, {
       headers: this.authHeaders,
       fetchOptions: this.fetchOptions,
+      fetch: this.fetchOverride,
     })(params[0]);
   }
 
@@ -603,6 +683,7 @@ export class DAVClient {
     return defaultParam(rawCreateVCard, {
       headers: this.authHeaders,
       fetchOptions: this.fetchOptions,
+      fetch: this.fetchOverride,
     })(params[0]);
   }
 
@@ -610,6 +691,7 @@ export class DAVClient {
     return defaultParam(rawUpdateVCard, {
       headers: this.authHeaders,
       fetchOptions: this.fetchOptions,
+      fetch: this.fetchOverride,
     })(params[0]);
   }
 
@@ -617,6 +699,7 @@ export class DAVClient {
     return defaultParam(rawDeleteVCard, {
       headers: this.authHeaders,
       fetchOptions: this.fetchOptions,
+      fetch: this.fetchOverride,
     })(params[0]);
   }
 }

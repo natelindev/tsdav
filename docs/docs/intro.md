@@ -59,7 +59,27 @@ Use the ESM bundle in modern browsers:
 ```
 
 Browser requests to CalDAV/CardDAV endpoints are often blocked by CORS. Prefer running
-tsdav in a server environment or proxying requests through your backend.
+tsdav in a server environment, proxying requests through your backend, or using a [custom transport](#custom-transport-electroncors).
+
+### Custom Transport (Electron/CORS)
+
+If you are using `tsdav` in an environment like an Electron renderer process where `fetch` is restricted by CORS (especially for providers like iCloud or Gmail), you can provide a custom `fetch` implementation to route requests through a proxy or Electron's main process.
+
+```ts
+const client = await createDAVClient({
+  serverUrl: 'https://caldav.icloud.com',
+  credentials: { ... },
+  authMethod: 'Basic',
+  // Custom fetch override
+  fetch: async (url, options) => {
+    // Implement your own transport here, e.g., IPC to main process
+    const response = await window.electronAPI.makeRequest(url, options);
+    return response;
+  },
+});
+```
+
+The custom `fetch` should follow the standard Fetch API interface. This is also supported in the `DAVClient` constructor and most high-level functions.
 
 ### Basic usage
 

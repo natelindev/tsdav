@@ -12,14 +12,14 @@ export declare const createDAVClient: (params: {
     authMethod?: "Basic" | "Oauth" | "Digest" | "Custom" | "Bearer";
     authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
     defaultAccountType?: DAVAccount["accountType"] | undefined;
-    fetch?: typeof fetch;
+    fetch?: any;
 }) => Promise<{
     davRequest: (params0: {
         url: string;
         init: DAVRequest;
         convertIncoming?: boolean;
         parseOutgoing?: boolean;
-        fetch?: typeof fetch;
+        fetch?: any;
     }) => Promise<DAVResponse[]>;
     propfind: (params: {
         url: string;
@@ -35,6 +35,7 @@ export declare const createDAVClient: (params: {
         headers?: Record<string, string>;
         loadCollections?: boolean;
         loadObjects?: boolean;
+        fetch?: any;
     }) => Promise<DAVAccount>;
     createObject: (params: {
         url: string;
@@ -266,7 +267,7 @@ export declare class DAVClient {
     authHeaders?: Record<string, string>;
     account?: DAVAccount;
     fetchOptions?: RequestInit;
-    fetchOverride?: typeof fetch;
+    fetchOverride?: any;
     authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
     constructor(params: {
         serverUrl: string;
@@ -275,7 +276,7 @@ export declare class DAVClient {
         authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
         defaultAccountType?: DAVAccount['accountType'] | undefined;
         fetchOptions?: RequestInit;
-        fetch?: typeof fetch;
+        fetch?: any;
     });
     login(): Promise<void>;
     davRequest(params0: {
@@ -284,6 +285,7 @@ export declare class DAVClient {
         convertIncoming?: boolean;
         parseOutgoing?: boolean;
         fetchOptions?: RequestInit;
+        fetch?: any;
     }): Promise<DAVResponse[]>;
     createObject(...params: Parameters<typeof rawCreateObject>): Promise<Response>;
     updateObject(...params: Parameters<typeof rawUpdateObject>): Promise<Response>;
@@ -295,6 +297,7 @@ export declare class DAVClient {
         loadCollections?: boolean;
         loadObjects?: boolean;
         fetchOptions?: RequestInit;
+        fetch?: any;
     }): Promise<DAVAccount>;
     collectionQuery(...params: Parameters<typeof rawCollectionQuery>): Promise<DAVResponse[]>;
     makeCollection(...params: Parameters<typeof rawMakeCollection>): Promise<DAVResponse[]>;
@@ -309,6 +312,7 @@ export declare class DAVClient {
         method?: 'basic' | 'webdav';
         headers?: Record<string, string>;
         fetchOptions?: RequestInit;
+        fetch?: any;
         account?: DAVAccount;
         detailedResult?: false;
     }): Promise<T>;
@@ -317,6 +321,7 @@ export declare class DAVClient {
         method?: 'basic' | 'webdav';
         headers?: Record<string, string>;
         fetchOptions?: RequestInit;
+        fetch?: any;
         account?: DAVAccount;
         detailedResult: true;
     }): Promise<Omit<T, 'objects'> & {

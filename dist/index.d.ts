@@ -327,14 +327,14 @@ declare const _default: {
         authMethod?: "Basic" | "Oauth" | "Digest" | "Custom" | "Bearer";
         authFunction?: (credentials: import("./types/models").DAVCredentials) => Promise<Record<string, string>>;
         defaultAccountType?: import("./types/models").DAVAccount["accountType"] | undefined;
-        fetch?: typeof fetch;
+        fetch?: any;
     }) => Promise<{
         davRequest: (params0: {
             url: string;
             init: import("./types/DAVTypes").DAVRequest;
             convertIncoming?: boolean;
             parseOutgoing?: boolean;
-            fetch?: typeof fetch;
+            fetch?: any;
         }) => Promise<import("./types/DAVTypes").DAVResponse[]>;
         propfind: (params: {
             url: string;
@@ -350,6 +350,7 @@ declare const _default: {
             headers?: Record<string, string>;
             loadCollections?: boolean;
             loadObjects?: boolean;
+            fetch?: any;
         }) => Promise<import("./types/models").DAVAccount>;
         createObject: (params: {
             url: string;

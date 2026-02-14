@@ -345,12 +345,15 @@ const collectionQuery = async (params) => {
         fetchOptions,
         fetch: fetchOverride,
     });
-    const errorResponse = queryResults.find((res) => !res.ok);
+    const errorResponse = queryResults.find((res) => !res.ok || (res.status && res.status >= 400));
     if (errorResponse) {
         throw new Error(`Collection query failed: ${errorResponse.status} ${errorResponse.statusText}. ${errorResponse.raw ? `Raw response: ${errorResponse.raw}` : ''}`);
     }
     // empty query result
-    if (queryResults.length === 1 && !queryResults[0].raw) {
+    if (queryResults.length === 1 &&
+        !queryResults[0].raw &&
+        queryResults[0].status &&
+        queryResults[0].status < 300) {
         return [];
     }
     return queryResults;
@@ -1599,6 +1602,7 @@ const createDAVClient = async (params) => {
         ? await createAccount({
             account: { serverUrl, credentials, accountType: defaultAccountType },
             headers: authHeaders,
+            fetch: fetchOverride,
         })
         : undefined;
     const davRequest$1 = async (params0) => {
@@ -1634,67 +1638,115 @@ const createDAVClient = async (params) => {
     const propfind$1 = defaultParam(propfind, { headers: authHeaders, fetch: fetchOverride });
     // account
     const createAccount$1 = async (params0) => {
-        const { account, headers, loadCollections, loadObjects } = params0;
+        const { account, headers, loadCollections, loadObjects, fetch: fetchOverride2 } = params0;
         return createAccount({
             account: { serverUrl, credentials, ...account },
             headers: { ...authHeaders, ...headers },
             loadCollections,
             loadObjects,
+            fetch: fetchOverride2 !== null && fetchOverride2 !== void 0 ? fetchOverride2 : fetchOverride,
         });
     };
     // collection
-    const collectionQuery$1 = defaultParam(collectionQuery, { headers: authHeaders });
-    const makeCollection$1 = defaultParam(makeCollection, { headers: authHeaders });
-    const syncCollection$1 = defaultParam(syncCollection, { headers: authHeaders });
+    const collectionQuery$1 = defaultParam(collectionQuery, {
+        headers: authHeaders,
+        fetch: fetchOverride,
+    });
+    const makeCollection$1 = defaultParam(makeCollection, {
+        headers: authHeaders,
+        fetch: fetchOverride,
+    });
+    const syncCollection$1 = defaultParam(syncCollection, {
+        headers: authHeaders,
+        fetch: fetchOverride,
+    });
     const supportedReportSet$1 = defaultParam(supportedReportSet, {
         headers: authHeaders,
+        fetch: fetchOverride,
     });
     const isCollectionDirty$1 = defaultParam(isCollectionDirty, {
         headers: authHeaders,
+        fetch: fetchOverride,
     });
     const smartCollectionSync$1 = defaultParam(smartCollectionSync, {
         headers: authHeaders,
         account: defaultAccount,
+        fetch: fetchOverride,
     });
     // calendar
-    const calendarQuery$1 = defaultParam(calendarQuery, { headers: authHeaders });
-    const calendarMultiGet$1 = defaultParam(calendarMultiGet, { headers: authHeaders });
-    const makeCalendar$1 = defaultParam(makeCalendar, { headers: authHeaders });
+    const calendarQuery$1 = defaultParam(calendarQuery, {
+        headers: authHeaders,
+        fetch: fetchOverride,
+    });
+    const calendarMultiGet$1 = defaultParam(calendarMultiGet, {
+        headers: authHeaders,
+        fetch: fetchOverride,
+    });
+    const makeCalendar$1 = defaultParam(makeCalendar, {
+        headers: authHeaders,
+        fetch: fetchOverride,
+    });
     const fetchCalendars$1 = defaultParam(fetchCalendars, {
         headers: authHeaders,
         account: defaultAccount,
+        fetch: fetchOverride,
     });
     const fetchCalendarUserAddresses$1 = defaultParam(fetchCalendarUserAddresses, {
         headers: authHeaders,
         account: defaultAccount,
+        fetch: fetchOverride,
     });
     const fetchCalendarObjects$1 = defaultParam(fetchCalendarObjects, {
         headers: authHeaders,
+        fetch: fetchOverride,
     });
     const createCalendarObject$1 = defaultParam(createCalendarObject, {
         headers: authHeaders,
+        fetch: fetchOverride,
     });
     const updateCalendarObject$1 = defaultParam(updateCalendarObject, {
         headers: authHeaders,
+        fetch: fetchOverride,
     });
     const deleteCalendarObject$1 = defaultParam(deleteCalendarObject, {
         headers: authHeaders,
+        fetch: fetchOverride,
     });
     const syncCalendars$1 = defaultParam(syncCalendars, {
         account: defaultAccount,
         headers: authHeaders,
+        fetch: fetchOverride,
     });
     // addressBook
-    const addressBookQuery$1 = defaultParam(addressBookQuery, { headers: authHeaders });
-    const addressBookMultiGet$1 = defaultParam(addressBookMultiGet, { headers: authHeaders });
+    const addressBookQuery$1 = defaultParam(addressBookQuery, {
+        headers: authHeaders,
+        fetch: fetchOverride,
+    });
+    const addressBookMultiGet$1 = defaultParam(addressBookMultiGet, {
+        headers: authHeaders,
+        fetch: fetchOverride,
+    });
     const fetchAddressBooks$1 = defaultParam(fetchAddressBooks, {
         account: defaultAccount,
         headers: authHeaders,
+        fetch: fetchOverride,
     });
-    const fetchVCards$1 = defaultParam(fetchVCards, { headers: authHeaders });
-    const createVCard$1 = defaultParam(createVCard, { headers: authHeaders });
-    const updateVCard$1 = defaultParam(updateVCard, { headers: authHeaders });
-    const deleteVCard$1 = defaultParam(deleteVCard, { headers: authHeaders });
+    const fetchVCards$1 = defaultParam(fetchVCards, {
+        headers: authHeaders,
+        fetch: fetchOverride,
+    });
+    const createVCard$1 = defaultParam(createVCard, {
+        headers: authHeaders,
+        fetch: fetchOverride,
+    });
+    const updateVCard$1 = defaultParam(updateVCard, {
+        headers: authHeaders,
+        fetch: fetchOverride,
+    });
+    const deleteVCard$1 = defaultParam(deleteVCard, {
+        headers: authHeaders,
+        fetch: fetchOverride,
+    });
     return {
         davRequest: davRequest$1,
         propfind: propfind$1,
@@ -1775,7 +1827,7 @@ class DAVClient {
             : undefined;
     }
     async davRequest(params0) {
-        const { init, ...rest } = params0;
+        const { init, fetch: fetchOverride2, ...rest } = params0;
         const { headers, ...restInit } = init;
         return davRequest({
             ...rest,
@@ -1787,6 +1839,7 @@ class DAVClient {
                 },
             },
             fetchOptions: this.fetchOptions,
+            fetch: fetchOverride2 !== null && fetchOverride2 !== void 0 ? fetchOverride2 : this.fetchOverride,
         });
     }
     async createObject(...params) {
@@ -1794,6 +1847,7 @@ class DAVClient {
             url: this.serverUrl,
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
     async updateObject(...params) {
@@ -1801,6 +1855,7 @@ class DAVClient {
             url: this.serverUrl,
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
     async deleteObject(...params) {
@@ -1808,58 +1863,67 @@ class DAVClient {
             url: this.serverUrl,
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
     async propfind(...params) {
         return defaultParam(propfind, {
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
     async createAccount(params0) {
-        const { account, headers, loadCollections, loadObjects, fetchOptions } = params0;
+        const { account, headers, loadCollections, loadObjects, fetchOptions, fetch } = params0;
         return createAccount({
             account: { serverUrl: this.serverUrl, credentials: this.credentials, ...account },
             headers: { ...this.authHeaders, ...headers },
             loadCollections,
             loadObjects,
             fetchOptions: fetchOptions !== null && fetchOptions !== void 0 ? fetchOptions : this.fetchOptions,
+            fetch: fetch !== null && fetch !== void 0 ? fetch : this.fetchOverride,
         });
     }
     async collectionQuery(...params) {
         return defaultParam(collectionQuery, {
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
     async makeCollection(...params) {
         return defaultParam(makeCollection, {
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
     async syncCollection(...params) {
         return defaultParam(syncCollection, {
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
     async supportedReportSet(...params) {
         return defaultParam(supportedReportSet, {
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
     async isCollectionDirty(...params) {
         return defaultParam(isCollectionDirty, {
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
     async smartCollectionSync(...params) {
         return defaultParam(smartCollectionSync, {
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
             account: this.account,
         })(params[0]);
     }
@@ -1867,18 +1931,21 @@ class DAVClient {
         return defaultParam(calendarQuery, {
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
     async makeCalendar(...params) {
         return defaultParam(makeCalendar, {
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
     async calendarMultiGet(...params) {
         return defaultParam(calendarMultiGet, {
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
     async fetchCalendars(...params) {
@@ -1886,6 +1953,7 @@ class DAVClient {
             headers: this.authHeaders,
             account: this.account,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params === null || params === void 0 ? void 0 : params[0]);
     }
     async fetchCalendarUserAddresses(...params) {
@@ -1893,30 +1961,35 @@ class DAVClient {
             headers: this.authHeaders,
             account: this.account,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params === null || params === void 0 ? void 0 : params[0]);
     }
     async fetchCalendarObjects(...params) {
         return defaultParam(fetchCalendarObjects, {
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
     async createCalendarObject(...params) {
         return defaultParam(createCalendarObject, {
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
     async updateCalendarObject(...params) {
         return defaultParam(updateCalendarObject, {
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
     async deleteCalendarObject(...params) {
         return defaultParam(deleteCalendarObject, {
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
     async syncCalendars(...params) {
@@ -1924,18 +1997,21 @@ class DAVClient {
             headers: this.authHeaders,
             account: this.account,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
     async addressBookQuery(...params) {
         return defaultParam(addressBookQuery, {
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
     async addressBookMultiGet(...params) {
         return defaultParam(addressBookMultiGet, {
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
     async fetchAddressBooks(...params) {
@@ -1943,30 +2019,35 @@ class DAVClient {
             headers: this.authHeaders,
             account: this.account,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params === null || params === void 0 ? void 0 : params[0]);
     }
     async fetchVCards(...params) {
         return defaultParam(fetchVCards, {
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
     async createVCard(...params) {
         return defaultParam(createVCard, {
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
     async updateVCard(...params) {
         return defaultParam(updateVCard, {
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
     async deleteVCard(...params) {
         return defaultParam(deleteVCard, {
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
 }
