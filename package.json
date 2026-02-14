@@ -1,6 +1,6 @@
 {
   "name": "tsdav",
-  "version": "2.1.7",
+  "version": "2.1.8",
   "description": "WebDAV, CALDAV, and CARDDAV client for Nodejs and the Browser",
   "keywords": [
     "dav",
@@ -32,6 +32,7 @@
   ],
   "scripts": {
     "build": "pnpm -s clean && rollup -c rollup.config.mjs && copyfiles package.json LICENSE README.md ./dist && rimraf ./dist/ts",
+    "lint": "eslint --ext .ts,.tsx src --ignore-pattern src/__tests__ --ignore-pattern src/util/__tests__",
     "clean": "rimraf dist*",
     "prepublishOnly": "pnpm build",
     "test": "jest --testPathPatterns=src/__tests__/unit",
@@ -65,7 +66,7 @@
     "copyfiles": "2.4.1",
     "cross-env": "10.1.0",
     "dotenv": "17.2.3",
-    "eslint": "9.39.2",
+    "eslint": "8.57.0",
     "eslint-config-airbnb": "19.0.4",
     "eslint-config-airbnb-typescript": "18.0.0",
     "eslint-config-prettier": "10.1.8",
@@ -85,6 +86,6 @@
     "typescript": "5.9.3"
   },
   "engines": {
-    "node": ">=10"
+    "node": ">=18"
   }
 }

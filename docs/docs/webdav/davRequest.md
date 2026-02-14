@@ -36,6 +36,7 @@ const [result] = await davRequest({
 - `convertIncoming` defaults to `true`, whether to convert the passed in init object request body, if `false`, davRequest would expect `init->body` is `xml` string, and would send it directly to target `url` without processing.
 - `parseOutgoing` defaults to `true`, whether to parse the return value in response body, if `false`, the response `raw` would be raw `xml` string returned from server.
 - `fetchOptions` options to pass to underlying fetch function
+- `fetch` custom fetch implementation to override the default `cross-fetch`
 
 ### Return Value
 

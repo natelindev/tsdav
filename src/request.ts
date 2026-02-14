@@ -1,10 +1,10 @@
-import { fetch } from 'cross-fetch';
 import getLogger from 'debug';
 import convert, { ElementCompact } from 'xml-js';
 
 import { DAVNamespace, DAVNamespaceShort } from './consts';
 import { DAVDepth, DAVRequest, DAVResponse } from './types/DAVTypes';
 import { camelCase } from './util/camelCase';
+import { fetch } from './util/fetch';
 import { nativeType } from './util/nativeType';
 import { cleanupFalsy, excludeHeaders, getDAVAttribute } from './util/requestHelpers';
 
@@ -26,8 +26,17 @@ export const davRequest = async (params: {
   convertIncoming?: boolean;
   parseOutgoing?: boolean;
   fetchOptions?: RequestInit;
+  fetch?: typeof fetch;
 }): Promise<DAVResponse[]> => {
-  const { url, init, convertIncoming = true, parseOutgoing = true, fetchOptions = {} } = params;
+  const {
+    url,
+    init,
+    convertIncoming = true,
+    parseOutgoing = true,
+    fetchOptions = {},
+    fetch: fetchOverride,
+  } = params;
+  const requestFetch = fetchOverride ?? fetch;
   const { headers = {}, body, namespace, method, attributes } = init;
   const xmlBody = convertIncoming
     ? convert.js2xml(
@@ -64,15 +73,15 @@ export const davRequest = async (params: {
   // );
   // debug(xmlBody);
   const fetchOptionsWithoutHeaders = {
-    ...fetchOptions
-  }
+    ...fetchOptions,
+  };
   delete fetchOptionsWithoutHeaders.headers;
 
-  const davResponse = await fetch(url, {
+  const davResponse = await requestFetch(url, {
     headers: {
       'Content-Type': 'text/xml;charset=UTF-8',
       ...cleanupFalsy(headers),
-      ...(fetchOptions.headers || {})
+      ...(fetchOptions.headers || {}),
     },
     body: xmlBody,
     method,
@@ -180,8 +189,17 @@ export const propfind = async (params: {
   headers?: Record<string, string>;
   headersToExclude?: string[];
   fetchOptions?: RequestInit;
+  fetch?: typeof fetch;
 }): Promise<DAVResponse[]> => {
-  const { url, props, depth, headers, headersToExclude, fetchOptions = {} } = params;
+  const {
+    url,
+    props,
+    depth,
+    headers,
+    headersToExclude,
+    fetchOptions = {},
+    fetch: fetchOverride,
+  } = params;
   return davRequest({
     url,
     init: {
@@ -202,6 +220,7 @@ export const propfind = async (params: {
       },
     },
     fetchOptions,
+    fetch: fetchOverride,
   });
 };
 
@@ -211,9 +230,11 @@ export const createObject = async (params: {
   headers?: Record<string, string>;
   headersToExclude?: string[];
   fetchOptions?: RequestInit;
+  fetch?: typeof fetch;
 }): Promise<Response> => {
-  const { url, data, headers, headersToExclude, fetchOptions = {} } = params;
-  return fetch(url, {
+  const { url, data, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
+  const requestFetch = fetchOverride ?? fetch;
+  return requestFetch(url, {
     method: 'PUT',
     body: data,
     headers: excludeHeaders(headers, headersToExclude),
@@ -228,9 +249,19 @@ export const updateObject = async (params: {
   headers?: Record<string, string>;
   headersToExclude?: string[];
   fetchOptions?: RequestInit;
+  fetch?: typeof fetch;
 }): Promise<Response> => {
-  const { url, data, etag, headers, headersToExclude, fetchOptions = {} } = params;
-  return fetch(url, {
+  const {
+    url,
+    data,
+    etag,
+    headers,
+    headersToExclude,
+    fetchOptions = {},
+    fetch: fetchOverride,
+  } = params;
+  const requestFetch = fetchOverride ?? fetch;
+  return requestFetch(url, {
     method: 'PUT',
     body: data,
     headers: excludeHeaders(cleanupFalsy({ 'If-Match': etag, ...headers }), headersToExclude),
@@ -244,9 +275,11 @@ export const deleteObject = async (params: {
   headers?: Record<string, string>;
   headersToExclude?: string[];
   fetchOptions?: RequestInit;
+  fetch?: typeof fetch;
 }): Promise<Response> => {
-  const { url, headers, etag, headersToExclude, fetchOptions = {} } = params;
-  return fetch(url, {
+  const { url, headers, etag, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
+  const requestFetch = fetchOverride ?? fetch;
+  return requestFetch(url, {
     method: 'DELETE',
     headers: excludeHeaders(cleanupFalsy({ 'If-Match': etag, ...headers }), headersToExclude),
     ...fetchOptions,

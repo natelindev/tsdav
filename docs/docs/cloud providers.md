@@ -24,9 +24,12 @@ Generate an app specific password just like apple, follow [this guide](https://w
 
 ##### Nextcloud
 
-Nextcloud supports CalDAV/CardDAV with Basic auth (username + app password). For browser
-clients, you may need to use a server-side proxy or trusted domain configuration to
-avoid CORS issues. A common server URL is:
+Nextcloud supports CalDAV/CardDAV with Basic auth (username + app password) and Bearer auth (OIDC tokens).
+
+- **Basic Auth:** Recommended for most use cases. Use your username and an app-specific password.
+- **Bearer Auth:** Supported if Nextcloud is configured with OIDC (e.g., via `user_oidc` app). Use `authMethod: 'Bearer'` and provide your access token in `credentials.accessToken`.
+
+For browser clients, you may need to use a server-side proxy or trusted domain configuration to avoid CORS issues. A common server URL is:
 
 `https://<your-nextcloud-host>/remote.php/dav`
 
@@ -62,3 +65,42 @@ Some cloud providers' APIs are not very standard, they might includes several qu
 ##### NextCloud
 
 1. Object deletion will result in original object be renamed rather than actual deletion. This can cause problems at times.
+
+### Platform Specifics
+
+#### KaiOS (mozSystem)
+
+KaiOS allows making cross-origin requests from privileged apps using `XMLHttpRequest` with `mozSystem: true`. You can use `tsdav` in KaiOS by providing a custom `fetch` implementation that wraps `XMLHttpRequest`.
+
+```typescript
+const kaiOSFetch = (url, init) => {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest({ mozSystem: true });
+    xhr.open(init.method || 'GET', url);
+    if (init.headers) {
+      Object.entries(init.headers).forEach(([key, value]) => {
+        xhr.setRequestHeader(key, value);
+      });
+    }
+    xhr.onload = () => {
+      resolve({
+        ok: xhr.status >= 200 && xhr.status < 300,
+        status: xhr.status,
+        statusText: xhr.statusText,
+        text: () => Promise.resolve(xhr.responseText),
+        headers: {
+          get: (name) => xhr.getResponseHeader(name),
+        },
+      });
+    };
+    xhr.onerror = () => reject(new Error('Network error'));
+    xhr.send(init.body);
+  });
+};
+
+const client = new DAVClient({
+  serverUrl: '...',
+  credentials: { ... },
+  fetch: kaiOSFetch as any,
+});
+```

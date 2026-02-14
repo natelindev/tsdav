@@ -33,704 +33,6 @@ function getAugmentedNamespace(n) {
 	return a;
 }
 
-var browserPonyfill = {exports: {}};
-
-var hasRequiredBrowserPonyfill;
-
-function requireBrowserPonyfill () {
-	if (hasRequiredBrowserPonyfill) return browserPonyfill.exports;
-	hasRequiredBrowserPonyfill = 1;
-	(function (module, exports$1) {
-		// Save global object in a variable
-		var __global__ =
-		(typeof globalThis !== 'undefined' && globalThis) ||
-		(typeof self !== 'undefined' && self) ||
-		(typeof commonjsGlobal !== 'undefined' && commonjsGlobal);
-		// Create an object that extends from __global__ without the fetch function
-		var __globalThis__ = (function () {
-		function F() {
-		this.fetch = false;
-		this.DOMException = __global__.DOMException;
-		}
-		F.prototype = __global__; // Needed for feature detection on whatwg-fetch's code
-		return new F();
-		})();
-		// Wraps whatwg-fetch with a function scope to hijack the global object
-		// "globalThis" that's going to be patched
-		(function(globalThis) {
-
-		((function (exports$1) {
-
-		  /* eslint-disable no-prototype-builtins */
-		  var g =
-		    (typeof globalThis !== 'undefined' && globalThis) ||
-		    (typeof self !== 'undefined' && self) ||
-		    // eslint-disable-next-line no-undef
-		    (typeof commonjsGlobal !== 'undefined' && commonjsGlobal) ||
-		    {};
-
-		  var support = {
-		    searchParams: 'URLSearchParams' in g,
-		    iterable: 'Symbol' in g && 'iterator' in Symbol,
-		    blob:
-		      'FileReader' in g &&
-		      'Blob' in g &&
-		      (function() {
-		        try {
-		          new Blob();
-		          return true
-		        } catch (e) {
-		          return false
-		        }
-		      })(),
-		    formData: 'FormData' in g,
-		    arrayBuffer: 'ArrayBuffer' in g
-		  };
-
-		  function isDataView(obj) {
-		    return obj && DataView.prototype.isPrototypeOf(obj)
-		  }
-
-		  if (support.arrayBuffer) {
-		    var viewClasses = [
-		      '[object Int8Array]',
-		      '[object Uint8Array]',
-		      '[object Uint8ClampedArray]',
-		      '[object Int16Array]',
-		      '[object Uint16Array]',
-		      '[object Int32Array]',
-		      '[object Uint32Array]',
-		      '[object Float32Array]',
-		      '[object Float64Array]'
-		    ];
-
-		    var isArrayBufferView =
-		      ArrayBuffer.isView ||
-		      function(obj) {
-		        return obj && viewClasses.indexOf(Object.prototype.toString.call(obj)) > -1
-		      };
-		  }
-
-		  function normalizeName(name) {
-		    if (typeof name !== 'string') {
-		      name = String(name);
-		    }
-		    if (/[^a-z0-9\-#$%&'*+.^_`|~!]/i.test(name) || name === '') {
-		      throw new TypeError('Invalid character in header field name: "' + name + '"')
-		    }
-		    return name.toLowerCase()
-		  }
-
-		  function normalizeValue(value) {
-		    if (typeof value !== 'string') {
-		      value = String(value);
-		    }
-		    return value
-		  }
-
-		  // Build a destructive iterator for the value list
-		  function iteratorFor(items) {
-		    var iterator = {
-		      next: function() {
-		        var value = items.shift();
-		        return {done: value === undefined, value: value}
-		      }
-		    };
-
-		    if (support.iterable) {
-		      iterator[Symbol.iterator] = function() {
-		        return iterator
-		      };
-		    }
-
-		    return iterator
-		  }
-
-		  function Headers(headers) {
-		    this.map = {};
-
-		    if (headers instanceof Headers) {
-		      headers.forEach(function(value, name) {
-		        this.append(name, value);
-		      }, this);
-		    } else if (Array.isArray(headers)) {
-		      headers.forEach(function(header) {
-		        if (header.length != 2) {
-		          throw new TypeError('Headers constructor: expected name/value pair to be length 2, found' + header.length)
-		        }
-		        this.append(header[0], header[1]);
-		      }, this);
-		    } else if (headers) {
-		      Object.getOwnPropertyNames(headers).forEach(function(name) {
-		        this.append(name, headers[name]);
-		      }, this);
-		    }
-		  }
-
-		  Headers.prototype.append = function(name, value) {
-		    name = normalizeName(name);
-		    value = normalizeValue(value);
-		    var oldValue = this.map[name];
-		    this.map[name] = oldValue ? oldValue + ', ' + value : value;
-		  };
-
-		  Headers.prototype['delete'] = function(name) {
-		    delete this.map[normalizeName(name)];
-		  };
-
-		  Headers.prototype.get = function(name) {
-		    name = normalizeName(name);
-		    return this.has(name) ? this.map[name] : null
-		  };
-
-		  Headers.prototype.has = function(name) {
-		    return this.map.hasOwnProperty(normalizeName(name))
-		  };
-
-		  Headers.prototype.set = function(name, value) {
-		    this.map[normalizeName(name)] = normalizeValue(value);
-		  };
-
-		  Headers.prototype.forEach = function(callback, thisArg) {
-		    for (var name in this.map) {
-		      if (this.map.hasOwnProperty(name)) {
-		        callback.call(thisArg, this.map[name], name, this);
-		      }
-		    }
-		  };
-
-		  Headers.prototype.keys = function() {
-		    var items = [];
-		    this.forEach(function(value, name) {
-		      items.push(name);
-		    });
-		    return iteratorFor(items)
-		  };
-
-		  Headers.prototype.values = function() {
-		    var items = [];
-		    this.forEach(function(value) {
-		      items.push(value);
-		    });
-		    return iteratorFor(items)
-		  };
-
-		  Headers.prototype.entries = function() {
-		    var items = [];
-		    this.forEach(function(value, name) {
-		      items.push([name, value]);
-		    });
-		    return iteratorFor(items)
-		  };
-
-		  if (support.iterable) {
-		    Headers.prototype[Symbol.iterator] = Headers.prototype.entries;
-		  }
-
-		  function consumed(body) {
-		    if (body._noBody) return
-		    if (body.bodyUsed) {
-		      return Promise.reject(new TypeError('Already read'))
-		    }
-		    body.bodyUsed = true;
-		  }
-
-		  function fileReaderReady(reader) {
-		    return new Promise(function(resolve, reject) {
-		      reader.onload = function() {
-		        resolve(reader.result);
-		      };
-		      reader.onerror = function() {
-		        reject(reader.error);
-		      };
-		    })
-		  }
-
-		  function readBlobAsArrayBuffer(blob) {
-		    var reader = new FileReader();
-		    var promise = fileReaderReady(reader);
-		    reader.readAsArrayBuffer(blob);
-		    return promise
-		  }
-
-		  function readBlobAsText(blob) {
-		    var reader = new FileReader();
-		    var promise = fileReaderReady(reader);
-		    var match = /charset=([A-Za-z0-9_-]+)/.exec(blob.type);
-		    var encoding = match ? match[1] : 'utf-8';
-		    reader.readAsText(blob, encoding);
-		    return promise
-		  }
-
-		  function readArrayBufferAsText(buf) {
-		    var view = new Uint8Array(buf);
-		    var chars = new Array(view.length);
-
-		    for (var i = 0; i < view.length; i++) {
-		      chars[i] = String.fromCharCode(view[i]);
-		    }
-		    return chars.join('')
-		  }
-
-		  function bufferClone(buf) {
-		    if (buf.slice) {
-		      return buf.slice(0)
-		    } else {
-		      var view = new Uint8Array(buf.byteLength);
-		      view.set(new Uint8Array(buf));
-		      return view.buffer
-		    }
-		  }
-
-		  function Body() {
-		    this.bodyUsed = false;
-
-		    this._initBody = function(body) {
-		      /*
-		        fetch-mock wraps the Response object in an ES6 Proxy to
-		        provide useful test harness features such as flush. However, on
-		        ES5 browsers without fetch or Proxy support pollyfills must be used;
-		        the proxy-pollyfill is unable to proxy an attribute unless it exists
-		        on the object before the Proxy is created. This change ensures
-		        Response.bodyUsed exists on the instance, while maintaining the
-		        semantic of setting Request.bodyUsed in the constructor before
-		        _initBody is called.
-		      */
-		      // eslint-disable-next-line no-self-assign
-		      this.bodyUsed = this.bodyUsed;
-		      this._bodyInit = body;
-		      if (!body) {
-		        this._noBody = true;
-		        this._bodyText = '';
-		      } else if (typeof body === 'string') {
-		        this._bodyText = body;
-		      } else if (support.blob && Blob.prototype.isPrototypeOf(body)) {
-		        this._bodyBlob = body;
-		      } else if (support.formData && FormData.prototype.isPrototypeOf(body)) {
-		        this._bodyFormData = body;
-		      } else if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body)) {
-		        this._bodyText = body.toString();
-		      } else if (support.arrayBuffer && support.blob && isDataView(body)) {
-		        this._bodyArrayBuffer = bufferClone(body.buffer);
-		        // IE 10-11 can't handle a DataView body.
-		        this._bodyInit = new Blob([this._bodyArrayBuffer]);
-		      } else if (support.arrayBuffer && (ArrayBuffer.prototype.isPrototypeOf(body) || isArrayBufferView(body))) {
-		        this._bodyArrayBuffer = bufferClone(body);
-		      } else {
-		        this._bodyText = body = Object.prototype.toString.call(body);
-		      }
-
-		      if (!this.headers.get('content-type')) {
-		        if (typeof body === 'string') {
-		          this.headers.set('content-type', 'text/plain;charset=UTF-8');
-		        } else if (this._bodyBlob && this._bodyBlob.type) {
-		          this.headers.set('content-type', this._bodyBlob.type);
-		        } else if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body)) {
-		          this.headers.set('content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
-		        }
-		      }
-		    };
-
-		    if (support.blob) {
-		      this.blob = function() {
-		        var rejected = consumed(this);
-		        if (rejected) {
-		          return rejected
-		        }
-
-		        if (this._bodyBlob) {
-		          return Promise.resolve(this._bodyBlob)
-		        } else if (this._bodyArrayBuffer) {
-		          return Promise.resolve(new Blob([this._bodyArrayBuffer]))
-		        } else if (this._bodyFormData) {
-		          throw new Error('could not read FormData body as blob')
-		        } else {
-		          return Promise.resolve(new Blob([this._bodyText]))
-		        }
-		      };
-		    }
-
-		    this.arrayBuffer = function() {
-		      if (this._bodyArrayBuffer) {
-		        var isConsumed = consumed(this);
-		        if (isConsumed) {
-		          return isConsumed
-		        } else if (ArrayBuffer.isView(this._bodyArrayBuffer)) {
-		          return Promise.resolve(
-		            this._bodyArrayBuffer.buffer.slice(
-		              this._bodyArrayBuffer.byteOffset,
-		              this._bodyArrayBuffer.byteOffset + this._bodyArrayBuffer.byteLength
-		            )
-		          )
-		        } else {
-		          return Promise.resolve(this._bodyArrayBuffer)
-		        }
-		      } else if (support.blob) {
-		        return this.blob().then(readBlobAsArrayBuffer)
-		      } else {
-		        throw new Error('could not read as ArrayBuffer')
-		      }
-		    };
-
-		    this.text = function() {
-		      var rejected = consumed(this);
-		      if (rejected) {
-		        return rejected
-		      }
-
-		      if (this._bodyBlob) {
-		        return readBlobAsText(this._bodyBlob)
-		      } else if (this._bodyArrayBuffer) {
-		        return Promise.resolve(readArrayBufferAsText(this._bodyArrayBuffer))
-		      } else if (this._bodyFormData) {
-		        throw new Error('could not read FormData body as text')
-		      } else {
-		        return Promise.resolve(this._bodyText)
-		      }
-		    };
-
-		    if (support.formData) {
-		      this.formData = function() {
-		        return this.text().then(decode)
-		      };
-		    }
-
-		    this.json = function() {
-		      return this.text().then(JSON.parse)
-		    };
-
-		    return this
-		  }
-
-		  // HTTP methods whose capitalization should be normalized
-		  var methods = ['CONNECT', 'DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE'];
-
-		  function normalizeMethod(method) {
-		    var upcased = method.toUpperCase();
-		    return methods.indexOf(upcased) > -1 ? upcased : method
-		  }
-
-		  function Request(input, options) {
-		    if (!(this instanceof Request)) {
-		      throw new TypeError('Please use the "new" operator, this DOM object constructor cannot be called as a function.')
-		    }
-
-		    options = options || {};
-		    var body = options.body;
-
-		    if (input instanceof Request) {
-		      if (input.bodyUsed) {
-		        throw new TypeError('Already read')
-		      }
-		      this.url = input.url;
-		      this.credentials = input.credentials;
-		      if (!options.headers) {
-		        this.headers = new Headers(input.headers);
-		      }
-		      this.method = input.method;
-		      this.mode = input.mode;
-		      this.signal = input.signal;
-		      if (!body && input._bodyInit != null) {
-		        body = input._bodyInit;
-		        input.bodyUsed = true;
-		      }
-		    } else {
-		      this.url = String(input);
-		    }
-
-		    this.credentials = options.credentials || this.credentials || 'same-origin';
-		    if (options.headers || !this.headers) {
-		      this.headers = new Headers(options.headers);
-		    }
-		    this.method = normalizeMethod(options.method || this.method || 'GET');
-		    this.mode = options.mode || this.mode || null;
-		    this.signal = options.signal || this.signal || (function () {
-		      if ('AbortController' in g) {
-		        var ctrl = new AbortController();
-		        return ctrl.signal;
-		      }
-		    }());
-		    this.referrer = null;
-
-		    if ((this.method === 'GET' || this.method === 'HEAD') && body) {
-		      throw new TypeError('Body not allowed for GET or HEAD requests')
-		    }
-		    this._initBody(body);
-
-		    if (this.method === 'GET' || this.method === 'HEAD') {
-		      if (options.cache === 'no-store' || options.cache === 'no-cache') {
-		        // Search for a '_' parameter in the query string
-		        var reParamSearch = /([?&])_=[^&]*/;
-		        if (reParamSearch.test(this.url)) {
-		          // If it already exists then set the value with the current time
-		          this.url = this.url.replace(reParamSearch, '$1_=' + new Date().getTime());
-		        } else {
-		          // Otherwise add a new '_' parameter to the end with the current time
-		          var reQueryString = /\?/;
-		          this.url += (reQueryString.test(this.url) ? '&' : '?') + '_=' + new Date().getTime();
-		        }
-		      }
-		    }
-		  }
-
-		  Request.prototype.clone = function() {
-		    return new Request(this, {body: this._bodyInit})
-		  };
-
-		  function decode(body) {
-		    var form = new FormData();
-		    body
-		      .trim()
-		      .split('&')
-		      .forEach(function(bytes) {
-		        if (bytes) {
-		          var split = bytes.split('=');
-		          var name = split.shift().replace(/\+/g, ' ');
-		          var value = split.join('=').replace(/\+/g, ' ');
-		          form.append(decodeURIComponent(name), decodeURIComponent(value));
-		        }
-		      });
-		    return form
-		  }
-
-		  function parseHeaders(rawHeaders) {
-		    var headers = new Headers();
-		    // Replace instances of \r\n and \n followed by at least one space or horizontal tab with a space
-		    // https://tools.ietf.org/html/rfc7230#section-3.2
-		    var preProcessedHeaders = rawHeaders.replace(/\r?\n[\t ]+/g, ' ');
-		    // Avoiding split via regex to work around a common IE11 bug with the core-js 3.6.0 regex polyfill
-		    // https://github.com/github/fetch/issues/748
-		    // https://github.com/zloirock/core-js/issues/751
-		    preProcessedHeaders
-		      .split('\r')
-		      .map(function(header) {
-		        return header.indexOf('\n') === 0 ? header.substr(1, header.length) : header
-		      })
-		      .forEach(function(line) {
-		        var parts = line.split(':');
-		        var key = parts.shift().trim();
-		        if (key) {
-		          var value = parts.join(':').trim();
-		          try {
-		            headers.append(key, value);
-		          } catch (error) {
-		            console.warn('Response ' + error.message);
-		          }
-		        }
-		      });
-		    return headers
-		  }
-
-		  Body.call(Request.prototype);
-
-		  function Response(bodyInit, options) {
-		    if (!(this instanceof Response)) {
-		      throw new TypeError('Please use the "new" operator, this DOM object constructor cannot be called as a function.')
-		    }
-		    if (!options) {
-		      options = {};
-		    }
-
-		    this.type = 'default';
-		    this.status = options.status === undefined ? 200 : options.status;
-		    if (this.status < 200 || this.status > 599) {
-		      throw new RangeError("Failed to construct 'Response': The status provided (0) is outside the range [200, 599].")
-		    }
-		    this.ok = this.status >= 200 && this.status < 300;
-		    this.statusText = options.statusText === undefined ? '' : '' + options.statusText;
-		    this.headers = new Headers(options.headers);
-		    this.url = options.url || '';
-		    this._initBody(bodyInit);
-		  }
-
-		  Body.call(Response.prototype);
-
-		  Response.prototype.clone = function() {
-		    return new Response(this._bodyInit, {
-		      status: this.status,
-		      statusText: this.statusText,
-		      headers: new Headers(this.headers),
-		      url: this.url
-		    })
-		  };
-
-		  Response.error = function() {
-		    var response = new Response(null, {status: 200, statusText: ''});
-		    response.ok = false;
-		    response.status = 0;
-		    response.type = 'error';
-		    return response
-		  };
-
-		  var redirectStatuses = [301, 302, 303, 307, 308];
-
-		  Response.redirect = function(url, status) {
-		    if (redirectStatuses.indexOf(status) === -1) {
-		      throw new RangeError('Invalid status code')
-		    }
-
-		    return new Response(null, {status: status, headers: {location: url}})
-		  };
-
-		  exports$1.DOMException = g.DOMException;
-		  try {
-		    new exports$1.DOMException();
-		  } catch (err) {
-		    exports$1.DOMException = function(message, name) {
-		      this.message = message;
-		      this.name = name;
-		      var error = Error(message);
-		      this.stack = error.stack;
-		    };
-		    exports$1.DOMException.prototype = Object.create(Error.prototype);
-		    exports$1.DOMException.prototype.constructor = exports$1.DOMException;
-		  }
-
-		  function fetch(input, init) {
-		    return new Promise(function(resolve, reject) {
-		      var request = new Request(input, init);
-
-		      if (request.signal && request.signal.aborted) {
-		        return reject(new exports$1.DOMException('Aborted', 'AbortError'))
-		      }
-
-		      var xhr = new XMLHttpRequest();
-
-		      function abortXhr() {
-		        xhr.abort();
-		      }
-
-		      xhr.onload = function() {
-		        var options = {
-		          statusText: xhr.statusText,
-		          headers: parseHeaders(xhr.getAllResponseHeaders() || '')
-		        };
-		        // This check if specifically for when a user fetches a file locally from the file system
-		        // Only if the status is out of a normal range
-		        if (request.url.indexOf('file://') === 0 && (xhr.status < 200 || xhr.status > 599)) {
-		          options.status = 200;
-		        } else {
-		          options.status = xhr.status;
-		        }
-		        options.url = 'responseURL' in xhr ? xhr.responseURL : options.headers.get('X-Request-URL');
-		        var body = 'response' in xhr ? xhr.response : xhr.responseText;
-		        setTimeout(function() {
-		          resolve(new Response(body, options));
-		        }, 0);
-		      };
-
-		      xhr.onerror = function() {
-		        setTimeout(function() {
-		          reject(new TypeError('Network request failed'));
-		        }, 0);
-		      };
-
-		      xhr.ontimeout = function() {
-		        setTimeout(function() {
-		          reject(new TypeError('Network request timed out'));
-		        }, 0);
-		      };
-
-		      xhr.onabort = function() {
-		        setTimeout(function() {
-		          reject(new exports$1.DOMException('Aborted', 'AbortError'));
-		        }, 0);
-		      };
-
-		      function fixUrl(url) {
-		        try {
-		          return url === '' && g.location.href ? g.location.href : url
-		        } catch (e) {
-		          return url
-		        }
-		      }
-
-		      xhr.open(request.method, fixUrl(request.url), true);
-
-		      if (request.credentials === 'include') {
-		        xhr.withCredentials = true;
-		      } else if (request.credentials === 'omit') {
-		        xhr.withCredentials = false;
-		      }
-
-		      if ('responseType' in xhr) {
-		        if (support.blob) {
-		          xhr.responseType = 'blob';
-		        } else if (
-		          support.arrayBuffer
-		        ) {
-		          xhr.responseType = 'arraybuffer';
-		        }
-		      }
-
-		      if (init && typeof init.headers === 'object' && !(init.headers instanceof Headers || (g.Headers && init.headers instanceof g.Headers))) {
-		        var names = [];
-		        Object.getOwnPropertyNames(init.headers).forEach(function(name) {
-		          names.push(normalizeName(name));
-		          xhr.setRequestHeader(name, normalizeValue(init.headers[name]));
-		        });
-		        request.headers.forEach(function(value, name) {
-		          if (names.indexOf(name) === -1) {
-		            xhr.setRequestHeader(name, value);
-		          }
-		        });
-		      } else {
-		        request.headers.forEach(function(value, name) {
-		          xhr.setRequestHeader(name, value);
-		        });
-		      }
-
-		      if (request.signal) {
-		        request.signal.addEventListener('abort', abortXhr);
-
-		        xhr.onreadystatechange = function() {
-		          // DONE (success or failure)
-		          if (xhr.readyState === 4) {
-		            request.signal.removeEventListener('abort', abortXhr);
-		          }
-		        };
-		      }
-
-		      xhr.send(typeof request._bodyInit === 'undefined' ? null : request._bodyInit);
-		    })
-		  }
-
-		  fetch.polyfill = true;
-
-		  if (!g.fetch) {
-		    g.fetch = fetch;
-		    g.Headers = Headers;
-		    g.Request = Request;
-		    g.Response = Response;
-		  }
-
-		  exports$1.Headers = Headers;
-		  exports$1.Request = Request;
-		  exports$1.Response = Response;
-		  exports$1.fetch = fetch;
-
-		  return exports$1;
-
-		}))({});
-		})(__globalThis__);
-		// This is a ponyfill, so...
-		__globalThis__.fetch.ponyfill = true;
-		delete __globalThis__.fetch.polyfill;
-		// Choose between native implementation (__global__) or custom implementation (__globalThis__)
-		var ctx = __global__.fetch ? __global__ : __globalThis__;
-		exports$1 = ctx.fetch; // To enable: import fetch from 'cross-fetch'
-		exports$1.default = ctx.fetch; // For TypeScript consumers without esModuleInterop.
-		exports$1.fetch = ctx.fetch; // To enable: import {fetch} from 'cross-fetch'
-		exports$1.Headers = ctx.Headers;
-		exports$1.Request = ctx.Request;
-		exports$1.Response = ctx.Response;
-		module.exports = exports$1; 
-	} (browserPonyfill, browserPonyfill.exports));
-	return browserPonyfill.exports;
-}
-
-var browserPonyfillExports = requireBrowserPonyfill();
-
 var global$1 = (typeof global !== "undefined" ? global :
   typeof self !== "undefined" ? self :
   typeof window !== "undefined" ? window : {});
@@ -9231,6 +8533,718 @@ var convert = /*@__PURE__*/getDefaultExportFromCjs(libExports);
 
 const camelCase = (str) => str.replace(/([-_]\w)/g, (g) => g[1].toUpperCase());
 
+var browserPonyfill = {exports: {}};
+
+var hasRequiredBrowserPonyfill;
+
+function requireBrowserPonyfill () {
+	if (hasRequiredBrowserPonyfill) return browserPonyfill.exports;
+	hasRequiredBrowserPonyfill = 1;
+	(function (module, exports$1) {
+		// Save global object in a variable
+		var __global__ =
+		(typeof globalThis !== 'undefined' && globalThis) ||
+		(typeof self !== 'undefined' && self) ||
+		(typeof commonjsGlobal !== 'undefined' && commonjsGlobal);
+		// Create an object that extends from __global__ without the fetch function
+		var __globalThis__ = (function () {
+		function F() {
+		this.fetch = false;
+		this.DOMException = __global__.DOMException;
+		}
+		F.prototype = __global__; // Needed for feature detection on whatwg-fetch's code
+		return new F();
+		})();
+		// Wraps whatwg-fetch with a function scope to hijack the global object
+		// "globalThis" that's going to be patched
+		(function(globalThis) {
+
+		((function (exports$1) {
+
+		  /* eslint-disable no-prototype-builtins */
+		  var g =
+		    (typeof globalThis !== 'undefined' && globalThis) ||
+		    (typeof self !== 'undefined' && self) ||
+		    // eslint-disable-next-line no-undef
+		    (typeof commonjsGlobal !== 'undefined' && commonjsGlobal) ||
+		    {};
+
+		  var support = {
+		    searchParams: 'URLSearchParams' in g,
+		    iterable: 'Symbol' in g && 'iterator' in Symbol,
+		    blob:
+		      'FileReader' in g &&
+		      'Blob' in g &&
+		      (function() {
+		        try {
+		          new Blob();
+		          return true
+		        } catch (e) {
+		          return false
+		        }
+		      })(),
+		    formData: 'FormData' in g,
+		    arrayBuffer: 'ArrayBuffer' in g
+		  };
+
+		  function isDataView(obj) {
+		    return obj && DataView.prototype.isPrototypeOf(obj)
+		  }
+
+		  if (support.arrayBuffer) {
+		    var viewClasses = [
+		      '[object Int8Array]',
+		      '[object Uint8Array]',
+		      '[object Uint8ClampedArray]',
+		      '[object Int16Array]',
+		      '[object Uint16Array]',
+		      '[object Int32Array]',
+		      '[object Uint32Array]',
+		      '[object Float32Array]',
+		      '[object Float64Array]'
+		    ];
+
+		    var isArrayBufferView =
+		      ArrayBuffer.isView ||
+		      function(obj) {
+		        return obj && viewClasses.indexOf(Object.prototype.toString.call(obj)) > -1
+		      };
+		  }
+
+		  function normalizeName(name) {
+		    if (typeof name !== 'string') {
+		      name = String(name);
+		    }
+		    if (/[^a-z0-9\-#$%&'*+.^_`|~!]/i.test(name) || name === '') {
+		      throw new TypeError('Invalid character in header field name: "' + name + '"')
+		    }
+		    return name.toLowerCase()
+		  }
+
+		  function normalizeValue(value) {
+		    if (typeof value !== 'string') {
+		      value = String(value);
+		    }
+		    return value
+		  }
+
+		  // Build a destructive iterator for the value list
+		  function iteratorFor(items) {
+		    var iterator = {
+		      next: function() {
+		        var value = items.shift();
+		        return {done: value === undefined, value: value}
+		      }
+		    };
+
+		    if (support.iterable) {
+		      iterator[Symbol.iterator] = function() {
+		        return iterator
+		      };
+		    }
+
+		    return iterator
+		  }
+
+		  function Headers(headers) {
+		    this.map = {};
+
+		    if (headers instanceof Headers) {
+		      headers.forEach(function(value, name) {
+		        this.append(name, value);
+		      }, this);
+		    } else if (Array.isArray(headers)) {
+		      headers.forEach(function(header) {
+		        if (header.length != 2) {
+		          throw new TypeError('Headers constructor: expected name/value pair to be length 2, found' + header.length)
+		        }
+		        this.append(header[0], header[1]);
+		      }, this);
+		    } else if (headers) {
+		      Object.getOwnPropertyNames(headers).forEach(function(name) {
+		        this.append(name, headers[name]);
+		      }, this);
+		    }
+		  }
+
+		  Headers.prototype.append = function(name, value) {
+		    name = normalizeName(name);
+		    value = normalizeValue(value);
+		    var oldValue = this.map[name];
+		    this.map[name] = oldValue ? oldValue + ', ' + value : value;
+		  };
+
+		  Headers.prototype['delete'] = function(name) {
+		    delete this.map[normalizeName(name)];
+		  };
+
+		  Headers.prototype.get = function(name) {
+		    name = normalizeName(name);
+		    return this.has(name) ? this.map[name] : null
+		  };
+
+		  Headers.prototype.has = function(name) {
+		    return this.map.hasOwnProperty(normalizeName(name))
+		  };
+
+		  Headers.prototype.set = function(name, value) {
+		    this.map[normalizeName(name)] = normalizeValue(value);
+		  };
+
+		  Headers.prototype.forEach = function(callback, thisArg) {
+		    for (var name in this.map) {
+		      if (this.map.hasOwnProperty(name)) {
+		        callback.call(thisArg, this.map[name], name, this);
+		      }
+		    }
+		  };
+
+		  Headers.prototype.keys = function() {
+		    var items = [];
+		    this.forEach(function(value, name) {
+		      items.push(name);
+		    });
+		    return iteratorFor(items)
+		  };
+
+		  Headers.prototype.values = function() {
+		    var items = [];
+		    this.forEach(function(value) {
+		      items.push(value);
+		    });
+		    return iteratorFor(items)
+		  };
+
+		  Headers.prototype.entries = function() {
+		    var items = [];
+		    this.forEach(function(value, name) {
+		      items.push([name, value]);
+		    });
+		    return iteratorFor(items)
+		  };
+
+		  if (support.iterable) {
+		    Headers.prototype[Symbol.iterator] = Headers.prototype.entries;
+		  }
+
+		  function consumed(body) {
+		    if (body._noBody) return
+		    if (body.bodyUsed) {
+		      return Promise.reject(new TypeError('Already read'))
+		    }
+		    body.bodyUsed = true;
+		  }
+
+		  function fileReaderReady(reader) {
+		    return new Promise(function(resolve, reject) {
+		      reader.onload = function() {
+		        resolve(reader.result);
+		      };
+		      reader.onerror = function() {
+		        reject(reader.error);
+		      };
+		    })
+		  }
+
+		  function readBlobAsArrayBuffer(blob) {
+		    var reader = new FileReader();
+		    var promise = fileReaderReady(reader);
+		    reader.readAsArrayBuffer(blob);
+		    return promise
+		  }
+
+		  function readBlobAsText(blob) {
+		    var reader = new FileReader();
+		    var promise = fileReaderReady(reader);
+		    var match = /charset=([A-Za-z0-9_-]+)/.exec(blob.type);
+		    var encoding = match ? match[1] : 'utf-8';
+		    reader.readAsText(blob, encoding);
+		    return promise
+		  }
+
+		  function readArrayBufferAsText(buf) {
+		    var view = new Uint8Array(buf);
+		    var chars = new Array(view.length);
+
+		    for (var i = 0; i < view.length; i++) {
+		      chars[i] = String.fromCharCode(view[i]);
+		    }
+		    return chars.join('')
+		  }
+
+		  function bufferClone(buf) {
+		    if (buf.slice) {
+		      return buf.slice(0)
+		    } else {
+		      var view = new Uint8Array(buf.byteLength);
+		      view.set(new Uint8Array(buf));
+		      return view.buffer
+		    }
+		  }
+
+		  function Body() {
+		    this.bodyUsed = false;
+
+		    this._initBody = function(body) {
+		      /*
+		        fetch-mock wraps the Response object in an ES6 Proxy to
+		        provide useful test harness features such as flush. However, on
+		        ES5 browsers without fetch or Proxy support pollyfills must be used;
+		        the proxy-pollyfill is unable to proxy an attribute unless it exists
+		        on the object before the Proxy is created. This change ensures
+		        Response.bodyUsed exists on the instance, while maintaining the
+		        semantic of setting Request.bodyUsed in the constructor before
+		        _initBody is called.
+		      */
+		      // eslint-disable-next-line no-self-assign
+		      this.bodyUsed = this.bodyUsed;
+		      this._bodyInit = body;
+		      if (!body) {
+		        this._noBody = true;
+		        this._bodyText = '';
+		      } else if (typeof body === 'string') {
+		        this._bodyText = body;
+		      } else if (support.blob && Blob.prototype.isPrototypeOf(body)) {
+		        this._bodyBlob = body;
+		      } else if (support.formData && FormData.prototype.isPrototypeOf(body)) {
+		        this._bodyFormData = body;
+		      } else if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body)) {
+		        this._bodyText = body.toString();
+		      } else if (support.arrayBuffer && support.blob && isDataView(body)) {
+		        this._bodyArrayBuffer = bufferClone(body.buffer);
+		        // IE 10-11 can't handle a DataView body.
+		        this._bodyInit = new Blob([this._bodyArrayBuffer]);
+		      } else if (support.arrayBuffer && (ArrayBuffer.prototype.isPrototypeOf(body) || isArrayBufferView(body))) {
+		        this._bodyArrayBuffer = bufferClone(body);
+		      } else {
+		        this._bodyText = body = Object.prototype.toString.call(body);
+		      }
+
+		      if (!this.headers.get('content-type')) {
+		        if (typeof body === 'string') {
+		          this.headers.set('content-type', 'text/plain;charset=UTF-8');
+		        } else if (this._bodyBlob && this._bodyBlob.type) {
+		          this.headers.set('content-type', this._bodyBlob.type);
+		        } else if (support.searchParams && URLSearchParams.prototype.isPrototypeOf(body)) {
+		          this.headers.set('content-type', 'application/x-www-form-urlencoded;charset=UTF-8');
+		        }
+		      }
+		    };
+
+		    if (support.blob) {
+		      this.blob = function() {
+		        var rejected = consumed(this);
+		        if (rejected) {
+		          return rejected
+		        }
+
+		        if (this._bodyBlob) {
+		          return Promise.resolve(this._bodyBlob)
+		        } else if (this._bodyArrayBuffer) {
+		          return Promise.resolve(new Blob([this._bodyArrayBuffer]))
+		        } else if (this._bodyFormData) {
+		          throw new Error('could not read FormData body as blob')
+		        } else {
+		          return Promise.resolve(new Blob([this._bodyText]))
+		        }
+		      };
+		    }
+
+		    this.arrayBuffer = function() {
+		      if (this._bodyArrayBuffer) {
+		        var isConsumed = consumed(this);
+		        if (isConsumed) {
+		          return isConsumed
+		        } else if (ArrayBuffer.isView(this._bodyArrayBuffer)) {
+		          return Promise.resolve(
+		            this._bodyArrayBuffer.buffer.slice(
+		              this._bodyArrayBuffer.byteOffset,
+		              this._bodyArrayBuffer.byteOffset + this._bodyArrayBuffer.byteLength
+		            )
+		          )
+		        } else {
+		          return Promise.resolve(this._bodyArrayBuffer)
+		        }
+		      } else if (support.blob) {
+		        return this.blob().then(readBlobAsArrayBuffer)
+		      } else {
+		        throw new Error('could not read as ArrayBuffer')
+		      }
+		    };
+
+		    this.text = function() {
+		      var rejected = consumed(this);
+		      if (rejected) {
+		        return rejected
+		      }
+
+		      if (this._bodyBlob) {
+		        return readBlobAsText(this._bodyBlob)
+		      } else if (this._bodyArrayBuffer) {
+		        return Promise.resolve(readArrayBufferAsText(this._bodyArrayBuffer))
+		      } else if (this._bodyFormData) {
+		        throw new Error('could not read FormData body as text')
+		      } else {
+		        return Promise.resolve(this._bodyText)
+		      }
+		    };
+
+		    if (support.formData) {
+		      this.formData = function() {
+		        return this.text().then(decode)
+		      };
+		    }
+
+		    this.json = function() {
+		      return this.text().then(JSON.parse)
+		    };
+
+		    return this
+		  }
+
+		  // HTTP methods whose capitalization should be normalized
+		  var methods = ['CONNECT', 'DELETE', 'GET', 'HEAD', 'OPTIONS', 'PATCH', 'POST', 'PUT', 'TRACE'];
+
+		  function normalizeMethod(method) {
+		    var upcased = method.toUpperCase();
+		    return methods.indexOf(upcased) > -1 ? upcased : method
+		  }
+
+		  function Request(input, options) {
+		    if (!(this instanceof Request)) {
+		      throw new TypeError('Please use the "new" operator, this DOM object constructor cannot be called as a function.')
+		    }
+
+		    options = options || {};
+		    var body = options.body;
+
+		    if (input instanceof Request) {
+		      if (input.bodyUsed) {
+		        throw new TypeError('Already read')
+		      }
+		      this.url = input.url;
+		      this.credentials = input.credentials;
+		      if (!options.headers) {
+		        this.headers = new Headers(input.headers);
+		      }
+		      this.method = input.method;
+		      this.mode = input.mode;
+		      this.signal = input.signal;
+		      if (!body && input._bodyInit != null) {
+		        body = input._bodyInit;
+		        input.bodyUsed = true;
+		      }
+		    } else {
+		      this.url = String(input);
+		    }
+
+		    this.credentials = options.credentials || this.credentials || 'same-origin';
+		    if (options.headers || !this.headers) {
+		      this.headers = new Headers(options.headers);
+		    }
+		    this.method = normalizeMethod(options.method || this.method || 'GET');
+		    this.mode = options.mode || this.mode || null;
+		    this.signal = options.signal || this.signal || (function () {
+		      if ('AbortController' in g) {
+		        var ctrl = new AbortController();
+		        return ctrl.signal;
+		      }
+		    }());
+		    this.referrer = null;
+
+		    if ((this.method === 'GET' || this.method === 'HEAD') && body) {
+		      throw new TypeError('Body not allowed for GET or HEAD requests')
+		    }
+		    this._initBody(body);
+
+		    if (this.method === 'GET' || this.method === 'HEAD') {
+		      if (options.cache === 'no-store' || options.cache === 'no-cache') {
+		        // Search for a '_' parameter in the query string
+		        var reParamSearch = /([?&])_=[^&]*/;
+		        if (reParamSearch.test(this.url)) {
+		          // If it already exists then set the value with the current time
+		          this.url = this.url.replace(reParamSearch, '$1_=' + new Date().getTime());
+		        } else {
+		          // Otherwise add a new '_' parameter to the end with the current time
+		          var reQueryString = /\?/;
+		          this.url += (reQueryString.test(this.url) ? '&' : '?') + '_=' + new Date().getTime();
+		        }
+		      }
+		    }
+		  }
+
+		  Request.prototype.clone = function() {
+		    return new Request(this, {body: this._bodyInit})
+		  };
+
+		  function decode(body) {
+		    var form = new FormData();
+		    body
+		      .trim()
+		      .split('&')
+		      .forEach(function(bytes) {
+		        if (bytes) {
+		          var split = bytes.split('=');
+		          var name = split.shift().replace(/\+/g, ' ');
+		          var value = split.join('=').replace(/\+/g, ' ');
+		          form.append(decodeURIComponent(name), decodeURIComponent(value));
+		        }
+		      });
+		    return form
+		  }
+
+		  function parseHeaders(rawHeaders) {
+		    var headers = new Headers();
+		    // Replace instances of \r\n and \n followed by at least one space or horizontal tab with a space
+		    // https://tools.ietf.org/html/rfc7230#section-3.2
+		    var preProcessedHeaders = rawHeaders.replace(/\r?\n[\t ]+/g, ' ');
+		    // Avoiding split via regex to work around a common IE11 bug with the core-js 3.6.0 regex polyfill
+		    // https://github.com/github/fetch/issues/748
+		    // https://github.com/zloirock/core-js/issues/751
+		    preProcessedHeaders
+		      .split('\r')
+		      .map(function(header) {
+		        return header.indexOf('\n') === 0 ? header.substr(1, header.length) : header
+		      })
+		      .forEach(function(line) {
+		        var parts = line.split(':');
+		        var key = parts.shift().trim();
+		        if (key) {
+		          var value = parts.join(':').trim();
+		          try {
+		            headers.append(key, value);
+		          } catch (error) {
+		            console.warn('Response ' + error.message);
+		          }
+		        }
+		      });
+		    return headers
+		  }
+
+		  Body.call(Request.prototype);
+
+		  function Response(bodyInit, options) {
+		    if (!(this instanceof Response)) {
+		      throw new TypeError('Please use the "new" operator, this DOM object constructor cannot be called as a function.')
+		    }
+		    if (!options) {
+		      options = {};
+		    }
+
+		    this.type = 'default';
+		    this.status = options.status === undefined ? 200 : options.status;
+		    if (this.status < 200 || this.status > 599) {
+		      throw new RangeError("Failed to construct 'Response': The status provided (0) is outside the range [200, 599].")
+		    }
+		    this.ok = this.status >= 200 && this.status < 300;
+		    this.statusText = options.statusText === undefined ? '' : '' + options.statusText;
+		    this.headers = new Headers(options.headers);
+		    this.url = options.url || '';
+		    this._initBody(bodyInit);
+		  }
+
+		  Body.call(Response.prototype);
+
+		  Response.prototype.clone = function() {
+		    return new Response(this._bodyInit, {
+		      status: this.status,
+		      statusText: this.statusText,
+		      headers: new Headers(this.headers),
+		      url: this.url
+		    })
+		  };
+
+		  Response.error = function() {
+		    var response = new Response(null, {status: 200, statusText: ''});
+		    response.ok = false;
+		    response.status = 0;
+		    response.type = 'error';
+		    return response
+		  };
+
+		  var redirectStatuses = [301, 302, 303, 307, 308];
+
+		  Response.redirect = function(url, status) {
+		    if (redirectStatuses.indexOf(status) === -1) {
+		      throw new RangeError('Invalid status code')
+		    }
+
+		    return new Response(null, {status: status, headers: {location: url}})
+		  };
+
+		  exports$1.DOMException = g.DOMException;
+		  try {
+		    new exports$1.DOMException();
+		  } catch (err) {
+		    exports$1.DOMException = function(message, name) {
+		      this.message = message;
+		      this.name = name;
+		      var error = Error(message);
+		      this.stack = error.stack;
+		    };
+		    exports$1.DOMException.prototype = Object.create(Error.prototype);
+		    exports$1.DOMException.prototype.constructor = exports$1.DOMException;
+		  }
+
+		  function fetch(input, init) {
+		    return new Promise(function(resolve, reject) {
+		      var request = new Request(input, init);
+
+		      if (request.signal && request.signal.aborted) {
+		        return reject(new exports$1.DOMException('Aborted', 'AbortError'))
+		      }
+
+		      var xhr = new XMLHttpRequest();
+
+		      function abortXhr() {
+		        xhr.abort();
+		      }
+
+		      xhr.onload = function() {
+		        var options = {
+		          statusText: xhr.statusText,
+		          headers: parseHeaders(xhr.getAllResponseHeaders() || '')
+		        };
+		        // This check if specifically for when a user fetches a file locally from the file system
+		        // Only if the status is out of a normal range
+		        if (request.url.indexOf('file://') === 0 && (xhr.status < 200 || xhr.status > 599)) {
+		          options.status = 200;
+		        } else {
+		          options.status = xhr.status;
+		        }
+		        options.url = 'responseURL' in xhr ? xhr.responseURL : options.headers.get('X-Request-URL');
+		        var body = 'response' in xhr ? xhr.response : xhr.responseText;
+		        setTimeout(function() {
+		          resolve(new Response(body, options));
+		        }, 0);
+		      };
+
+		      xhr.onerror = function() {
+		        setTimeout(function() {
+		          reject(new TypeError('Network request failed'));
+		        }, 0);
+		      };
+
+		      xhr.ontimeout = function() {
+		        setTimeout(function() {
+		          reject(new TypeError('Network request timed out'));
+		        }, 0);
+		      };
+
+		      xhr.onabort = function() {
+		        setTimeout(function() {
+		          reject(new exports$1.DOMException('Aborted', 'AbortError'));
+		        }, 0);
+		      };
+
+		      function fixUrl(url) {
+		        try {
+		          return url === '' && g.location.href ? g.location.href : url
+		        } catch (e) {
+		          return url
+		        }
+		      }
+
+		      xhr.open(request.method, fixUrl(request.url), true);
+
+		      if (request.credentials === 'include') {
+		        xhr.withCredentials = true;
+		      } else if (request.credentials === 'omit') {
+		        xhr.withCredentials = false;
+		      }
+
+		      if ('responseType' in xhr) {
+		        if (support.blob) {
+		          xhr.responseType = 'blob';
+		        } else if (
+		          support.arrayBuffer
+		        ) {
+		          xhr.responseType = 'arraybuffer';
+		        }
+		      }
+
+		      if (init && typeof init.headers === 'object' && !(init.headers instanceof Headers || (g.Headers && init.headers instanceof g.Headers))) {
+		        var names = [];
+		        Object.getOwnPropertyNames(init.headers).forEach(function(name) {
+		          names.push(normalizeName(name));
+		          xhr.setRequestHeader(name, normalizeValue(init.headers[name]));
+		        });
+		        request.headers.forEach(function(value, name) {
+		          if (names.indexOf(name) === -1) {
+		            xhr.setRequestHeader(name, value);
+		          }
+		        });
+		      } else {
+		        request.headers.forEach(function(value, name) {
+		          xhr.setRequestHeader(name, value);
+		        });
+		      }
+
+		      if (request.signal) {
+		        request.signal.addEventListener('abort', abortXhr);
+
+		        xhr.onreadystatechange = function() {
+		          // DONE (success or failure)
+		          if (xhr.readyState === 4) {
+		            request.signal.removeEventListener('abort', abortXhr);
+		          }
+		        };
+		      }
+
+		      xhr.send(typeof request._bodyInit === 'undefined' ? null : request._bodyInit);
+		    })
+		  }
+
+		  fetch.polyfill = true;
+
+		  if (!g.fetch) {
+		    g.fetch = fetch;
+		    g.Headers = Headers;
+		    g.Request = Request;
+		    g.Response = Response;
+		  }
+
+		  exports$1.Headers = Headers;
+		  exports$1.Request = Request;
+		  exports$1.Response = Response;
+		  exports$1.fetch = fetch;
+
+		  return exports$1;
+
+		}))({});
+		})(__globalThis__);
+		// This is a ponyfill, so...
+		__globalThis__.fetch.ponyfill = true;
+		delete __globalThis__.fetch.polyfill;
+		// Choose between native implementation (__global__) or custom implementation (__globalThis__)
+		var ctx = __global__.fetch ? __global__ : __globalThis__;
+		exports$1 = ctx.fetch; // To enable: import fetch from 'cross-fetch'
+		exports$1.default = ctx.fetch; // For TypeScript consumers without esModuleInterop.
+		exports$1.fetch = ctx.fetch; // To enable: import {fetch} from 'cross-fetch'
+		exports$1.Headers = ctx.Headers;
+		exports$1.Request = ctx.Request;
+		exports$1.Response = ctx.Response;
+		module.exports = exports$1; 
+	} (browserPonyfill, browserPonyfill.exports));
+	return browserPonyfill.exports;
+}
+
+var browserPonyfillExports = requireBrowserPonyfill();
+var crossFetch = /*@__PURE__*/getDefaultExportFromCjs(browserPonyfillExports);
+
+/**
+ * Cloudflare Workers and some modern environments have a native fetch on globalThis.
+ * We prefer it over cross-fetch to avoid compatibility issues with the polyfill.
+ */
+const getFetch = () => {
+    if (typeof globalThis !== 'undefined' && typeof globalThis.fetch === 'function') {
+        return globalThis.fetch.bind(globalThis);
+    }
+    // Fallback to cross-fetch
+    return crossFetch;
+};
+const fetch = getFetch();
+
 const nativeType = (value) => {
     const nValue = Number(value);
     if (!Number.isNaN(nValue)) {
@@ -9312,7 +9326,8 @@ var requestHelpers = /*#__PURE__*/Object.freeze({
 const debug$5 = getLogger('tsdav:request');
 const davRequest = async (params) => {
     var _a;
-    const { url, init, convertIncoming = true, parseOutgoing = true, fetchOptions = {} } = params;
+    const { url, init, convertIncoming = true, parseOutgoing = true, fetchOptions = {}, fetch: fetchOverride, } = params;
+    const requestFetch = fetchOverride !== null && fetchOverride !== void 0 ? fetchOverride : fetch;
     const { headers = {}, body, namespace, method, attributes } = init;
     const xmlBody = convertIncoming
         ? convert.js2xml({
@@ -9345,14 +9360,14 @@ const davRequest = async (params) => {
     // );
     // debug(xmlBody);
     const fetchOptionsWithoutHeaders = {
-        ...fetchOptions
+        ...fetchOptions,
     };
     delete fetchOptionsWithoutHeaders.headers;
-    const davResponse = await browserPonyfillExports.fetch(url, {
+    const davResponse = await requestFetch(url, {
         headers: {
             'Content-Type': 'text/xml;charset=UTF-8',
             ...cleanupFalsy(headers),
-            ...(fetchOptions.headers || {})
+            ...(fetchOptions.headers || {}),
         },
         body: xmlBody,
         method,
@@ -9446,7 +9461,7 @@ const davRequest = async (params) => {
     });
 };
 const propfind = async (params) => {
-    const { url, props, depth, headers, headersToExclude, fetchOptions = {} } = params;
+    const { url, props, depth, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride, } = params;
     return davRequest({
         url,
         init: {
@@ -9467,11 +9482,13 @@ const propfind = async (params) => {
             },
         },
         fetchOptions,
+        fetch: fetchOverride,
     });
 };
 const createObject = async (params) => {
-    const { url, data, headers, headersToExclude, fetchOptions = {} } = params;
-    return browserPonyfillExports.fetch(url, {
+    const { url, data, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
+    const requestFetch = fetchOverride !== null && fetchOverride !== void 0 ? fetchOverride : fetch;
+    return requestFetch(url, {
         method: 'PUT',
         body: data,
         headers: excludeHeaders(headers, headersToExclude),
@@ -9479,8 +9496,9 @@ const createObject = async (params) => {
     });
 };
 const updateObject = async (params) => {
-    const { url, data, etag, headers, headersToExclude, fetchOptions = {} } = params;
-    return browserPonyfillExports.fetch(url, {
+    const { url, data, etag, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride, } = params;
+    const requestFetch = fetchOverride !== null && fetchOverride !== void 0 ? fetchOverride : fetch;
+    return requestFetch(url, {
         method: 'PUT',
         body: data,
         headers: excludeHeaders(cleanupFalsy({ 'If-Match': etag, ...headers }), headersToExclude),
@@ -9488,8 +9506,9 @@ const updateObject = async (params) => {
     });
 };
 const deleteObject = async (params) => {
-    const { url, headers, etag, headersToExclude, fetchOptions = {} } = params;
-    return browserPonyfillExports.fetch(url, {
+    const { url, headers, etag, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
+    const requestFetch = fetchOverride !== null && fetchOverride !== void 0 ? fetchOverride : fetch;
+    return requestFetch(url, {
         method: 'DELETE',
         headers: excludeHeaders(cleanupFalsy({ 'If-Match': etag, ...headers }), headersToExclude),
         ...fetchOptions,
@@ -9517,7 +9536,7 @@ const findMissingFieldNames = (obj, fields) => fields.reduce((prev, curr) => (ob
 /* eslint-disable no-underscore-dangle */
 const debug$4 = getLogger('tsdav:collection');
 const collectionQuery = async (params) => {
-    const { url, body, depth, defaultNamespace = DAVNamespaceShort.DAV, headers, headersToExclude, fetchOptions = {} } = params;
+    const { url, body, depth, defaultNamespace = DAVNamespaceShort.DAV, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride, } = params;
     const queryResults = await davRequest({
         url,
         init: {
@@ -9527,15 +9546,23 @@ const collectionQuery = async (params) => {
             body,
         },
         fetchOptions,
+        fetch: fetchOverride,
     });
+    const errorResponse = queryResults.find((res) => !res.ok || (res.status && res.status >= 400));
+    if (errorResponse) {
+        throw new Error(`Collection query failed: ${errorResponse.status} ${errorResponse.statusText}. ${errorResponse.raw ? `Raw response: ${errorResponse.raw}` : ''}`);
+    }
     // empty query result
-    if (queryResults.length === 1 && !queryResults[0].raw) {
+    if (queryResults.length === 1 &&
+        !queryResults[0].raw &&
+        queryResults[0].status &&
+        queryResults[0].status < 300) {
         return [];
     }
     return queryResults;
 };
 const makeCollection = async (params) => {
-    const { url, props, depth, headers, headersToExclude, fetchOptions = {} } = params;
+    const { url, props, depth, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride, } = params;
     return davRequest({
         url,
         init: {
@@ -9552,12 +9579,13 @@ const makeCollection = async (params) => {
                 }
                 : undefined,
         },
-        fetchOptions
+        fetchOptions,
+        fetch: fetchOverride,
     });
 };
 const supportedReportSet = async (params) => {
     var _a, _b, _c, _d, _e;
-    const { collection, headers, headersToExclude, fetchOptions = {} } = params;
+    const { collection, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
     const res = await propfind({
         url: collection.url,
         props: {
@@ -9565,13 +9593,14 @@ const supportedReportSet = async (params) => {
         },
         depth: '0',
         headers: excludeHeaders(headers, headersToExclude),
-        fetchOptions
+        fetchOptions,
+        fetch: fetchOverride,
     });
     return ((_e = (_d = (_c = (_b = (_a = res[0]) === null || _a === void 0 ? void 0 : _a.props) === null || _b === void 0 ? void 0 : _b.supportedReportSet) === null || _c === void 0 ? void 0 : _c.supportedReport) === null || _d === void 0 ? void 0 : _d.map((sr) => Object.keys(sr.report)[0])) !== null && _e !== void 0 ? _e : []);
 };
 const isCollectionDirty = async (params) => {
     var _a, _b, _c;
-    const { collection, headers, headersToExclude, fetchOptions = {} } = params;
+    const { collection, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
     const responses = await propfind({
         url: collection.url,
         props: {
@@ -9579,7 +9608,8 @@ const isCollectionDirty = async (params) => {
         },
         depth: '0',
         headers: excludeHeaders(headers, headersToExclude),
-        fetchOptions
+        fetchOptions,
+        fetch: fetchOverride,
     });
     const res = responses.filter((r) => urlContains(collection.url, r.href))[0];
     if (!res) {
@@ -9594,7 +9624,7 @@ const isCollectionDirty = async (params) => {
  * This is for webdav sync-collection only
  */
 const syncCollection = (params) => {
-    const { url, props, headers, syncLevel, syncToken, headersToExclude, fetchOptions } = params;
+    const { url, props, headers, syncLevel, syncToken, headersToExclude, fetchOptions, fetch: fetchOverride, } = params;
     return davRequest({
         url,
         init: {
@@ -9614,13 +9644,14 @@ const syncCollection = (params) => {
                 },
             },
         },
-        fetchOptions
+        fetchOptions,
+        fetch: fetchOverride,
     });
 };
 /** remote collection to local */
 const smartCollectionSync = async (params) => {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
-    const { collection, method, headers, headersToExclude, account, detailedResult, fetchOptions = {} } = params;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m;
+    const { collection, method, headers, headersToExclude, account, detailedResult, fetchOptions = {}, fetch: fetchOverride, } = params;
     const requiredFields = ['accountType', 'homeUrl'];
     if (!account || !hasFields(account, requiredFields)) {
         if (!account) {
@@ -9641,7 +9672,8 @@ const smartCollectionSync = async (params) => {
             syncLevel: 1,
             syncToken: collection.syncToken,
             headers: excludeHeaders(headers, headersToExclude),
-            fetchOptions
+            fetchOptions,
+            fetch: fetchOverride,
         });
         const objectResponses = result.filter((r) => {
             var _a;
@@ -9662,7 +9694,8 @@ const smartCollectionSync = async (params) => {
                 objectUrls: changedObjectUrls,
                 depth: '1',
                 headers: excludeHeaders(headers, headersToExclude),
-                fetchOptions
+                fetchOptions,
+                fetch: fetchOverride,
             })))) !== null && _c !== void 0 ? _c : [])
             : [];
         const remoteObjects = multiGetObjectResponse.map((res) => {
@@ -9707,14 +9740,16 @@ const smartCollectionSync = async (params) => {
         const { isDirty, newCtag } = await isCollectionDirty({
             collection,
             headers: excludeHeaders(headers, headersToExclude),
-            fetchOptions
+            fetchOptions,
+            fetch: fetchOverride,
         });
         const localObjects = (_j = collection.objects) !== null && _j !== void 0 ? _j : [];
-        const remoteObjects = (_l = (await ((_k = collection.fetchObjects) === null || _k === void 0 ? void 0 : _k.call(collection, {
+        const remoteObjects = (_m = (await ((_l = (_k = collection).fetchObjects) === null || _l === void 0 ? void 0 : _l.call(_k, {
             collection,
             headers: excludeHeaders(headers, headersToExclude),
-            fetchOptions
-        })))) !== null && _l !== void 0 ? _l : [];
+            fetchOptions,
+            fetch: fetchOverride,
+        })))) !== null && _m !== void 0 ? _m : [];
         // no existing url
         const created = remoteObjects.filter((ro) => localObjects.every((lo) => !urlContains(lo.url, ro.url)));
         // debug(`created objects: ${created.map((o) => o.url).join('\n')}`);
@@ -9766,7 +9801,7 @@ var collection = /*#__PURE__*/Object.freeze({
 /* eslint-disable no-underscore-dangle */
 const debug$3 = getLogger('tsdav:addressBook');
 const addressBookQuery = async (params) => {
-    const { url, props, filters, depth, headers, headersToExclude, fetchOptions = {} } = params;
+    const { url, props, filters, depth, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride, } = params;
     return collectionQuery({
         url,
         body: {
@@ -9786,10 +9821,11 @@ const addressBookQuery = async (params) => {
         depth,
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
+        fetch: fetchOverride,
     });
 };
 const addressBookMultiGet = async (params) => {
-    const { url, props, objectUrls, depth, headers, headersToExclude, fetchOptions = {} } = params;
+    const { url, props, objectUrls, depth, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride, } = params;
     return collectionQuery({
         url,
         body: {
@@ -9803,10 +9839,11 @@ const addressBookMultiGet = async (params) => {
         depth,
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
+        fetch: fetchOverride,
     });
 };
 const fetchAddressBooks = async (params) => {
-    const { account, headers, props: customProps, headersToExclude, fetchOptions = {}, } = params !== null && params !== void 0 ? params : {};
+    const { account, headers, props: customProps, headersToExclude, fetchOptions = {}, fetch: fetchOverride, } = params !== null && params !== void 0 ? params : {};
     const requiredFields = ['homeUrl', 'rootUrl'];
     if (!account || !hasFields(account, requiredFields)) {
         if (!account) {
@@ -9825,6 +9862,7 @@ const fetchAddressBooks = async (params) => {
         depth: '1',
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
+        fetch: fetchOverride,
     });
     return Promise.all(res
         .filter((r) => { var _a, _b; return Object.keys((_b = (_a = r.props) === null || _a === void 0 ? void 0 : _a.resourcetype) !== null && _b !== void 0 ? _b : {}).includes('addressbook'); })
@@ -9847,11 +9885,12 @@ const fetchAddressBooks = async (params) => {
             collection: addr,
             headers: excludeHeaders(headers, headersToExclude),
             fetchOptions,
+            fetch: fetchOverride,
         }),
     })));
 };
 const fetchVCards = async (params) => {
-    const { addressBook, headers, objectUrls, headersToExclude, urlFilter = (url) => url, useMultiGet = true, fetchOptions = {}, } = params;
+    const { addressBook, headers, objectUrls, headersToExclude, urlFilter = (url) => url, useMultiGet = true, fetchOptions = {}, fetch: fetchOverride, } = params;
     debug$3(`Fetching vcards from ${addressBook === null || addressBook === void 0 ? void 0 : addressBook.url}`);
     const requiredFields = ['url'];
     if (!addressBook || !hasFields(addressBook, requiredFields)) {
@@ -9868,8 +9907,10 @@ const fetchVCards = async (params) => {
         depth: '1',
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
-    })).map((res) => { var _a; return (res.ok ? ((_a = res.href) !== null && _a !== void 0 ? _a : '') : ''); }))
+        fetch: fetchOverride,
+    })).map((res) => { var _a; return (_a = res.href) !== null && _a !== void 0 ? _a : ''; }))
         .map((url) => (url.startsWith('http') || !url ? url : new URL(url, addressBook.url).href))
+        .filter((url) => url && !urlEquals(url, addressBook.url))
         .filter(urlFilter)
         .map((url) => new URL(url).pathname);
     let vCardResults = [];
@@ -9885,6 +9926,7 @@ const fetchVCards = async (params) => {
                 depth: '1',
                 headers: excludeHeaders(headers, headersToExclude),
                 fetchOptions,
+                fetch: fetchOverride,
             });
         }
         else {
@@ -9897,6 +9939,7 @@ const fetchVCards = async (params) => {
                 depth: '1',
                 headers: excludeHeaders(headers, headersToExclude),
                 fetchOptions,
+                fetch: fetchOverride,
             });
         }
     }
@@ -9910,7 +9953,7 @@ const fetchVCards = async (params) => {
     });
 };
 const createVCard = async (params) => {
-    const { addressBook, vCardString, filename, headers, headersToExclude, fetchOptions = {}, } = params;
+    const { addressBook, vCardString, filename, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride, } = params;
     return createObject({
         url: new URL(filename, addressBook.url).href,
         data: vCardString,
@@ -9920,10 +9963,11 @@ const createVCard = async (params) => {
             ...headers,
         }, headersToExclude),
         fetchOptions,
+        fetch: fetchOverride,
     });
 };
 const updateVCard = async (params) => {
-    const { vCard, headers, headersToExclude, fetchOptions = {} } = params;
+    const { vCard, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
     return updateObject({
         url: vCard.url,
         data: vCard.data,
@@ -9933,15 +9977,17 @@ const updateVCard = async (params) => {
             ...headers,
         }, headersToExclude),
         fetchOptions,
+        fetch: fetchOverride,
     });
 };
 const deleteVCard = async (params) => {
-    const { vCard, headers, headersToExclude, fetchOptions = {} } = params;
+    const { vCard, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
     return deleteObject({
         url: vCard.url,
         etag: vCard.etag,
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
+        fetch: fetchOverride,
     });
 };
 
@@ -9960,7 +10006,7 @@ var addressBook = /*#__PURE__*/Object.freeze({
 const debug$2 = getLogger('tsdav:calendar');
 const fetchCalendarUserAddresses = async (params) => {
     var _a, _b, _c;
-    const { account, headers, headersToExclude, fetchOptions = {} } = params;
+    const { account, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
     const requiredFields = ['principalUrl', 'rootUrl'];
     if (!hasFields(account, requiredFields)) {
         throw new Error(`account must have ${findMissingFieldNames(account, requiredFields)} before fetchUserAddresses`);
@@ -9972,6 +10018,7 @@ const fetchCalendarUserAddresses = async (params) => {
         depth: '0',
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
+        fetch: fetchOverride,
     });
     const matched = responses.find((r) => urlContains(account.principalUrl, r.href));
     if (!matched || !matched.ok) {
@@ -9982,7 +10029,7 @@ const fetchCalendarUserAddresses = async (params) => {
     return addresses;
 };
 const calendarQuery = async (params) => {
-    const { url, props, filters, timezone, depth, headers, headersToExclude, fetchOptions = {}, } = params;
+    const { url, props, filters, timezone, depth, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride, } = params;
     return collectionQuery({
         url,
         body: {
@@ -10002,10 +10049,11 @@ const calendarQuery = async (params) => {
         depth,
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
+        fetch: fetchOverride,
     });
 };
 const calendarMultiGet = async (params) => {
-    const { url, props, objectUrls, filters, timezone, depth, headers, headersToExclude, fetchOptions = {}, } = params;
+    const { url, props, objectUrls, filters, timezone, depth, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride, } = params;
     return collectionQuery({
         url,
         body: {
@@ -10021,10 +10069,11 @@ const calendarMultiGet = async (params) => {
         depth,
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
+        fetch: fetchOverride,
     });
 };
 const makeCalendar = async (params) => {
-    const { url, props, depth, headers, headersToExclude, fetchOptions = {} } = params;
+    const { url, props, depth, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride, } = params;
     return davRequest({
         url,
         init: {
@@ -10045,10 +10094,11 @@ const makeCalendar = async (params) => {
             },
         },
         fetchOptions,
+        fetch: fetchOverride,
     });
 };
 const fetchCalendars = async (params) => {
-    const { headers, account, props: customProps, projectedProps, headersToExclude, fetchOptions = {}, } = params !== null && params !== void 0 ? params : {};
+    const { headers, account, props: customProps, projectedProps, headersToExclude, fetchOptions = {}, fetch: fetchOverride, } = params !== null && params !== void 0 ? params : {};
     const requiredFields = ['homeUrl', 'rootUrl'];
     if (!account || !hasFields(account, requiredFields)) {
         if (!account) {
@@ -10071,6 +10121,7 @@ const fetchCalendars = async (params) => {
         depth: '1',
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
+        fetch: fetchOverride,
     });
     return Promise.all(res
         .filter((r) => { var _a, _b; return Object.keys((_b = (_a = r.props) === null || _a === void 0 ? void 0 : _a.resourcetype) !== null && _b !== void 0 ? _b : {}).includes('calendar'); })
@@ -10108,11 +10159,12 @@ const fetchCalendars = async (params) => {
             collection: cal,
             headers: excludeHeaders(headers, headersToExclude),
             fetchOptions,
+            fetch: fetchOverride,
         }),
     })));
 };
 const fetchCalendarObjects = async (params) => {
-    const { calendar, objectUrls, filters: customFilters, timeRange, headers, expand, urlFilter = (url) => Boolean(url === null || url === void 0 ? void 0 : url.includes('.ics')), useMultiGet = true, headersToExclude, fetchOptions = {}, } = params;
+    const { calendar, objectUrls, filters: customFilters, timeRange, headers, expand, urlFilter = (url) => Boolean(url === null || url === void 0 ? void 0 : url.includes('.ics')), useMultiGet = true, headersToExclude, fetchOptions = {}, fetch: fetchOverride, } = params;
     if (timeRange) {
         // validate timeRange
         const ISO_8601 = /^\d{4}(-\d\d(-\d\d(T\d\d:\d\d(:\d\d)?(\.\d+)?(([+-]\d\d:\d\d)|Z)?)?)?)?$/i;
@@ -10161,14 +10213,16 @@ const fetchCalendarObjects = async (params) => {
             },
         },
     ];
+    let initialResponses = [];
     const calendarObjectUrls = (objectUrls !== null && objectUrls !== void 0 ? objectUrls : 
     // fetch all objects of the calendar
-    (await calendarQuery({
+    (initialResponses = await calendarQuery({
         url: calendar.url,
         props: {
-            [`${DAVNamespaceShort.DAV}:getetag`]: {
-                ...(expand && timeRange
-                    ? {
+            [`${DAVNamespaceShort.DAV}:getetag`]: {},
+            ...(expand && timeRange
+                ? {
+                    [`${DAVNamespaceShort.CALDAV}:calendar-data`]: {
                         [`${DAVNamespaceShort.CALDAV}:expand`]: {
                             _attributes: {
                                 start: `${new Date(timeRange.start)
@@ -10181,21 +10235,31 @@ const fetchCalendarObjects = async (params) => {
                                     .replace(/[-:.]/g, '')}Z`,
                             },
                         },
-                    }
-                    : {}),
-            },
+                    },
+                }
+                : {}),
         },
         filters,
         depth: '1',
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
+        fetch: fetchOverride,
     })).map((res) => { var _a; return (_a = res.href) !== null && _a !== void 0 ? _a : ''; }))
         .map((url) => (url.startsWith('http') || !url ? url : new URL(url, calendar.url).href)) // patch up to full url if url is not full
         .filter(urlFilter) // custom filter function on calendar objects
         .map((url) => new URL(url).pathname); // obtain pathname of the url
     let calendarObjectResults = [];
     if (calendarObjectUrls.length > 0) {
-        if (!useMultiGet || expand) {
+        if (expand && !objectUrls) {
+            calendarObjectResults = initialResponses.filter((res) => {
+                var _a, _b;
+                const fullUrl = ((_a = res.href) !== null && _a !== void 0 ? _a : '').startsWith('http')
+                    ? res.href
+                    : new URL((_b = res.href) !== null && _b !== void 0 ? _b : '', calendar.url).href;
+                return urlFilter(fullUrl !== null && fullUrl !== void 0 ? fullUrl : '');
+            });
+        }
+        else if (!useMultiGet) {
             calendarObjectResults = await calendarQuery({
                 url: calendar.url,
                 props: {
@@ -10223,6 +10287,7 @@ const fetchCalendarObjects = async (params) => {
                 depth: '1',
                 headers: excludeHeaders(headers, headersToExclude),
                 fetchOptions,
+                fetch: fetchOverride,
             });
         }
         else {
@@ -10253,6 +10318,7 @@ const fetchCalendarObjects = async (params) => {
                 depth: '1',
                 headers: excludeHeaders(headers, headersToExclude),
                 fetchOptions,
+                fetch: fetchOverride,
             });
         }
     }
@@ -10266,7 +10332,7 @@ const fetchCalendarObjects = async (params) => {
     });
 };
 const createCalendarObject = async (params) => {
-    const { calendar, iCalString, filename, headers, headersToExclude, fetchOptions = {} } = params;
+    const { calendar, iCalString, filename, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride, } = params;
     return createObject({
         url: new URL(filename, calendar.url).href,
         data: iCalString,
@@ -10276,10 +10342,11 @@ const createCalendarObject = async (params) => {
             ...headers,
         }, headersToExclude),
         fetchOptions,
+        fetch: fetchOverride,
     });
 };
 const updateCalendarObject = async (params) => {
-    const { calendarObject, headers, headersToExclude, fetchOptions = {} } = params;
+    const { calendarObject, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride, } = params;
     return updateObject({
         url: calendarObject.url,
         data: calendarObject.data,
@@ -10289,15 +10356,17 @@ const updateCalendarObject = async (params) => {
             ...headers,
         }, headersToExclude),
         fetchOptions,
+        fetch: fetchOverride,
     });
 };
 const deleteCalendarObject = async (params) => {
-    const { calendarObject, headers, headersToExclude, fetchOptions = {} } = params;
+    const { calendarObject, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride, } = params;
     return deleteObject({
         url: calendarObject.url,
         etag: calendarObject.etag,
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
+        fetch: fetchOverride,
     });
 };
 /**
@@ -10305,7 +10374,7 @@ const deleteCalendarObject = async (params) => {
  */
 const syncCalendars = async (params) => {
     var _a;
-    const { oldCalendars, account, detailedResult, headers, headersToExclude, fetchOptions = {}, } = params;
+    const { oldCalendars, account, detailedResult, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride, } = params;
     if (!account) {
         throw new Error('Must have account before syncCalendars');
     }
@@ -10314,6 +10383,7 @@ const syncCalendars = async (params) => {
         account,
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
+        fetch: fetchOverride,
     });
     // no existing url
     const created = remoteCalendars.filter((rc) => localCalendars.every((lc) => !urlContains(lc.url, rc.url)));
@@ -10336,6 +10406,7 @@ const syncCalendars = async (params) => {
             headers: excludeHeaders(headers, headersToExclude),
             account,
             fetchOptions,
+            fetch: fetchOverride,
         });
         return result;
     }));
@@ -10355,7 +10426,7 @@ const syncCalendars = async (params) => {
         : [...unchanged, ...created, ...updatedWithObjects];
 };
 const freeBusyQuery = async (params) => {
-    const { url, timeRange, depth, headers, headersToExclude, fetchOptions = {} } = params;
+    const { url, timeRange, depth, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride, } = params;
     if (timeRange) {
         // validate timeRange
         const ISO_8601 = /^\d{4}(-\d\d(-\d\d(T\d\d:\d\d(:\d\d)?(\.\d+)?(([+-]\d\d:\d\d)|Z)?)?)?)?$/i;
@@ -10385,6 +10456,7 @@ const freeBusyQuery = async (params) => {
         depth,
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
+        fetch: fetchOverride,
     });
     return result[0];
 };
@@ -10408,14 +10480,24 @@ const debug$1 = getLogger('tsdav:account');
 const serviceDiscovery = async (params) => {
     var _a, _b;
     debug$1('Service discovery...');
-    const { account, headers, headersToExclude, fetchOptions = {} } = params;
+    const { account, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
+    const requestFetch = fetchOverride !== null && fetchOverride !== void 0 ? fetchOverride : fetch;
     const endpoint = new URL(account.serverUrl);
     const uri = new URL(`/.well-known/${account.accountType}`, endpoint);
     uri.protocol = (_a = endpoint.protocol) !== null && _a !== void 0 ? _a : 'http';
     try {
-        const response = await browserPonyfillExports.fetch(uri.href, {
-            headers: excludeHeaders(headers, headersToExclude),
+        const response = await requestFetch(uri.href, {
+            headers: {
+                ...excludeHeaders(headers, headersToExclude),
+                'Content-Type': 'text/xml;charset=UTF-8',
+            },
             method: 'PROPFIND',
+            body: `<?xml version="1.0" encoding="utf-8" ?>
+<d:propfind xmlns:d="DAV:">
+  <d:prop>
+    <d:resourcetype/>
+  </d:prop>
+</d:propfind>`,
             redirect: 'manual',
             ...fetchOptions,
         });
@@ -10440,7 +10522,7 @@ const serviceDiscovery = async (params) => {
 };
 const fetchPrincipalUrl = async (params) => {
     var _a, _b, _c, _d, _e;
-    const { account, headers, headersToExclude, fetchOptions = {} } = params;
+    const { account, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
     const requiredFields = ['rootUrl'];
     if (!hasFields(account, requiredFields)) {
         throw new Error(`account must have ${findMissingFieldNames(account, requiredFields)} before fetchPrincipalUrl`);
@@ -10454,6 +10536,7 @@ const fetchPrincipalUrl = async (params) => {
         depth: '0',
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
+        fetch: fetchOverride,
     });
     if (!response.ok) {
         debug$1(`Fetch principal url failed: ${response.statusText}`);
@@ -10466,7 +10549,7 @@ const fetchPrincipalUrl = async (params) => {
 };
 const fetchHomeUrl = async (params) => {
     var _a, _b;
-    const { account, headers, headersToExclude, fetchOptions = {} } = params;
+    const { account, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
     const requiredFields = ['principalUrl', 'rootUrl'];
     if (!hasFields(account, requiredFields)) {
         throw new Error(`account must have ${findMissingFieldNames(account, requiredFields)} before fetchHomeUrl`);
@@ -10480,6 +10563,7 @@ const fetchHomeUrl = async (params) => {
         depth: '0',
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
+        fetch: fetchOverride,
     });
     const matched = responses.find((r) => urlContains(account.principalUrl, r.href));
     if (!matched || !matched.ok) {
@@ -10493,22 +10577,25 @@ const fetchHomeUrl = async (params) => {
     return result;
 };
 const createAccount = async (params) => {
-    const { account, headers, loadCollections = false, loadObjects = false, headersToExclude, fetchOptions = {}, } = params;
+    const { account, headers, loadCollections = false, loadObjects = false, headersToExclude, fetchOptions = {}, fetch: fetchOverride, } = params;
     const newAccount = { ...account };
     newAccount.rootUrl = await serviceDiscovery({
         account,
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
+        fetch: fetchOverride,
     });
     newAccount.principalUrl = await fetchPrincipalUrl({
         account: newAccount,
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
+        fetch: fetchOverride,
     });
     newAccount.homeUrl = await fetchHomeUrl({
         account: newAccount,
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
+        fetch: fetchOverride,
     });
     // to load objects you must first load collections
     if (loadCollections || loadObjects) {
@@ -10517,6 +10604,7 @@ const createAccount = async (params) => {
                 headers: excludeHeaders(headers, headersToExclude),
                 account: newAccount,
                 fetchOptions,
+                fetch: fetchOverride,
             });
         }
         else if (account.accountType === 'carddav') {
@@ -10524,6 +10612,7 @@ const createAccount = async (params) => {
                 headers: excludeHeaders(headers, headersToExclude),
                 account: newAccount,
                 fetchOptions,
+                fetch: fetchOverride,
             });
         }
     }
@@ -10535,6 +10624,7 @@ const createAccount = async (params) => {
                     calendar: cal,
                     headers: excludeHeaders(headers, headersToExclude),
                     fetchOptions,
+                    fetch: fetchOverride,
                 }),
             })));
         }
@@ -10545,6 +10635,7 @@ const createAccount = async (params) => {
                     addressBook: addr,
                     headers: excludeHeaders(headers, headersToExclude),
                     fetchOptions,
+                    fetch: fetchOverride,
                 }),
             })));
         }
@@ -10748,7 +10839,12 @@ const getBasicAuthHeaders = (credentials) => {
         authorization: `Basic ${base64Exports.encode(`${credentials.username}:${credentials.password}`)}`,
     };
 };
-const fetchOauthTokens = async (credentials, fetchOptions) => {
+const getBearerAuthHeaders = (credentials) => {
+    return {
+        authorization: `Bearer ${credentials.accessToken}`,
+    };
+};
+const fetchOauthTokens = async (credentials, fetchOptions, fetchOverride) => {
     const requireFields = [
         'authorizationCode',
         'redirectUrl',
@@ -10768,7 +10864,8 @@ const fetchOauthTokens = async (credentials, fetchOptions) => {
     });
     debug(credentials.tokenUrl);
     debug(param.toString());
-    const response = await browserPonyfillExports.fetch(credentials.tokenUrl, {
+    const requestFetch = fetchOverride !== null && fetchOverride !== void 0 ? fetchOverride : fetch;
+    const response = await requestFetch(credentials.tokenUrl, {
         method: 'POST',
         body: param.toString(),
         headers: {
@@ -10784,7 +10881,7 @@ const fetchOauthTokens = async (credentials, fetchOptions) => {
     debug(`Fetch Oauth tokens failed: ${await response.text()}`);
     return {};
 };
-const refreshAccessToken = async (credentials, fetchOptions) => {
+const refreshAccessToken = async (credentials, fetchOptions, fetchOverride) => {
     const requireFields = [
         'refreshToken',
         'clientId',
@@ -10800,7 +10897,8 @@ const refreshAccessToken = async (credentials, fetchOptions) => {
         refresh_token: credentials.refreshToken,
         grant_type: 'refresh_token',
     });
-    const response = await browserPonyfillExports.fetch(credentials.tokenUrl, {
+    const requestFetch = fetchOverride !== null && fetchOverride !== void 0 ? fetchOverride : fetch;
+    const response = await requestFetch(credentials.tokenUrl, {
         method: 'POST',
         body: param.toString(),
         headers: {
@@ -10815,19 +10913,19 @@ const refreshAccessToken = async (credentials, fetchOptions) => {
     debug(`Refresh access token failed: ${await response.text()}`);
     return {};
 };
-const getOauthHeaders = async (credentials, fetchOptions) => {
+const getOauthHeaders = async (credentials, fetchOptions, fetchOverride) => {
     var _a;
     debug('Fetching oauth headers');
     let tokens = {};
     if (!credentials.refreshToken) {
         // No refresh token, fetch new tokens
-        tokens = await fetchOauthTokens(credentials, fetchOptions);
+        tokens = await fetchOauthTokens(credentials, fetchOptions, fetchOverride);
     }
     else if ((credentials.refreshToken && !credentials.accessToken) ||
         Date.now() > ((_a = credentials.expiration) !== null && _a !== void 0 ? _a : 0)) {
         // have refresh token, but no accessToken, fetch access token only
         // or have both, but accessToken was expired
-        tokens = await refreshAccessToken(credentials, fetchOptions);
+        tokens = await refreshAccessToken(credentials, fetchOptions, fetchOverride);
     }
     // now we should have valid access token
     debug(`Oauth tokens fetched: ${tokens.access_token}`);
@@ -10844,6 +10942,7 @@ var authHelpers = /*#__PURE__*/Object.freeze({
 	defaultParam: defaultParam,
 	fetchOauthTokens: fetchOauthTokens,
 	getBasicAuthHeaders: getBasicAuthHeaders,
+	getBearerAuthHeaders: getBearerAuthHeaders,
 	getOauthHeaders: getOauthHeaders,
 	refreshAccessToken: refreshAccessToken
 });
@@ -10851,14 +10950,17 @@ var authHelpers = /*#__PURE__*/Object.freeze({
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 const createDAVClient = async (params) => {
     var _a;
-    const { serverUrl, credentials, authMethod, defaultAccountType, authFunction } = params;
+    const { serverUrl, credentials, authMethod, defaultAccountType, authFunction, fetch: fetchOverride, } = params;
     let authHeaders = {};
     switch (authMethod) {
         case 'Basic':
             authHeaders = getBasicAuthHeaders(credentials);
             break;
+        case 'Bearer':
+            authHeaders = getBearerAuthHeaders(credentials);
+            break;
         case 'Oauth':
-            authHeaders = (await getOauthHeaders(credentials)).headers;
+            authHeaders = (await getOauthHeaders(credentials, undefined, fetchOverride)).headers;
             break;
         case 'Digest':
             authHeaders = {
@@ -10875,10 +10977,11 @@ const createDAVClient = async (params) => {
         ? await createAccount({
             account: { serverUrl, credentials, accountType: defaultAccountType },
             headers: authHeaders,
+            fetch: fetchOverride,
         })
         : undefined;
     const davRequest$1 = async (params0) => {
-        const { init, ...rest } = params0;
+        const { init, fetch: fetchOverride2, ...rest } = params0;
         const { headers, ...restInit } = init;
         return davRequest({
             ...rest,
@@ -10889,78 +10992,136 @@ const createDAVClient = async (params) => {
                     ...headers,
                 },
             },
+            fetch: fetchOverride2 !== null && fetchOverride2 !== void 0 ? fetchOverride2 : fetchOverride,
         });
     };
     const createObject$1 = defaultParam(createObject, {
         url: serverUrl,
         headers: authHeaders,
+        fetch: fetchOverride,
     });
-    const updateObject$1 = defaultParam(updateObject, { headers: authHeaders, url: serverUrl });
-    const deleteObject$1 = defaultParam(deleteObject, { headers: authHeaders, url: serverUrl });
-    const propfind$1 = defaultParam(propfind, { headers: authHeaders });
+    const updateObject$1 = defaultParam(updateObject, {
+        headers: authHeaders,
+        url: serverUrl,
+        fetch: fetchOverride,
+    });
+    const deleteObject$1 = defaultParam(deleteObject, {
+        headers: authHeaders,
+        url: serverUrl,
+        fetch: fetchOverride,
+    });
+    const propfind$1 = defaultParam(propfind, { headers: authHeaders, fetch: fetchOverride });
     // account
     const createAccount$1 = async (params0) => {
-        const { account, headers, loadCollections, loadObjects } = params0;
+        const { account, headers, loadCollections, loadObjects, fetch: fetchOverride2 } = params0;
         return createAccount({
             account: { serverUrl, credentials, ...account },
             headers: { ...authHeaders, ...headers },
             loadCollections,
             loadObjects,
+            fetch: fetchOverride2 !== null && fetchOverride2 !== void 0 ? fetchOverride2 : fetchOverride,
         });
     };
     // collection
-    const collectionQuery$1 = defaultParam(collectionQuery, { headers: authHeaders });
-    const makeCollection$1 = defaultParam(makeCollection, { headers: authHeaders });
-    const syncCollection$1 = defaultParam(syncCollection, { headers: authHeaders });
+    const collectionQuery$1 = defaultParam(collectionQuery, {
+        headers: authHeaders,
+        fetch: fetchOverride,
+    });
+    const makeCollection$1 = defaultParam(makeCollection, {
+        headers: authHeaders,
+        fetch: fetchOverride,
+    });
+    const syncCollection$1 = defaultParam(syncCollection, {
+        headers: authHeaders,
+        fetch: fetchOverride,
+    });
     const supportedReportSet$1 = defaultParam(supportedReportSet, {
         headers: authHeaders,
+        fetch: fetchOverride,
     });
     const isCollectionDirty$1 = defaultParam(isCollectionDirty, {
         headers: authHeaders,
+        fetch: fetchOverride,
     });
     const smartCollectionSync$1 = defaultParam(smartCollectionSync, {
         headers: authHeaders,
         account: defaultAccount,
+        fetch: fetchOverride,
     });
     // calendar
-    const calendarQuery$1 = defaultParam(calendarQuery, { headers: authHeaders });
-    const calendarMultiGet$1 = defaultParam(calendarMultiGet, { headers: authHeaders });
-    const makeCalendar$1 = defaultParam(makeCalendar, { headers: authHeaders });
+    const calendarQuery$1 = defaultParam(calendarQuery, {
+        headers: authHeaders,
+        fetch: fetchOverride,
+    });
+    const calendarMultiGet$1 = defaultParam(calendarMultiGet, {
+        headers: authHeaders,
+        fetch: fetchOverride,
+    });
+    const makeCalendar$1 = defaultParam(makeCalendar, {
+        headers: authHeaders,
+        fetch: fetchOverride,
+    });
     const fetchCalendars$1 = defaultParam(fetchCalendars, {
         headers: authHeaders,
         account: defaultAccount,
+        fetch: fetchOverride,
     });
     const fetchCalendarUserAddresses$1 = defaultParam(fetchCalendarUserAddresses, {
         headers: authHeaders,
         account: defaultAccount,
+        fetch: fetchOverride,
     });
     const fetchCalendarObjects$1 = defaultParam(fetchCalendarObjects, {
         headers: authHeaders,
+        fetch: fetchOverride,
     });
     const createCalendarObject$1 = defaultParam(createCalendarObject, {
         headers: authHeaders,
+        fetch: fetchOverride,
     });
     const updateCalendarObject$1 = defaultParam(updateCalendarObject, {
         headers: authHeaders,
+        fetch: fetchOverride,
     });
     const deleteCalendarObject$1 = defaultParam(deleteCalendarObject, {
         headers: authHeaders,
+        fetch: fetchOverride,
     });
     const syncCalendars$1 = defaultParam(syncCalendars, {
         account: defaultAccount,
         headers: authHeaders,
+        fetch: fetchOverride,
     });
     // addressBook
-    const addressBookQuery$1 = defaultParam(addressBookQuery, { headers: authHeaders });
-    const addressBookMultiGet$1 = defaultParam(addressBookMultiGet, { headers: authHeaders });
+    const addressBookQuery$1 = defaultParam(addressBookQuery, {
+        headers: authHeaders,
+        fetch: fetchOverride,
+    });
+    const addressBookMultiGet$1 = defaultParam(addressBookMultiGet, {
+        headers: authHeaders,
+        fetch: fetchOverride,
+    });
     const fetchAddressBooks$1 = defaultParam(fetchAddressBooks, {
         account: defaultAccount,
         headers: authHeaders,
+        fetch: fetchOverride,
     });
-    const fetchVCards$1 = defaultParam(fetchVCards, { headers: authHeaders });
-    const createVCard$1 = defaultParam(createVCard, { headers: authHeaders });
-    const updateVCard$1 = defaultParam(updateVCard, { headers: authHeaders });
-    const deleteVCard$1 = defaultParam(deleteVCard, { headers: authHeaders });
+    const fetchVCards$1 = defaultParam(fetchVCards, {
+        headers: authHeaders,
+        fetch: fetchOverride,
+    });
+    const createVCard$1 = defaultParam(createVCard, {
+        headers: authHeaders,
+        fetch: fetchOverride,
+    });
+    const updateVCard$1 = defaultParam(updateVCard, {
+        headers: authHeaders,
+        fetch: fetchOverride,
+    });
+    const deleteVCard$1 = defaultParam(deleteVCard, {
+        headers: authHeaders,
+        fetch: fetchOverride,
+    });
     return {
         davRequest: davRequest$1,
         propfind: propfind$1,
@@ -11002,6 +11163,7 @@ class DAVClient {
         this.accountType = (_b = params.defaultAccountType) !== null && _b !== void 0 ? _b : 'caldav';
         this.authFunction = params.authFunction;
         this.fetchOptions = (_c = params.fetchOptions) !== null && _c !== void 0 ? _c : {};
+        this.fetchOverride = params.fetch;
     }
     async login() {
         var _a;
@@ -11009,8 +11171,11 @@ class DAVClient {
             case 'Basic':
                 this.authHeaders = getBasicAuthHeaders(this.credentials);
                 break;
+            case 'Bearer':
+                this.authHeaders = getBearerAuthHeaders(this.credentials);
+                break;
             case 'Oauth':
-                this.authHeaders = (await getOauthHeaders(this.credentials, this.fetchOptions)).headers;
+                this.authHeaders = (await getOauthHeaders(this.credentials, this.fetchOptions, this.fetchOverride)).headers;
                 break;
             case 'Digest':
                 this.authHeaders = {
@@ -11032,11 +11197,12 @@ class DAVClient {
                 },
                 headers: this.authHeaders,
                 fetchOptions: this.fetchOptions,
+                fetch: this.fetchOverride,
             })
             : undefined;
     }
     async davRequest(params0) {
-        const { init, ...rest } = params0;
+        const { init, fetch: fetchOverride2, ...rest } = params0;
         const { headers, ...restInit } = init;
         return davRequest({
             ...rest,
@@ -11048,6 +11214,7 @@ class DAVClient {
                 },
             },
             fetchOptions: this.fetchOptions,
+            fetch: fetchOverride2 !== null && fetchOverride2 !== void 0 ? fetchOverride2 : this.fetchOverride,
         });
     }
     async createObject(...params) {
@@ -11055,6 +11222,7 @@ class DAVClient {
             url: this.serverUrl,
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
     async updateObject(...params) {
@@ -11062,6 +11230,7 @@ class DAVClient {
             url: this.serverUrl,
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
     async deleteObject(...params) {
@@ -11069,97 +11238,192 @@ class DAVClient {
             url: this.serverUrl,
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
     async propfind(...params) {
-        return defaultParam(propfind, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(propfind, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
+        })(params[0]);
     }
     async createAccount(params0) {
-        const { account, headers, loadCollections, loadObjects, fetchOptions } = params0;
+        const { account, headers, loadCollections, loadObjects, fetchOptions, fetch } = params0;
         return createAccount({
             account: { serverUrl: this.serverUrl, credentials: this.credentials, ...account },
             headers: { ...this.authHeaders, ...headers },
             loadCollections,
             loadObjects,
             fetchOptions: fetchOptions !== null && fetchOptions !== void 0 ? fetchOptions : this.fetchOptions,
+            fetch: fetch !== null && fetch !== void 0 ? fetch : this.fetchOverride,
         });
     }
     async collectionQuery(...params) {
-        return defaultParam(collectionQuery, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(collectionQuery, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
+        })(params[0]);
     }
     async makeCollection(...params) {
-        return defaultParam(makeCollection, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(makeCollection, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
+        })(params[0]);
     }
     async syncCollection(...params) {
-        return defaultParam(syncCollection, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(syncCollection, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
+        })(params[0]);
     }
     async supportedReportSet(...params) {
-        return defaultParam(supportedReportSet, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(supportedReportSet, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
+        })(params[0]);
     }
     async isCollectionDirty(...params) {
-        return defaultParam(isCollectionDirty, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(isCollectionDirty, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
+        })(params[0]);
     }
     async smartCollectionSync(...params) {
         return defaultParam(smartCollectionSync, {
             headers: this.authHeaders,
             fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
             account: this.account,
         })(params[0]);
     }
     async calendarQuery(...params) {
-        return defaultParam(calendarQuery, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(calendarQuery, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
+        })(params[0]);
     }
     async makeCalendar(...params) {
-        return defaultParam(makeCalendar, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(makeCalendar, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
+        })(params[0]);
     }
     async calendarMultiGet(...params) {
-        return defaultParam(calendarMultiGet, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(calendarMultiGet, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
+        })(params[0]);
     }
     async fetchCalendars(...params) {
-        return defaultParam(fetchCalendars, { headers: this.authHeaders, account: this.account, fetchOptions: this.fetchOptions })(params === null || params === void 0 ? void 0 : params[0]);
+        return defaultParam(fetchCalendars, {
+            headers: this.authHeaders,
+            account: this.account,
+            fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
+        })(params === null || params === void 0 ? void 0 : params[0]);
     }
     async fetchCalendarUserAddresses(...params) {
-        return defaultParam(fetchCalendarUserAddresses, { headers: this.authHeaders, account: this.account, fetchOptions: this.fetchOptions })(params === null || params === void 0 ? void 0 : params[0]);
+        return defaultParam(fetchCalendarUserAddresses, {
+            headers: this.authHeaders,
+            account: this.account,
+            fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
+        })(params === null || params === void 0 ? void 0 : params[0]);
     }
     async fetchCalendarObjects(...params) {
-        return defaultParam(fetchCalendarObjects, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(fetchCalendarObjects, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
+        })(params[0]);
     }
     async createCalendarObject(...params) {
-        return defaultParam(createCalendarObject, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(createCalendarObject, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
+        })(params[0]);
     }
     async updateCalendarObject(...params) {
-        return defaultParam(updateCalendarObject, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(updateCalendarObject, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
+        })(params[0]);
     }
     async deleteCalendarObject(...params) {
-        return defaultParam(deleteCalendarObject, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(deleteCalendarObject, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
+        })(params[0]);
     }
     async syncCalendars(...params) {
         return defaultParam(syncCalendars, {
             headers: this.authHeaders,
             account: this.account,
-            fetchOptions: this.fetchOptions
+            fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
         })(params[0]);
     }
     async addressBookQuery(...params) {
-        return defaultParam(addressBookQuery, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(addressBookQuery, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
+        })(params[0]);
     }
     async addressBookMultiGet(...params) {
-        return defaultParam(addressBookMultiGet, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(addressBookMultiGet, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
+        })(params[0]);
     }
     async fetchAddressBooks(...params) {
-        return defaultParam(fetchAddressBooks, { headers: this.authHeaders, account: this.account, fetchOptions: this.fetchOptions })(params === null || params === void 0 ? void 0 : params[0]);
+        return defaultParam(fetchAddressBooks, {
+            headers: this.authHeaders,
+            account: this.account,
+            fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
+        })(params === null || params === void 0 ? void 0 : params[0]);
     }
     async fetchVCards(...params) {
-        return defaultParam(fetchVCards, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(fetchVCards, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
+        })(params[0]);
     }
     async createVCard(...params) {
-        return defaultParam(createVCard, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(createVCard, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
+        })(params[0]);
     }
     async updateVCard(...params) {
-        return defaultParam(updateVCard, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(updateVCard, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
+        })(params[0]);
     }
     async deleteVCard(...params) {
-        return defaultParam(deleteVCard, { headers: this.authHeaders, fetchOptions: this.fetchOptions })(params[0]);
+        return defaultParam(deleteVCard, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
+        })(params[0]);
     }
 }
 
@@ -11183,4 +11447,4 @@ var index = {
     ...requestHelpers,
 };
 
-export { DAVAttributeMap, DAVClient, DAVNamespace, DAVNamespaceShort, addressBookMultiGet, addressBookQuery, calendarMultiGet, calendarQuery, cleanupFalsy, collectionQuery, createAccount, createCalendarObject, createDAVClient, createObject, createVCard, davRequest, index as default, deleteCalendarObject, deleteObject, deleteVCard, fetchAddressBooks, fetchCalendarObjects, fetchCalendarUserAddresses, fetchCalendars, fetchOauthTokens, fetchVCards, freeBusyQuery, getBasicAuthHeaders, getDAVAttribute, getOauthHeaders, isCollectionDirty, makeCalendar, propfind, refreshAccessToken, smartCollectionSync, supportedReportSet, syncCalendars, syncCollection, updateCalendarObject, updateObject, updateVCard, urlContains, urlEquals };
+export { DAVAttributeMap, DAVClient, DAVNamespace, DAVNamespaceShort, addressBookMultiGet, addressBookQuery, calendarMultiGet, calendarQuery, cleanupFalsy, collectionQuery, createAccount, createCalendarObject, createDAVClient, createObject, createVCard, davRequest, index as default, deleteCalendarObject, deleteObject, deleteVCard, fetchAddressBooks, fetchCalendarObjects, fetchCalendarUserAddresses, fetchCalendars, fetchOauthTokens, fetchVCards, freeBusyQuery, getBasicAuthHeaders, getBearerAuthHeaders, getDAVAttribute, getOauthHeaders, isCollectionDirty, makeCalendar, propfind, refreshAccessToken, smartCollectionSync, supportedReportSet, syncCalendars, syncCollection, updateCalendarObject, updateObject, updateVCard, urlContains, urlEquals };

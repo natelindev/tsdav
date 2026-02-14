@@ -1,9 +1,9 @@
 import { encode } from 'base-64';
-import { fetch } from 'cross-fetch';
 import getLogger from 'debug';
 
 import { DAVTokens } from '../types/DAVTypes';
 import { DAVCredentials } from '../types/models';
+import { fetch } from './fetch';
 import { findMissingFieldNames, hasFields } from './typeHelpers';
 
 const debug = getLogger('tsdav:authHelper');
@@ -27,9 +27,16 @@ export const getBasicAuthHeaders = (credentials: DAVCredentials): { authorizatio
   };
 };
 
+export const getBearerAuthHeaders = (credentials: DAVCredentials): { authorization?: string } => {
+  return {
+    authorization: `Bearer ${credentials.accessToken}`,
+  };
+};
+
 export const fetchOauthTokens = async (
   credentials: DAVCredentials,
   fetchOptions?: RequestInit,
+  fetchOverride?: typeof fetch,
 ): Promise<DAVTokens> => {
   const requireFields: Array<keyof DAVCredentials> = [
     'authorizationCode',
@@ -55,7 +62,8 @@ export const fetchOauthTokens = async (
   debug(credentials.tokenUrl);
   debug(param.toString());
 
-  const response = await fetch(credentials.tokenUrl, {
+  const requestFetch = fetchOverride ?? fetch;
+  const response = await requestFetch(credentials.tokenUrl, {
     method: 'POST',
     body: param.toString(),
     headers: {
@@ -80,6 +88,7 @@ export const fetchOauthTokens = async (
 export const refreshAccessToken = async (
   credentials: DAVCredentials,
   fetchOptions?: RequestInit,
+  fetchOverride?: typeof fetch,
 ): Promise<{
   access_token?: string;
   expires_in?: number;
@@ -101,7 +110,8 @@ export const refreshAccessToken = async (
     refresh_token: credentials.refreshToken,
     grant_type: 'refresh_token',
   });
-  const response = await fetch(credentials.tokenUrl, {
+  const requestFetch = fetchOverride ?? fetch;
+  const response = await requestFetch(credentials.tokenUrl, {
     method: 'POST',
     body: param.toString(),
     headers: {
@@ -124,19 +134,20 @@ export const refreshAccessToken = async (
 export const getOauthHeaders = async (
   credentials: DAVCredentials,
   fetchOptions?: RequestInit,
+  fetchOverride?: typeof fetch,
 ): Promise<{ tokens: DAVTokens; headers: { authorization?: string } }> => {
   debug('Fetching oauth headers');
   let tokens: DAVTokens = {};
   if (!credentials.refreshToken) {
     // No refresh token, fetch new tokens
-    tokens = await fetchOauthTokens(credentials, fetchOptions);
+    tokens = await fetchOauthTokens(credentials, fetchOptions, fetchOverride);
   } else if (
     (credentials.refreshToken && !credentials.accessToken) ||
     Date.now() > (credentials.expiration ?? 0)
   ) {
     // have refresh token, but no accessToken, fetch access token only
     // or have both, but accessToken was expired
-    tokens = await refreshAccessToken(credentials, fetchOptions);
+    tokens = await refreshAccessToken(credentials, fetchOptions, fetchOverride);
   }
   // now we should have valid access token
   debug(`Oauth tokens fetched: ${tokens.access_token}`);

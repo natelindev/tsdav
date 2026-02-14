@@ -1,5 +1,6 @@
 import { DAVTokens } from '../types/DAVTypes';
 import { DAVCredentials } from '../types/models';
+import { fetch } from './fetch';
 /**
  * Provide given params as default params to given function with optional params.
  *
@@ -10,12 +11,15 @@ export declare const defaultParam: <F extends (...args: any[]) => any>(fn: F, pa
 export declare const getBasicAuthHeaders: (credentials: DAVCredentials) => {
     authorization?: string;
 };
-export declare const fetchOauthTokens: (credentials: DAVCredentials, fetchOptions?: RequestInit) => Promise<DAVTokens>;
-export declare const refreshAccessToken: (credentials: DAVCredentials, fetchOptions?: RequestInit) => Promise<{
+export declare const getBearerAuthHeaders: (credentials: DAVCredentials) => {
+    authorization?: string;
+};
+export declare const fetchOauthTokens: (credentials: DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof fetch) => Promise<DAVTokens>;
+export declare const refreshAccessToken: (credentials: DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof fetch) => Promise<{
     access_token?: string;
     expires_in?: number;
 }>;
-export declare const getOauthHeaders: (credentials: DAVCredentials, fetchOptions?: RequestInit) => Promise<{
+export declare const getOauthHeaders: (credentials: DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof fetch) => Promise<{
     tokens: DAVTokens;
     headers: {
         authorization?: string;

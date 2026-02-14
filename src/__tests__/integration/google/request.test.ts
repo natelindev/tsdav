@@ -1,4 +1,4 @@
-import { fetch } from 'cross-fetch';
+import { fetch } from '../../../util/fetch';
 import fsp from 'fs/promises';
 
 import { createAccount } from '../../../account';

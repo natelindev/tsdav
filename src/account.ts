@@ -1,4 +1,3 @@
-import { fetch } from 'cross-fetch';
 import getLogger from 'debug';
 
 import { fetchAddressBooks, fetchVCards } from './addressBook';
@@ -6,6 +5,7 @@ import { fetchCalendarObjects, fetchCalendars } from './calendar';
 import { DAVNamespaceShort } from './consts';
 import { propfind } from './request';
 import { DAVAccount } from './types/models';
+import { fetch } from './util/fetch';
 import { excludeHeaders, urlContains } from './util/requestHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelpers';
 
@@ -16,21 +16,32 @@ export const serviceDiscovery = async (params: {
   headers?: Record<string, string>;
   headersToExclude?: string[];
   fetchOptions?: RequestInit;
+  fetch?: typeof fetch;
 }): Promise<string> => {
   debug('Service discovery...');
-  const { account, headers, headersToExclude, fetchOptions = {} } = params;
+  const { account, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
+  const requestFetch = fetchOverride ?? fetch;
   const endpoint = new URL(account.serverUrl);
 
   const uri = new URL(`/.well-known/${account.accountType}`, endpoint);
   uri.protocol = endpoint.protocol ?? 'http';
 
   try {
-    const response = await fetch(uri.href, {
-      headers: excludeHeaders(headers, headersToExclude),
+    const response = await requestFetch(uri.href, {
+      headers: {
+        ...excludeHeaders(headers, headersToExclude),
+        'Content-Type': 'text/xml;charset=UTF-8',
+      },
       method: 'PROPFIND',
+      body: `<?xml version="1.0" encoding="utf-8" ?>
+<d:propfind xmlns:d="DAV:">
+  <d:prop>
+    <d:resourcetype/>
+  </d:prop>
+</d:propfind>`,
       redirect: 'manual',
       ...fetchOptions,
-    });
+    } as any);
 
     if (response.status >= 300 && response.status < 400) {
       // http redirect.
@@ -59,8 +70,9 @@ export const fetchPrincipalUrl = async (params: {
   headers?: Record<string, string>;
   headersToExclude?: string[];
   fetchOptions?: RequestInit;
+  fetch?: typeof fetch;
 }): Promise<string> => {
-  const { account, headers, headersToExclude, fetchOptions = {} } = params;
+  const { account, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
   const requiredFields: Array<'rootUrl'> = ['rootUrl'];
   if (!hasFields(account, requiredFields)) {
     throw new Error(
@@ -79,6 +91,7 @@ export const fetchPrincipalUrl = async (params: {
     depth: '0',
     headers: excludeHeaders(headers, headersToExclude),
     fetchOptions,
+    fetch: fetchOverride,
   });
   if (!response.ok) {
     debug(`Fetch principal url failed: ${response.statusText}`);
@@ -95,8 +108,9 @@ export const fetchHomeUrl = async (params: {
   headers?: Record<string, string>;
   headersToExclude?: string[];
   fetchOptions?: RequestInit;
+  fetch?: typeof fetch;
 }): Promise<string> => {
-  const { account, headers, headersToExclude, fetchOptions = {} } = params;
+  const { account, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
   const requiredFields: Array<'principalUrl' | 'rootUrl'> = ['principalUrl', 'rootUrl'];
   if (!hasFields(account, requiredFields)) {
     throw new Error(
@@ -114,11 +128,14 @@ export const fetchHomeUrl = async (params: {
     depth: '0',
     headers: excludeHeaders(headers, headersToExclude),
     fetchOptions,
+    fetch: fetchOverride,
   });
 
   const matched = responses.find((r) => urlContains(account.principalUrl, r.href));
   if (!matched || !matched.ok) {
-    debug(`Fetch home url failed with status ${matched?.statusText} and error ${JSON.stringify(responses.map((r) => r.error))}`);
+    debug(
+      `Fetch home url failed with status ${matched?.statusText} and error ${JSON.stringify(responses.map((r) => r.error))}`,
+    );
     throw new Error('cannot find homeUrl');
   }
 
@@ -139,6 +156,7 @@ export const createAccount = async (params: {
   loadCollections?: boolean;
   loadObjects?: boolean;
   fetchOptions?: RequestInit;
+  fetch?: typeof fetch;
 }): Promise<DAVAccount> => {
   const {
     account,
@@ -147,22 +165,26 @@ export const createAccount = async (params: {
     loadObjects = false,
     headersToExclude,
     fetchOptions = {},
+    fetch: fetchOverride,
   } = params;
   const newAccount: DAVAccount = { ...account };
   newAccount.rootUrl = await serviceDiscovery({
     account,
     headers: excludeHeaders(headers, headersToExclude),
     fetchOptions,
+    fetch: fetchOverride,
   });
   newAccount.principalUrl = await fetchPrincipalUrl({
     account: newAccount,
     headers: excludeHeaders(headers, headersToExclude),
     fetchOptions,
+    fetch: fetchOverride,
   });
   newAccount.homeUrl = await fetchHomeUrl({
     account: newAccount,
     headers: excludeHeaders(headers, headersToExclude),
     fetchOptions,
+    fetch: fetchOverride,
   });
   // to load objects you must first load collections
   if (loadCollections || loadObjects) {
@@ -171,12 +193,14 @@ export const createAccount = async (params: {
         headers: excludeHeaders(headers, headersToExclude),
         account: newAccount,
         fetchOptions,
+        fetch: fetchOverride,
       });
     } else if (account.accountType === 'carddav') {
       newAccount.addressBooks = await fetchAddressBooks({
         headers: excludeHeaders(headers, headersToExclude),
         account: newAccount,
         fetchOptions,
+        fetch: fetchOverride,
       });
     }
   }
@@ -189,6 +213,7 @@ export const createAccount = async (params: {
             calendar: cal,
             headers: excludeHeaders(headers, headersToExclude),
             fetchOptions,
+            fetch: fetchOverride,
           }),
         })),
       );
@@ -200,6 +225,7 @@ export const createAccount = async (params: {
             addressBook: addr,
             headers: excludeHeaders(headers, headersToExclude),
             fetchOptions,
+            fetch: fetchOverride,
           }),
         })),
       );
