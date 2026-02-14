@@ -339,38 +339,38 @@ export const fetchCalendarObjects = async (params: {
     },
   ];
 
+  let initialResponses: DAVResponse[] = [];
   const calendarObjectUrls = (
     objectUrls ??
     // fetch all objects of the calendar
-    (
-      await calendarQuery({
-        url: calendar.url,
-        props: {
-          [`${DAVNamespaceShort.DAV}:getetag`]: {
-            ...(expand && timeRange
-              ? {
-                  [`${DAVNamespaceShort.CALDAV}:expand`]: {
-                    _attributes: {
-                      start: `${new Date(timeRange.start)
-                        .toISOString()
-                        .slice(0, 19)
-                        .replace(/[-:.]/g, '')}Z`,
-                      end: `${new Date(timeRange.end)
-                        .toISOString()
-                        .slice(0, 19)
-                        .replace(/[-:.]/g, '')}Z`,
-                    },
+    (initialResponses = await calendarQuery({
+      url: calendar.url,
+      props: {
+        [`${DAVNamespaceShort.DAV}:getetag`]: {},
+        ...(expand && timeRange
+          ? {
+              [`${DAVNamespaceShort.CALDAV}:calendar-data`]: {
+                [`${DAVNamespaceShort.CALDAV}:expand`]: {
+                  _attributes: {
+                    start: `${new Date(timeRange.start)
+                      .toISOString()
+                      .slice(0, 19)
+                      .replace(/[-:.]/g, '')}Z`,
+                    end: `${new Date(timeRange.end)
+                      .toISOString()
+                      .slice(0, 19)
+                      .replace(/[-:.]/g, '')}Z`,
                   },
-                }
-              : {}),
-          },
-        },
-        filters,
-        depth: '1',
-        headers: excludeHeaders(headers, headersToExclude),
-        fetchOptions,
-      })
-    ).map((res) => res.href ?? '')
+                },
+              },
+            }
+          : {}),
+      },
+      filters,
+      depth: '1',
+      headers: excludeHeaders(headers, headersToExclude),
+      fetchOptions,
+    })).map((res) => res.href ?? '')
   )
     .map((url) => (url.startsWith('http') || !url ? url : new URL(url, calendar.url).href)) // patch up to full url if url is not full
     .filter(urlFilter) // custom filter function on calendar objects
@@ -379,7 +379,14 @@ export const fetchCalendarObjects = async (params: {
   let calendarObjectResults: DAVResponse[] = [];
 
   if (calendarObjectUrls.length > 0) {
-    if (!useMultiGet || expand) {
+    if (expand && !objectUrls) {
+      calendarObjectResults = initialResponses.filter((res) => {
+        const fullUrl = (res.href ?? '').startsWith('http')
+          ? res.href
+          : new URL(res.href ?? '', calendar.url).href;
+        return urlFilter(fullUrl ?? '');
+      });
+    } else if (!useMultiGet) {
       calendarObjectResults = await calendarQuery({
         url: calendar.url,
         props: {

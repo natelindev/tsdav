@@ -1,3 +1,10 @@
+## v2.1.8
+
+##### improvements
+
+- fixed [#272](https://github.com/natelindev/tsdav/issues/272) malformed expand request in fetchCalendarObjects
+- optimized fetchCalendarObjects to reduce redundant requests when expand is true
+
 ## v2.1.7
 
 ##### improvements
