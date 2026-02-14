@@ -17,7 +17,7 @@ It's very common to be used for cloud storage(limited support), as well as calen
 | Fastmail      | ✅     | ✅     | ✅      |
 | Nextcloud     | ✅     | ✅     | ✅      |
 | Baikal        | ✅     | ✅     | ✅      |
-| ZOHO          | ✅     | ✅     | ⛔️      |
+| ZOHO          | ✅     | ✅     | ✅      |
 | DAViCal       | ✅     | ✅     | ⛔️      |
 | Forward Email | ⛔️     | ✅     | ✅      |
 

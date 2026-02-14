@@ -59,11 +59,11 @@ module.exports = {
         docs: {
           path: 'docs',
           sidebarPath: require.resolve('./sidebars.js'),
-          editUrl: 'https://github.com/natelindev/tsdav/edit/master/docs/',
+          editUrl: 'https://github.com/natelindev/tsdav/edit/main/docs/',
           lastVersion: 'current',
           versions: {
             current: {
-              label: '2.1.6',
+              label: '2.1.7',
             },
             '1.1.6': {
               label: '1.1.6',
@@ -80,8 +80,5 @@ module.exports = {
       },
     ],
   ],
-  plugins: [
-    "@cmfcmf/docusaurus-search-local",
-    require.resolve('./docusuarusWebpack5Plugin'),
-  ],
+  plugins: ['@cmfcmf/docusaurus-search-local', require.resolve('./docusuarusWebpack5Plugin')],
 };
