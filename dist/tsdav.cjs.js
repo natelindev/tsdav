@@ -2111,6 +2111,7 @@ exports.fetchOauthTokens = fetchOauthTokens;
 exports.fetchVCards = fetchVCards;
 exports.freeBusyQuery = freeBusyQuery;
 exports.getBasicAuthHeaders = getBasicAuthHeaders;
+exports.getBearerAuthHeaders = getBearerAuthHeaders;
 exports.getDAVAttribute = getDAVAttribute;
 exports.getOauthHeaders = getOauthHeaders;
 exports.isCollectionDirty = isCollectionDirty;

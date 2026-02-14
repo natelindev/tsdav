@@ -9,7 +9,7 @@ export { davRequest, propfind, createObject, updateObject, deleteObject } from '
 export { collectionQuery, supportedReportSet, isCollectionDirty, syncCollection, smartCollectionSync, } from './collection';
 export { calendarQuery, calendarMultiGet, makeCalendar, fetchCalendars, fetchCalendarUserAddresses, fetchCalendarObjects, createCalendarObject, updateCalendarObject, deleteCalendarObject, syncCalendars, freeBusyQuery, } from './calendar';
 export { addressBookQuery, addressBookMultiGet, fetchAddressBooks, fetchVCards, createVCard, updateVCard, deleteVCard, } from './addressBook';
-export { getBasicAuthHeaders, getOauthHeaders, fetchOauthTokens, refreshAccessToken, } from './util/authHelpers';
+export { getBasicAuthHeaders, getBearerAuthHeaders, getOauthHeaders, fetchOauthTokens, refreshAccessToken, } from './util/authHelpers';
 export { urlContains, urlEquals, getDAVAttribute, cleanupFalsy } from './util/requestHelpers';
 export { DAVNamespace, DAVAttributeMap, DAVNamespaceShort } from './consts';
 declare const _default: {

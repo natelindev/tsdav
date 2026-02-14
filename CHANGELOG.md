@@ -4,6 +4,12 @@
 
 - fixed [#272](https://github.com/natelindev/tsdav/issues/272) malformed expand request in fetchCalendarObjects
 - optimized fetchCalendarObjects to reduce redundant requests when expand is true
+- added Bearer auth support for token-based providers (e.g., Nextcloud OIDC)
+- added fetch overrides across account, request, and collection helpers for custom transports
+- prefer native fetch in Cloudflare Workers to avoid cross-fetch incompatibilities
+- collectionQuery now rejects on non-OK responses instead of returning empty arrays
+- fetchVCards filters out collection URLs to avoid empty/invalid entries (Radicale-compatible)
+- docs updates for iCal feed import, providers, and custom transport guidance
 
 ## v2.1.7
 

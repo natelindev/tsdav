@@ -137,3 +137,21 @@ as `digestString` param in DAVCredentials
 
 for custom auth, you can pass additional data via `customData` prop to DAVCredentials,
 you can pass in your custom auth function as `authFunction` param and will have DAVCredentials available to it.
+
+### getBearerAuthHeaders
+
+Generate Bearer authorization headers from an access token (useful for OIDC providers such as Nextcloud when supported).
+
+```ts
+const result = getBearerAuthHeaders({
+  accessToken: 'YOUR_OIDC_ACCESS_TOKEN',
+});
+```
+
+#### Return Value
+
+```ts
+{
+  authorization: 'Bearer YOUR_OIDC_ACCESS_TOKEN',
+}
+```
