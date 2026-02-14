@@ -11,7 +11,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: ['10', '12', '14', '16']
+        node-version: [18, 20, 22, 24]
 
     environment:
       name: Production
@@ -19,13 +19,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Use Node.js ${{ matrix.node_version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node_version }}
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm --frozen-lockfile
+        run: pnpm i --frozen-lockfile
 
       - name: Run `typecheck`
         run: pnpm typecheck
