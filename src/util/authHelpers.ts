@@ -27,6 +27,12 @@ export const getBasicAuthHeaders = (credentials: DAVCredentials): { authorizatio
   };
 };
 
+export const getBearerAuthHeaders = (credentials: DAVCredentials): { authorization?: string } => {
+  return {
+    authorization: `Bearer ${credentials.accessToken}`,
+  };
+};
+
 export const fetchOauthTokens = async (
   credentials: DAVCredentials,
   fetchOptions?: RequestInit,

@@ -168,3 +168,22 @@ refers to [Changelog](./CHANGELOG.md)
 
 this package uses `debug` package,
 add `tsdav:*` to `DEBUG` env variable to enable debug logs
+
+### FAQ
+
+#### Can I use token-based auth (e.g., OIDC) with Nextcloud?
+
+Yes, if your Nextcloud instance is configured to support it (e.g., via the `user_oidc` app), you can use `authMethod: 'Bearer'`:
+
+```ts
+const client = new DAVClient({
+  serverUrl: 'https://<your-nextcloud-host>/remote.php/dav',
+  credentials: {
+    accessToken: 'YOUR_OIDC_ACCESS_TOKEN',
+  },
+  authMethod: 'Bearer',
+  defaultAccountType: 'caldav',
+});
+```
+
+Note: Some Nextcloud configurations may still require Basic auth (username + app password) for DAV endpoints if OIDC is not fully integrated with the DAV subsystem.

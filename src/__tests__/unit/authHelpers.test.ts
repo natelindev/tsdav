@@ -3,6 +3,7 @@ import {
   fetchOauthTokens,
   getBasicAuthHeaders,
   refreshAccessToken,
+  getBearerAuthHeaders,
 } from '../../util/authHelpers';
 
 test('defaultParam should be able to add default param', () => {
@@ -31,6 +32,13 @@ test('getBasicAuthHeaders should return correct hash', () => {
     password: '12345',
   });
   expect(authorization).toEqual('Basic dGVzdDoxMjM0NQ==');
+});
+
+test('getBearerAuthHeaders should return correct header', () => {
+  const { authorization } = getBearerAuthHeaders({
+    accessToken: 'test_token',
+  });
+  expect(authorization).toEqual('Bearer test_token');
 });
 
 test('fetchOauthTokens should rejects when missing args', async () => {

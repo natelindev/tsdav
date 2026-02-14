@@ -24,9 +24,12 @@ Generate an app specific password just like apple, follow [this guide](https://w
 
 ##### Nextcloud
 
-Nextcloud supports CalDAV/CardDAV with Basic auth (username + app password). For browser
-clients, you may need to use a server-side proxy or trusted domain configuration to
-avoid CORS issues. A common server URL is:
+Nextcloud supports CalDAV/CardDAV with Basic auth (username + app password) and Bearer auth (OIDC tokens).
+
+- **Basic Auth:** Recommended for most use cases. Use your username and an app-specific password.
+- **Bearer Auth:** Supported if Nextcloud is configured with OIDC (e.g., via `user_oidc` app). Use `authMethod: 'Bearer'` and provide your access token in `credentials.accessToken`.
+
+For browser clients, you may need to use a server-side proxy or trusted domain configuration to avoid CORS issues. A common server URL is:
 
 `https://<your-nextcloud-host>/remote.php/dav`
 
