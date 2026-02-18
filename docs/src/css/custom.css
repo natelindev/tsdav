@@ -23,3 +23,58 @@
   margin: 0 calc(-1 * var(--ifm-pre-padding));
   padding: 0 var(--ifm-pre-padding);
 }
+
+/* Markdown Actions Dropdown Styles */
+article .markdown header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  overflow: visible;
+}
+
+article .markdown header h1 {
+  flex: 1 1 auto;
+  margin: 0;
+}
+
+.markdown-actions-container {
+  flex-shrink: 0;
+  margin-left: auto;
+  position: relative;
+}
+
+.markdown-actions-container .dropdown {
+  position: relative;
+}
+
+.markdown-actions-container .dropdown__menu {
+  z-index: 1000;
+  min-width: 220px;
+  right: auto;
+  left: 0;
+}
+
+.dropdown__link:hover {
+  background-color: var(--ifm-hover-overlay);
+}
+
+@media (max-width: 768px) {
+  .markdown-actions-container {
+    margin-right: clamp(0px, 0.5rem, 1rem);
+    margin-bottom: 1rem;
+  }
+
+  .markdown-actions-container .button {
+    font-size: 0.875rem;
+    padding: 0.375rem 0.75rem;
+  }
+
+  .markdown-actions-container .dropdown__menu {
+    right: 0;
+    left: auto;
+    min-width: min(220px, calc(100vw - 2rem));
+    max-width: calc(100vw - 2rem);
+    padding-bottom: 0.75rem;
+  }
+}

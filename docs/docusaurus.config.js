@@ -83,6 +83,7 @@ module.exports = {
   plugins: [
     '@cmfcmf/docusaurus-search-local',
     require.resolve('./docusuarusWebpack5Plugin'),
+    'docusaurus-markdown-source-plugin',
     [
       'docusaurus-plugin-llms',
       {
@@ -106,6 +107,7 @@ module.exports = {
           'cloud providers.*',
           'migration.*',
           'contributing.*',
+          'llms.*',
         ],
         includeUnmatchedLast: true,
       },
