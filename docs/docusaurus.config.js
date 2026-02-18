@@ -80,5 +80,35 @@ module.exports = {
       },
     ],
   ],
-  plugins: ['@cmfcmf/docusaurus-search-local', require.resolve('./docusuarusWebpack5Plugin')],
+  plugins: [
+    '@cmfcmf/docusaurus-search-local',
+    require.resolve('./docusuarusWebpack5Plugin'),
+    [
+      'docusaurus-plugin-llms',
+      {
+        generateLLMsTxt: true,
+        generateLLMsFullTxt: true,
+        docsDir: 'docs',
+        title: 'tsdav Documentation',
+        description:
+          'TypeScript WebDAV client library wrapping CalDAV and CardDAV workflows for browsers and Node.js.',
+        excludeImports: true,
+        removeDuplicateHeadings: true,
+        includeOrder: [
+          'intro.*',
+          'webdav/**/*',
+          'caldav/**/*',
+          'carddav/**/*',
+          'types/**/*',
+          'helpers/**/*',
+          'helper.*',
+          'smart calendar sync.*',
+          'cloud providers.*',
+          'migration.*',
+          'contributing.*',
+        ],
+        includeUnmatchedLast: true,
+      },
+    ],
+  ],
 };

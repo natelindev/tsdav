@@ -105,3 +105,4 @@ typings/
 .tern-port
 .DS_Store
 .vscode/settings.json
+.vercel
