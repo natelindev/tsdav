@@ -38,6 +38,7 @@
     }
   ],
   "rewrites": [
+    { "source": "/docs/:path(.*)\\.md", "destination": "/:path.md" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
