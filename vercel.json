@@ -37,17 +37,7 @@
       ]
     }
   ],
-  "routes": [
-    {
-      "src": "/(.*)\\.md",
-      "dest": "/$1.md"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
