@@ -1,3 +1,4 @@
+import { vi, describe, it, test, expect, beforeAll, beforeEach } from 'vitest';
 import { fetch } from '../fetch';
 
 describe('fetch utility', () => {

@@ -1,8 +1,19 @@
+import { describe, it, test, expect, beforeAll, beforeEach } from 'vitest';
 import fsp from 'fs/promises';
 
 import { createAccount } from '../../../account';
-import { calendarMultiGet, fetchCalendarObjects, fetchCalendars } from '../../../calendar';
-import { DAVNamespace } from '../../../consts';
+import {
+  calendarMultiGet,
+  calendarQuery,
+  createCalendarObject,
+  deleteCalendarObject,
+  fetchCalendarObjects,
+  fetchCalendars,
+  syncCalendars,
+  updateCalendarObject,
+} from '../../../calendar';
+import { smartCollectionSync } from '../../../collection';
+import { DAVNamespace, DAVNamespaceShort } from '../../../consts';
 import { createObject, deleteObject } from '../../../request';
 import { DAVAccount } from '../../../types/models';
 import { getBasicAuthHeaders } from '../../../util/authHelpers';
@@ -82,15 +93,20 @@ test('calendarMultiGet should be able to get information about multiple calendar
 
   const calendarObjects = await calendarMultiGet({
     url: calendars[0].url,
-    props: [
-      { name: 'getetag', namespace: DAVNamespace.DAV },
-      { name: 'calendar-data', namespace: DAVNamespace.CALDAV },
+    props: {
+      [`${DAVNamespaceShort.DAV}:getetag`]: {},
+      [`${DAVNamespaceShort.CALDAV}:calendar-data`]: {},
+    },
+    objectUrls: [
+      new URL(objectUrl1).pathname,
+      new URL(objectUrl2).pathname,
+      new URL(objectUrl3).pathname,
     ],
     depth: '1',
     headers: authHeaders,
   });
 
-  expect(calendarObjects.length > 0);
+  expect(calendarObjects.length).toBeGreaterThanOrEqual(3);
 
   const deleteResult1 = await deleteObject({
     url: objectUrl1,
@@ -278,4 +294,219 @@ test('fetchCalendarObjects should fail when passed timeRange is invalid', async 
     });
 
   expect(t()).rejects.toEqual(new Error('invalid timeRange format, not in ISO8601'));
+});
+
+test('calendarQuery should be able to query calendar objects', async () => {
+  const iCalString = await fsp.readFile(`${__dirname}/../data/ical/9.ics`, 'utf-8');
+  const calendars = await fetchCalendars({
+    account,
+    headers: authHeaders,
+  });
+
+  const objectUrl = new URL('query-test.ics', calendars[0].url).href;
+  await createObject({
+    url: objectUrl,
+    data: iCalString,
+    headers: {
+      'content-type': 'text/calendar; charset=utf-8',
+      ...authHeaders,
+    },
+  });
+
+  const results = await calendarQuery({
+    url: calendars[0].url,
+    props: {
+      [`${DAVNamespaceShort.DAV}:getetag`]: {},
+      [`${DAVNamespaceShort.CALDAV}:calendar-data`]: {},
+    },
+    filters: [
+      {
+        'comp-filter': {
+          _attributes: { name: 'VCALENDAR' },
+          'comp-filter': {
+            _attributes: { name: 'VEVENT' },
+          },
+        },
+      },
+    ],
+    depth: '1',
+    headers: authHeaders,
+  });
+
+  expect(results.length > 0).toBe(true);
+  expect(results.every((r) => r.ok)).toBe(true);
+
+  // Nextcloud may rename objects, so find and delete by UID
+  const allObjs = await fetchCalendarObjects({ calendar: calendars[0], headers: authHeaders });
+  const toDelete = allObjs.find((o) => o.data?.includes('b53b6846-ede3-4689-b744-aa33963e1586'));
+  if (toDelete) {
+    await deleteObject({ url: toDelete.url, headers: authHeaders });
+  }
+});
+
+test('createCalendarObject should be able to create calendar object', async () => {
+  const iCalString = await fsp.readFile(`${__dirname}/../data/ical/14.ics`, 'utf-8');
+  const calendars = await fetchCalendars({
+    account,
+    headers: authHeaders,
+  });
+
+  const createResult = await createCalendarObject({
+    calendar: calendars[0],
+    filename: 'highlevel-create.ics',
+    iCalString,
+    headers: authHeaders,
+  });
+
+  expect(createResult.ok).toBe(true);
+
+  // Nextcloud may rename objects to UID-based filenames, so fetch all and find by UID
+  const objects = await fetchCalendarObjects({
+    calendar: calendars[0],
+    headers: authHeaders,
+  });
+
+  const created = objects.find((o) => o.data?.includes('a1b2c3d4-e5f6-7890-abcd-ef1234567890'));
+  expect(created).toBeDefined();
+  expect(created!.data.length > 0).toBe(true);
+
+  await deleteObject({
+    url: created!.url,
+    headers: authHeaders,
+  });
+});
+
+test('updateCalendarObject should be able to update calendar object', async () => {
+  const iCalString = await fsp.readFile(`${__dirname}/../data/ical/16.ics`, 'utf-8');
+  const updatedICalString = await fsp.readFile(`${__dirname}/../data/ical/17.ics`, 'utf-8');
+  const calendars = await fetchCalendars({
+    account,
+    headers: authHeaders,
+  });
+
+  await createCalendarObject({
+    calendar: calendars[0],
+    filename: 'highlevel-update.ics',
+    iCalString,
+    headers: authHeaders,
+  });
+
+  // Nextcloud may rename objects to UID-based filenames, so fetch all and find by UID
+  const allObjects = await fetchCalendarObjects({
+    calendar: calendars[0],
+    headers: authHeaders,
+  });
+  const obj = allObjects.find((o) => o.data?.includes('b2c3d4e5-f6a7-8901-bcde-f12345678901'));
+  expect(obj).toBeDefined();
+
+  const updateResult = await updateCalendarObject({
+    calendarObject: {
+      url: obj!.url,
+      etag: obj!.etag,
+      data: updatedICalString,
+    },
+    headers: authHeaders,
+  });
+
+  expect(updateResult.ok).toBe(true);
+
+  await deleteObject({
+    url: obj!.url,
+    headers: authHeaders,
+  });
+});
+
+test('deleteCalendarObject should be able to delete calendar object', async () => {
+  const iCalString = await fsp.readFile(`${__dirname}/../data/ical/18.ics`, 'utf-8');
+  const calendars = await fetchCalendars({
+    account,
+    headers: authHeaders,
+  });
+
+  await createCalendarObject({
+    calendar: calendars[0],
+    filename: 'highlevel-delete.ics',
+    iCalString,
+    headers: authHeaders,
+  });
+
+  // Nextcloud may rename objects to UID-based filenames, so fetch all and find by UID
+  const allObjects = await fetchCalendarObjects({
+    calendar: calendars[0],
+    headers: authHeaders,
+  });
+  const obj = allObjects.find((o) => o.data?.includes('c3d4e5f6-a7b8-9012-cdef-123456789012'));
+  expect(obj).toBeDefined();
+
+  const deleteResult = await deleteCalendarObject({
+    calendarObject: {
+      url: obj!.url,
+      etag: obj!.etag,
+    },
+    headers: authHeaders,
+  });
+
+  expect(deleteResult.ok).toBe(true);
+});
+
+test('syncCalendars should be able to detect calendar changes', async () => {
+  const calendars = await fetchCalendars({
+    account,
+    headers: authHeaders,
+  });
+
+  const { created, updated, deleted } = await syncCalendars({
+    oldCalendars: calendars,
+    account,
+    headers: authHeaders,
+    detailedResult: true,
+  });
+
+  expect(Array.isArray(created)).toBe(true);
+  expect(Array.isArray(updated)).toBe(true);
+  expect(Array.isArray(deleted)).toBe(true);
+});
+
+test('smartCollectionSync should be able to sync calendar objects', async () => {
+  const iCalString = await fsp.readFile(`${__dirname}/../data/ical/9.ics`, 'utf-8');
+  const calendars = await fetchCalendars({
+    account,
+    headers: authHeaders,
+  });
+
+  const objectUrl = new URL('sync-test.ics', calendars[0].url).href;
+  await createObject({
+    url: objectUrl,
+    data: iCalString,
+    headers: {
+      'content-type': 'text/calendar; charset=utf-8',
+      ...authHeaders,
+    },
+  });
+
+  const syncResult = await smartCollectionSync({
+    collection: {
+      url: calendars[0].url,
+      ctag: calendars[0].ctag,
+      syncToken: calendars[0].syncToken,
+      objects: [],
+      objectMultiGet: calendarMultiGet,
+    },
+    method: 'webdav',
+    headers: authHeaders,
+    account,
+    detailedResult: true,
+  });
+
+  expect(syncResult.objects).toBeDefined();
+  expect(Array.isArray(syncResult.objects.created)).toBe(true);
+  expect(Array.isArray(syncResult.objects.updated)).toBe(true);
+  expect(Array.isArray(syncResult.objects.deleted)).toBe(true);
+
+  // Nextcloud may rename objects, so find and delete by UID
+  const allObjs = await fetchCalendarObjects({ calendar: calendars[0], headers: authHeaders });
+  const toDelete = allObjs.find((o) => o.data?.includes('b53b6846-ede3-4689-b744-aa33963e1586'));
+  if (toDelete) {
+    await deleteObject({ url: toDelete.url, headers: authHeaders });
+  }
 });

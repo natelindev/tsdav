@@ -1,7 +1,16 @@
+import { describe, it, test, expect, beforeAll, beforeEach } from 'vitest';
 import fsp from 'fs/promises';
 
 import { createAccount } from '../../../account';
-import { createVCard, fetchAddressBooks, fetchVCards } from '../../../addressBook';
+import {
+  addressBookMultiGet,
+  createVCard,
+  deleteVCard,
+  fetchAddressBooks,
+  fetchVCards,
+  updateVCard,
+} from '../../../addressBook';
+import { DAVNamespace, DAVNamespaceShort } from '../../../consts';
 import { deleteObject } from '../../../request';
 import { DAVAccount } from '../../../types/models';
 import { getBasicAuthHeaders } from '../../../util/authHelpers';
@@ -90,4 +99,125 @@ test('fetchVCards should be able to fetch vcards', async () => {
   });
 
   expect(deleteResult.ok).toBe(true);
+});
+
+test('updateVCard should be able to update a vcard', async () => {
+  const addressBooks = await fetchAddressBooks({
+    account,
+    headers: authHeaders,
+  });
+
+  const vcard3 = await fsp.readFile(`${__dirname}/../data/vcard/3.vcf`, 'utf8');
+  const vcard4 = await fsp.readFile(`${__dirname}/../data/vcard/4.vcf`, 'utf8');
+
+  await createVCard({
+    addressBook: addressBooks[0],
+    vCardString: vcard3,
+    filename: '3.vcf',
+    headers: authHeaders,
+  });
+
+  const vcards = await fetchVCards({
+    addressBook: addressBooks[0],
+    objectUrls: [new URL('3.vcf', addressBooks[0].url).href],
+    headers: authHeaders,
+  });
+
+  const updateResult = await updateVCard({
+    vCard: {
+      url: new URL('3.vcf', addressBooks[0].url).href,
+      etag: vcards[0].etag,
+      data: vcard4,
+    },
+    headers: authHeaders,
+  });
+
+  expect(updateResult.ok).toBe(true);
+
+  await deleteObject({
+    url: new URL('3.vcf', addressBooks[0].url).href,
+    headers: authHeaders,
+  });
+});
+
+test('deleteVCard should be able to delete a vcard', async () => {
+  const addressBooks = await fetchAddressBooks({
+    account,
+    headers: authHeaders,
+  });
+
+  const vcard3 = await fsp.readFile(`${__dirname}/../data/vcard/3.vcf`, 'utf8');
+
+  await createVCard({
+    addressBook: addressBooks[0],
+    vCardString: vcard3,
+    filename: 'delete-test.vcf',
+    headers: authHeaders,
+  });
+
+  const vcards = await fetchVCards({
+    addressBook: addressBooks[0],
+    objectUrls: [new URL('delete-test.vcf', addressBooks[0].url).href],
+    headers: authHeaders,
+  });
+
+  const deleteResult = await deleteVCard({
+    vCard: {
+      url: new URL('delete-test.vcf', addressBooks[0].url).href,
+      etag: vcards[0].etag,
+    },
+    headers: authHeaders,
+  });
+
+  expect(deleteResult.ok).toBe(true);
+});
+
+test('addressBookMultiGet should be able to get multiple vcards', async () => {
+  const addressBooks = await fetchAddressBooks({
+    account,
+    headers: authHeaders,
+  });
+
+  const vcard1 = await fsp.readFile(`${__dirname}/../data/vcard/1.vcf`, 'utf8');
+  const vcard2 = await fsp.readFile(`${__dirname}/../data/vcard/2.vcf`, 'utf8');
+
+  await createVCard({
+    addressBook: addressBooks[0],
+    vCardString: vcard1,
+    filename: 'multi1.vcf',
+    headers: authHeaders,
+  });
+
+  await createVCard({
+    addressBook: addressBooks[0],
+    vCardString: vcard2,
+    filename: 'multi2.vcf',
+    headers: authHeaders,
+  });
+
+  const results = await addressBookMultiGet({
+    url: addressBooks[0].url,
+    props: {
+      [`${DAVNamespaceShort.DAV}:getetag`]: {},
+      [`${DAVNamespaceShort.CARDDAV}:address-data`]: {},
+    },
+    objectUrls: [
+      new URL('multi1.vcf', addressBooks[0].url).pathname,
+      new URL('multi2.vcf', addressBooks[0].url).pathname,
+    ],
+    depth: '1',
+    headers: authHeaders,
+  });
+
+  expect(results.length).toBe(2);
+  expect(results.every((r) => r.ok)).toBe(true);
+
+  await deleteObject({
+    url: new URL('multi1.vcf', addressBooks[0].url).href,
+    headers: authHeaders,
+  });
+  await deleteObject({
+    url: new URL('multi2.vcf', addressBooks[0].url).href,
+    headers: authHeaders,
+  });
 });

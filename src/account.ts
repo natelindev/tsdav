@@ -11,6 +11,12 @@ import { findMissingFieldNames, hasFields } from './util/typeHelpers';
 
 const debug = getLogger('tsdav:account');
 
+const getCandidateRootUrls = (serverUrl: string, discoveredRootUrl: string): string[] => {
+  const candidates = [discoveredRootUrl, serverUrl, new URL('/', serverUrl).href];
+
+  return candidates.filter((url, index) => candidates.indexOf(url) === index);
+};
+
 export const serviceDiscovery = async (params: {
   account: DAVAccount;
   headers?: Record<string, string>;
@@ -26,6 +32,25 @@ export const serviceDiscovery = async (params: {
   const uri = new URL(`/.well-known/${account.accountType}`, endpoint);
   uri.protocol = endpoint.protocol ?? 'http';
 
+  const extractRedirect = (response: Response): string | undefined => {
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get('Location');
+      if (typeof location === 'string' && location.length) {
+        debug(`Service discovery redirected to ${location}`);
+        const serviceURL = new URL(location, endpoint);
+
+        if (serviceURL.hostname === uri.hostname && uri.port && !serviceURL.port) {
+          serviceURL.port = uri.port;
+        }
+
+        serviceURL.protocol = endpoint.protocol ?? 'http';
+        return serviceURL.href;
+      }
+    }
+    return undefined;
+  };
+
+  // Try PROPFIND first (standard method for CalDAV/CardDAV service discovery)
   try {
     const response = await requestFetch(uri.href, {
       headers: {
@@ -43,23 +68,30 @@ export const serviceDiscovery = async (params: {
       ...fetchOptions,
     } as any);
 
-    if (response.status >= 300 && response.status < 400) {
-      // http redirect.
-      const location = response.headers.get('Location');
-      if (typeof location === 'string' && location.length) {
-        debug(`Service discovery redirected to ${location}`);
-        const serviceURL = new URL(location, endpoint);
-
-        if (serviceURL.hostname === uri.hostname && uri.port && !serviceURL.port) {
-          serviceURL.port = uri.port;
-        }
-
-        serviceURL.protocol = endpoint.protocol ?? 'http';
-        return serviceURL.href;
-      }
+    const redirectUrl = extractRedirect(response);
+    if (redirectUrl) {
+      return redirectUrl;
     }
   } catch (err) {
-    debug(`Service discovery failed: ${(err as Error).stack}`);
+    debug(`Service discovery PROPFIND failed: ${(err as Error).stack}`);
+  }
+
+  // Some servers (e.g. sabre-based like RoundCube) only redirect GET requests
+  // at .well-known endpoints, so try GET as a fallback
+  try {
+    const response = await requestFetch(uri.href, {
+      headers: excludeHeaders(headers, headersToExclude),
+      method: 'GET',
+      redirect: 'manual',
+      ...fetchOptions,
+    } as any);
+
+    const redirectUrl = extractRedirect(response);
+    if (redirectUrl) {
+      return redirectUrl;
+    }
+  } catch (err) {
+    debug(`Service discovery GET failed: ${(err as Error).stack}`);
   }
 
   return endpoint.href;
@@ -96,11 +128,19 @@ export const fetchPrincipalUrl = async (params: {
   if (!response.ok) {
     debug(`Fetch principal url failed: ${response.statusText}`);
     if (response.status === 401) {
-      throw new Error('Invalid credentials');
+      throw new Error(`Invalid credentials: PROPFIND ${account.rootUrl} returned 401 Unauthorized`);
     }
+    throw new Error('cannot find principalUrl');
   }
-  debug(`Fetched principal url ${response.props?.currentUserPrincipal?.href}`);
-  return new URL(response.props?.currentUserPrincipal?.href ?? '', account.rootUrl).href;
+
+  const principalHref = response.props?.currentUserPrincipal?.href;
+  if (typeof principalHref !== 'string' || !principalHref.length) {
+    debug('Fetch principal url failed: missing current-user-principal href');
+    throw new Error('cannot find principalUrl');
+  }
+
+  debug(`Fetched principal url ${principalHref}`);
+  return new URL(principalHref, account.rootUrl).href;
 };
 
 export const fetchHomeUrl = async (params: {
@@ -168,19 +208,52 @@ export const createAccount = async (params: {
     fetch: fetchOverride,
   } = params;
   const newAccount: DAVAccount = { ...account };
-  newAccount.rootUrl = await serviceDiscovery({
+  const discoveredRootUrl = account.rootUrl ?? await serviceDiscovery({
     account,
     headers: excludeHeaders(headers, headersToExclude),
     fetchOptions,
     fetch: fetchOverride,
   });
-  newAccount.principalUrl = await fetchPrincipalUrl({
+
+  if (account.rootUrl) {
+    newAccount.rootUrl = account.rootUrl;
+  } else if (account.principalUrl) {
+    newAccount.rootUrl = discoveredRootUrl;
+  } else {
+    let lastPrincipalError: Error | undefined;
+
+    for (const rootUrl of getCandidateRootUrls(account.serverUrl, discoveredRootUrl)) {
+      try {
+        const principalUrl = await fetchPrincipalUrl({
+          account: {
+            ...newAccount,
+            rootUrl,
+          },
+          headers: excludeHeaders(headers, headersToExclude),
+          fetchOptions,
+          fetch: fetchOverride,
+        });
+
+        newAccount.rootUrl = rootUrl;
+        newAccount.principalUrl = principalUrl;
+        break;
+      } catch (err) {
+        lastPrincipalError = err as Error;
+      }
+    }
+
+    if (!newAccount.rootUrl || !newAccount.principalUrl) {
+      throw lastPrincipalError ?? new Error('cannot find principalUrl');
+    }
+  }
+
+  newAccount.principalUrl = account.principalUrl ?? newAccount.principalUrl ?? await fetchPrincipalUrl({
     account: newAccount,
     headers: excludeHeaders(headers, headersToExclude),
     fetchOptions,
     fetch: fetchOverride,
   });
-  newAccount.homeUrl = await fetchHomeUrl({
+  newAccount.homeUrl = account.homeUrl ?? await fetchHomeUrl({
     account: newAccount,
     headers: excludeHeaders(headers, headersToExclude),
     fetchOptions,

@@ -1,7 +1,9 @@
+import { vi, describe, it, test, expect, beforeAll, beforeEach } from 'vitest';
 import {
   defaultParam,
   fetchOauthTokens,
   getBasicAuthHeaders,
+  getOauthHeaders,
   refreshAccessToken,
   getBearerAuthHeaders,
 } from '../../util/authHelpers';
@@ -59,4 +61,207 @@ test('refreshAccessToken should rejects when missing args', async () => {
   expect(t).rejects.toThrow(
     'Oauth credentials missing: refreshToken,clientId,clientSecret,tokenUrl',
   );
+});
+
+describe('fetchOauthTokens success', () => {
+  it('should return tokens on successful response', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        access_token: 'acc-token',
+        refresh_token: 'ref-token',
+        expires_in: 3600,
+      }),
+    });
+
+    const tokens = await fetchOauthTokens(
+      {
+        authorizationCode: 'code123',
+        redirectUrl: 'http://localhost/callback',
+        clientId: 'cid',
+        clientSecret: 'csecret',
+        tokenUrl: 'http://example.com/token',
+      },
+      undefined,
+      mockFetch as any,
+    );
+
+    expect(tokens).toEqual({
+      access_token: 'acc-token',
+      refresh_token: 'ref-token',
+      expires_in: 3600,
+    });
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://example.com/token',
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
+
+  it('should return empty object on failed response', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: false,
+      text: vi.fn().mockResolvedValue('error'),
+    });
+
+    const tokens = await fetchOauthTokens(
+      {
+        authorizationCode: 'code123',
+        redirectUrl: 'http://localhost/callback',
+        clientId: 'cid',
+        clientSecret: 'csecret',
+        tokenUrl: 'http://example.com/token',
+      },
+      undefined,
+      mockFetch as any,
+    );
+
+    expect(tokens).toEqual({});
+  });
+});
+
+describe('refreshAccessToken success', () => {
+  it('should return tokens on successful response', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        access_token: 'new-acc-token',
+        expires_in: 7200,
+      }),
+    });
+
+    const tokens = await refreshAccessToken(
+      {
+        refreshToken: 'ref-token',
+        clientId: 'cid',
+        clientSecret: 'csecret',
+        tokenUrl: 'http://example.com/token',
+      },
+      undefined,
+      mockFetch as any,
+    );
+
+    expect(tokens).toEqual({
+      access_token: 'new-acc-token',
+      expires_in: 7200,
+    });
+  });
+
+  it('should return empty object on failed response', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: false,
+      text: vi.fn().mockResolvedValue('error'),
+    });
+
+    const tokens = await refreshAccessToken(
+      {
+        refreshToken: 'ref-token',
+        clientId: 'cid',
+        clientSecret: 'csecret',
+        tokenUrl: 'http://example.com/token',
+      },
+      undefined,
+      mockFetch as any,
+    );
+
+    expect(tokens).toEqual({});
+  });
+});
+
+describe('getOauthHeaders', () => {
+  it('should fetch new tokens when no refreshToken', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        access_token: 'fresh-token',
+        refresh_token: 'ref',
+        expires_in: 3600,
+      }),
+    });
+
+    const result = await getOauthHeaders(
+      {
+        authorizationCode: 'code',
+        redirectUrl: 'http://localhost/callback',
+        clientId: 'cid',
+        clientSecret: 'csecret',
+        tokenUrl: 'http://example.com/token',
+      },
+      undefined,
+      mockFetch as any,
+    );
+
+    expect(result.headers.authorization).toBe('Bearer fresh-token');
+    expect(result.tokens.access_token).toBe('fresh-token');
+  });
+
+  it('should refresh when has refreshToken but no accessToken', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        access_token: 'refreshed-token',
+        expires_in: 3600,
+      }),
+    });
+
+    const result = await getOauthHeaders(
+      {
+        refreshToken: 'ref-token',
+        clientId: 'cid',
+        clientSecret: 'csecret',
+        tokenUrl: 'http://example.com/token',
+      },
+      undefined,
+      mockFetch as any,
+    );
+
+    expect(result.headers.authorization).toBe('Bearer refreshed-token');
+    expect(result.tokens.access_token).toBe('refreshed-token');
+  });
+
+  it('should refresh when accessToken is expired', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        access_token: 'refreshed-token',
+        expires_in: 3600,
+      }),
+    });
+
+    const result = await getOauthHeaders(
+      {
+        refreshToken: 'ref-token',
+        accessToken: 'old-token',
+        expiration: Date.now() - 1000, // expired
+        clientId: 'cid',
+        clientSecret: 'csecret',
+        tokenUrl: 'http://example.com/token',
+      },
+      undefined,
+      mockFetch as any,
+    );
+
+    expect(result.headers.authorization).toBe('Bearer refreshed-token');
+  });
+
+  it('should use existing accessToken when not expired', async () => {
+    const mockFetch = vi.fn();
+
+    const result = await getOauthHeaders(
+      {
+        refreshToken: 'ref-token',
+        accessToken: 'valid-token',
+        expiration: Date.now() + 100000, // not expired
+        clientId: 'cid',
+        clientSecret: 'csecret',
+        tokenUrl: 'http://example.com/token',
+      },
+      undefined,
+      mockFetch as any,
+    );
+
+    // Should not have fetched since token is not expired
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect(result.headers.authorization).toBe('Bearer undefined');
+    expect(result.tokens).toEqual({});
+  });
 });

@@ -10478,13 +10478,30 @@ var calendar = /*#__PURE__*/Object.freeze({
 
 const debug$1 = getLogger('tsdav:account');
 const serviceDiscovery = async (params) => {
-    var _a, _b;
+    var _a;
     debug$1('Service discovery...');
     const { account, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
     const requestFetch = fetchOverride !== null && fetchOverride !== void 0 ? fetchOverride : fetch;
     const endpoint = new URL(account.serverUrl);
     const uri = new URL(`/.well-known/${account.accountType}`, endpoint);
     uri.protocol = (_a = endpoint.protocol) !== null && _a !== void 0 ? _a : 'http';
+    const extractRedirect = (response) => {
+        var _a;
+        if (response.status >= 300 && response.status < 400) {
+            const location = response.headers.get('Location');
+            if (typeof location === 'string' && location.length) {
+                debug$1(`Service discovery redirected to ${location}`);
+                const serviceURL = new URL(location, endpoint);
+                if (serviceURL.hostname === uri.hostname && uri.port && !serviceURL.port) {
+                    serviceURL.port = uri.port;
+                }
+                serviceURL.protocol = (_a = endpoint.protocol) !== null && _a !== void 0 ? _a : 'http';
+                return serviceURL.href;
+            }
+        }
+        return undefined;
+    };
+    // Try PROPFIND first (standard method for CalDAV/CardDAV service discovery)
     try {
         const response = await requestFetch(uri.href, {
             headers: {
@@ -10501,22 +10518,30 @@ const serviceDiscovery = async (params) => {
             redirect: 'manual',
             ...fetchOptions,
         });
-        if (response.status >= 300 && response.status < 400) {
-            // http redirect.
-            const location = response.headers.get('Location');
-            if (typeof location === 'string' && location.length) {
-                debug$1(`Service discovery redirected to ${location}`);
-                const serviceURL = new URL(location, endpoint);
-                if (serviceURL.hostname === uri.hostname && uri.port && !serviceURL.port) {
-                    serviceURL.port = uri.port;
-                }
-                serviceURL.protocol = (_b = endpoint.protocol) !== null && _b !== void 0 ? _b : 'http';
-                return serviceURL.href;
-            }
+        const redirectUrl = extractRedirect(response);
+        if (redirectUrl) {
+            return redirectUrl;
         }
     }
     catch (err) {
-        debug$1(`Service discovery failed: ${err.stack}`);
+        debug$1(`Service discovery PROPFIND failed: ${err.stack}`);
+    }
+    // Some servers (e.g. sabre-based like RoundCube) only redirect GET requests
+    // at .well-known endpoints, so try GET as a fallback
+    try {
+        const response = await requestFetch(uri.href, {
+            headers: excludeHeaders(headers, headersToExclude),
+            method: 'GET',
+            redirect: 'manual',
+            ...fetchOptions,
+        });
+        const redirectUrl = extractRedirect(response);
+        if (redirectUrl) {
+            return redirectUrl;
+        }
+    }
+    catch (err) {
+        debug$1(`Service discovery GET failed: ${err.stack}`);
     }
     return endpoint.href;
 };
@@ -10541,7 +10566,7 @@ const fetchPrincipalUrl = async (params) => {
     if (!response.ok) {
         debug$1(`Fetch principal url failed: ${response.statusText}`);
         if (response.status === 401) {
-            throw new Error('Invalid credentials');
+            throw new Error(`Invalid credentials: PROPFIND ${account.rootUrl} returned 401 Unauthorized`);
         }
     }
     debug$1(`Fetched principal url ${(_b = (_a = response.props) === null || _a === void 0 ? void 0 : _a.currentUserPrincipal) === null || _b === void 0 ? void 0 : _b.href}`);
@@ -10577,21 +10602,22 @@ const fetchHomeUrl = async (params) => {
     return result;
 };
 const createAccount = async (params) => {
+    var _a, _b, _c;
     const { account, headers, loadCollections = false, loadObjects = false, headersToExclude, fetchOptions = {}, fetch: fetchOverride, } = params;
     const newAccount = { ...account };
-    newAccount.rootUrl = await serviceDiscovery({
+    newAccount.rootUrl = (_a = account.rootUrl) !== null && _a !== void 0 ? _a : await serviceDiscovery({
         account,
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
         fetch: fetchOverride,
     });
-    newAccount.principalUrl = await fetchPrincipalUrl({
+    newAccount.principalUrl = (_b = account.principalUrl) !== null && _b !== void 0 ? _b : await fetchPrincipalUrl({
         account: newAccount,
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
         fetch: fetchOverride,
     });
-    newAccount.homeUrl = await fetchHomeUrl({
+    newAccount.homeUrl = (_c = account.homeUrl) !== null && _c !== void 0 ? _c : await fetchHomeUrl({
         account: newAccount,
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,

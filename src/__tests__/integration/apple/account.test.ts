@@ -1,3 +1,4 @@
+import { describe, it, test, expect, beforeAll, beforeEach } from 'vitest';
 import { createAccount, fetchHomeUrl, fetchPrincipalUrl, serviceDiscovery } from '../../../account';
 import { getBasicAuthHeaders } from '../../../util/authHelpers';
 

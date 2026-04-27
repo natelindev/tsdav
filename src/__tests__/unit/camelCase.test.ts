@@ -1,3 +1,4 @@
+import { vi, describe, it, test, expect, beforeAll, beforeEach } from 'vitest';
 import { camelCase } from '../../util/camelCase';
 
 test('camelCase should convert snakeCase to camelCase', () => {
