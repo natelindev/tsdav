@@ -61,6 +61,44 @@ Use the ESM bundle in modern browsers:
 Browser requests to CalDAV/CardDAV endpoints are often blocked by CORS. Prefer running
 tsdav in a server environment, proxying requests through your backend, or using a [custom transport](#custom-transport-electroncors).
 
+### Bun
+
+`tsdav` runs under [Bun](https://bun.sh) without any additional configuration.
+Install and import as you would under Node.js:
+
+```bash
+bun add tsdav
+```
+
+```ts
+import { createDAVClient } from 'tsdav';
+```
+
+Bun's built-in `fetch` is used automatically.
+
+### Deno
+
+`tsdav` is consumable under [Deno](https://deno.com) via the `npm:` specifier
+in Deno 2.x and later:
+
+```ts
+import { createDAVClient } from 'npm:tsdav';
+
+const client = await createDAVClient({
+  serverUrl: 'https://caldav.icloud.com',
+  credentials: {
+    username: Deno.env.get('APPLE_ID')!,
+    password: Deno.env.get('APPLE_APP_PASSWORD')!,
+  },
+  authMethod: 'Basic',
+  defaultAccountType: 'caldav',
+});
+```
+
+Run with at minimum `--allow-net` (for CalDAV/CardDAV servers) and
+`--allow-env` (if you read credentials from the environment). Deno's native
+`fetch` is used automatically.
+
 ### Cloudflare Workers
 
 `tsdav` is compatible with Cloudflare Workers. It automatically detects and uses the native `fetch` provided by the Workers runtime.

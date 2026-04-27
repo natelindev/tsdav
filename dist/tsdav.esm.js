@@ -1,6 +1,5 @@
 import getLogger from 'debug';
 import convert from 'xml-js';
-import crossFetch from 'cross-fetch';
 import base64 from 'base-64';
 
 var DAVNamespace;
@@ -42,17 +41,36 @@ var ICALObjects;
 const camelCase = (str) => str.replace(/[-_]+(\w?)/g, (_m, c) => (c ? c.toUpperCase() : ''));
 
 /**
- * Cloudflare Workers and some modern environments have a native fetch on globalThis.
- * We prefer it over cross-fetch to avoid compatibility issues with the polyfill.
+ * Resolve the runtime `fetch` implementation.
+ *
+ * All supported runtimes expose a standards-compliant `fetch` on
+ * `globalThis`:
+ *   - Node.js >= 18 (the minimum declared in package.json#engines)
+ *   - Modern browsers
+ *   - Bun (all versions)
+ *   - Deno (all versions)
+ *   - Cloudflare Workers, Electron, KaiOS 3+
+ *
+ * Exotic hosts without a global `fetch` must either install a polyfill on
+ * `globalThis` before importing tsdav, or pass their own `fetch`
+ * implementation to `createDAVClient`, the `DAVClient` constructor, or the
+ * individual request helpers.
  */
-const getFetch = () => {
+const resolveFetch = () => {
     if (typeof globalThis !== 'undefined' && typeof globalThis.fetch === 'function') {
         return globalThis.fetch.bind(globalThis);
     }
-    // Fallback to cross-fetch
-    return crossFetch;
+    // Return a thunk that throws on first invocation rather than at module
+    // load time, so that consumers who always supply their own `fetch` via
+    // the public API do not trip this check merely by importing tsdav.
+    return (() => {
+        throw new Error('tsdav: global fetch is not available in this runtime. ' +
+            'Upgrade to Node.js >= 18, run under a browser/Bun/Deno, or install a fetch polyfill ' +
+            'on globalThis before importing tsdav. You can also pass a custom `fetch` implementation ' +
+            'to `createDAVClient`, `DAVClient`, or individual request helpers.');
+    });
 };
-const fetch = getFetch();
+const fetch = resolveFetch();
 
 // Only coerce strings that are unambiguously numeric. Matches optional sign,
 // integer or decimal, and optional exponent. Rejects empty string, whitespace,

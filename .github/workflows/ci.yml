@@ -55,3 +55,143 @@ jobs:
           CREDENTIAL_NEXTCLOUD_USERNAME: ${{secrets.CREDENTIAL_NEXTCLOUD_USERNAME}}
           CREDENTIAL_NEXTCLOUD_PASSWORD: ${{secrets.CREDENTIAL_NEXTCLOUD_PASSWORD}}
           CREDENTIAL_NEXTCLOUD_SERVER_URL: ${{secrets.CREDENTIAL_NEXTCLOUD_SERVER_URL}}
+
+  bun-smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm i --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Import + instantiate from ESM bundle under Bun
+        run: |
+          cat > /tmp/tsdav-bun-smoke.mjs <<'EOF'
+          import { DAVClient, createDAVClient, DAVNamespace } from './dist/tsdav.esm.js';
+          if (typeof DAVClient !== 'function') throw new Error('DAVClient missing');
+          if (typeof createDAVClient !== 'function') throw new Error('createDAVClient missing');
+          if (!DAVNamespace) throw new Error('DAVNamespace missing');
+          // Exercise the auth helper path that previously crashed under
+          // native ESM due to base-64's CJS shape.
+          new DAVClient({
+            serverUrl: 'http://example.com',
+            credentials: { username: 'u', password: 'p' },
+          });
+          console.log('bun-ok');
+          EOF
+          bun /tmp/tsdav-bun-smoke.mjs | tee /tmp/bun.out
+          grep -q '^bun-ok$' /tmp/bun.out
+
+      - name: Import from CJS bundle under Bun
+        run: |
+          cat > /tmp/tsdav-bun-cjs.cjs <<'EOF'
+          const { DAVClient } = require('./dist/tsdav.cjs.js');
+          if (typeof DAVClient !== 'function') throw new Error('DAVClient missing from CJS');
+          console.log('bun-cjs-ok');
+          EOF
+          bun /tmp/tsdav-bun-cjs.cjs | tee /tmp/bun-cjs.out
+          grep -q '^bun-cjs-ok$' /tmp/bun-cjs.out
+
+  deno-smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm i --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Pack tarball from repo root
+        id: pack
+        run: |
+          # Pack using the real root package.json so that `files`, `main`,
+          # `module`, `types`, and `exports` resolve the way they would on
+          # the npm registry. `dist/package.json` is a stale informational
+          # copy with paths that are only valid from inside the repo root.
+          mkdir -p /tmp/deno-smoke
+          npm pack --pack-destination /tmp/deno-smoke > /tmp/pack.out
+          TARBALL=$(ls /tmp/deno-smoke/tsdav-*.tgz | head -n1)
+          echo "tarball=$TARBALL" >> "$GITHUB_OUTPUT"
+
+      - name: Import tsdav under Deno via npm: specifier
+        run: |
+          # Build a throwaway consumer workspace that installs the packed
+          # tarball into node_modules, then tell Deno to consume that
+          # existing node_modules via `nodeModulesDir: "manual"`. Using
+          # `--node-modules-dir=auto` here would make Deno resolve
+          # `npm:tsdav` against the public registry (ignoring our local
+          # build), which defeats the whole point of the smoke test.
+          mkdir -p /tmp/deno-smoke/consumer
+          cd /tmp/deno-smoke/consumer
+          cat > package.json <<EOF
+          {
+            "name": "consumer",
+            "private": true,
+            "type": "module",
+            "dependencies": { "tsdav": "file:${{ steps.pack.outputs.tarball }}" }
+          }
+          EOF
+          npm install --no-audit --no-fund --no-save --no-package-lock
+          # Sanity-check: the installed package must be the freshly packed
+          # version and must NOT drag in `cross-fetch`.
+          INSTALLED_VERSION=$(node -p "require('./node_modules/tsdav/package.json').version")
+          echo "installed tsdav version: $INSTALLED_VERSION"
+          if [ -d node_modules/cross-fetch ]; then
+            echo "cross-fetch unexpectedly present in node_modules"
+            exit 1
+          fi
+          cat > deno.json <<'EOF'
+          {
+            "nodeModulesDir": "manual"
+          }
+          EOF
+          cat > smoke.ts <<'EOF'
+          import { DAVClient, createDAVClient, DAVNamespace } from 'npm:tsdav';
+          if (typeof DAVClient !== 'function') throw new Error('DAVClient missing');
+          if (typeof createDAVClient !== 'function') throw new Error('createDAVClient missing');
+          if (!DAVNamespace) throw new Error('DAVNamespace missing');
+          new DAVClient({
+            serverUrl: 'http://example.com',
+            credentials: { username: 'u', password: 'p' },
+          });
+          console.log('deno-ok');
+          EOF
+          deno run --allow-read --allow-env smoke.ts | tee /tmp/deno.out
+          grep -q '^deno-ok$' /tmp/deno.out

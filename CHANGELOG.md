@@ -1,4 +1,16 @@
-## v2.1.9
+## v2.2.0
+
+##### features
+
+- first-class support for [Bun](https://bun.sh) and [Deno](https://deno.com) in addition to Node.js (>= 18), modern browsers, and Cloudflare Workers
+- added package `exports` map with `browser`, `deno`, `bun`, `worker`, `import`, `require`, and `default` conditions so each runtime picks the correct bundle automatically
+- added dedicated Bun and Deno smoke-test jobs to CI to guard both runtimes against regressions
+- added Bun and Deno usage guides to the docs
+
+##### breaking changes
+
+- dropped the `cross-fetch` runtime dependency. tsdav now uses the standards-compliant `fetch` exposed by every supported runtime (Node.js >= 18, browsers, Bun, Deno, Cloudflare Workers, Electron). Hosts without a global `fetch` must install a polyfill on `globalThis` before importing tsdav, or pass a custom `fetch` to `createDAVClient` / `DAVClient` / individual request helpers. Node < 18 is no longer supported (already documented in `engines.node`, now enforced at the code level).
+- added `exports` field to `package.json`. Deep subpath imports like `import 'tsdav/dist/tsdav.esm.js'` are no longer allowed; use the package root (`import ... from 'tsdav'`) instead.
 
 ##### bug fixes
 

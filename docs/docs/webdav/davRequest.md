@@ -5,8 +5,10 @@ sidebar_position: 1
 ## `davRequest`
 
 core request function of the library,
-based on `cross-fetch`, so the api should work across browser and Node.js
-using `xml-js` so that js objects can be passed as request.
+built on top of the standards-compliant `fetch` exposed by every supported
+runtime (Node.js >= 18, modern browsers, Bun, Deno, Cloudflare Workers,
+Electron). `xml-js` is used so that plain JS objects can be passed as the
+request body.
 
 ```ts
 const [result] = await davRequest({
@@ -36,7 +38,7 @@ const [result] = await davRequest({
 - `convertIncoming` defaults to `true`, whether to convert the passed in init object request body, if `false`, davRequest would expect `init->body` is `xml` string, and would send it directly to target `url` without processing.
 - `parseOutgoing` defaults to `true`, whether to parse the return value in response body, if `false`, the response `raw` would be raw `xml` string returned from server.
 - `fetchOptions` options to pass to underlying fetch function
-- `fetch` custom fetch implementation to override the default `cross-fetch`
+- `fetch` custom fetch implementation to override the runtime's native `fetch`
 
 ### Return Value
 

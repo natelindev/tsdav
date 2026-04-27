@@ -1,6 +1,6 @@
 {
   "name": "tsdav",
-  "version": "2.1.9",
+  "version": "2.2.0",
   "description": "WebDAV, CALDAV, and CARDDAV client for Nodejs and the Browser",
   "keywords": [
     "dav",
@@ -17,12 +17,27 @@
     "sync",
     "nodejs",
     "browser",
+    "bun",
+    "deno",
     "typescript"
   ],
   "homepage": "https://tsdav.vercel.app/",
   "repository": "https://github.com/natelindev/tsdav",
   "license": "MIT",
   "author": "linlilulll@gmail.com",
+  "exports": {
+    ".": {
+      "types": "./dist/tsdav.d.ts",
+      "browser": "./dist/tsdav.js",
+      "deno": "./dist/tsdav.esm.js",
+      "bun": "./dist/tsdav.esm.js",
+      "worker": "./dist/tsdav.esm.js",
+      "import": "./dist/tsdav.esm.js",
+      "require": "./dist/tsdav.cjs.js",
+      "default": "./dist/tsdav.esm.js"
+    },
+    "./package.json": "./package.json"
+  },
   "main": "dist/tsdav.cjs.js",
   "module": "dist/tsdav.esm.js",
   "types": "dist/tsdav.d.ts",
@@ -50,7 +65,6 @@
   },
   "dependencies": {
     "base-64": "1.0.0",
-    "cross-fetch": "4.1.0",
     "debug": "4.4.3",
     "xml-js": "1.6.11"
   },
