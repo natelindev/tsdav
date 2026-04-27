@@ -123,11 +123,19 @@ export const supportedReportSet = async (params: {
     fetchOptions,
     fetch: fetchOverride,
   });
-  return (
-    res[0]?.props?.supportedReportSet?.supportedReport?.map(
-      (sr: { report: any }) => Object.keys(sr.report)[0],
-    ) ?? []
-  );
+  // xml-js compact output collapses repeated elements into an array, but a
+  // lone `<supported-report>` element parses to a single object. Normalize to
+  // an array so downstream `.map` never crashes with "map is not a function".
+  const supportedReport = res[0]?.props?.supportedReportSet?.supportedReport;
+  if (!supportedReport) {
+    return [];
+  }
+  const reports = Array.isArray(supportedReport) ? supportedReport : [supportedReport];
+  return reports
+    .map((sr: { report?: Record<string, unknown> }) =>
+      sr?.report ? Object.keys(sr.report)[0] : undefined,
+    )
+    .filter((name): name is string => typeof name === 'string' && name.length > 0);
 };
 
 export const isCollectionDirty = async (params: {
@@ -366,7 +374,11 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
     const localObjects = collection.objects ?? [];
     // The fetchObjects signature is a union of CalDAV/CardDAV variants that
     // TypeScript cannot narrow from `T extends DAVCollection`. Call via an
-    // explicit any-cast, which preserves runtime behavior.
+    // explicit any-cast, which preserves runtime behavior. The `fetch`
+    // override MUST be forwarded here so custom transports (Electron,
+    // Workers, KaiOS) still work in the basic/ctag-based sync fallback —
+    // dropping it would silently re-route the request through the global
+    // fetch, breaking those environments.
     const remoteObjects: DAVObject[] =
       (await (
         collection.fetchObjects as
@@ -374,12 +386,14 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
               collection: DAVCollection;
               headers?: Record<string, string>;
               fetchOptions?: RequestInit;
+              fetch?: typeof globalThis.fetch;
             }) => Promise<DAVObject[]>)
           | undefined
       )?.({
         collection,
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
+        fetch: fetchOverride,
       })) ?? [];
 
     // no existing url

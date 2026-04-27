@@ -220,6 +220,59 @@ describe('supportedReportSet', () => {
 
     expect(result).toEqual([]);
   });
+
+  // Regression: xml-js compact output collapses a single `<supported-report>`
+  // element into a plain object (not a one-element array). Before this fix,
+  // `.map` would crash with "map is not a function" against a valid 207
+  // response from servers that advertise exactly one report.
+  it('should handle a single supported-report parsed as an object', async () => {
+    mockedPropfind.mockResolvedValue([
+      {
+        href: '/col/',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        props: {
+          supportedReportSet: {
+            supportedReport: { report: { syncCollection: {} } },
+          },
+        },
+      },
+    ]);
+
+    const result = await supportedReportSet({
+      collection: { url: 'http://example.com/col/' },
+    });
+
+    expect(result).toEqual(['syncCollection']);
+  });
+
+  it('should skip malformed supported-report entries without a report key', async () => {
+    mockedPropfind.mockResolvedValue([
+      {
+        href: '/col/',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        props: {
+          supportedReportSet: {
+            // Some servers return entries where `report` is missing or empty.
+            supportedReport: [
+              { report: { syncCollection: {} } },
+              { report: {} },
+              {},
+            ],
+          },
+        },
+      },
+    ]);
+
+    const result = await supportedReportSet({
+      collection: { url: 'http://example.com/col/' },
+    });
+
+    expect(result).toEqual(['syncCollection']);
+  });
 });
 
 describe('isCollectionDirty', () => {
@@ -369,6 +422,45 @@ describe('smartCollectionSync', () => {
     expect(result.objects.created).toHaveLength(1);
     expect(result.objects.deleted).toHaveLength(0);
     expect(result.syncToken).toBe('new-token');
+  });
+
+  // Regression: the basic/ctag fallback used to call `collection.fetchObjects`
+  // with only `{ collection, headers, fetchOptions }`, silently dropping any
+  // `fetch` override supplied by the caller. That broke custom transports
+  // (Electron, KaiOS, Workers) in fallback sync mode.
+  it('should forward the fetch override to collection.fetchObjects in basic mode', async () => {
+    mockedPropfind.mockResolvedValue([
+      {
+        href: 'http://example.com/col/',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        props: { getctag: 'new-ctag' },
+      },
+    ]);
+
+    const customFetch = vi.fn();
+    const mockFetchObjects = vi.fn().mockResolvedValue([]);
+
+    await smartCollectionSync({
+      collection: {
+        url: 'http://example.com/col/',
+        reports: [],
+        ctag: 'old-ctag',
+        objects: [],
+        fetchObjects: mockFetchObjects,
+      } as any,
+      account: {
+        serverUrl: 'https://example.com/',
+        accountType: 'caldav',
+        homeUrl: 'https://example.com/col/',
+      },
+      fetch: customFetch as any,
+      detailedResult: true,
+    });
+
+    expect(mockFetchObjects).toHaveBeenCalledTimes(1);
+    expect(mockFetchObjects.mock.calls[0][0].fetch).toBe(customFetch);
   });
 
   it('should use basic method when collection reports do not include syncCollection', async () => {

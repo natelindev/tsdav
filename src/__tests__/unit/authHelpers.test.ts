@@ -48,7 +48,10 @@ test('fetchOauthTokens should rejects when missing args', async () => {
     fetchOauthTokens({
       authorizationCode: '123',
     });
-  expect(t).rejects.toThrow(
+  // Awaited so the assertion is attached to the ongoing test; Vitest already
+  // warns today that an unawaited `.rejects` assertion will be a hard error
+  // in the next major.
+  await expect(t).rejects.toThrow(
     'Oauth credentials missing: redirectUrl,clientId,clientSecret,tokenUrl',
   );
 });
@@ -58,7 +61,7 @@ test('refreshAccessToken should rejects when missing args', async () => {
     refreshAccessToken({
       authorizationCode: '123',
     });
-  expect(t).rejects.toThrow(
+  await expect(t).rejects.toThrow(
     'Oauth credentials missing: refreshToken,clientId,clientSecret,tokenUrl',
   );
 });

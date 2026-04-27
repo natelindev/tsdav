@@ -18,11 +18,13 @@ export type DAVCollection = {
         collection: DAVCalendar;
         headers?: Record<string, string>;
         fetchOptions?: RequestInit;
+        fetch?: typeof globalThis.fetch;
       }) => Promise<DAVCalendarObject[]>)
     | ((params?: {
         collection: DAVAddressBook;
         headers?: Record<string, string>;
         fetchOptions?: RequestInit;
+        fetch?: typeof globalThis.fetch;
       }) => Promise<DAVVCard[]>);
   objectMultiGet?: (params: {
     url: string;

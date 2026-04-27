@@ -82,6 +82,27 @@ describe('createDAVClient auth methods', () => {
     expect(calledHeaders.authorization).toMatch(/^Basic /);
   });
 
+  // Regression: `authMethod` is optional on the createDAVClient param type
+  // (matching the DAVClient class), but the factory used to throw
+  // "Invalid auth method" the moment it was omitted. Default to 'Basic' so
+  // both public entrypoints behave consistently at runtime.
+  it('should default to Basic auth when authMethod is omitted', async () => {
+    const mockFetch = buildMockFetch();
+    const client = await createDAVClient({
+      serverUrl: 'http://example.com',
+      credentials: mockCredentials,
+      fetch: mockFetch,
+    });
+
+    await client.davRequest({
+      url: 'http://example.com/test',
+      init: { method: 'PROPFIND', body: {} },
+    });
+
+    const calledHeaders = mockFetch.mock.calls[0][1].headers;
+    expect(calledHeaders.authorization).toMatch(/^Basic /);
+  });
+
   it('should handle Bearer auth', async () => {
     const mockFetch = buildMockFetch();
     const client = await createDAVClient({

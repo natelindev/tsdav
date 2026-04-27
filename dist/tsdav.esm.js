@@ -1,7 +1,7 @@
 import getLogger from 'debug';
 import convert from 'xml-js';
 import crossFetch from 'cross-fetch';
-import { encode } from 'base-64';
+import base64 from 'base-64';
 
 var DAVNamespace;
 (function (DAVNamespace) {
@@ -459,7 +459,7 @@ const makeCollection = async (params) => {
     });
 };
 const supportedReportSet = async (params) => {
-    var _a, _b, _c, _d, _e;
+    var _a, _b, _c;
     const { collection, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
     const res = await propfind({
         url: collection.url,
@@ -471,7 +471,17 @@ const supportedReportSet = async (params) => {
         fetchOptions,
         fetch: fetchOverride,
     });
-    return ((_e = (_d = (_c = (_b = (_a = res[0]) === null || _a === void 0 ? void 0 : _a.props) === null || _b === void 0 ? void 0 : _b.supportedReportSet) === null || _c === void 0 ? void 0 : _c.supportedReport) === null || _d === void 0 ? void 0 : _d.map((sr) => Object.keys(sr.report)[0])) !== null && _e !== void 0 ? _e : []);
+    // xml-js compact output collapses repeated elements into an array, but a
+    // lone `<supported-report>` element parses to a single object. Normalize to
+    // an array so downstream `.map` never crashes with "map is not a function".
+    const supportedReport = (_c = (_b = (_a = res[0]) === null || _a === void 0 ? void 0 : _a.props) === null || _b === void 0 ? void 0 : _b.supportedReportSet) === null || _c === void 0 ? void 0 : _c.supportedReport;
+    if (!supportedReport) {
+        return [];
+    }
+    const reports = Array.isArray(supportedReport) ? supportedReport : [supportedReport];
+    return reports
+        .map((sr) => (sr === null || sr === void 0 ? void 0 : sr.report) ? Object.keys(sr.report)[0] : undefined)
+        .filter((name) => typeof name === 'string' && name.length > 0);
 };
 const isCollectionDirty = async (params) => {
     var _a, _b, _c;
@@ -636,11 +646,16 @@ const smartCollectionSync = async (params) => {
         const localObjects = (_j = collection.objects) !== null && _j !== void 0 ? _j : [];
         // The fetchObjects signature is a union of CalDAV/CardDAV variants that
         // TypeScript cannot narrow from `T extends DAVCollection`. Call via an
-        // explicit any-cast, which preserves runtime behavior.
+        // explicit any-cast, which preserves runtime behavior. The `fetch`
+        // override MUST be forwarded here so custom transports (Electron,
+        // Workers, KaiOS) still work in the basic/ctag-based sync fallback —
+        // dropping it would silently re-route the request through the global
+        // fetch, breaking those environments.
         const remoteObjects = (_l = (await ((_k = collection.fetchObjects) === null || _k === void 0 ? void 0 : _k.call(collection, {
             collection,
             headers: excludeHeaders(headers, headersToExclude),
             fetchOptions,
+            fetch: fetchOverride,
         })))) !== null && _l !== void 0 ? _l : [];
         // no existing url
         const created = remoteObjects.filter((ro) => localObjects.every((lo) => !urlContains(lo.url, ro.url)));
@@ -1652,6 +1667,14 @@ var account = /*#__PURE__*/Object.freeze({
     serviceDiscovery: serviceDiscovery
 });
 
+// `base-64` is a CommonJS module that uses `module.exports = base64` with a
+// separately declared object literal. Node's CJS-module-lexer cannot detect
+// `encode`/`decode` as named exports from that pattern, so a native ESM
+// consumer importing the compiled `dist/tsdav.esm.js` would fail with
+// "Named export 'encode' not found" if we used `import { encode } from 'base-64'`.
+// Use the default-import + destructure pattern so Rollup and raw Node ESM
+// both resolve the symbol via the CJS default export.
+const { encode } = base64;
 const debug = getLogger('tsdav:authHelper');
 /**
  * Provide given params as default params to given function with optional params.
@@ -1816,7 +1839,11 @@ var authHelpers = /*#__PURE__*/Object.freeze({
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 const createDAVClient = async (params) => {
     var _a;
-    const { serverUrl, credentials, authMethod, defaultAccountType, authFunction, fetchOptions: defaultFetchOptions, fetch: fetchOverride, } = params;
+    const { serverUrl, credentials, 
+    // Match the class-based DAVClient default so the two entrypoints behave
+    // the same when `authMethod` is omitted (`authMethod?` on the type must
+    // not throw 'Invalid auth method' at runtime).
+    authMethod = 'Basic', defaultAccountType, authFunction, fetchOptions: defaultFetchOptions, fetch: fetchOverride, } = params;
     let authHeaders = {};
     switch (authMethod) {
         case 'Basic':

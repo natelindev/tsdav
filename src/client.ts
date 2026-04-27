@@ -68,7 +68,10 @@ export const createDAVClient = async (params: {
   const {
     serverUrl,
     credentials,
-    authMethod,
+    // Match the class-based DAVClient default so the two entrypoints behave
+    // the same when `authMethod` is omitted (`authMethod?` on the type must
+    // not throw 'Invalid auth method' at runtime).
+    authMethod = 'Basic',
     defaultAccountType,
     authFunction,
     fetchOptions: defaultFetchOptions,

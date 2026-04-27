@@ -1,10 +1,19 @@
-import { encode } from 'base-64';
+// `base-64` is a CommonJS module that uses `module.exports = base64` with a
+// separately declared object literal. Node's CJS-module-lexer cannot detect
+// `encode`/`decode` as named exports from that pattern, so a native ESM
+// consumer importing the compiled `dist/tsdav.esm.js` would fail with
+// "Named export 'encode' not found" if we used `import { encode } from 'base-64'`.
+// Use the default-import + destructure pattern so Rollup and raw Node ESM
+// both resolve the symbol via the CJS default export.
+import base64 from 'base-64';
 import getLogger from 'debug';
 
 import { DAVTokens } from '../types/DAVTypes';
 import { DAVCredentials } from '../types/models';
 import { fetch } from './fetch';
 import { findMissingFieldNames, hasFields } from './typeHelpers';
+
+const { encode } = base64;
 
 const debug = getLogger('tsdav:authHelper');
 
