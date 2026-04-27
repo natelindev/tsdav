@@ -26,13 +26,25 @@ describe('nativeType', () => {
     expect(nativeType('foo bar')).toBe('foo bar');
   });
 
-  it('should return empty string as-is', () => {
-    // '' converts to 0 via Number(''), so it returns 0
-    expect(nativeType('')).toBe(0);
+  it('should return empty string as-is (not coerced to 0)', () => {
+    expect(nativeType('')).toBe('');
   });
 
-  it('should return whitespace as string', () => {
-    // '  ' converts to 0 via Number('  '), so it returns 0
-    expect(nativeType('  ')).toBe(0);
+  it('should return whitespace as string (not coerced to 0)', () => {
+    expect(nativeType('  ')).toBe('  ');
+  });
+
+  it('should preserve numeric-looking tokens with leading zeros', () => {
+    // sync tokens / ctags like "0123" must not be silently coerced to 123
+    expect(nativeType('0123')).toBe('0123');
+    expect(nativeType('007')).toBe('007');
+  });
+
+  it('should preserve etag-like quoted strings', () => {
+    expect(nativeType('"abc123"')).toBe('"abc123"');
+  });
+
+  it('should preserve sync-token URIs', () => {
+    expect(nativeType('http://sabre.io/ns/sync/123')).toBe('http://sabre.io/ns/sync/123');
   });
 });

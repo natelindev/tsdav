@@ -21,7 +21,9 @@ export const defaultParam =
   };
 
 export const getBasicAuthHeaders = (credentials: DAVCredentials): { authorization?: string } => {
-  debug(`Basic auth token generated: ${encode(`${credentials.username}:${credentials.password}`)}`);
+  // NOTE: never log the actual token. Even under DEBUG it would leak
+  // credentials to stdout / log aggregators.
+  debug(`Basic auth token generated for user "${credentials.username ?? ''}"`);
   return {
     authorization: `Basic ${encode(`${credentials.username}:${credentials.password}`)}`,
   };
@@ -59,8 +61,7 @@ export const fetchOauthTokens = async (
     client_secret: credentials.clientSecret,
   });
 
-  debug(credentials.tokenUrl);
-  debug(param.toString());
+  debug(`Fetching oauth tokens from ${credentials.tokenUrl}`);
 
   const requestFetch = fetchOverride ?? fetch;
   const response = await requestFetch(credentials.tokenUrl, {
@@ -81,7 +82,7 @@ export const fetchOauthTokens = async (
     } = await response.json();
     return tokens;
   }
-  debug(`Fetch Oauth tokens failed: ${await response.text()}`);
+  debug(`Fetch Oauth tokens failed with status ${response.status}`);
   return {};
 };
 
@@ -89,10 +90,7 @@ export const refreshAccessToken = async (
   credentials: DAVCredentials,
   fetchOptions?: RequestInit,
   fetchOverride?: typeof fetch,
-): Promise<{
-  access_token?: string;
-  expires_in?: number;
-}> => {
+): Promise<DAVTokens> => {
   const requireFields: Array<keyof DAVCredentials> = [
     'refreshToken',
     'clientId',
@@ -121,16 +119,25 @@ export const refreshAccessToken = async (
   });
 
   if (response.ok) {
-    const tokens: {
-      access_token: string;
-      expires_in: number;
-    } = await response.json();
+    // Some providers (e.g. Google) rotate refresh tokens. Pass the full
+    // payload back to callers so they can persist whichever fields were
+    // returned.
+    const tokens = (await response.json()) as DAVTokens;
     return tokens;
   }
-  debug(`Refresh access token failed: ${await response.text()}`);
+  debug(`Refresh access token failed with status ${response.status}`);
   return {};
 };
 
+/**
+ * Resolve OAuth headers for the given credentials.
+ *
+ * This will mutate `credentials` in-place with the freshly issued
+ * `accessToken`, `refreshToken` (if rotated by the provider), and an
+ * `expiration` timestamp (ms since epoch). Callers that persist credentials
+ * across sessions should re-read these fields from the same credentials
+ * object after this call.
+ */
 export const getOauthHeaders = async (
   credentials: DAVCredentials,
   fetchOptions?: RequestInit,
@@ -138,9 +145,11 @@ export const getOauthHeaders = async (
 ): Promise<{ tokens: DAVTokens; headers: { authorization?: string } }> => {
   debug('Fetching oauth headers');
   let tokens: DAVTokens = {};
+  let didRefresh = false;
   if (!credentials.refreshToken) {
     // No refresh token, fetch new tokens
     tokens = await fetchOauthTokens(credentials, fetchOptions, fetchOverride);
+    didRefresh = true;
   } else if (
     (credentials.refreshToken && !credentials.accessToken) ||
     Date.now() > (credentials.expiration ?? 0)
@@ -148,14 +157,36 @@ export const getOauthHeaders = async (
     // have refresh token, but no accessToken, fetch access token only
     // or have both, but accessToken was expired
     tokens = await refreshAccessToken(credentials, fetchOptions, fetchOverride);
+    didRefresh = true;
+  } else {
+    // existing access token is still valid; reuse it
+    tokens = {
+      access_token: credentials.accessToken,
+      refresh_token: credentials.refreshToken,
+    };
   }
-  // now we should have valid access token
-  debug(`Oauth tokens fetched: ${tokens.access_token}`);
+
+  if (didRefresh) {
+    // Persist refreshed tokens on the credentials object so that subsequent
+    // invocations (and the caller's external storage, if they hold a
+    // reference) see the updated values.
+    /* eslint-disable no-param-reassign */
+    if (tokens.access_token) {
+      credentials.accessToken = tokens.access_token;
+    }
+    if (tokens.refresh_token) {
+      credentials.refreshToken = tokens.refresh_token;
+    }
+    if (typeof tokens.expires_in === 'number') {
+      credentials.expiration = Date.now() + tokens.expires_in * 1000;
+    }
+    /* eslint-enable no-param-reassign */
+  }
+
+  debug('Oauth tokens obtained');
 
   return {
     tokens,
-    headers: {
-      authorization: `Bearer ${tokens.access_token}`,
-    },
+    headers: tokens.access_token ? { authorization: `Bearer ${tokens.access_token}` } : {},
   };
 };

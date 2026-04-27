@@ -261,7 +261,11 @@ describe('getOauthHeaders', () => {
 
     // Should not have fetched since token is not expired
     expect(mockFetch).not.toHaveBeenCalled();
-    expect(result.headers.authorization).toBe('Bearer undefined');
-    expect(result.tokens).toEqual({});
+    // Reuse the existing valid access token rather than emitting "Bearer undefined"
+    expect(result.headers.authorization).toBe('Bearer valid-token');
+    expect(result.tokens).toEqual({
+      access_token: 'valid-token',
+      refresh_token: 'ref-token',
+    });
   });
 });

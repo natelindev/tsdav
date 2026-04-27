@@ -15,10 +15,16 @@ export declare const getBearerAuthHeaders: (credentials: DAVCredentials) => {
     authorization?: string;
 };
 export declare const fetchOauthTokens: (credentials: DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof fetch) => Promise<DAVTokens>;
-export declare const refreshAccessToken: (credentials: DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof fetch) => Promise<{
-    access_token?: string;
-    expires_in?: number;
-}>;
+export declare const refreshAccessToken: (credentials: DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof fetch) => Promise<DAVTokens>;
+/**
+ * Resolve OAuth headers for the given credentials.
+ *
+ * This will mutate `credentials` in-place with the freshly issued
+ * `accessToken`, `refreshToken` (if rotated by the provider), and an
+ * `expiration` timestamp (ms since epoch). Callers that persist credentials
+ * across sessions should re-read these fields from the same credentials
+ * object after this call.
+ */
 export declare const getOauthHeaders: (credentials: DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof fetch) => Promise<{
     tokens: DAVTokens;
     headers: {

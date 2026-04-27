@@ -144,7 +144,7 @@ export const fetchAddressBooks = async (params?: {
           url: new URL(rs.href ?? '', account.rootUrl ?? '').href,
           ctag: rs.props?.getctag,
           displayName: typeof displayName === 'string' ? displayName : '',
-          resourcetype: Object.keys(rs.props?.resourcetype),
+          resourcetype: Object.keys(rs.props?.resourcetype ?? {}),
           syncToken: rs.props?.syncToken,
         };
       })
@@ -175,7 +175,7 @@ export const fetchVCards = async (params: {
     headers,
     objectUrls,
     headersToExclude,
-    urlFilter = (url) => url,
+    urlFilter = (url) => Boolean(url),
     useMultiGet = true,
     fetchOptions = {},
     fetch: fetchOverride,

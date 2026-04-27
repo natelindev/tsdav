@@ -273,7 +273,7 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
     const deletedObjectUrls = objectResponses.filter((o) => o.status === 404).map((r) => r.href);
 
     const multiGetObjectResponse = changedObjectUrls.length
-      ? ((await (collection as any)?.objectMultiGet?.({
+      ? ((await collection.objectMultiGet?.({
           url: collection.url,
           props: {
             [`${DAVNamespaceShort.DAV}:getetag`]: {},
@@ -288,7 +288,7 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
           headers: excludeHeaders(headers, headersToExclude),
           fetchOptions,
           fetch: fetchOverride,
-        } as any)) ?? [])
+        })) ?? [])
       : [];
 
     const remoteObjects = multiGetObjectResponse.map((res: DAVResponse) => {
@@ -346,14 +346,41 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
       fetchOptions,
       fetch: fetchOverride,
     });
+
+    // If the collection hasn't changed, skip the expensive fetchObjects call
+    // entirely and return early. The trailing return below handles the
+    // not-dirty case with an empty diff.
+    if (!isDirty) {
+      return detailedResult
+        ? {
+            ...collection,
+            objects: {
+              created: [],
+              updated: [],
+              deleted: [],
+            },
+          }
+        : collection;
+    }
+
     const localObjects = collection.objects ?? [];
+    // The fetchObjects signature is a union of CalDAV/CardDAV variants that
+    // TypeScript cannot narrow from `T extends DAVCollection`. Call via an
+    // explicit any-cast, which preserves runtime behavior.
     const remoteObjects: DAVObject[] =
-      (await (collection as any).fetchObjects?.({
+      (await (
+        collection.fetchObjects as
+          | ((params: {
+              collection: DAVCollection;
+              headers?: Record<string, string>;
+              fetchOptions?: RequestInit;
+            }) => Promise<DAVObject[]>)
+          | undefined
+      )?.({
         collection,
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
-        fetch: fetchOverride,
-      } as any)) ?? [];
+      })) ?? [];
 
     // no existing url
     const created = remoteObjects.filter((ro: DAVObject) =>
@@ -381,15 +408,13 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
       remoteObjects.some((ro: DAVObject) => urlContains(lo.url, ro.url) && ro.etag === lo.etag),
     );
 
-    if (isDirty) {
-      return {
-        ...collection,
-        objects: detailedResult
-          ? { created, updated, deleted }
-          : [...unchanged, ...created, ...updated],
-        ctag: newCtag,
-      };
-    }
+    return {
+      ...collection,
+      objects: detailedResult
+        ? { created, updated, deleted }
+        : [...unchanged, ...created, ...updated],
+      ctag: newCtag,
+    };
   }
 
   return detailedResult

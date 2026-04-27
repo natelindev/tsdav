@@ -28,6 +28,7 @@ export type DAVCollection = {
         depth: DAVDepth;
         fetchOptions?: RequestInit;
         headers?: Record<string, string>;
+        fetch?: typeof globalThis.fetch;
     }) => Promise<DAVResponse[]>;
 };
 export type DAVObject = {

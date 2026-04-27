@@ -67,6 +67,7 @@ type DAVCollection = {
         depth: DAVDepth;
         fetchOptions?: RequestInit;
         headers?: Record<string, string>;
+        fetch?: typeof globalThis.fetch;
     }) => Promise<DAVResponse[]>;
 };
 type DAVObject = {
@@ -453,14 +454,16 @@ declare const createDAVClient: (params: {
     authMethod?: "Basic" | "Oauth" | "Digest" | "Custom" | "Bearer";
     authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
     defaultAccountType?: DAVAccount["accountType"] | undefined;
-    fetch?: any;
+    fetchOptions?: RequestInit;
+    fetch?: typeof globalThis.fetch;
 }) => Promise<{
     davRequest: (params0: {
         url: string;
         init: DAVRequest;
         convertIncoming?: boolean;
         parseOutgoing?: boolean;
-        fetch?: any;
+        fetchOptions?: RequestInit;
+        fetch?: typeof globalThis.fetch;
     }) => Promise<DAVResponse[]>;
     propfind: (params: {
         url: string;
@@ -476,7 +479,8 @@ declare const createDAVClient: (params: {
         headers?: Record<string, string>;
         loadCollections?: boolean;
         loadObjects?: boolean;
-        fetch?: any;
+        fetchOptions?: RequestInit;
+        fetch?: typeof globalThis.fetch;
     }) => Promise<DAVAccount>;
     createObject: (params: {
         url: string;
@@ -708,7 +712,7 @@ declare class DAVClient {
     authHeaders?: Record<string, string>;
     account?: DAVAccount;
     fetchOptions?: RequestInit;
-    fetchOverride?: any;
+    fetchOverride?: typeof globalThis.fetch;
     authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
     constructor(params: {
         serverUrl: string;
@@ -717,16 +721,19 @@ declare class DAVClient {
         authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
         defaultAccountType?: DAVAccount['accountType'] | undefined;
         fetchOptions?: RequestInit;
-        fetch?: any;
+        fetch?: typeof globalThis.fetch;
     });
-    login(): Promise<void>;
+    login(options?: {
+        loadCollections?: boolean;
+        loadObjects?: boolean;
+    }): Promise<void>;
     davRequest(params0: {
         url: string;
         init: DAVRequest;
         convertIncoming?: boolean;
         parseOutgoing?: boolean;
         fetchOptions?: RequestInit;
-        fetch?: any;
+        fetch?: typeof globalThis.fetch;
     }): Promise<DAVResponse[]>;
     createObject(...params: Parameters<typeof createObject>): Promise<Response>;
     updateObject(...params: Parameters<typeof updateObject>): Promise<Response>;
@@ -738,7 +745,7 @@ declare class DAVClient {
         loadCollections?: boolean;
         loadObjects?: boolean;
         fetchOptions?: RequestInit;
-        fetch?: any;
+        fetch?: typeof globalThis.fetch;
     }): Promise<DAVAccount>;
     collectionQuery(...params: Parameters<typeof collectionQuery>): Promise<DAVResponse[]>;
     makeCollection(...params: Parameters<typeof makeCollection>): Promise<DAVResponse[]>;
@@ -753,7 +760,7 @@ declare class DAVClient {
         method?: 'basic' | 'webdav';
         headers?: Record<string, string>;
         fetchOptions?: RequestInit;
-        fetch?: any;
+        fetch?: typeof globalThis.fetch;
         account?: DAVAccount;
         detailedResult?: false;
     }): Promise<T>;
@@ -762,7 +769,7 @@ declare class DAVClient {
         method?: 'basic' | 'webdav';
         headers?: Record<string, string>;
         fetchOptions?: RequestInit;
-        fetch?: any;
+        fetch?: typeof globalThis.fetch;
         account?: DAVAccount;
         detailedResult: true;
     }): Promise<Omit<T, 'objects'> & {
@@ -808,10 +815,16 @@ declare const getBearerAuthHeaders: (credentials: DAVCredentials) => {
     authorization?: string;
 };
 declare const fetchOauthTokens: (credentials: DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof fetch$1) => Promise<DAVTokens>;
-declare const refreshAccessToken: (credentials: DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof fetch$1) => Promise<{
-    access_token?: string;
-    expires_in?: number;
-}>;
+declare const refreshAccessToken: (credentials: DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof fetch$1) => Promise<DAVTokens>;
+/**
+ * Resolve OAuth headers for the given credentials.
+ *
+ * This will mutate `credentials` in-place with the freshly issued
+ * `accessToken`, `refreshToken` (if rotated by the provider), and an
+ * `expiration` timestamp (ms since epoch). Callers that persist credentials
+ * across sessions should re-read these fields from the same credentials
+ * object after this call.
+ */
 declare const getOauthHeaders: (credentials: DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof fetch$1) => Promise<{
     tokens: DAVTokens;
     headers: {
@@ -819,7 +832,22 @@ declare const getOauthHeaders: (credentials: DAVCredentials, fetchOptions?: Requ
     };
 }>;
 
+/**
+ * Strict URL equality after trimming whitespace and a single trailing slash.
+ * Two URLs are equal if and only if their normalized forms are identical.
+ */
 declare const urlEquals: (urlA?: string, urlB?: string) => boolean;
+/**
+ * Loose URL containment check used for matching DAV responses against known
+ * collection/principal URLs. Tolerates trailing slashes and partial vs. full
+ * URLs (e.g. "www.example.com" vs. "https://www.example.com/").
+ *
+ * NOTE: this is intentionally permissive to accommodate DAV servers that
+ * return hrefs as paths instead of full URLs. Callers MUST only compare URLs
+ * at the same hierarchy level (collection-to-collection, object-to-object).
+ * Comparing a collection URL against an object URL will produce false
+ * positives because the collection URL is a prefix of the object URL.
+ */
 declare const urlContains: (urlA?: string, urlB?: string) => boolean;
 declare const getDAVAttribute: (nsArr: DAVNamespace[]) => {
     [key: string]: DAVNamespace;
@@ -845,10 +873,7 @@ declare const _default: {
         authorization?: string;
     };
     fetchOauthTokens: (credentials: DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof fetch$1) => Promise<DAVTokens>;
-    refreshAccessToken: (credentials: DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof fetch$1) => Promise<{
-        access_token?: string;
-        expires_in?: number;
-    }>;
+    refreshAccessToken: (credentials: DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof fetch$1) => Promise<DAVTokens>;
     getOauthHeaders: (credentials: DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof fetch$1) => Promise<{
         tokens: DAVTokens;
         headers: {
@@ -1141,14 +1166,16 @@ declare const _default: {
         authMethod?: "Basic" | "Oauth" | "Digest" | "Custom" | "Bearer";
         authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
         defaultAccountType?: DAVAccount["accountType"] | undefined;
-        fetch?: any;
+        fetchOptions?: RequestInit;
+        fetch?: typeof globalThis.fetch;
     }) => Promise<{
         davRequest: (params0: {
             url: string;
             init: DAVRequest;
             convertIncoming?: boolean;
             parseOutgoing?: boolean;
-            fetch?: any;
+            fetchOptions?: RequestInit;
+            fetch?: typeof globalThis.fetch;
         }) => Promise<DAVResponse[]>;
         propfind: (params: {
             url: string;
@@ -1164,7 +1191,8 @@ declare const _default: {
             headers?: Record<string, string>;
             loadCollections?: boolean;
             loadObjects?: boolean;
-            fetch?: any;
+            fetchOptions?: RequestInit;
+            fetch?: typeof globalThis.fetch;
         }) => Promise<DAVAccount>;
         createObject: (params: {
             url: string;

@@ -37,13 +37,21 @@ export const serviceDiscovery = async (params: {
       const location = response.headers.get('Location');
       if (typeof location === 'string' && location.length) {
         debug(`Service discovery redirected to ${location}`);
+        // Detect whether the Location header contained an explicit scheme
+        // (e.g. "https://other.example.com/..."). Schemeless redirects like
+        // "/.well-known/..." or "//host/path" must inherit the endpoint's
+        // protocol; explicit ones must be honored verbatim (never downgrade
+        // https → http, never silently upgrade either).
+        const hasExplicitScheme = /^[a-z][a-z0-9+.-]*:/i.test(location);
         const serviceURL = new URL(location, endpoint);
 
         if (serviceURL.hostname === uri.hostname && uri.port && !serviceURL.port) {
           serviceURL.port = uri.port;
         }
 
-        serviceURL.protocol = endpoint.protocol ?? 'http';
+        if (!hasExplicitScheme) {
+          serviceURL.protocol = endpoint.protocol ?? 'http';
+        }
         return serviceURL.href;
       }
     }
@@ -53,20 +61,22 @@ export const serviceDiscovery = async (params: {
   // Try PROPFIND first (standard method for CalDAV/CardDAV service discovery)
   try {
     const response = await requestFetch(uri.href, {
+      ...fetchOptions,
+      // the following fields are essential to discovery; do not allow
+      // fetchOptions to override them.
+      method: 'PROPFIND',
       headers: {
         ...excludeHeaders(headers, headersToExclude),
         'Content-Type': 'text/xml;charset=UTF-8',
       },
-      method: 'PROPFIND',
       body: `<?xml version="1.0" encoding="utf-8" ?>
 <d:propfind xmlns:d="DAV:">
   <d:prop>
     <d:resourcetype/>
   </d:prop>
 </d:propfind>`,
-      redirect: 'manual',
-      ...fetchOptions,
-    } as any);
+      redirect: 'manual' as RequestRedirect,
+    });
 
     const redirectUrl = extractRedirect(response);
     if (redirectUrl) {
@@ -80,11 +90,11 @@ export const serviceDiscovery = async (params: {
   // at .well-known endpoints, so try GET as a fallback
   try {
     const response = await requestFetch(uri.href, {
-      headers: excludeHeaders(headers, headersToExclude),
-      method: 'GET',
-      redirect: 'manual',
       ...fetchOptions,
-    } as any);
+      method: 'GET',
+      headers: excludeHeaders(headers, headersToExclude),
+      redirect: 'manual' as RequestRedirect,
+    });
 
     const redirectUrl = extractRedirect(response);
     if (redirectUrl) {
@@ -179,12 +189,20 @@ export const fetchHomeUrl = async (params: {
     throw new Error('cannot find homeUrl');
   }
 
-  const result = new URL(
+  const homeHref =
     account.accountType === 'caldav'
-      ? matched?.props?.calendarHomeSet.href
-      : matched?.props?.addressbookHomeSet.href,
-    account.rootUrl,
-  ).href;
+      ? matched.props?.calendarHomeSet?.href
+      : matched.props?.addressbookHomeSet?.href;
+  if (typeof homeHref !== 'string' || homeHref.length === 0) {
+    debug(
+      `Fetch home url failed: server did not return a ${
+        account.accountType === 'caldav' ? 'calendar-home-set' : 'addressbook-home-set'
+      } href`,
+    );
+    throw new Error('cannot find homeUrl');
+  }
+
+  const result = new URL(homeHref, account.rootUrl).href;
   debug(`Fetched home url ${result}`);
   return result;
 };
@@ -208,12 +226,14 @@ export const createAccount = async (params: {
     fetch: fetchOverride,
   } = params;
   const newAccount: DAVAccount = { ...account };
-  const discoveredRootUrl = account.rootUrl ?? await serviceDiscovery({
-    account,
-    headers: excludeHeaders(headers, headersToExclude),
-    fetchOptions,
-    fetch: fetchOverride,
-  });
+  const discoveredRootUrl =
+    account.rootUrl ??
+    (await serviceDiscovery({
+      account,
+      headers: excludeHeaders(headers, headersToExclude),
+      fetchOptions,
+      fetch: fetchOverride,
+    }));
 
   if (account.rootUrl) {
     newAccount.rootUrl = account.rootUrl;
@@ -247,18 +267,23 @@ export const createAccount = async (params: {
     }
   }
 
-  newAccount.principalUrl = account.principalUrl ?? newAccount.principalUrl ?? await fetchPrincipalUrl({
-    account: newAccount,
-    headers: excludeHeaders(headers, headersToExclude),
-    fetchOptions,
-    fetch: fetchOverride,
-  });
-  newAccount.homeUrl = account.homeUrl ?? await fetchHomeUrl({
-    account: newAccount,
-    headers: excludeHeaders(headers, headersToExclude),
-    fetchOptions,
-    fetch: fetchOverride,
-  });
+  newAccount.principalUrl =
+    account.principalUrl ??
+    newAccount.principalUrl ??
+    (await fetchPrincipalUrl({
+      account: newAccount,
+      headers: excludeHeaders(headers, headersToExclude),
+      fetchOptions,
+      fetch: fetchOverride,
+    }));
+  newAccount.homeUrl =
+    account.homeUrl ??
+    (await fetchHomeUrl({
+      account: newAccount,
+      headers: excludeHeaders(headers, headersToExclude),
+      fetchOptions,
+      fetch: fetchOverride,
+    }));
   // to load objects you must first load collections
   if (loadCollections || loadObjects) {
     if (account.accountType === 'caldav') {

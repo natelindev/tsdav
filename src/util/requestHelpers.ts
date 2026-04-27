@@ -2,6 +2,15 @@ import { DAVAttributeMap, DAVNamespace } from '../consts';
 
 import type { NoUndefinedField } from './typeHelpers';
 
+const normalizeUrl = (url: string): string => {
+  const trimmed = url.trim();
+  return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed;
+};
+
+/**
+ * Strict URL equality after trimming whitespace and a single trailing slash.
+ * Two URLs are equal if and only if their normalized forms are identical.
+ */
 export const urlEquals = (urlA?: string, urlB?: string): boolean => {
   if (!urlA && !urlB) {
     return true;
@@ -9,19 +18,20 @@ export const urlEquals = (urlA?: string, urlB?: string): boolean => {
   if (!urlA || !urlB) {
     return false;
   }
-
-  const trimmedUrlA = urlA.trim();
-  const trimmedUrlB = urlB.trim();
-
-  if (Math.abs(trimmedUrlA.length - trimmedUrlB.length) > 1) {
-    return false;
-  }
-
-  const strippedUrlA = trimmedUrlA.slice(-1) === '/' ? trimmedUrlA.slice(0, -1) : trimmedUrlA;
-  const strippedUrlB = trimmedUrlB.slice(-1) === '/' ? trimmedUrlB.slice(0, -1) : trimmedUrlB;
-  return urlA.includes(strippedUrlB) || urlB.includes(strippedUrlA);
+  return normalizeUrl(urlA) === normalizeUrl(urlB);
 };
 
+/**
+ * Loose URL containment check used for matching DAV responses against known
+ * collection/principal URLs. Tolerates trailing slashes and partial vs. full
+ * URLs (e.g. "www.example.com" vs. "https://www.example.com/").
+ *
+ * NOTE: this is intentionally permissive to accommodate DAV servers that
+ * return hrefs as paths instead of full URLs. Callers MUST only compare URLs
+ * at the same hierarchy level (collection-to-collection, object-to-object).
+ * Comparing a collection URL against an object URL will produce false
+ * positives because the collection URL is a prefix of the object URL.
+ */
 export const urlContains = (urlA?: string, urlB?: string): boolean => {
   if (!urlA && !urlB) {
     return true;
@@ -30,12 +40,9 @@ export const urlContains = (urlA?: string, urlB?: string): boolean => {
     return false;
   }
 
-  const trimmedUrlA = urlA.trim();
-  const trimmedUrlB = urlB.trim();
-
-  const strippedUrlA = trimmedUrlA.slice(-1) === '/' ? trimmedUrlA.slice(0, -1) : trimmedUrlA;
-  const strippedUrlB = trimmedUrlB.slice(-1) === '/' ? trimmedUrlB.slice(0, -1) : trimmedUrlB;
-  return urlA.includes(strippedUrlB) || urlB.includes(strippedUrlA);
+  const strippedUrlA = normalizeUrl(urlA);
+  const strippedUrlB = normalizeUrl(urlB);
+  return strippedUrlA.includes(strippedUrlB) || strippedUrlB.includes(strippedUrlA);
 };
 
 export const getDAVAttribute = (nsArr: DAVNamespace[]): { [key: string]: DAVNamespace } =>
@@ -67,7 +74,9 @@ export const excludeHeaders = (
     return headers;
   }
 
+  // HTTP headers are case-insensitive, so normalize both sides before comparing
+  const excludeSet = new Set(headersToExclude.map((h) => h.toLowerCase()));
   return Object.fromEntries(
-    Object.entries(headers).filter(([key]) => !headersToExclude.includes(key)),
+    Object.entries(headers).filter(([key]) => !excludeSet.has(key.toLowerCase())),
   );
 };

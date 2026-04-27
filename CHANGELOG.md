@@ -1,7 +1,40 @@
 ## v2.1.9
 
+##### bug fixes
+
+- fixed `syncCalendars` dropping genuinely unchanged calendars from the non-`detailedResult` return; `unchanged` is now selected by matching sync-token/ctag instead of the inverted comparison
+- fixed `fetchCalendarUserAddresses` returning `[]` when the server responded with a single `<href>` element instead of an array
+- fixed `fetchCalendars` / `fetchAddressBooks` crashing on servers that omit `resourcetype` or return a single `<comp>` element (`Object.keys(undefined)` / bad dereference)
+- fixed `fetchHomeUrl` throwing an opaque `TypeError` when the server returned an empty `<calendar-home-set/>` or `<addressbook-home-set/>`; emits a descriptive error instead
+- fixed service discovery silently downgrading explicit `https://` redirects to `http://` when the origin was http; schemeless/relative redirects still inherit the endpoint's protocol
+- fixed service discovery's `redirect: 'manual'`, `method`, `headers`, and `body` being silently overridable by user-supplied `fetchOptions`
+- fixed `davRequest` crashing on non-multistatus XML responses (e.g. CalDAV `<error>` reports) with `Cannot read properties of undefined (reading 'response')`
+- fixed `davRequest` merging `Content-Type` case-insensitively so a user-supplied `content-type` no longer coexists with the library's `Content-Type`
+- fixed `davRequest`'s per-response `ok` flag: now derived from the parsed HTTP status (RFC 4918 propstat), not from presence of an `<error/>` element (which matched empty error stubs)
+- fixed `davRequest` capping the `raw` field on non-XML responses so oversized HTML error pages don't bloat thrown error messages or logs
+- fixed `excludeHeaders` comparing header names case-sensitively; HTTP headers are case-insensitive so `Authorization` and `authorization` are now treated as the same entry
+- fixed `nativeType` coercing empty strings, whitespace, and leading-zero tokens (e.g. `"0123"`) to numbers, which corrupted sync-tokens, etags, and ctags parsed from XML
+- fixed `camelCase` leaking stray separators on consecutive `-`/`_` runs (`foo--bar` now produces `fooBar`)
+- fixed `urlEquals` using a brittle bidirectional-`includes` with a length guard; now a strict trim + single-trailing-slash normalization
+- fixed `smartCollectionSync` (`basic` mode) wasting a `fetchObjects` call when the collection wasn't dirty; now short-circuits on `isDirty === false`
+- fixed `syncCalendars`'s `detailedResult: true` returning the bare `updated` calendar list without the fetched objects; both result shapes now return calendars with objects populated via `smartCollectionSync`
+- fixed `createDAVClient` (factory) silently ignoring `fetchOptions`; parameter added and threaded to every sub-helper
+- fixed `DAVClient#davRequest` dropping the per-call `fetchOptions` in favor of `this.fetchOptions`
+- fixed OAuth flows never persisting refreshed `accessToken` / rotated `refreshToken` / new `expiration` back onto the credentials object, causing repeat refreshes and stale rotating refresh tokens (Google)
+- fixed OAuth headers returning `Bearer undefined` when the in-memory `accessToken` was still valid; the existing token is now reused
+- fixed `authMethod: 'Custom'` silently authenticating with no headers when `authFunction` was omitted; now throws a clear error
+
+##### security
+
+- stopped logging the base64 basic-auth token and the OAuth access token under `DEBUG=tsdav:*`; debug output now references the username / emits status codes only
+
 ##### improvements
 
+- removed several `as any` casts from `DAVClient` / `createDAVClient` so `fetch` and `fetchOptions` are properly typed (`typeof globalThis.fetch` / `RequestInit`)
+- `DAVClient#login` now accepts `{ loadCollections, loadObjects }` to pre-populate the default account in one call
+- `createAccount` (factory and class) now validates `accountType` at runtime and throws a clear error when both the passed account and `defaultAccountType` are missing it
+- `fetchVCards` default `urlFilter` now returns `boolean` instead of the url string
+- added `fetch?` to `DAVCollection.objectMultiGet` type so custom transports can be threaded through `smartCollectionSync`
 - added docusaurus-plugin-llms for LLM-friendly documentation
 - updated docs for LLM discoverability
 - fixed Vercel deployment configuration

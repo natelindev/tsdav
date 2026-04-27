@@ -31,10 +31,7 @@ declare const _default: {
         authorization?: string;
     };
     fetchOauthTokens: (credentials: import("./types/models").DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof import("./util/fetch").fetch) => Promise<import("./types/DAVTypes").DAVTokens>;
-    refreshAccessToken: (credentials: import("./types/models").DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof import("./util/fetch").fetch) => Promise<{
-        access_token?: string;
-        expires_in?: number;
-    }>;
+    refreshAccessToken: (credentials: import("./types/models").DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof import("./util/fetch").fetch) => Promise<import("./types/DAVTypes").DAVTokens>;
     getOauthHeaders: (credentials: import("./types/models").DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof import("./util/fetch").fetch) => Promise<{
         tokens: import("./types/DAVTypes").DAVTokens;
         headers: {
@@ -327,14 +324,16 @@ declare const _default: {
         authMethod?: "Basic" | "Oauth" | "Digest" | "Custom" | "Bearer";
         authFunction?: (credentials: import("./types/models").DAVCredentials) => Promise<Record<string, string>>;
         defaultAccountType?: import("./types/models").DAVAccount["accountType"] | undefined;
-        fetch?: any;
+        fetchOptions?: RequestInit;
+        fetch?: typeof globalThis.fetch;
     }) => Promise<{
         davRequest: (params0: {
             url: string;
             init: import("./types/DAVTypes").DAVRequest;
             convertIncoming?: boolean;
             parseOutgoing?: boolean;
-            fetch?: any;
+            fetchOptions?: RequestInit;
+            fetch?: typeof globalThis.fetch;
         }) => Promise<import("./types/DAVTypes").DAVResponse[]>;
         propfind: (params: {
             url: string;
@@ -350,7 +349,8 @@ declare const _default: {
             headers?: Record<string, string>;
             loadCollections?: boolean;
             loadObjects?: boolean;
-            fetch?: any;
+            fetchOptions?: RequestInit;
+            fetch?: typeof globalThis.fetch;
         }) => Promise<import("./types/models").DAVAccount>;
         createObject: (params: {
             url: string;

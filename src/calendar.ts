@@ -8,16 +8,40 @@ import { createObject, davRequest, deleteObject, propfind, updateObject } from '
 import { DAVDepth, DAVResponse } from './types/DAVTypes';
 import { SyncCalendars } from './types/functionsOverloads';
 import { DAVAccount, DAVCalendar, DAVCalendarObject } from './types/models';
-import {
-  cleanupFalsy,
-  conditionalParam,
-  excludeHeaders,
-  getDAVAttribute,
-  urlContains,
-} from './util/requestHelpers';
+import { cleanupFalsy, excludeHeaders, getDAVAttribute, urlContains } from './util/requestHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelpers';
 
 const debug = getLogger('tsdav:calendar');
+
+const ISO_8601 = /^\d{4}(-\d\d(-\d\d(T\d\d:\d\d(:\d\d)?(\.\d+)?(([+-]\d\d:\d\d)|Z)?)?)?)?$/i;
+const ISO_8601_FULL = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?(([+-]\d\d:\d\d)|Z)?$/i;
+
+/**
+ * Validate a time-range input: both endpoints must be ISO-8601 shaped AND
+ * parse to a real Date (so values like `0000-13-99` get rejected).
+ */
+const validateTimeRange = (timeRange: { start: string; end: string }): void => {
+  const { start, end } = timeRange;
+  const formatValid =
+    (ISO_8601.test(start) && ISO_8601.test(end)) ||
+    (ISO_8601_FULL.test(start) && ISO_8601_FULL.test(end));
+  if (!formatValid) {
+    throw new Error('invalid timeRange format, not in ISO8601');
+  }
+  if (Number.isNaN(new Date(start).getTime()) || Number.isNaN(new Date(end).getTime())) {
+    throw new Error('invalid timeRange: start or end is not a valid date');
+  }
+};
+
+const extractComponentNames = (compSet: unknown): string[] => {
+  let names: (string | undefined)[] = [];
+  if (Array.isArray(compSet)) {
+    names = compSet.map((sc: any) => sc?._attributes?.name);
+  } else if (compSet && typeof compSet === 'object') {
+    names = [(compSet as any)._attributes?.name];
+  }
+  return names.filter((n): n is string => typeof n === 'string' && n.length > 0);
+};
 
 export const fetchCalendarUserAddresses = async (params: {
   account: DAVAccount;
@@ -49,7 +73,16 @@ export const fetchCalendarUserAddresses = async (params: {
     throw new Error('cannot find calendarUserAddresses');
   }
 
-  const addresses = matched?.props?.calendarUserAddressSet?.href?.filter(Boolean) || [];
+  const rawHrefs = matched?.props?.calendarUserAddressSet?.href;
+  let hrefArray: unknown[] = [];
+  if (Array.isArray(rawHrefs)) {
+    hrefArray = rawHrefs;
+  } else if (rawHrefs) {
+    hrefArray = [rawHrefs];
+  }
+  const addresses: string[] = hrefArray.filter(
+    (h: unknown): h is string => typeof h === 'string' && h.length > 0,
+  );
 
   debug(`Fetched calendar user addresses ${addresses}`);
   return addresses;
@@ -236,35 +269,30 @@ export const fetchCalendars = async (params?: {
       .filter((r) => Object.keys(r.props?.resourcetype ?? {}).includes('calendar'))
       .filter((rc) => {
         // filter out none iCal format calendars.
-        const components: ICALObjects[] = Array.isArray(
-          rc.props?.supportedCalendarComponentSet?.comp,
-        )
-          ? rc.props?.supportedCalendarComponentSet.comp.map((sc: any) => sc._attributes.name)
-          : [rc.props?.supportedCalendarComponentSet?.comp?._attributes.name];
-        return components.some((c) => Object.values(ICALObjects).includes(c));
+        const components = extractComponentNames(rc.props?.supportedCalendarComponentSet?.comp);
+        return components.some((c) => Object.values(ICALObjects).includes(c as ICALObjects));
       })
       .map((rs) => {
         // debug(`Found calendar ${rs.props?.displayname}`);
         const description = rs.props?.calendarDescription;
         const timezone = rs.props?.calendarTimezone;
+        const compSet = rs.props?.supportedCalendarComponentSet?.comp;
+        const projectedEntries = Object.entries(rs.props ?? {}).filter(
+          ([key]) => projectedProps?.[key],
+        );
         return {
           description: typeof description === 'string' ? description : '',
           timezone: typeof timezone === 'string' ? timezone : '',
           url: new URL(rs.href ?? '', account.rootUrl ?? '').href,
           ctag: rs.props?.getctag,
           calendarColor: rs.props?.calendarColor,
-          displayName: rs.props?.displayname._cdata ?? rs.props?.displayname,
-          components: Array.isArray(rs.props?.supportedCalendarComponentSet.comp)
-            ? rs.props?.supportedCalendarComponentSet.comp.map((sc: any) => sc._attributes.name)
-            : [rs.props?.supportedCalendarComponentSet.comp?._attributes.name],
-          resourcetype: Object.keys(rs.props?.resourcetype),
+          displayName: rs.props?.displayname?._cdata ?? rs.props?.displayname,
+          components: extractComponentNames(compSet),
+          resourcetype: Object.keys(rs.props?.resourcetype ?? {}),
           syncToken: rs.props?.syncToken,
-          ...conditionalParam(
-            'projectedProps',
-            Object.fromEntries(
-              Object.entries(rs.props ?? {}).filter(([key]) => projectedProps?.[key]),
-            ),
-          ),
+          ...(projectedProps && projectedEntries.length > 0
+            ? { projectedProps: Object.fromEntries(projectedEntries) }
+            : {}),
         };
       })
       .map(async (cal) => ({
@@ -307,15 +335,7 @@ export const fetchCalendarObjects = async (params: {
   } = params;
 
   if (timeRange) {
-    // validate timeRange
-    const ISO_8601 = /^\d{4}(-\d\d(-\d\d(T\d\d:\d\d(:\d\d)?(\.\d+)?(([+-]\d\d:\d\d)|Z)?)?)?)?$/i;
-    const ISO_8601_FULL = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?(([+-]\d\d:\d\d)|Z)?$/i;
-    if (
-      (!ISO_8601.test(timeRange.start) || !ISO_8601.test(timeRange.end)) &&
-      (!ISO_8601_FULL.test(timeRange.start) || !ISO_8601_FULL.test(timeRange.end))
-    ) {
-      throw new Error('invalid timeRange format, not in ISO8601');
-    }
+    validateTimeRange(timeRange);
   }
   debug(`Fetching calendar objects from ${calendar?.url}`);
   const requiredFields: Array<'url'> = ['url'];
@@ -641,20 +661,21 @@ export const syncCalendars: SyncCalendars = async (params: {
   );
   debug(`deleted calendars: ${deleted.map((cc) => cc.displayName)}`);
 
+  // calendars that still exist remotely AND whose syncToken/ctag are unchanged
   const unchanged = localCalendars.filter((cal) =>
-    remoteCalendars.some(
-      (rc) =>
-        urlContains(rc.url, cal.url) &&
-        ((rc.syncToken && `${rc.syncToken}` !== `${cal.syncToken}`) ||
-          (rc.ctag && `${rc.ctag}` !== `${cal.ctag}`)),
-    ),
+    remoteCalendars.some((rc) => {
+      if (!urlContains(rc.url, cal.url)) return false;
+      const syncTokenMatches = !rc.syncToken || `${rc.syncToken}` === `${cal.syncToken}`;
+      const ctagMatches = !rc.ctag || `${rc.ctag}` === `${cal.ctag}`;
+      return syncTokenMatches && ctagMatches;
+    }),
   );
-  // debug(`unchanged calendars: ${unchanged.map((cc) => cc.displayName)}`);
+  debug(`unchanged calendars: ${unchanged.map((cc) => cc.displayName)}`);
 
   return detailedResult
     ? {
         created,
-        updated,
+        updated: updatedWithObjects,
         deleted,
       }
     : [...unchanged, ...created, ...updatedWithObjects];
@@ -679,19 +700,10 @@ export const freeBusyQuery = async (params: {
     fetch: fetchOverride,
   } = params;
 
-  if (timeRange) {
-    // validate timeRange
-    const ISO_8601 = /^\d{4}(-\d\d(-\d\d(T\d\d:\d\d(:\d\d)?(\.\d+)?(([+-]\d\d:\d\d)|Z)?)?)?)?$/i;
-    const ISO_8601_FULL = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?(([+-]\d\d:\d\d)|Z)?$/i;
-    if (
-      (!ISO_8601.test(timeRange.start) || !ISO_8601.test(timeRange.end)) &&
-      (!ISO_8601_FULL.test(timeRange.start) || !ISO_8601_FULL.test(timeRange.end))
-    ) {
-      throw new Error('invalid timeRange format, not in ISO8601');
-    }
-  } else {
+  if (!timeRange) {
     throw new Error('timeRange is required');
   }
+  validateTimeRange(timeRange);
 
   const result = await collectionQuery({
     url,
