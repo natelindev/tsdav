@@ -1,6 +1,6 @@
 {
   "name": "tsdav",
-  "version": "2.1.8",
+  "version": "2.1.9",
   "description": "WebDAV, CALDAV, and CARDDAV client for Nodejs and the Browser",
   "keywords": [
     "dav",
@@ -32,17 +32,19 @@
   ],
   "scripts": {
     "build": "pnpm -s clean && rollup -c rollup.config.mjs && copyfiles package.json LICENSE README.md ./dist && rimraf ./dist/ts",
-    "lint": "eslint --ext .ts,.tsx src --ignore-pattern src/__tests__ --ignore-pattern src/util/__tests__",
     "clean": "rimraf dist*",
+    "lint": "eslint --ext .ts,.tsx src --ignore-pattern src/__tests__ --ignore-pattern src/util/__tests__",
     "prepublishOnly": "pnpm build",
-    "test": "jest --testPathPatterns=src/__tests__/unit",
-    "test:apple": "jest --testPathPatterns=src/__tests__/integration/apple --runInBand",
-    "test:baikal": "jest --testPathPatterns=src/__tests__/integration/baikal --runInBand",
-    "test:fastmail": "jest --testPathPatterns=src/__tests__/integration/fastmail --runInBand",
-    "test:google": "jest --testPathPatterns=src/__tests__/integration/google --runInBand",
-    "test:nextcloud": "jest --testPathPatterns=src/__tests__/integration/nextcloud --runInBand",
-    "test:unit": "jest --testPathPatterns=src/__tests__/unit",
-    "test:zoho": "jest --testPathPatterns=src/__tests__/integration/zoho --runInBand",
+    "test": "vitest run src/__tests__/unit",
+    "test:apple": "vitest run src/__tests__/integration/apple --no-file-parallelism",
+    "test:baikal": "vitest run src/__tests__/integration/baikal --no-file-parallelism",
+    "test:coverage": "vitest run src/__tests__/unit src/util/__tests__ --coverage",
+    "test:coverage:report": "vitest run src/__tests__/unit src/util/__tests__ --coverage --reporter=lcov --reporter=text-summary",
+    "test:fastmail": "vitest run src/__tests__/integration/fastmail --no-file-parallelism",
+    "test:google": "vitest run src/__tests__/integration/google --no-file-parallelism",
+    "test:nextcloud": "vitest run src/__tests__/integration/nextcloud --no-file-parallelism",
+    "test:unit": "vitest run src/__tests__/unit",
+    "test:zoho": "vitest run src/__tests__/integration/zoho --no-file-parallelism",
     "typecheck": "tsc --noEmit",
     "watch": "tsc --watch --outDir ./dist"
   },
@@ -59,7 +61,6 @@
     "@rollup/plugin-typescript": "12.3.0",
     "@types/base-64": "1.0.2",
     "@types/debug": "4.1.12",
-    "@types/jest": "30.0.0",
     "@types/node": "25.0.9",
     "@typescript-eslint/eslint-plugin": "8.53.1",
     "@typescript-eslint/parser": "8.53.1",
@@ -73,7 +74,6 @@
     "eslint-module-utils": "2.12.1",
     "eslint-plugin-import": "2.32.0",
     "eslint-plugin-prettier": "5.5.5",
-    "jest": "30.2.0",
     "prettier": "3.8.0",
     "rimraf": "6.1.2",
     "rollup": "4.55.3",
@@ -81,9 +81,9 @@
     "rollup-plugin-node-builtins": "2.1.2",
     "rollup-plugin-polyfill-node": "0.13.0",
     "sort-package-json": "3.6.0",
-    "ts-jest": "29.4.6",
     "tslib": "2.8.1",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vitest": "^4.1.0"
   },
   "engines": {
     "node": ">=18"

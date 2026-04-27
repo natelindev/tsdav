@@ -1,3 +1,12 @@
+## v2.1.9
+
+##### improvements
+
+- added docusaurus-plugin-llms for LLM-friendly documentation
+- updated docs for LLM discoverability
+- fixed Vercel deployment configuration
+- fixed markdown integration for docs deployment
+
 ## v2.1.8
 
 ##### improvements

@@ -10477,6 +10477,10 @@ var calendar = /*#__PURE__*/Object.freeze({
 });
 
 const debug$1 = getLogger('tsdav:account');
+const getCandidateRootUrls = (serverUrl, discoveredRootUrl) => {
+    const candidates = [discoveredRootUrl, serverUrl, new URL('/', serverUrl).href];
+    return candidates.filter((url, index) => candidates.indexOf(url) === index);
+};
 const serviceDiscovery = async (params) => {
     var _a;
     debug$1('Service discovery...');
@@ -10546,7 +10550,7 @@ const serviceDiscovery = async (params) => {
     return endpoint.href;
 };
 const fetchPrincipalUrl = async (params) => {
-    var _a, _b, _c, _d, _e;
+    var _a, _b;
     const { account, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
     const requiredFields = ['rootUrl'];
     if (!hasFields(account, requiredFields)) {
@@ -10568,9 +10572,15 @@ const fetchPrincipalUrl = async (params) => {
         if (response.status === 401) {
             throw new Error(`Invalid credentials: PROPFIND ${account.rootUrl} returned 401 Unauthorized`);
         }
+        throw new Error('cannot find principalUrl');
     }
-    debug$1(`Fetched principal url ${(_b = (_a = response.props) === null || _a === void 0 ? void 0 : _a.currentUserPrincipal) === null || _b === void 0 ? void 0 : _b.href}`);
-    return new URL((_e = (_d = (_c = response.props) === null || _c === void 0 ? void 0 : _c.currentUserPrincipal) === null || _d === void 0 ? void 0 : _d.href) !== null && _e !== void 0 ? _e : '', account.rootUrl).href;
+    const principalHref = (_b = (_a = response.props) === null || _a === void 0 ? void 0 : _a.currentUserPrincipal) === null || _b === void 0 ? void 0 : _b.href;
+    if (typeof principalHref !== 'string' || !principalHref.length) {
+        debug$1('Fetch principal url failed: missing current-user-principal href');
+        throw new Error('cannot find principalUrl');
+    }
+    debug$1(`Fetched principal url ${principalHref}`);
+    return new URL(principalHref, account.rootUrl).href;
 };
 const fetchHomeUrl = async (params) => {
     var _a, _b;
@@ -10602,22 +10612,53 @@ const fetchHomeUrl = async (params) => {
     return result;
 };
 const createAccount = async (params) => {
-    var _a, _b, _c;
+    var _a, _b, _c, _d;
     const { account, headers, loadCollections = false, loadObjects = false, headersToExclude, fetchOptions = {}, fetch: fetchOverride, } = params;
     const newAccount = { ...account };
-    newAccount.rootUrl = (_a = account.rootUrl) !== null && _a !== void 0 ? _a : await serviceDiscovery({
+    const discoveredRootUrl = (_a = account.rootUrl) !== null && _a !== void 0 ? _a : await serviceDiscovery({
         account,
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
         fetch: fetchOverride,
     });
-    newAccount.principalUrl = (_b = account.principalUrl) !== null && _b !== void 0 ? _b : await fetchPrincipalUrl({
+    if (account.rootUrl) {
+        newAccount.rootUrl = account.rootUrl;
+    }
+    else if (account.principalUrl) {
+        newAccount.rootUrl = discoveredRootUrl;
+    }
+    else {
+        let lastPrincipalError;
+        for (const rootUrl of getCandidateRootUrls(account.serverUrl, discoveredRootUrl)) {
+            try {
+                const principalUrl = await fetchPrincipalUrl({
+                    account: {
+                        ...newAccount,
+                        rootUrl,
+                    },
+                    headers: excludeHeaders(headers, headersToExclude),
+                    fetchOptions,
+                    fetch: fetchOverride,
+                });
+                newAccount.rootUrl = rootUrl;
+                newAccount.principalUrl = principalUrl;
+                break;
+            }
+            catch (err) {
+                lastPrincipalError = err;
+            }
+        }
+        if (!newAccount.rootUrl || !newAccount.principalUrl) {
+            throw lastPrincipalError !== null && lastPrincipalError !== void 0 ? lastPrincipalError : new Error('cannot find principalUrl');
+        }
+    }
+    newAccount.principalUrl = (_c = (_b = account.principalUrl) !== null && _b !== void 0 ? _b : newAccount.principalUrl) !== null && _c !== void 0 ? _c : await fetchPrincipalUrl({
         account: newAccount,
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
         fetch: fetchOverride,
     });
-    newAccount.homeUrl = (_c = account.homeUrl) !== null && _c !== void 0 ? _c : await fetchHomeUrl({
+    newAccount.homeUrl = (_d = account.homeUrl) !== null && _d !== void 0 ? _d : await fetchHomeUrl({
         account: newAccount,
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
