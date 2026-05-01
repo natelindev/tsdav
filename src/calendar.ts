@@ -268,9 +268,16 @@ export const fetchCalendars = async (params?: {
     res
       .filter((r) => Object.keys(r.props?.resourcetype ?? {}).includes('calendar'))
       .filter((rc) => {
-        // filter out none iCal format calendars.
+        // Filter out non-iCal calendars when components are declared. Some servers
+        // (e.g. Purelymail) omit `supported-calendar-component-set` despite RFC 4791
+        // § 5.2.3 requiring it. When no usable component names come back, fall back to
+        // accepting the calendar — the previous filter already established it's a
+        // `<calendar/>` resourcetype, so we have independent evidence it's a calendar.
         const components = extractComponentNames(rc.props?.supportedCalendarComponentSet?.comp);
-        return components.some((c) => Object.values(ICALObjects).includes(c as ICALObjects));
+        return (
+          components.length === 0 ||
+          components.some((c) => Object.values(ICALObjects).includes(c as ICALObjects))
+        );
       })
       .map((rs) => {
         // debug(`Found calendar ${rs.props?.displayname}`);
