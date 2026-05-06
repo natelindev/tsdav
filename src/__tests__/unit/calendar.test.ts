@@ -375,6 +375,52 @@ describe('fetchCalendars', () => {
     expect(result).toHaveLength(1);
     expect(result[0].displayName).toBe('Good');
   });
+
+  it('should accept calendars when supported-calendar-component-set is missing', async () => {
+    // Some servers (e.g. Purelymail) violate RFC 4791 § 5.2.3 by not returning the
+    // supported-calendar-component-set property. The previous resourcetype filter has
+    // already confirmed these are calendar collections, so they should pass through.
+    mockedPropfind.mockResolvedValue([
+      {
+        href: '/cal/empty-prop/',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        props: {
+          displayname: 'Empty Prop',
+          resourcetype: { calendar: {}, collection: {} },
+          // Server returned <supported-calendar-component-set/> with no children
+          supportedCalendarComponentSet: {},
+          getctag: 'c1',
+        },
+      },
+      {
+        href: '/cal/missing-prop/',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        props: {
+          displayname: 'Missing Prop',
+          resourcetype: { calendar: {}, collection: {} },
+          // Property entirely absent from the response
+          getctag: 'c2',
+        },
+      },
+    ]);
+    mockedSupportedReportSet.mockResolvedValue([]);
+
+    const result = await fetchCalendars({
+      account: {
+        serverUrl: 'https://example.com/',
+        homeUrl: 'https://example.com/cal/',
+        rootUrl: 'https://example.com/',
+        accountType: 'caldav',
+      },
+    });
+
+    expect(result).toHaveLength(2);
+    expect(result.map((c) => c.displayName)).toEqual(['Empty Prop', 'Missing Prop']);
+  });
 });
 
 describe('fetchCalendarUserAddresses', () => {
