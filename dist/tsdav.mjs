@@ -1086,9 +1086,14 @@ const fetchCalendars = async (params) => {
         .filter((r) => { var _a, _b; return Object.keys((_b = (_a = r.props) === null || _a === void 0 ? void 0 : _a.resourcetype) !== null && _b !== void 0 ? _b : {}).includes('calendar'); })
         .filter((rc) => {
         var _a, _b;
-        // filter out none iCal format calendars.
+        // Filter out non-iCal calendars when components are declared. Some servers
+        // (e.g. Purelymail) omit `supported-calendar-component-set` despite RFC 4791
+        // § 5.2.3 requiring it. When no usable component names come back, fall back to
+        // accepting the calendar — the previous filter already established it's a
+        // `<calendar/>` resourcetype, so we have independent evidence it's a calendar.
         const components = extractComponentNames((_b = (_a = rc.props) === null || _a === void 0 ? void 0 : _a.supportedCalendarComponentSet) === null || _b === void 0 ? void 0 : _b.comp);
-        return components.some((c) => Object.values(ICALObjects).includes(c));
+        return (components.length === 0 ||
+            components.some((c) => Object.values(ICALObjects).includes(c)));
     })
         .map((rs) => {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r;

@@ -1,3 +1,9 @@
+## v2.2.1
+
+##### bug fixes
+
+- fixed `fetchCalendars` rejecting calendar collections when servers omit or return an empty `supported-calendar-component-set` (Purelymail compatibility)
+
 ## v2.2.0
 
 ##### features
