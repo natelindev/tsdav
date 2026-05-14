@@ -150,7 +150,7 @@ jobs:
           TARBALL=$(ls /tmp/deno-smoke/tsdav-*.tgz | head -n1)
           echo "tarball=$TARBALL" >> "$GITHUB_OUTPUT"
 
-      - name: Import tsdav under Deno via npm: specifier
+      - name: 'Import tsdav under Deno via npm: specifier'
         run: |
           # Build a throwaway consumer workspace that installs the packed
           # tarball into node_modules, then tell Deno to consume that
