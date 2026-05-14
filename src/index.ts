@@ -32,6 +32,7 @@ export {
   isCollectionDirty,
   syncCollection,
   smartCollectionSync,
+  smartCollectionSyncDetailed,
 } from './collection';
 
 export {
@@ -45,6 +46,7 @@ export {
   updateCalendarObject,
   deleteCalendarObject,
   syncCalendars,
+  syncCalendarsDetailed,
   freeBusyQuery,
 } from './calendar';
 

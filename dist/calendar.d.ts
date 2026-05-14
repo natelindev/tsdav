@@ -1,6 +1,6 @@
 import { ElementCompact } from 'xml-js';
 import { DAVDepth, DAVResponse } from './types/DAVTypes';
-import { SyncCalendars } from './types/functionsOverloads';
+import { SyncCalendars, SyncCalendarsDetailed } from './types/functionsOverloads';
 import { DAVAccount, DAVCalendar, DAVCalendarObject } from './types/models';
 export declare const fetchCalendarUserAddresses: (params: {
     account: DAVAccount;
@@ -93,6 +93,7 @@ export declare const deleteCalendarObject: (params: {
  * Sync remote calendars to local
  */
 export declare const syncCalendars: SyncCalendars;
+export declare const syncCalendarsDetailed: SyncCalendarsDetailed;
 export declare const freeBusyQuery: (params: {
     url: string;
     timeRange: {

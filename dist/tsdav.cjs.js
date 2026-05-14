@@ -714,6 +714,7 @@ const smartCollectionSync = async (params) => {
         }
         : collection;
 };
+const smartCollectionSyncDetailed = async (params) => smartCollectionSync({ ...params, detailedResult: true });
 
 var collection = /*#__PURE__*/Object.freeze({
     __proto__: null,
@@ -721,6 +722,7 @@ var collection = /*#__PURE__*/Object.freeze({
     isCollectionDirty: isCollectionDirty,
     makeCollection: makeCollection,
     smartCollectionSync: smartCollectionSync,
+    smartCollectionSyncDetailed: smartCollectionSyncDetailed,
     supportedReportSet: supportedReportSet,
     syncCollection: syncCollection
 });
@@ -1392,6 +1394,7 @@ const syncCalendars = async (params) => {
         }
         : [...unchanged, ...created, ...updatedWithObjects];
 };
+const syncCalendarsDetailed = async (params) => syncCalendars({ ...params, detailedResult: true });
 const freeBusyQuery = async (params) => {
     const { url, timeRange, depth, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride, } = params;
     if (!timeRange) {
@@ -1432,6 +1435,7 @@ var calendar = /*#__PURE__*/Object.freeze({
     freeBusyQuery: freeBusyQuery,
     makeCalendar: makeCalendar,
     syncCalendars: syncCalendars,
+    syncCalendarsDetailed: syncCalendarsDetailed,
     updateCalendarObject: updateCalendarObject
 });
 
@@ -1954,6 +1958,7 @@ const createDAVClient = async (params) => {
     const supportedReportSet$1 = defaultParam(supportedReportSet, commonDefaults);
     const isCollectionDirty$1 = defaultParam(isCollectionDirty, commonDefaults);
     const smartCollectionSync$1 = defaultParam(smartCollectionSync, commonDefaultsWithAccount);
+    const smartCollectionSyncDetailed$1 = defaultParam(smartCollectionSyncDetailed, commonDefaultsWithAccount);
     // calendar
     const calendarQuery$1 = defaultParam(calendarQuery, commonDefaults);
     const calendarMultiGet$1 = defaultParam(calendarMultiGet, commonDefaults);
@@ -1965,6 +1970,7 @@ const createDAVClient = async (params) => {
     const updateCalendarObject$1 = defaultParam(updateCalendarObject, commonDefaults);
     const deleteCalendarObject$1 = defaultParam(deleteCalendarObject, commonDefaults);
     const syncCalendars$1 = defaultParam(syncCalendars, commonDefaultsWithAccount);
+    const syncCalendarsDetailed$1 = defaultParam(syncCalendarsDetailed, commonDefaultsWithAccount);
     // addressBook
     const addressBookQuery$1 = defaultParam(addressBookQuery, commonDefaults);
     const addressBookMultiGet$1 = defaultParam(addressBookMultiGet, commonDefaults);
@@ -1990,6 +1996,7 @@ const createDAVClient = async (params) => {
         supportedReportSet: supportedReportSet$1,
         isCollectionDirty: isCollectionDirty$1,
         smartCollectionSync: smartCollectionSync$1,
+        smartCollectionSyncDetailed: smartCollectionSyncDetailed$1,
         fetchCalendars: fetchCalendars$1,
         fetchCalendarUserAddresses: fetchCalendarUserAddresses$1,
         fetchCalendarObjects: fetchCalendarObjects$1,
@@ -1997,6 +2004,7 @@ const createDAVClient = async (params) => {
         updateCalendarObject: updateCalendarObject$1,
         deleteCalendarObject: deleteCalendarObject$1,
         syncCalendars: syncCalendars$1,
+        syncCalendarsDetailed: syncCalendarsDetailed$1,
         fetchAddressBooks: fetchAddressBooks$1,
         addressBookMultiGet: addressBookMultiGet$1,
         fetchVCards: fetchVCards$1,
@@ -2170,6 +2178,14 @@ class DAVClient {
             account: this.account,
         })(params[0]);
     }
+    async smartCollectionSyncDetailed(param) {
+        return defaultParam(smartCollectionSyncDetailed, {
+            headers: this.authHeaders,
+            fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
+            account: this.account,
+        })(param);
+    }
     async calendarQuery(...params) {
         return defaultParam(calendarQuery, {
             headers: this.authHeaders,
@@ -2237,6 +2253,14 @@ class DAVClient {
     }
     async syncCalendars(...params) {
         return defaultParam(syncCalendars, {
+            headers: this.authHeaders,
+            account: this.account,
+            fetchOptions: this.fetchOptions,
+            fetch: this.fetchOverride,
+        })(params[0]);
+    }
+    async syncCalendarsDetailed(...params) {
+        return defaultParam(syncCalendarsDetailed, {
             headers: this.authHeaders,
             account: this.account,
             fetchOptions: this.fetchOptions,
@@ -2349,8 +2373,10 @@ exports.makeCalendar = makeCalendar;
 exports.propfind = propfind;
 exports.refreshAccessToken = refreshAccessToken;
 exports.smartCollectionSync = smartCollectionSync;
+exports.smartCollectionSyncDetailed = smartCollectionSyncDetailed;
 exports.supportedReportSet = supportedReportSet;
 exports.syncCalendars = syncCalendars;
+exports.syncCalendarsDetailed = syncCalendarsDetailed;
 exports.syncCollection = syncCollection;
 exports.updateCalendarObject = updateCalendarObject;
 exports.updateObject = updateObject;

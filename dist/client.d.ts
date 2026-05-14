@@ -3,8 +3,8 @@ import { calendarMultiGet as rawCalendarMultiGet, calendarQuery as rawCalendarQu
 import { collectionQuery as rawCollectionQuery, isCollectionDirty as rawIsCollectionDirty, makeCollection as rawMakeCollection, supportedReportSet as rawSupportedReportSet, syncCollection as rawSyncCollection } from './collection';
 import { createObject as rawCreateObject, deleteObject as rawDeleteObject, propfind as rawPropfind, updateObject as rawUpdateObject } from './request';
 import { DAVRequest, DAVResponse } from './types/DAVTypes';
-import { SmartCollectionSync, SyncCalendars } from './types/functionsOverloads';
-import { DAVAccount, DAVAddressBook, DAVCalendar, DAVCalendarObject, DAVCollection, DAVCredentials, DAVObject, DAVVCard } from './types/models';
+import { SmartCollectionSync, SmartCollectionSyncDetailed, SmartCollectionSyncDetailedResult, SyncCalendars, SyncCalendarsDetailed, SyncCalendarsDetailedResult } from './types/functionsOverloads';
+import { DAVAccount, DAVAddressBook, DAVCalendar, DAVCalendarObject, DAVCollection, DAVCredentials, DAVVCard } from './types/models';
 import { Optional } from './util/typeHelpers';
 export declare const createDAVClient: (params: {
     serverUrl: string;
@@ -154,6 +154,7 @@ export declare const createDAVClient: (params: {
         newCtag: string;
     }>;
     smartCollectionSync: SmartCollectionSync;
+    smartCollectionSyncDetailed: SmartCollectionSyncDetailed;
     fetchCalendars: (params?: {
         account?: DAVAccount;
         props?: import("xml-js").ElementCompact;
@@ -185,7 +186,7 @@ export declare const createDAVClient: (params: {
         useMultiGet?: boolean;
         fetchOptions?: RequestInit;
         fetch?: typeof fetch;
-    }) => Promise<DAVObject[]>;
+    }) => Promise<import("./types/models").DAVObject[]>;
     createCalendarObject: (params: {
         calendar: DAVCalendar;
         iCalString: string;
@@ -210,6 +211,7 @@ export declare const createDAVClient: (params: {
         fetch?: typeof fetch;
     }) => Promise<Response>;
     syncCalendars: SyncCalendars;
+    syncCalendarsDetailed: SyncCalendarsDetailed;
     fetchAddressBooks: (params?: {
         account?: DAVAccount;
         props?: import("xml-js").ElementCompact;
@@ -237,7 +239,7 @@ export declare const createDAVClient: (params: {
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
         fetch?: typeof fetch;
-    }) => Promise<DAVObject[]>;
+    }) => Promise<import("./types/models").DAVObject[]>;
     createVCard: (params: {
         addressBook: DAVAddressBook;
         vCardString: string;
@@ -317,26 +319,44 @@ export declare class DAVClient {
         collection: T;
         method?: 'basic' | 'webdav';
         headers?: Record<string, string>;
+        headersToExclude?: string[];
         fetchOptions?: RequestInit;
         fetch?: typeof globalThis.fetch;
         account?: DAVAccount;
+        /** @deprecated Use smartCollectionSyncDetailed instead. */
         detailedResult?: false;
     }): Promise<T>;
     smartCollectionSync<T extends DAVCollection>(param: {
         collection: T;
         method?: 'basic' | 'webdav';
         headers?: Record<string, string>;
+        headersToExclude?: string[];
         fetchOptions?: RequestInit;
         fetch?: typeof globalThis.fetch;
         account?: DAVAccount;
+        /** @deprecated Use smartCollectionSyncDetailed instead. */
         detailedResult: true;
-    }): Promise<Omit<T, 'objects'> & {
-        objects: {
-            created: DAVObject[];
-            updated: DAVObject[];
-            deleted: DAVObject[];
-        };
-    }>;
+    }): Promise<SmartCollectionSyncDetailedResult<T>>;
+    smartCollectionSync<T extends DAVCollection>(param: {
+        collection: T;
+        method?: 'basic' | 'webdav';
+        headers?: Record<string, string>;
+        headersToExclude?: string[];
+        fetchOptions?: RequestInit;
+        fetch?: typeof globalThis.fetch;
+        account?: DAVAccount;
+        /** @deprecated Use smartCollectionSyncDetailed instead. */
+        detailedResult?: boolean;
+    }): Promise<T | SmartCollectionSyncDetailedResult<T>>;
+    smartCollectionSyncDetailed<T extends DAVCollection>(param: {
+        collection: T;
+        method?: 'basic' | 'webdav';
+        headers?: Record<string, string>;
+        headersToExclude?: string[];
+        fetchOptions?: RequestInit;
+        fetch?: typeof globalThis.fetch;
+        account?: DAVAccount;
+    }): Promise<SmartCollectionSyncDetailedResult<T>>;
     calendarQuery(...params: Parameters<typeof rawCalendarQuery>): Promise<DAVResponse[]>;
     makeCalendar(...params: Parameters<typeof rawMakeCalendar>): Promise<DAVResponse[]>;
     calendarMultiGet(...params: Parameters<typeof rawCalendarMultiGet>): Promise<DAVResponse[]>;
@@ -347,6 +367,7 @@ export declare class DAVClient {
     updateCalendarObject(...params: Parameters<typeof rawUpdateCalendarObject>): Promise<Response>;
     deleteCalendarObject(...params: Parameters<typeof rawDeleteCalendarObject>): Promise<Response>;
     syncCalendars(...params: Parameters<SyncCalendars>): Promise<ReturnType<SyncCalendars>>;
+    syncCalendarsDetailed(...params: Parameters<SyncCalendarsDetailed>): Promise<SyncCalendarsDetailedResult>;
     addressBookQuery(...params: Parameters<typeof rawAddressBookQuery>): Promise<DAVResponse[]>;
     addressBookMultiGet(...params: Parameters<typeof rawAddressBookMultiGet>): Promise<DAVResponse[]>;
     fetchAddressBooks(...params: Parameters<typeof rawFetchAddressBooks>): Promise<DAVAddressBook[]>;

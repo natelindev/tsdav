@@ -111,53 +111,68 @@ type DAVCalendar = {
     calendarColor?: string;
 } & DAVCollection;
 
+type SmartCollectionSyncBaseParam<T extends DAVCollection> = {
+    collection: T;
+    method?: 'basic' | 'webdav';
+    headers?: Record<string, string>;
+    headersToExclude?: string[];
+    fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
+    account?: DAVAccount;
+};
+type SmartCollectionSyncDetailedResult<T extends DAVCollection> = Omit<T, 'objects'> & {
+    objects: {
+        created: DAVObject[];
+        updated: DAVObject[];
+        deleted: DAVObject[];
+    };
+};
 interface SmartCollectionSync {
-    <T extends DAVCollection>(param: {
-        collection: T;
-        method?: 'basic' | 'webdav';
-        headers?: Record<string, string>;
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch;
-        account?: DAVAccount;
+    <T extends DAVCollection>(param: SmartCollectionSyncBaseParam<T> & {
+        /** @deprecated Use smartCollectionSyncDetailed instead. */
         detailedResult: true;
-    }): Promise<Omit<T, 'objects'> & {
-        objects: {
-            created: DAVObject[];
-            updated: DAVObject[];
-            deleted: DAVObject[];
-        };
-    }>;
-    <T extends DAVCollection>(param: {
-        collection: T;
-        method?: 'basic' | 'webdav';
-        headers?: Record<string, string>;
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch;
-        account?: DAVAccount;
+    }): Promise<SmartCollectionSyncDetailedResult<T>>;
+    <T extends DAVCollection>(param: SmartCollectionSyncBaseParam<T> & {
+        /** @deprecated Use smartCollectionSyncDetailed instead. */
         detailedResult?: false;
     }): Promise<T>;
+    <T extends DAVCollection>(param: SmartCollectionSyncBaseParam<T> & {
+        /** @deprecated Use smartCollectionSyncDetailed instead. */
+        detailedResult?: boolean;
+    }): Promise<T | SmartCollectionSyncDetailedResult<T>>;
 }
+interface SmartCollectionSyncDetailed {
+    <T extends DAVCollection>(param: SmartCollectionSyncBaseParam<T>): Promise<SmartCollectionSyncDetailedResult<T>>;
+}
+type SyncCalendarsBaseParam = {
+    oldCalendars: DAVCalendar[];
+    headers?: Record<string, string>;
+    headersToExclude?: string[];
+    fetchOptions?: RequestInit;
+    fetch?: typeof fetch;
+    account?: DAVAccount;
+};
+type SyncCalendarsDetailedResult = {
+    created: DAVCalendar[];
+    updated: DAVCalendar[];
+    deleted: DAVCalendar[];
+};
 interface SyncCalendars {
-    (params: {
-        oldCalendars: DAVCalendar[];
-        headers?: Record<string, string>;
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch;
-        account?: DAVAccount;
+    (params: SyncCalendarsBaseParam & {
+        /** @deprecated Use syncCalendarsDetailed instead. */
         detailedResult: true;
-    }): Promise<{
-        created: DAVCalendar[];
-        updated: DAVCalendar[];
-        deleted: DAVCalendar[];
-    }>;
-    (params: {
-        oldCalendars: DAVCalendar[];
-        headers?: Record<string, string>;
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch;
-        account?: DAVAccount;
+    }): Promise<SyncCalendarsDetailedResult>;
+    (params: SyncCalendarsBaseParam & {
+        /** @deprecated Use syncCalendarsDetailed instead. */
         detailedResult?: false;
     }): Promise<DAVCalendar[]>;
+    (params: SyncCalendarsBaseParam & {
+        /** @deprecated Use syncCalendarsDetailed instead. */
+        detailedResult?: boolean;
+    }): Promise<DAVCalendar[] | SyncCalendarsDetailedResult>;
+}
+interface SyncCalendarsDetailed {
+    (params: SyncCalendarsBaseParam): Promise<SyncCalendarsDetailedResult>;
 }
 
 declare const fetch$1: typeof globalThis.fetch;
@@ -342,6 +357,7 @@ declare const deleteCalendarObject: (params: {
  * Sync remote calendars to local
  */
 declare const syncCalendars: SyncCalendars;
+declare const syncCalendarsDetailed: SyncCalendarsDetailed;
 declare const freeBusyQuery: (params: {
     url: string;
     timeRange: {
@@ -406,6 +422,7 @@ declare const syncCollection: (params: {
 }) => Promise<DAVResponse[]>;
 /** remote collection to local */
 declare const smartCollectionSync: SmartCollectionSync;
+declare const smartCollectionSyncDetailed: SmartCollectionSyncDetailed;
 
 declare const davRequest: (params: {
     url: string;
@@ -598,6 +615,7 @@ declare const createDAVClient: (params: {
         newCtag: string;
     }>;
     smartCollectionSync: SmartCollectionSync;
+    smartCollectionSyncDetailed: SmartCollectionSyncDetailed;
     fetchCalendars: (params?: {
         account?: DAVAccount;
         props?: xml_js.ElementCompact;
@@ -654,6 +672,7 @@ declare const createDAVClient: (params: {
         fetch?: typeof fetch;
     }) => Promise<Response>;
     syncCalendars: SyncCalendars;
+    syncCalendarsDetailed: SyncCalendarsDetailed;
     fetchAddressBooks: (params?: {
         account?: DAVAccount;
         props?: xml_js.ElementCompact;
@@ -761,26 +780,44 @@ declare class DAVClient {
         collection: T;
         method?: 'basic' | 'webdav';
         headers?: Record<string, string>;
+        headersToExclude?: string[];
         fetchOptions?: RequestInit;
         fetch?: typeof globalThis.fetch;
         account?: DAVAccount;
+        /** @deprecated Use smartCollectionSyncDetailed instead. */
         detailedResult?: false;
     }): Promise<T>;
     smartCollectionSync<T extends DAVCollection>(param: {
         collection: T;
         method?: 'basic' | 'webdav';
         headers?: Record<string, string>;
+        headersToExclude?: string[];
         fetchOptions?: RequestInit;
         fetch?: typeof globalThis.fetch;
         account?: DAVAccount;
+        /** @deprecated Use smartCollectionSyncDetailed instead. */
         detailedResult: true;
-    }): Promise<Omit<T, 'objects'> & {
-        objects: {
-            created: DAVObject[];
-            updated: DAVObject[];
-            deleted: DAVObject[];
-        };
-    }>;
+    }): Promise<SmartCollectionSyncDetailedResult<T>>;
+    smartCollectionSync<T extends DAVCollection>(param: {
+        collection: T;
+        method?: 'basic' | 'webdav';
+        headers?: Record<string, string>;
+        headersToExclude?: string[];
+        fetchOptions?: RequestInit;
+        fetch?: typeof globalThis.fetch;
+        account?: DAVAccount;
+        /** @deprecated Use smartCollectionSyncDetailed instead. */
+        detailedResult?: boolean;
+    }): Promise<T | SmartCollectionSyncDetailedResult<T>>;
+    smartCollectionSyncDetailed<T extends DAVCollection>(param: {
+        collection: T;
+        method?: 'basic' | 'webdav';
+        headers?: Record<string, string>;
+        headersToExclude?: string[];
+        fetchOptions?: RequestInit;
+        fetch?: typeof globalThis.fetch;
+        account?: DAVAccount;
+    }): Promise<SmartCollectionSyncDetailedResult<T>>;
     calendarQuery(...params: Parameters<typeof calendarQuery>): Promise<DAVResponse[]>;
     makeCalendar(...params: Parameters<typeof makeCalendar>): Promise<DAVResponse[]>;
     calendarMultiGet(...params: Parameters<typeof calendarMultiGet>): Promise<DAVResponse[]>;
@@ -791,6 +828,7 @@ declare class DAVClient {
     updateCalendarObject(...params: Parameters<typeof updateCalendarObject>): Promise<Response>;
     deleteCalendarObject(...params: Parameters<typeof deleteCalendarObject>): Promise<Response>;
     syncCalendars(...params: Parameters<SyncCalendars>): Promise<ReturnType<SyncCalendars>>;
+    syncCalendarsDetailed(...params: Parameters<SyncCalendarsDetailed>): Promise<SyncCalendarsDetailedResult>;
     addressBookQuery(...params: Parameters<typeof addressBookQuery>): Promise<DAVResponse[]>;
     addressBookMultiGet(...params: Parameters<typeof addressBookMultiGet>): Promise<DAVResponse[]>;
     fetchAddressBooks(...params: Parameters<typeof fetchAddressBooks>): Promise<DAVAddressBook[]>;
@@ -970,6 +1008,7 @@ declare const _default: {
         fetch?: typeof fetch;
     }) => Promise<Response>;
     syncCalendars: SyncCalendars;
+    syncCalendarsDetailed: SyncCalendarsDetailed;
     freeBusyQuery: (params: {
         url: string;
         timeRange: {
@@ -1120,6 +1159,7 @@ declare const _default: {
         fetch?: typeof fetch;
     }) => Promise<DAVResponse[]>;
     smartCollectionSync: SmartCollectionSync;
+    smartCollectionSyncDetailed: SmartCollectionSyncDetailed;
     davRequest: (params: {
         url: string;
         init: DAVRequest;
@@ -1310,6 +1350,7 @@ declare const _default: {
             newCtag: string;
         }>;
         smartCollectionSync: SmartCollectionSync;
+        smartCollectionSyncDetailed: SmartCollectionSyncDetailed;
         fetchCalendars: (params?: {
             account?: DAVAccount;
             props?: xml_js.ElementCompact;
@@ -1366,6 +1407,7 @@ declare const _default: {
             fetch?: typeof fetch;
         }) => Promise<Response>;
         syncCalendars: SyncCalendars;
+        syncCalendarsDetailed: SyncCalendarsDetailed;
         fetchAddressBooks: (params?: {
             account?: DAVAccount;
             props?: xml_js.ElementCompact;
@@ -1430,5 +1472,5 @@ declare const _default: {
     };
 };
 
-export { DAVAttributeMap, DAVClient, DAVNamespace, DAVNamespaceShort, addressBookMultiGet, addressBookQuery, calendarMultiGet, calendarQuery, cleanupFalsy, collectionQuery, createAccount, createCalendarObject, createDAVClient, createObject, createVCard, davRequest, _default as default, deleteCalendarObject, deleteObject, deleteVCard, fetchAddressBooks, fetchCalendarObjects, fetchCalendarUserAddresses, fetchCalendars, fetchOauthTokens, fetchVCards, freeBusyQuery, getBasicAuthHeaders, getBearerAuthHeaders, getDAVAttribute, getOauthHeaders, isCollectionDirty, makeCalendar, propfind, refreshAccessToken, smartCollectionSync, supportedReportSet, syncCalendars, syncCollection, updateCalendarObject, updateObject, updateVCard, urlContains, urlEquals };
+export { DAVAttributeMap, DAVClient, DAVNamespace, DAVNamespaceShort, addressBookMultiGet, addressBookQuery, calendarMultiGet, calendarQuery, cleanupFalsy, collectionQuery, createAccount, createCalendarObject, createDAVClient, createObject, createVCard, davRequest, _default as default, deleteCalendarObject, deleteObject, deleteVCard, fetchAddressBooks, fetchCalendarObjects, fetchCalendarUserAddresses, fetchCalendars, fetchOauthTokens, fetchVCards, freeBusyQuery, getBasicAuthHeaders, getBearerAuthHeaders, getDAVAttribute, getOauthHeaders, isCollectionDirty, makeCalendar, propfind, refreshAccessToken, smartCollectionSync, smartCollectionSyncDetailed, supportedReportSet, syncCalendars, syncCalendarsDetailed, syncCollection, updateCalendarObject, updateObject, updateVCard, urlContains, urlEquals };
 export type { DAVAccount, DAVAddressBook, DAVCalendar, DAVCalendarObject, DAVCollection, DAVCredentials, DAVDepth, DAVMethods, DAVObject, DAVRequest, DAVResponse, DAVTokens, DAVVCard };

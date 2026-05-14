@@ -6,8 +6,8 @@ export { DAVClient } from './client';
 export { createDAVClient } from './client';
 export { createAccount } from './account';
 export { davRequest, propfind, createObject, updateObject, deleteObject } from './request';
-export { collectionQuery, supportedReportSet, isCollectionDirty, syncCollection, smartCollectionSync, } from './collection';
-export { calendarQuery, calendarMultiGet, makeCalendar, fetchCalendars, fetchCalendarUserAddresses, fetchCalendarObjects, createCalendarObject, updateCalendarObject, deleteCalendarObject, syncCalendars, freeBusyQuery, } from './calendar';
+export { collectionQuery, supportedReportSet, isCollectionDirty, syncCollection, smartCollectionSync, smartCollectionSyncDetailed, } from './collection';
+export { calendarQuery, calendarMultiGet, makeCalendar, fetchCalendars, fetchCalendarUserAddresses, fetchCalendarObjects, createCalendarObject, updateCalendarObject, deleteCalendarObject, syncCalendars, syncCalendarsDetailed, freeBusyQuery, } from './calendar';
 export { addressBookQuery, addressBookMultiGet, fetchAddressBooks, fetchVCards, createVCard, updateVCard, deleteVCard, } from './addressBook';
 export { getBasicAuthHeaders, getBearerAuthHeaders, getOauthHeaders, fetchOauthTokens, refreshAccessToken, } from './util/authHelpers';
 export { urlContains, urlEquals, getDAVAttribute, cleanupFalsy } from './util/requestHelpers';
@@ -126,6 +126,7 @@ declare const _default: {
         fetch?: typeof fetch;
     }) => Promise<Response>;
     syncCalendars: import("./types/functionsOverloads").SyncCalendars;
+    syncCalendarsDetailed: import("./types/functionsOverloads").SyncCalendarsDetailed;
     freeBusyQuery: (params: {
         url: string;
         timeRange: {
@@ -276,6 +277,7 @@ declare const _default: {
         fetch?: typeof fetch;
     }) => Promise<import("./types/DAVTypes").DAVResponse[]>;
     smartCollectionSync: import("./types/functionsOverloads").SmartCollectionSync;
+    smartCollectionSyncDetailed: import("./types/functionsOverloads").SmartCollectionSyncDetailed;
     davRequest: (params: {
         url: string;
         init: import("./types/DAVTypes").DAVRequest;
@@ -466,6 +468,7 @@ declare const _default: {
             newCtag: string;
         }>;
         smartCollectionSync: import("./types/functionsOverloads").SmartCollectionSync;
+        smartCollectionSyncDetailed: import("./types/functionsOverloads").SmartCollectionSyncDetailed;
         fetchCalendars: (params?: {
             account?: import("./types/models").DAVAccount;
             props?: import("xml-js").ElementCompact;
@@ -522,6 +525,7 @@ declare const _default: {
             fetch?: typeof fetch;
         }) => Promise<Response>;
         syncCalendars: import("./types/functionsOverloads").SyncCalendars;
+        syncCalendarsDetailed: import("./types/functionsOverloads").SyncCalendarsDetailed;
         fetchAddressBooks: (params?: {
             account?: import("./types/models").DAVAccount;
             props?: import("xml-js").ElementCompact;

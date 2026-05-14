@@ -20,20 +20,18 @@ your app's calendar object type like:
 
 ```ts
 type AppCalendar = {
-    id: string;
-    userId: string;
-    timezone?: string;
-    name?: string;
-    description?: string;
-    email?: string;
-    createdAt: string;
-    updatedAt: string;
-}
+  id: string;
+  userId: string;
+  timezone?: string;
+  name?: string;
+  description?: string;
+  email?: string;
+  createdAt: string;
+  updatedAt: string;
+};
 ```
 
 this table is used for your app's display, daily use, etc, optional if you do not alredy have a table like this or you do not want one-to-many relations with your app calendar, you can skip creating this table.
-
-
 
 ##### Caldav calendar
 
@@ -54,8 +52,6 @@ type CaldavCalendar = {
 };
 ```
 
-
-
 ##### credentials
 
 save caldav calendar credentials in another table, encryption is recommended:
@@ -69,8 +65,6 @@ type CalendarCredential = {
   source: // your caldav provider name
 }
 ```
-
-
 
 ##### caldav calendar objects
 
@@ -94,8 +88,6 @@ https://github.com/natelindev/pretty-jcal and https://github.com/kewisch/ical.js
 
 for generating new ics data, it's recommended to use https://github.com/nwcell/ics.js/
 
-
-
 ## Actual syncing
 
 First you need to have user go through authorization process and obtain valid `CalendarCredential`, the method differs for each caldav provider. You need to find and setup it yourself.
@@ -105,10 +97,7 @@ after having obtained the credentials, you can begin the actual sync
 First you need to get all stored calendars for the user
 
 ```ts
-const localCalendars = await this.db.getCalendarByUserIdAndSource(
-   userId,
-   source
-);
+const localCalendars = await this.db.getCalendarByUserIdAndSource(userId, source);
 ```
 
 then you need to create caldav client using credentials
@@ -127,18 +116,16 @@ const client = new DAVClient({
 
 ##### Remote to local
 
-you can use `syncCalendars` function from the lib with `detailedResult` set as `true`
+you can use `syncCalendarsDetailed` function from the lib
 
 ```ts
-const { created, updated, deleted } = await client.syncCalendars({
+const { created, updated, deleted } = await client.syncCalendarsDetailed({
   oldCalendars: localCalendars.map((lc) => ({
-      displayName: lc.name,
-      syncToken: lc.syncToken,
-      ctag: lc.ctag,
-      url: lc.url,
-    })
-  ),
-  detailedResult: true,
+    displayName: lc.name,
+    syncToken: lc.syncToken,
+    ctag: lc.ctag,
+    url: lc.url,
+  })),
 });
 ```
 
@@ -148,55 +135,53 @@ now you have all calendar changes on remote. make actual changes to your databas
 
 ```ts
 await this.db.transaction(async (tx) => {
+  await Promise.all(
+    created.map(async (c) => {
+      // created
+      const calendarObjects = await client.fetchCalendarObjects({ calendar: c });
 
-  await Promise.all(created.map(async (c) => {
-    // created
-    const calendarObjects = await client.fetchCalendarObjects({ calendar: c })
-
-    if (calendarObjects.length > 0) {
-      await Promise.all(
-        calendarObjects.map((co) => {
-          // parse start end time if needed
-          // const parsedObject = parse(co);
-          // const { start, end } = parsedObject;
-          return this.db.createCalendarObject(tx, {
-            ...co,
-            // start,
-            // end,
-            calendarId: c.id
-          })
-        })
-      )
-    }
-  }))
+      if (calendarObjects.length > 0) {
+        await Promise.all(
+          calendarObjects.map((co) => {
+            // parse start end time if needed
+            // const parsedObject = parse(co);
+            // const { start, end } = parsedObject;
+            return this.db.createCalendarObject(tx, {
+              ...co,
+              // start,
+              // end,
+              calendarId: c.id,
+            });
+          }),
+        );
+      }
+    }),
+  );
 
   // deleted
   if (deleted.length > 0) {
     await this.db.deleteByUrls(
       tx,
-      filteredDeleted.map((d) => d.url)
+      filteredDeleted.map((d) => d.url),
     );
   }
 
   // updated
   const localCalendarsToBeUpdated = await this.db.getByUrls(
     tx,
-    updated.map((u) => u.url)
+    updated.map((u) => u.url),
   );
 
   // find out and apply the change on calendar
   await Promise.all(
     localCalendarsToBeUpdated.map(async (lc) => {
-      const localObjects = await this.db.getCalendarById(
-        tx,
-        lc.id
-      );
+      const localObjects = await this.db.getCalendarById(tx, lc.id);
       const {
         created: createdObjects,
         updated: updatedObjects,
         deleted: deletedObjects,
       } = (
-        await client.smartCollectionSync({
+        await client.smartCollectionSyncDetailed({
           collection: {
             url: lc.url,
             ctag: lc.ctag,
@@ -205,7 +190,6 @@ await this.db.transaction(async (tx) => {
             objectMultiGet: client.calendarMultiGet,
           },
           method: 'webdav',
-          detailedResult: true,
         })
       ).objects;
 
@@ -227,7 +211,7 @@ await this.db.transaction(async (tx) => {
                 url: URL.resolve(lc.url, co.url),
                 calendarId: lc.id,
               });
-            })
+            }),
         );
       }
 
@@ -235,7 +219,7 @@ await this.db.transaction(async (tx) => {
       if (deletedObjects.length > 0) {
         await this.db.deleteCalendarObjectByUrls(
           tx,
-          deletedObjects.map((d) => URL.resolve(lc.url, d.url))
+          deletedObjects.map((d) => URL.resolve(lc.url, d.url)),
         );
       }
 
@@ -247,20 +231,16 @@ await this.db.transaction(async (tx) => {
             // const parsedObject = parse(co);
             // const { start, end } = parsedObject;
 
-            return this.db.updateCalendarObjectByUrl(
-              tx,
-              URL.resolve(lc.url, uo.url),
-              {
-                etag: uo.etag,
-                data: uo.data,
-                start,
-                end,
-              }
-            );
-          })
+            return this.db.updateCalendarObjectByUrl(tx, URL.resolve(lc.url, uo.url), {
+              etag: uo.etag,
+              data: uo.data,
+              start,
+              end,
+            });
+          }),
         );
       }
-    })
+    }),
   );
 
   // update the syncToken & ctag for the calendars to be updated
@@ -274,10 +254,9 @@ await this.db.transaction(async (tx) => {
         syncToken: u.syncToken,
         ctag: u.ctag,
       });
-    })
+    }),
   );
-
-})
+});
 ```
 
 ##### Local to remote

@@ -5,7 +5,11 @@ import { ElementCompact } from 'xml-js';
 import { DAVNamespace, DAVNamespaceShort } from './consts';
 import { davRequest, propfind } from './request';
 import { DAVDepth, DAVResponse } from './types/DAVTypes';
-import { SmartCollectionSync } from './types/functionsOverloads';
+import {
+  SmartCollectionSync,
+  SmartCollectionSyncDetailed,
+  SmartCollectionSyncDetailedResult,
+} from './types/functionsOverloads';
 import { DAVAccount, DAVCollection, DAVObject } from './types/models';
 import { cleanupFalsy, excludeHeaders, getDAVAttribute, urlContains } from './util/requestHelpers';
 import { findMissingFieldNames, hasFields, RequireAndNotNullSome } from './util/typeHelpers';
@@ -442,3 +446,16 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
       }
     : collection;
 };
+
+export const smartCollectionSyncDetailed: SmartCollectionSyncDetailed = async <
+  T extends DAVCollection,
+>(params: {
+  collection: T;
+  method?: 'basic' | 'webdav';
+  headers?: Record<string, string>;
+  headersToExclude?: string[];
+  account?: DAVAccount;
+  fetchOptions?: RequestInit;
+  fetch?: typeof fetch;
+}): Promise<SmartCollectionSyncDetailedResult<T>> =>
+  smartCollectionSync({ ...params, detailedResult: true });

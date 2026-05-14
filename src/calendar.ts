@@ -6,7 +6,11 @@ import { collectionQuery, smartCollectionSync, supportedReportSet } from './coll
 import { DAVNamespace, DAVNamespaceShort, ICALObjects } from './consts';
 import { createObject, davRequest, deleteObject, propfind, updateObject } from './request';
 import { DAVDepth, DAVResponse } from './types/DAVTypes';
-import { SyncCalendars } from './types/functionsOverloads';
+import {
+  SyncCalendars,
+  SyncCalendarsDetailed,
+  SyncCalendarsDetailedResult,
+} from './types/functionsOverloads';
 import { DAVAccount, DAVCalendar, DAVCalendarObject } from './types/models';
 import { cleanupFalsy, excludeHeaders, getDAVAttribute, urlContains } from './util/requestHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelpers';
@@ -687,6 +691,15 @@ export const syncCalendars: SyncCalendars = async (params: {
       }
     : [...unchanged, ...created, ...updatedWithObjects];
 };
+
+export const syncCalendarsDetailed: SyncCalendarsDetailed = async (params: {
+  oldCalendars: DAVCalendar[];
+  headers?: Record<string, string>;
+  headersToExclude?: string[];
+  account?: DAVAccount;
+  fetchOptions?: RequestInit;
+  fetch?: typeof fetch;
+}): Promise<SyncCalendarsDetailedResult> => syncCalendars({ ...params, detailedResult: true });
 
 export const freeBusyQuery = async (params: {
   url: string;

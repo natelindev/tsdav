@@ -1,7 +1,7 @@
 import { ElementCompact } from 'xml-js';
 import { DAVNamespaceShort } from './consts';
 import { DAVDepth, DAVResponse } from './types/DAVTypes';
-import { SmartCollectionSync } from './types/functionsOverloads';
+import { SmartCollectionSync, SmartCollectionSyncDetailed } from './types/functionsOverloads';
 import { DAVCollection } from './types/models';
 export declare const collectionQuery: (params: {
     url: string;
@@ -54,3 +54,4 @@ export declare const syncCollection: (params: {
 }) => Promise<DAVResponse[]>;
 /** remote collection to local */
 export declare const smartCollectionSync: SmartCollectionSync;
+export declare const smartCollectionSyncDetailed: SmartCollectionSyncDetailed;

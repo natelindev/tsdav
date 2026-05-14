@@ -10,6 +10,7 @@ import {
   freeBusyQuery,
   makeCalendar,
   syncCalendars,
+  syncCalendarsDetailed,
   updateCalendarObject,
 } from '../../calendar';
 import * as request from '../../request';
@@ -567,6 +568,27 @@ describe('syncCalendars', () => {
 
     expect(result.created).toHaveLength(1);
     expect(result.created[0].displayName).toBe('New Calendar');
+    expect(result.deleted).toHaveLength(0);
+  });
+
+  it('should return detailed result from syncCalendarsDetailed', async () => {
+    const account = {
+      serverUrl: 'https://example.com/',
+      homeUrl: 'https://example.com/cal/',
+      rootUrl: 'https://example.com/',
+      accountType: 'caldav' as const,
+    };
+
+    mockedPropfind.mockResolvedValue([]);
+    mockedSupportedReportSet.mockResolvedValue([]);
+
+    const result = await syncCalendarsDetailed({
+      oldCalendars: [],
+      account,
+    });
+
+    expect(result.created).toHaveLength(0);
+    expect(result.updated).toHaveLength(0);
     expect(result.deleted).toHaveLength(0);
   });
 

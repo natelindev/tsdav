@@ -286,9 +286,8 @@ const calendarObjects = await client.fetchCalendarObjects({
 ##### Get calendars changes from remote
 
 ```ts
-const { created, updated, deleted } = await client.syncCalendars({
-  calendars: myCalendars,
-  detailedResult: true,
+const { created, updated, deleted } = await client.syncCalendarsDetailed({
+  oldCalendars: myCalendars,
 });
 ```
 
@@ -296,7 +295,7 @@ const { created, updated, deleted } = await client.syncCalendars({
 
 ```ts
 const { created, updated, deleted } = (
-  await client.smartCollectionSync({
+  await client.smartCollectionSyncDetailed({
     collection: {
       url: localCalendar.url,
       ctag: localCalendar.ctag,
@@ -305,7 +304,6 @@ const { created, updated, deleted } = (
       objectMultiGet: client.calendarMultiGet,
     },
     method: 'webdav',
-    detailedResult: true,
   })
 ).objects;
 ```

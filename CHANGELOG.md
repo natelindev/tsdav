@@ -1,3 +1,10 @@
+## v2.2.2
+
+##### improvements
+
+- added `syncCalendarsDetailed` and `smartCollectionSyncDetailed` as explicit detailed-result APIs
+- deprecated `detailedResult` in favor of the new detailed sync functions while preserving backward-compatible overloads
+
 ## v2.2.1
 
 ##### bug fixes

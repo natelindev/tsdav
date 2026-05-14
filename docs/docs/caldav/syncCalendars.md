@@ -2,12 +2,12 @@
 sidebar_position: 4
 ---
 
-## `syncCalendars`
+## `syncCalendars` and `syncCalendarsDetailed`
 
 sync local version of calendars with remote.
 
 ```ts
-const { created, updated, deleted } = await syncCalendars({
+const { created, updated, deleted } = await syncCalendarsDetailed({
   oldCalendars: [
     {
       displayName: 'personal calendar',
@@ -24,7 +24,6 @@ const { created, updated, deleted } = await syncCalendars({
       ],
     },
   ],
-  detailedResult: true,
   headers: {
     authorization: 'Basic x0C9ueWd9Vz8OwS0DEAtkAlj',
   },
@@ -33,26 +32,24 @@ const { created, updated, deleted } = await syncCalendars({
 
 ### Arguments
 
-- `oldCalendars` **required**, locally version of calendars of this account, should contain [calendar objects](../types/DAVCalendarObject.md) as well if `detailedResult` is `false`
+- `oldCalendars` **required**, locally version of calendars of this account, should contain [calendar objects](../types/DAVCalendarObject.md) as well when using `syncCalendars`
 - `account` the account which calendars belong to,
-- `detailedResult` if falsy, the result would be latest version of the calendars of this account, otherwise they would be separated into three groups of `created`, `updated`, and `deleted`.
+- `detailedResult` deprecated, use `syncCalendarsDetailed` for the detailed result instead.
 - `headers` request headers
 - `headersToExclude` array of keys of the headers you want to exclude
 - `fetchOptions` options to pass to underlying fetch function
 
 :::info
-`objects` inside `oldCalendars` are not needed when `detailedResult` is `true`.
+`objects` inside `oldCalendars` are not needed when using `syncCalendarsDetailed`.
 :::
 
 ### Return Value
 
-depend on `detailedResult` option
-
-if `detailedResult` is falsy,
+`syncCalendars` returns:
 
 array of [DAVCalendar](../types/DAVCalendar.md) with calendar objects.
 
-if `detailedResult` is `true`,
+`syncCalendarsDetailed` returns:
 
 an object of
 
@@ -66,12 +63,12 @@ fetch the latest list of [DAVCalendar](../types/DAVCalendar.md) from remote,
 
 compare the provided list and the latest list to find out `created`, `updated`, and `deleted` calendars.
 
-if `detailedResult` is falsy,
+When using `syncCalendars`,
 
 fetch the latest list of [DAVCalendarObject](../types/DAVCalendarObject.md) from updated calendars using [rfc6578 webdav sync](https://datatracker.ietf.org/doc/html/rfc6578) and [calendarMultiGet](calendarMultiGet.md)
 
 return latest list of calendars with latest list of objects for `updated` calendars.
 
-if `detailedResult` is `true`,
+When using `syncCalendarsDetailed`,
 
 return three list of separate calendars without objects for `created`, `updated`, and `deleted`.

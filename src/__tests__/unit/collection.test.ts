@@ -4,6 +4,7 @@ import {
   isCollectionDirty,
   makeCollection,
   smartCollectionSync,
+  smartCollectionSyncDetailed,
   supportedReportSet,
   syncCollection,
 } from '../../collection';
@@ -668,6 +669,37 @@ describe('smartCollectionSync', () => {
 
     expect(result.objects.created).toHaveLength(1);
     expect(result.objects.created[0].data).toBe('BEGIN:VCARD\nEND:VCARD');
+  });
+
+  it('should return detailed result from smartCollectionSyncDetailed', async () => {
+    mockedPropfind.mockResolvedValue([
+      {
+        href: 'http://example.com/col/',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        props: { getctag: 'same-ctag' },
+      },
+    ]);
+
+    const result = await smartCollectionSyncDetailed({
+      collection: {
+        url: 'http://example.com/col/',
+        reports: [],
+        ctag: 'same-ctag',
+        objects: [],
+        fetchObjects: vi.fn().mockResolvedValue([]),
+      } as any,
+      account: {
+        serverUrl: 'https://example.com/',
+        accountType: 'caldav',
+        homeUrl: 'https://example.com/col/',
+      },
+    });
+
+    expect(result.objects.created).toHaveLength(0);
+    expect(result.objects.updated).toHaveLength(0);
+    expect(result.objects.deleted).toHaveLength(0);
   });
 
   it('should use webdav mode with detailedResult=false (returns merged objects)', async () => {
