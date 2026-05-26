@@ -37,6 +37,10 @@
       ]
     }
   ],
+  "redirects": [
+    { "source": "/", "destination": "/docs/", "permanent": true },
+    { "source": "/docs/intro", "destination": "/docs/", "permanent": true }
+  ],
   "rewrites": [
     { "source": "/docs/:path(.*)\\.md", "destination": "/:path.md" },
     { "source": "/(.*)", "destination": "/index.html" }
