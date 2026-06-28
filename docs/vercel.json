@@ -1,6 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": false,
+  "installCommand": "pnpm install --frozen-lockfile --ignore-workspace",
   "headers": [
     {
       "source": "/(.*)\\.md",

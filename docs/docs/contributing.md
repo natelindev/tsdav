@@ -6,6 +6,7 @@ sidebar_position: 8
 
 First you need to clone the repo and install dependencies with `pnpm install`.
 The repo pins pnpm 10.34.4 for local, CI, and Vercel builds.
+Vercel installs the docs package with `pnpm install --frozen-lockfile --ignore-workspace`.
 
 ### Build
 
