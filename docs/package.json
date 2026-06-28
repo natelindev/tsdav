@@ -51,5 +51,6 @@
     "@types/react-router-dom": "5.3.3",
     "docusaurus-plugin-llms": "^0.3.0",
     "typescript": "5.9.3"
-  }
+  },
+  "packageManager": "pnpm@10.34.4"
 }
