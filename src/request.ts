@@ -84,8 +84,12 @@ export const davRequest = async (params: {
     mergedHeaders[key] = value;
   };
   setHeader('Content-Type', 'text/xml;charset=UTF-8');
-  Object.entries(cleanupFalsy(headers)).forEach(([k, v]) => setHeader(k, v as string));
-  Object.entries(fetchOptions.headers || {}).forEach(([k, v]) => setHeader(k, v as string));
+  Object.entries(cleanupFalsy(headers)).forEach(([k, v]) => {
+    setHeader(k, v as string);
+  });
+  Object.entries(fetchOptions.headers || {}).forEach(([k, v]) => {
+    setHeader(k, v as string);
+  });
 
   const davResponse = await requestFetch(url, {
     ...fetchOptionsWithoutHeaders,

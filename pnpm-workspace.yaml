@@ -1,0 +1,11 @@
+packages:
+  - .
+
+allowBuilds:
+  esbuild: set this to true or false
+
+overrides:
+  picomatch: 4.0.4
+  postcss: 8.5.15
+  serialize-javascript: 7.0.6
+  vite: 6.4.3

@@ -395,10 +395,9 @@ export const fetchCalendarObjects = async (params: {
   ];
 
   let initialResponses: DAVResponse[] = [];
-  const calendarObjectUrls = (
-    objectUrls ??
-    // fetch all objects of the calendar
-    (initialResponses = await calendarQuery({
+  // fetch all objects of the calendar
+  if (!objectUrls) {
+    initialResponses = await calendarQuery({
       url: calendar.url,
       props: {
         [`${DAVNamespaceShort.DAV}:getetag`]: {},
@@ -426,8 +425,10 @@ export const fetchCalendarObjects = async (params: {
       headers: excludeHeaders(headers, headersToExclude),
       fetchOptions,
       fetch: fetchOverride,
-    })).map((res) => res.href ?? '')
-  )
+    });
+  }
+
+  const calendarObjectUrls = (objectUrls ?? initialResponses.map((res) => res.href ?? ''))
     .map((url) => (url.startsWith('http') || !url ? url : new URL(url, calendar.url).href)) // patch up to full url if url is not full
     .filter(urlFilter) // custom filter function on calendar objects
     .map((url) => new URL(url).pathname); // obtain pathname of the url
