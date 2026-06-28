@@ -5,6 +5,7 @@ sidebar_position: 8
 # Contributing
 
 First you need to clone the repo and install dependencies with `pnpm install`.
+The repo pins pnpm 10.34.4 for local, CI, and Vercel builds.
 
 ### Build
 
