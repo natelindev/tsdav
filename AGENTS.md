@@ -1,47 +1,103 @@
-# AGENTS
+# AGENTS.md
 
-## Project Snapshot
+Guidance for AI coding agents working in this repository. The architecture overview lives in `docs/agent-architecture-overview.md`.
 
-- `tsdav` is a TypeScript WebDAV client that wraps CalDAV and CardDAV workflows for browsers and Node.js (`docs/docs/intro.md`).
-- Core entry points are `createDAVClient` and `DAVClient`; for the class-based API you must call `client.login()` before issuing DAV requests.
-- Source lives in `src/`, generated bundles ship from `dist/`, while human-readable references are kept under `docs/docs/`.
-- Install dependencies with `pnpm install`; build with `pnpm build`. Jest integration targets expect provider credentials (`package.json` scripts).
-- Debug HTTP traffic by setting `DEBUG=tsdav:*` (`README.md`).
+## What Matters Most
 
-## WebDAV Building Blocks
+- Treat `tsdav` as a public TypeScript library. Preserve existing public API
+  behavior unless the task explicitly asks for a breaking change.
+- Keep changes narrow and source-first. Update `src/`, tests, and docs as
+  needed; do not hand-edit `dist/` unless the task is specifically about
+  release artifacts.
+- Preserve runtime portability across Node.js, browsers, Bun, Deno, and
+  Workers. Avoid adding Node-only APIs to shared runtime paths.
+- Do not run live provider integration tests unless credentials are configured
+  and the user asked for that level of verification.
 
-- `serviceDiscovery`, `fetchPrincipalUrl`, and `fetchHomeUrl` locate account roots via `/.well-known/` redirects (`docs/docs/webdav/account`).
-- `createAccount` enriches a `DAVAccount` with discovered URLs plus calendars/address books when supplied credentials.
-- `davRequest` is the low-level fetch wrapper shared by WebDAV, CalDAV, and CardDAV helpers (`docs/docs/webdav/davRequest.md`).
-- Object helpers map to HTTP verbs: `createObject`, `updateObject`, and `deleteObject` issue PUT/PATCH/DELETE with concurrency headers; `propfind` reads WebDAV metadata (`docs/docs/webdav`).
+## Runtime Targets
 
-## CalDAV Workflow Highlights
+- Target support is Node.js, vanilla client-side JavaScript in browsers, Deno,
+  Bun, Cloudflare Workers, and Electron.
+- Do not write environment-specific code that breaks any supported runtime.
+  Avoid hard dependencies on Node globals, browser globals, filesystem access,
+  process APIs, or bundler-only behavior in shared source paths.
+- When runtime-specific behavior is unavoidable, isolate it behind existing
+  extension points such as custom `fetch`, credentials, headers, or
+  `fetchOptions`, and keep the default path portable.
 
-- Enumerate calendars with `fetchCalendars`; filter or retrieve objects via `fetchCalendarObjects`, `calendarMultiGet`, and `calendarQuery` (`docs/docs/caldav`).
-- Write data with `createCalendarObject`, `updateCalendarObject`, and `deleteCalendarObject`; the helpers enforce proper `If-Match`/`If-None-Match` usage.
-- `syncCalendars` and `smartCollectionSync` surface server-side `sync-token`/`ctag` deltas for incremental syncs.
-- `smart calendar sync.md` documents end-to-end two-way sync: recommended database schema, handling created/updated/deleted objects, and when to fall back to multi-get.
+## Repo Map
 
-## CardDAV Workflow Highlights
+- `src/index.ts` defines the package exports.
+- `src/client.ts` contains `DAVClient` and `createDAVClient` orchestration.
+- `src/request.ts` owns low-level DAV requests and object helpers.
+- `src/account.ts`, `src/collection.ts`, `src/calendar.ts`, and
+  `src/addressBook.ts` implement WebDAV, CalDAV, and CardDAV workflows.
+- `src/types/` contains public model and request types.
+- `src/util/` contains shared auth, fetch, XML/request, and type helpers.
+- `src/__tests__/unit/` and `src/util/__tests__/` are the default test targets.
+- `src/__tests__/integration/<provider>/` contains provider tests that may use
+  environment credentials or recorded/mocked network behavior.
+- `docs/docs/` is the maintained documentation source. `docs/build/`,
+  `docs/.docusaurus/`, and `dist/` are generated outputs.
 
-- `fetchAddressBooks` discovers address books; `fetchVCards`, `addressBookMultiGet`, and `addressBookQuery` return contact payloads (`docs/docs/carddav`).
-- CRUD mirrors CalDAV: `createVCard`, `updateVCard`, and `deleteVCard` manage `.vcf` resources while honoring provider-specific UID behavior.
+## Setup And Commands
 
-## Helpers and Types
+- Install dependencies with `pnpm install`.
+- Run unit tests with `pnpm test:unit` or `pnpm test`.
+- Run a targeted unit test with `pnpm exec vitest run <path-to-test>`.
+- Run type checking with `pnpm typecheck`.
+- Run linting with `pnpm lint`.
+- Build package artifacts with `pnpm build`.
+- Provider scripts are `pnpm test:apple`, `pnpm test:baikal`,
+  `pnpm test:fastmail`, `pnpm test:google`, `pnpm test:nextcloud`, and
+  `pnpm test:zoho`.
 
-- `docs/docs/helper.mdx` exposes the XML ⇄ JS converter to assemble ElementCompact request bodies without manual XML string building.
-- Typed shapes such as `DAVAccount`, `DAVCalendar`, `DAVCalendarObject`, `DAVAddressBook`, `ElementCompact`, and credential tokens are documented in `docs/docs/types/`.
-- Most high-level functions accept `headers`, `headersToExclude`, and `fetchOptions` overrides—ensure custom auth headers align with provider requirements.
-- You can override the underlying `fetch` implementation for custom transports (Electron, KaiOS, Workers); see `docs/docs/intro.md` and `docs/docs/cloud providers.md`.
+## Change Workflow
 
-## Cloud Provider Notes
+- Read the relevant source module, nearby tests, and matching docs page before
+  editing behavior.
+- For public API changes, update exports, public types, docs, and examples
+  together.
+- Add or update unit tests for every bug fix and behavior change. Prefer mocked
+  fetch/request tests unless the behavior only appears against a provider.
+- If a change affects `DAVClient`, verify both functional helpers and the
+  class-based API path when practical.
+- Keep generated files out of normal patches. Let `pnpm build` regenerate
+  package output when release artifacts are required.
 
-- Credential setup differs across providers (Apple app-specific passwords, Google OAuth refresh tokens, Fastmail app passwords) (`docs/docs/cloud providers.md`).
-- Expect quirks such as Google renaming objects to UID-based filenames, Zoho preventing duplicate UIDs, and Nextcloud renaming on delete; design agents to normalize URLs before diffing.
+## DAV Guardrails
 
-## Field Tips for Agents
+- Build XML request bodies with existing helpers and `ElementCompact` shapes
+  where possible. Avoid ad hoc XML strings unless the surrounding code already
+  uses them for that exact case.
+- Preserve DAV-specific headers and semantics: `Depth`, `If-Match`,
+  `If-None-Match`, `Content-Type`, `REPORT`, `PROPFIND`, `PROPPATCH`, and
+  multi-status response parsing.
+- Keep custom `headers`, `headersToExclude`, `fetchOptions`, and custom `fetch`
+  behavior flowing through high-level APIs to `davRequest`.
+- Normalize and compare DAV URLs carefully. Servers differ on trailing slashes,
+  relative hrefs, redirects, and object filenames.
+- When overriding CalDAV/CardDAV props, keep required fields such as
+  `resourcetype` and `supported-calendar-component-set`.
+- Preserve known provider quirks documented in
+  `docs/agent-architecture-overview.md` and `docs/docs/cloud providers.md`.
 
-- Always normalize calendar object URLs using `URL.resolve` when combining parent collection URLs with relative paths (see smart sync example).
-- When overriding CalDAV/CardDAV `props`, keep required fields (`supported-calendar-component-set`, `resourcetype`) to prevent server errors.
-- Reuse helper predicates (`urlFilter`, `useMultiGet`) for providers that emit non-`.ics` or non-`.vcf` keys.
-- Integration tests (`pnpm test:<provider>`) hit live services—guard credentials via environment variables and skip in CI unless configured.
+## Tests And Credentials
+
+- Unit tests must not require real provider credentials.
+- Integration tests load `.env` via `dotenv/config`; start from `.env.example`
+  when credentials are needed.
+- Use existing `MOCK_FETCH` and `RECORD_NETWORK_REQUESTS` conventions when
+  working with provider tests. Do not record or commit secrets.
+- If credentials are missing, state that integration verification was skipped
+  instead of silently treating it as complete.
+
+## Style
+
+- Follow the existing TypeScript style and strictness.
+- Prettier settings are single quotes, semicolons, 2-space indentation, and
+  100-character print width.
+- Prefer existing helper functions and local patterns over new abstractions.
+- Keep comments sparse and focused on DAV behavior that is not obvious from the
+  code.
+- Use `DEBUG=tsdav:*` when debugging request flows.
