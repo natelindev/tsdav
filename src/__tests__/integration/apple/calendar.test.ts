@@ -303,7 +303,7 @@ test('fetchCalendarObjects should fail when passed timeRange is invalid', async 
       },
     });
 
-  expect(await t()).rejects.toEqual(new Error('invalid timeRange format, not in ISO8601'));
+  await expect(t()).rejects.toEqual(new Error('invalid timeRange format, not in ISO8601'));
 });
 
 test('calendarQuery should be able to query calendar objects', async () => {

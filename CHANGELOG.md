@@ -1,3 +1,18 @@
+## v2.3.0
+
+##### improvements
+
+- replaced the Rollup package build with Rolldown while preserving the existing public output filenames and package export map
+- kept the published library runtime support at Node.js >=18; building release artifacts from source now requires a Rolldown-supported Node.js version
+- reduced generated browser bundle size by relying on Rolldown's browser build instead of broad Node polyfill injection
+- removed the `base-64` dependency and kept Basic auth encoding portable across Node.js, browsers, Bun, Deno, and Workers
+- switched linting to Biome and tightened test/lint coverage for the source tree
+- updated runtime usage docs and routed the docs homepage directly to the maintained introduction page
+
+##### bug fixes
+
+- fixed the Apple/iCloud integration assertion for invalid CalDAV `timeRange` validation so the expected rejection is tested correctly
+
 ## v2.2.2
 
 ##### improvements

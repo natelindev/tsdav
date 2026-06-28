@@ -4,18 +4,15 @@ sidebar_position: 8
 
 # Contributing
 
-First you need to clone the repo and
+First you need to clone the repo and install dependencies with `pnpm install`.
 
 ### Build
 
-```bash
-npm run build
-```
-
-or
+Building release artifacts uses Rolldown and requires Node.js 20.19+ or
+22.12+.
 
 ```bash
-yarn build
+pnpm build
 ```
 
 #### Test

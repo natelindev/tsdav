@@ -20,12 +20,10 @@
     // the TS 6 deprecation diagnostic. Removed: the resolver falls back to
     // node_modules automatically.
     //
-    // Note: intentionally no `rootDir` so Rollup's `@rollup/plugin-typescript`
-    // keeps emitting declarations at `dist/index.d.ts` rather than
-    // `dist/src/index.d.ts`, which is what the final `dts()` bundling step
-    // consumes.
+    // Note: intentionally no `rootDir` so the build declaration step emits
+    // declarations at `dist/index.d.ts` rather than `dist/src/index.d.ts`.
     "outDir": "./dist"
   },
-  "include": ["src/**/*", "env.d.ts", "rollup.config.mjs"],
+  "include": ["src/**/*", "env.d.ts", "rolldown.config.mjs"],
   "exclude": ["node_modules", "**/__tests__/**"]
 }

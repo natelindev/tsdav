@@ -1,927 +1,45 @@
-import * as xml_js from 'xml-js';
-import { ElementCompact } from 'xml-js';
-
-type DAVDepth = '0' | '1' | 'infinity';
-type DAVMethods = 'COPY' | 'LOCK' | 'MKCOL' | 'MOVE' | 'PROPFIND' | 'PROPPATCH' | 'UNLOCK' | 'REPORT' | 'SEARCH' | 'MKCALENDAR';
-type HTTPMethods = 'GET' | 'HEAD' | 'POST' | 'PUT' | 'DELETE' | 'CONNECT' | 'OPTIONS' | 'TRACE' | 'PATCH';
-type DAVResponse = {
-    raw?: any;
-    href?: string;
-    status: number;
-    statusText: string;
-    ok: boolean;
-    error?: {
-        [key: string]: any;
-    };
-    responsedescription?: string;
-    props?: {
-        [key: string]: {
-            status: number;
-            statusText: string;
-            ok: boolean;
-            value: any;
-        } | any;
-    };
-};
-type DAVRequest = {
-    headers?: Record<string, string>;
-    method: DAVMethods | HTTPMethods;
-    body: any;
-    namespace?: string;
-    attributes?: Record<string, string>;
-};
-type DAVTokens = {
-    access_token?: string;
-    refresh_token?: string;
-    expires_in?: number;
-    id_token?: string;
-    token_type?: string;
-    scope?: string;
-};
-
-type DAVCollection = {
-    objects?: DAVObject[];
-    ctag?: string;
-    description?: string;
-    displayName?: string | Record<string, unknown>;
-    reports?: any;
-    resourcetype?: any;
-    syncToken?: string;
-    url: string;
-    fetchOptions?: RequestInit;
-    fetchObjects?: ((params?: {
-        collection: DAVCalendar;
-        headers?: Record<string, string>;
-        fetchOptions?: RequestInit;
-        fetch?: typeof globalThis.fetch;
-    }) => Promise<DAVCalendarObject[]>) | ((params?: {
-        collection: DAVAddressBook;
-        headers?: Record<string, string>;
-        fetchOptions?: RequestInit;
-        fetch?: typeof globalThis.fetch;
-    }) => Promise<DAVVCard[]>);
-    objectMultiGet?: (params: {
-        url: string;
-        props: ElementCompact;
-        objectUrls: string[];
-        filters?: ElementCompact;
-        timezone?: string;
-        depth: DAVDepth;
-        fetchOptions?: RequestInit;
-        headers?: Record<string, string>;
-        fetch?: typeof globalThis.fetch;
-    }) => Promise<DAVResponse[]>;
-};
-type DAVObject = {
-    data?: any;
-    etag?: string;
-    url: string;
-};
-type DAVCredentials = {
-    username?: string;
-    password?: string;
-    clientId?: string;
-    clientSecret?: string;
-    authorizationCode?: string;
-    redirectUrl?: string;
-    tokenUrl?: string;
-    accessToken?: string;
-    refreshToken?: string;
-    expiration?: number;
-    digestString?: string;
-    customData?: Record<string, unknown>;
-};
-type DAVAccount = {
-    accountType: 'caldav' | 'carddav';
-    serverUrl: string;
-    credentials?: DAVCredentials;
-    rootUrl?: string;
-    principalUrl?: string;
-    homeUrl?: string;
-    calendars?: DAVCalendar[];
-    addressBooks?: DAVAddressBook[];
-};
-type DAVVCard = DAVObject;
-type DAVCalendarObject = DAVObject;
-type DAVAddressBook = DAVCollection;
-type DAVCalendar = {
-    components?: string[];
-    timezone?: string;
-    projectedProps?: Record<string, unknown>;
-    calendarColor?: string;
-} & DAVCollection;
-
-type SmartCollectionSyncBaseParam<T extends DAVCollection> = {
-    collection: T;
-    method?: 'basic' | 'webdav';
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch;
-    account?: DAVAccount;
-};
-type SmartCollectionSyncDetailedResult<T extends DAVCollection> = Omit<T, 'objects'> & {
-    objects: {
-        created: DAVObject[];
-        updated: DAVObject[];
-        deleted: DAVObject[];
-    };
-};
-interface SmartCollectionSync {
-    <T extends DAVCollection>(param: SmartCollectionSyncBaseParam<T> & {
-        /** @deprecated Use smartCollectionSyncDetailed instead. */
-        detailedResult: true;
-    }): Promise<SmartCollectionSyncDetailedResult<T>>;
-    <T extends DAVCollection>(param: SmartCollectionSyncBaseParam<T> & {
-        /** @deprecated Use smartCollectionSyncDetailed instead. */
-        detailedResult?: false;
-    }): Promise<T>;
-    <T extends DAVCollection>(param: SmartCollectionSyncBaseParam<T> & {
-        /** @deprecated Use smartCollectionSyncDetailed instead. */
-        detailedResult?: boolean;
-    }): Promise<T | SmartCollectionSyncDetailedResult<T>>;
-}
-interface SmartCollectionSyncDetailed {
-    <T extends DAVCollection>(param: SmartCollectionSyncBaseParam<T>): Promise<SmartCollectionSyncDetailedResult<T>>;
-}
-type SyncCalendarsBaseParam = {
-    oldCalendars: DAVCalendar[];
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch;
-    account?: DAVAccount;
-};
-type SyncCalendarsDetailedResult = {
-    created: DAVCalendar[];
-    updated: DAVCalendar[];
-    deleted: DAVCalendar[];
-};
-interface SyncCalendars {
-    (params: SyncCalendarsBaseParam & {
-        /** @deprecated Use syncCalendarsDetailed instead. */
-        detailedResult: true;
-    }): Promise<SyncCalendarsDetailedResult>;
-    (params: SyncCalendarsBaseParam & {
-        /** @deprecated Use syncCalendarsDetailed instead. */
-        detailedResult?: false;
-    }): Promise<DAVCalendar[]>;
-    (params: SyncCalendarsBaseParam & {
-        /** @deprecated Use syncCalendarsDetailed instead. */
-        detailedResult?: boolean;
-    }): Promise<DAVCalendar[] | SyncCalendarsDetailedResult>;
-}
-interface SyncCalendarsDetailed {
-    (params: SyncCalendarsBaseParam): Promise<SyncCalendarsDetailedResult>;
-}
-
-declare const fetch$1: typeof globalThis.fetch;
-
-type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
-type NoUndefinedField<T> = {
-    [P in keyof T]-?: NoUndefinedField<NonNullable<T[P]>>;
-};
-
-declare enum DAVNamespace {
-    CALENDAR_SERVER = "http://calendarserver.org/ns/",
-    CALDAV_APPLE = "http://apple.com/ns/ical/",
-    CALDAV = "urn:ietf:params:xml:ns:caldav",
-    CARDDAV = "urn:ietf:params:xml:ns:carddav",
-    DAV = "DAV:"
-}
-declare const DAVAttributeMap: {
-    "urn:ietf:params:xml:ns:caldav": string;
-    "urn:ietf:params:xml:ns:carddav": string;
-    "http://calendarserver.org/ns/": string;
-    "http://apple.com/ns/ical/": string;
-    "DAV:": string;
-};
-declare enum DAVNamespaceShort {
-    CALDAV = "c",
-    CARDDAV = "card",
-    CALENDAR_SERVER = "cs",
-    CALDAV_APPLE = "ca",
-    DAV = "d"
-}
-
-declare const addressBookQuery: (params: {
-    url: string;
-    props: ElementCompact;
-    filters?: ElementCompact;
-    depth?: DAVDepth;
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch;
-}) => Promise<DAVResponse[]>;
-declare const addressBookMultiGet: (params: {
-    url: string;
-    props: ElementCompact;
-    objectUrls: string[];
-    depth: DAVDepth;
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch;
-}) => Promise<DAVResponse[]>;
-declare const fetchAddressBooks: (params?: {
-    account?: DAVAccount;
-    props?: ElementCompact;
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch;
-}) => Promise<DAVAddressBook[]>;
-declare const fetchVCards: (params: {
-    addressBook: DAVAddressBook;
-    headers?: Record<string, string>;
-    objectUrls?: string[];
-    urlFilter?: (url: string) => boolean;
-    useMultiGet?: boolean;
-    headersToExclude?: string[];
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch;
-}) => Promise<DAVVCard[]>;
-declare const createVCard: (params: {
-    addressBook: DAVAddressBook;
-    vCardString: string;
-    filename: string;
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch;
-}) => Promise<Response>;
-declare const updateVCard: (params: {
-    vCard: DAVVCard;
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch;
-}) => Promise<Response>;
-declare const deleteVCard: (params: {
-    vCard: DAVVCard;
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch;
-}) => Promise<Response>;
-
-declare const fetchCalendarUserAddresses: (params: {
-    account: DAVAccount;
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch;
-}) => Promise<string[]>;
-declare const calendarQuery: (params: {
-    url: string;
-    props: ElementCompact;
-    filters?: ElementCompact;
-    timezone?: string;
-    depth?: DAVDepth;
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch;
-}) => Promise<DAVResponse[]>;
-declare const calendarMultiGet: (params: {
-    url: string;
-    props: ElementCompact;
-    objectUrls?: string[];
-    timezone?: string;
-    depth: DAVDepth;
-    filters?: ElementCompact;
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch;
-}) => Promise<DAVResponse[]>;
-declare const makeCalendar: (params: {
-    url: string;
-    props: ElementCompact;
-    depth?: DAVDepth;
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch;
-}) => Promise<DAVResponse[]>;
-declare const fetchCalendars: (params?: {
-    account?: DAVAccount;
-    props?: ElementCompact;
-    projectedProps?: Record<string, boolean>;
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch;
-}) => Promise<DAVCalendar[]>;
-declare const fetchCalendarObjects: (params: {
-    calendar: DAVCalendar;
-    objectUrls?: string[];
-    filters?: ElementCompact;
-    timeRange?: {
-        start: string;
-        end: string;
-    };
-    expand?: boolean;
-    urlFilter?: (url: string) => boolean;
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    useMultiGet?: boolean;
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch;
-}) => Promise<DAVCalendarObject[]>;
-declare const createCalendarObject: (params: {
-    calendar: DAVCalendar;
-    iCalString: string;
-    filename: string;
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch;
-}) => Promise<Response>;
-declare const updateCalendarObject: (params: {
-    calendarObject: DAVCalendarObject;
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch;
-}) => Promise<Response>;
-declare const deleteCalendarObject: (params: {
-    calendarObject: DAVCalendarObject;
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch;
-}) => Promise<Response>;
-/**
- * Sync remote calendars to local
- */
-declare const syncCalendars: SyncCalendars;
-declare const syncCalendarsDetailed: SyncCalendarsDetailed;
-declare const freeBusyQuery: (params: {
-    url: string;
-    timeRange: {
-        start: string;
-        end: string;
-    };
-    depth?: DAVDepth;
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch;
-}) => Promise<DAVResponse>;
-
-declare const collectionQuery: (params: {
-    url: string;
-    body: any;
-    depth?: DAVDepth;
-    defaultNamespace?: DAVNamespaceShort;
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch;
-}) => Promise<DAVResponse[]>;
-declare const makeCollection: (params: {
-    url: string;
-    props?: ElementCompact;
-    depth?: DAVDepth;
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch;
-}) => Promise<DAVResponse[]>;
-declare const supportedReportSet: (params: {
-    collection: DAVCollection;
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch;
-}) => Promise<string[]>;
-declare const isCollectionDirty: (params: {
-    collection: DAVCollection;
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch;
-}) => Promise<{
-    isDirty: boolean;
-    newCtag: string;
-}>;
-/**
- * This is for webdav sync-collection only
- */
-declare const syncCollection: (params: {
-    url: string;
-    props: ElementCompact;
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    syncLevel?: number;
-    syncToken?: string;
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch;
-}) => Promise<DAVResponse[]>;
-/** remote collection to local */
-declare const smartCollectionSync: SmartCollectionSync;
-declare const smartCollectionSyncDetailed: SmartCollectionSyncDetailed;
-
-declare const davRequest: (params: {
-    url: string;
-    init: DAVRequest;
-    convertIncoming?: boolean;
-    parseOutgoing?: boolean;
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch$1;
-}) => Promise<DAVResponse[]>;
-declare const propfind: (params: {
-    url: string;
-    props: ElementCompact;
-    depth?: DAVDepth;
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch$1;
-}) => Promise<DAVResponse[]>;
-declare const createObject: (params: {
-    url: string;
-    data: BodyInit;
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch$1;
-}) => Promise<Response>;
-declare const updateObject: (params: {
-    url: string;
-    data: BodyInit;
-    etag?: string;
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch$1;
-}) => Promise<Response>;
-declare const deleteObject: (params: {
-    url: string;
-    etag?: string;
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch$1;
-}) => Promise<Response>;
-
-declare const createDAVClient: (params: {
-    serverUrl: string;
-    credentials: DAVCredentials;
-    authMethod?: "Basic" | "Oauth" | "Digest" | "Custom" | "Bearer";
-    authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
-    defaultAccountType?: DAVAccount["accountType"] | undefined;
-    fetchOptions?: RequestInit;
-    fetch?: typeof globalThis.fetch;
-}) => Promise<{
-    davRequest: (params0: {
-        url: string;
-        init: DAVRequest;
-        convertIncoming?: boolean;
-        parseOutgoing?: boolean;
-        fetchOptions?: RequestInit;
-        fetch?: typeof globalThis.fetch;
-    }) => Promise<DAVResponse[]>;
-    propfind: (params: {
-        url: string;
-        props: xml_js.ElementCompact;
-        depth?: DAVDepth;
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch$1;
-    }) => Promise<DAVResponse[]>;
-    createAccount: (params0: {
-        account: Optional<DAVAccount, "serverUrl">;
-        headers?: Record<string, string>;
-        loadCollections?: boolean;
-        loadObjects?: boolean;
-        fetchOptions?: RequestInit;
-        fetch?: typeof globalThis.fetch;
-    }) => Promise<DAVAccount>;
-    createObject: (params: {
-        url: string;
-        data: BodyInit;
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch$1;
-    }) => Promise<Response>;
-    updateObject: (params: {
-        url: string;
-        data: BodyInit;
-        etag?: string;
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch$1;
-    }) => Promise<Response>;
-    deleteObject: (params: {
-        url: string;
-        etag?: string;
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch$1;
-    }) => Promise<Response>;
-    calendarQuery: (params: {
-        url: string;
-        props: xml_js.ElementCompact;
-        filters?: xml_js.ElementCompact;
-        timezone?: string;
-        depth?: DAVDepth;
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch;
-    }) => Promise<DAVResponse[]>;
-    addressBookQuery: (params: {
-        url: string;
-        props: xml_js.ElementCompact;
-        filters?: xml_js.ElementCompact;
-        depth?: DAVDepth;
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch;
-    }) => Promise<DAVResponse[]>;
-    collectionQuery: (params: {
-        url: string;
-        body: any;
-        depth?: DAVDepth;
-        defaultNamespace?: DAVNamespaceShort;
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch;
-    }) => Promise<DAVResponse[]>;
-    makeCollection: (params: {
-        url: string;
-        props?: xml_js.ElementCompact;
-        depth?: DAVDepth;
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch;
-    }) => Promise<DAVResponse[]>;
-    calendarMultiGet: (params: {
-        url: string;
-        props: xml_js.ElementCompact;
-        objectUrls?: string[];
-        timezone?: string;
-        depth: DAVDepth;
-        filters?: xml_js.ElementCompact;
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch;
-    }) => Promise<DAVResponse[]>;
-    makeCalendar: (params: {
-        url: string;
-        props: xml_js.ElementCompact;
-        depth?: DAVDepth;
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch;
-    }) => Promise<DAVResponse[]>;
-    syncCollection: (params: {
-        url: string;
-        props: xml_js.ElementCompact;
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        syncLevel?: number;
-        syncToken?: string;
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch;
-    }) => Promise<DAVResponse[]>;
-    supportedReportSet: (params: {
-        collection: DAVCollection;
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch;
-    }) => Promise<string[]>;
-    isCollectionDirty: (params: {
-        collection: DAVCollection;
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch;
-    }) => Promise<{
-        isDirty: boolean;
-        newCtag: string;
-    }>;
-    smartCollectionSync: SmartCollectionSync;
-    smartCollectionSyncDetailed: SmartCollectionSyncDetailed;
-    fetchCalendars: (params?: {
-        account?: DAVAccount;
-        props?: xml_js.ElementCompact;
-        projectedProps?: Record<string, boolean>;
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch;
-    } | undefined) => Promise<DAVCalendar[]>;
-    fetchCalendarUserAddresses: (params: {
-        account: DAVAccount;
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch;
-    }) => Promise<string[]>;
-    fetchCalendarObjects: (params: {
-        calendar: DAVCalendar;
-        objectUrls?: string[];
-        filters?: xml_js.ElementCompact;
-        timeRange?: {
-            start: string;
-            end: string;
-        };
-        expand?: boolean;
-        urlFilter?: (url: string) => boolean;
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        useMultiGet?: boolean;
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch;
-    }) => Promise<DAVObject[]>;
-    createCalendarObject: (params: {
-        calendar: DAVCalendar;
-        iCalString: string;
-        filename: string;
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch;
-    }) => Promise<Response>;
-    updateCalendarObject: (params: {
-        calendarObject: DAVCalendarObject;
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch;
-    }) => Promise<Response>;
-    deleteCalendarObject: (params: {
-        calendarObject: DAVCalendarObject;
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch;
-    }) => Promise<Response>;
-    syncCalendars: SyncCalendars;
-    syncCalendarsDetailed: SyncCalendarsDetailed;
-    fetchAddressBooks: (params?: {
-        account?: DAVAccount;
-        props?: xml_js.ElementCompact;
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch;
-    } | undefined) => Promise<DAVCollection[]>;
-    addressBookMultiGet: (params: {
-        url: string;
-        props: xml_js.ElementCompact;
-        objectUrls: string[];
-        depth: DAVDepth;
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch;
-    }) => Promise<DAVResponse[]>;
-    fetchVCards: (params: {
-        addressBook: DAVAddressBook;
-        headers?: Record<string, string>;
-        objectUrls?: string[];
-        urlFilter?: (url: string) => boolean;
-        useMultiGet?: boolean;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch;
-    }) => Promise<DAVObject[]>;
-    createVCard: (params: {
-        addressBook: DAVAddressBook;
-        vCardString: string;
-        filename: string;
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch;
-    }) => Promise<Response>;
-    updateVCard: (params: {
-        vCard: DAVVCard;
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch;
-    }) => Promise<Response>;
-    deleteVCard: (params: {
-        vCard: DAVVCard;
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof fetch;
-    }) => Promise<Response>;
-}>;
-declare class DAVClient {
-    serverUrl: string;
-    credentials: DAVCredentials;
-    authMethod: 'Basic' | 'Oauth' | 'Digest' | 'Custom' | 'Bearer';
-    accountType: DAVAccount['accountType'];
-    authHeaders?: Record<string, string>;
-    account?: DAVAccount;
-    fetchOptions?: RequestInit;
-    fetchOverride?: typeof globalThis.fetch;
-    authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
-    constructor(params: {
-        serverUrl: string;
-        credentials: DAVCredentials;
-        authMethod?: 'Basic' | 'Oauth' | 'Digest' | 'Custom' | 'Bearer';
-        authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
-        defaultAccountType?: DAVAccount['accountType'] | undefined;
-        fetchOptions?: RequestInit;
-        fetch?: typeof globalThis.fetch;
-    });
-    login(options?: {
-        loadCollections?: boolean;
-        loadObjects?: boolean;
-    }): Promise<void>;
-    davRequest(params0: {
-        url: string;
-        init: DAVRequest;
-        convertIncoming?: boolean;
-        parseOutgoing?: boolean;
-        fetchOptions?: RequestInit;
-        fetch?: typeof globalThis.fetch;
-    }): Promise<DAVResponse[]>;
-    createObject(...params: Parameters<typeof createObject>): Promise<Response>;
-    updateObject(...params: Parameters<typeof updateObject>): Promise<Response>;
-    deleteObject(...params: Parameters<typeof deleteObject>): Promise<Response>;
-    propfind(...params: Parameters<typeof propfind>): Promise<DAVResponse[]>;
-    createAccount(params0: {
-        account: Optional<DAVAccount, 'serverUrl'>;
-        headers?: Record<string, string>;
-        loadCollections?: boolean;
-        loadObjects?: boolean;
-        fetchOptions?: RequestInit;
-        fetch?: typeof globalThis.fetch;
-    }): Promise<DAVAccount>;
-    collectionQuery(...params: Parameters<typeof collectionQuery>): Promise<DAVResponse[]>;
-    makeCollection(...params: Parameters<typeof makeCollection>): Promise<DAVResponse[]>;
-    syncCollection(...params: Parameters<typeof syncCollection>): Promise<DAVResponse[]>;
-    supportedReportSet(...params: Parameters<typeof supportedReportSet>): Promise<string[]>;
-    isCollectionDirty(...params: Parameters<typeof isCollectionDirty>): Promise<{
-        isDirty: boolean;
-        newCtag: string;
-    }>;
-    smartCollectionSync<T extends DAVCollection>(param: {
-        collection: T;
-        method?: 'basic' | 'webdav';
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof globalThis.fetch;
-        account?: DAVAccount;
-        /** @deprecated Use smartCollectionSyncDetailed instead. */
-        detailedResult?: false;
-    }): Promise<T>;
-    smartCollectionSync<T extends DAVCollection>(param: {
-        collection: T;
-        method?: 'basic' | 'webdav';
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof globalThis.fetch;
-        account?: DAVAccount;
-        /** @deprecated Use smartCollectionSyncDetailed instead. */
-        detailedResult: true;
-    }): Promise<SmartCollectionSyncDetailedResult<T>>;
-    smartCollectionSync<T extends DAVCollection>(param: {
-        collection: T;
-        method?: 'basic' | 'webdav';
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof globalThis.fetch;
-        account?: DAVAccount;
-        /** @deprecated Use smartCollectionSyncDetailed instead. */
-        detailedResult?: boolean;
-    }): Promise<T | SmartCollectionSyncDetailedResult<T>>;
-    smartCollectionSyncDetailed<T extends DAVCollection>(param: {
-        collection: T;
-        method?: 'basic' | 'webdav';
-        headers?: Record<string, string>;
-        headersToExclude?: string[];
-        fetchOptions?: RequestInit;
-        fetch?: typeof globalThis.fetch;
-        account?: DAVAccount;
-    }): Promise<SmartCollectionSyncDetailedResult<T>>;
-    calendarQuery(...params: Parameters<typeof calendarQuery>): Promise<DAVResponse[]>;
-    makeCalendar(...params: Parameters<typeof makeCalendar>): Promise<DAVResponse[]>;
-    calendarMultiGet(...params: Parameters<typeof calendarMultiGet>): Promise<DAVResponse[]>;
-    fetchCalendars(...params: Parameters<typeof fetchCalendars>): Promise<DAVCalendar[]>;
-    fetchCalendarUserAddresses(...params: Parameters<typeof fetchCalendarUserAddresses>): Promise<string[]>;
-    fetchCalendarObjects(...params: Parameters<typeof fetchCalendarObjects>): Promise<DAVCalendarObject[]>;
-    createCalendarObject(...params: Parameters<typeof createCalendarObject>): Promise<Response>;
-    updateCalendarObject(...params: Parameters<typeof updateCalendarObject>): Promise<Response>;
-    deleteCalendarObject(...params: Parameters<typeof deleteCalendarObject>): Promise<Response>;
-    syncCalendars(...params: Parameters<SyncCalendars>): Promise<ReturnType<SyncCalendars>>;
-    syncCalendarsDetailed(...params: Parameters<SyncCalendarsDetailed>): Promise<SyncCalendarsDetailedResult>;
-    addressBookQuery(...params: Parameters<typeof addressBookQuery>): Promise<DAVResponse[]>;
-    addressBookMultiGet(...params: Parameters<typeof addressBookMultiGet>): Promise<DAVResponse[]>;
-    fetchAddressBooks(...params: Parameters<typeof fetchAddressBooks>): Promise<DAVAddressBook[]>;
-    fetchVCards(...params: Parameters<typeof fetchVCards>): Promise<DAVVCard[]>;
-    createVCard(...params: Parameters<typeof createVCard>): Promise<Response>;
-    updateVCard(...params: Parameters<typeof updateVCard>): Promise<Response>;
-    deleteVCard(...params: Parameters<typeof deleteVCard>): Promise<Response>;
-}
-
-declare const createAccount: (params: {
-    account: DAVAccount;
-    headers?: Record<string, string>;
-    headersToExclude?: string[];
-    loadCollections?: boolean;
-    loadObjects?: boolean;
-    fetchOptions?: RequestInit;
-    fetch?: typeof fetch$1;
-}) => Promise<DAVAccount>;
-
-declare const getBasicAuthHeaders: (credentials: DAVCredentials) => {
-    authorization?: string;
-};
-declare const getBearerAuthHeaders: (credentials: DAVCredentials) => {
-    authorization?: string;
-};
-declare const fetchOauthTokens: (credentials: DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof fetch$1) => Promise<DAVTokens>;
-declare const refreshAccessToken: (credentials: DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof fetch$1) => Promise<DAVTokens>;
-/**
- * Resolve OAuth headers for the given credentials.
- *
- * This will mutate `credentials` in-place with the freshly issued
- * `accessToken`, `refreshToken` (if rotated by the provider), and an
- * `expiration` timestamp (ms since epoch). Callers that persist credentials
- * across sessions should re-read these fields from the same credentials
- * object after this call.
- */
-declare const getOauthHeaders: (credentials: DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof fetch$1) => Promise<{
-    tokens: DAVTokens;
-    headers: {
-        authorization?: string;
-    };
-}>;
-
-/**
- * Strict URL equality after trimming whitespace and a single trailing slash.
- * Two URLs are equal if and only if their normalized forms are identical.
- */
-declare const urlEquals: (urlA?: string, urlB?: string) => boolean;
-/**
- * Loose URL containment check used for matching DAV responses against known
- * collection/principal URLs. Tolerates trailing slashes and partial vs. full
- * URLs (e.g. "www.example.com" vs. "https://www.example.com/").
- *
- * NOTE: this is intentionally permissive to accommodate DAV servers that
- * return hrefs as paths instead of full URLs. Callers MUST only compare URLs
- * at the same hierarchy level (collection-to-collection, object-to-object).
- * Comparing a collection URL against an object URL will produce false
- * positives because the collection URL is a prefix of the object URL.
- */
-declare const urlContains: (urlA?: string, urlB?: string) => boolean;
-declare const getDAVAttribute: (nsArr: DAVNamespace[]) => {
-    [key: string]: DAVNamespace;
-};
-declare const cleanupFalsy: <T extends object = object>(obj: T) => NoUndefinedField<T>;
-
+import * as client from './client';
+import { DAVNamespace, DAVNamespaceShort } from './consts';
+export type { DAVDepth, DAVMethods, DAVRequest, DAVResponse, DAVTokens } from './types/DAVTypes';
+export type { DAVAccount, DAVAddressBook, DAVCalendar, DAVCalendarObject, DAVCollection, DAVCredentials, DAVObject, DAVVCard, } from './types/models';
+export { DAVClient } from './client';
+export { createDAVClient } from './client';
+export { createAccount } from './account';
+export { davRequest, propfind, createObject, updateObject, deleteObject } from './request';
+export { collectionQuery, supportedReportSet, isCollectionDirty, syncCollection, smartCollectionSync, smartCollectionSyncDetailed, } from './collection';
+export { calendarQuery, calendarMultiGet, makeCalendar, fetchCalendars, fetchCalendarUserAddresses, fetchCalendarObjects, createCalendarObject, updateCalendarObject, deleteCalendarObject, syncCalendars, syncCalendarsDetailed, freeBusyQuery, } from './calendar';
+export { addressBookQuery, addressBookMultiGet, fetchAddressBooks, fetchVCards, createVCard, updateVCard, deleteVCard, } from './addressBook';
+export { getBasicAuthHeaders, getBearerAuthHeaders, getOauthHeaders, fetchOauthTokens, refreshAccessToken, } from './util/authHelpers';
+export { urlContains, urlEquals, getDAVAttribute, cleanupFalsy } from './util/requestHelpers';
+export { DAVNamespace, DAVAttributeMap, DAVNamespaceShort } from './consts';
 declare const _default: {
     urlEquals: (urlA?: string, urlB?: string) => boolean;
     urlContains: (urlA?: string, urlB?: string) => boolean;
     getDAVAttribute: (nsArr: DAVNamespace[]) => {
         [key: string]: DAVNamespace;
     };
-    cleanupFalsy: <T extends object = object>(obj: T) => NoUndefinedField<T>;
+    cleanupFalsy: <T extends object = object>(obj: T) => import("./util/typeHelpers").NoUndefinedField<T>;
     conditionalParam: <T>(key: string, param: T) => {
         [key: string]: T;
     };
     excludeHeaders: (headers: Record<string, string> | undefined, headersToExclude: string[] | undefined) => Record<string, string>;
     defaultParam: <F extends (...args: any[]) => any>(fn: F, params: Partial<Parameters<F>[0]>) => (...args: Parameters<F>) => ReturnType<F>;
-    getBasicAuthHeaders: (credentials: DAVCredentials) => {
+    getBasicAuthHeaders: (credentials: import("./types/models").DAVCredentials) => {
         authorization?: string;
     };
-    getBearerAuthHeaders: (credentials: DAVCredentials) => {
+    getBearerAuthHeaders: (credentials: import("./types/models").DAVCredentials) => {
         authorization?: string;
     };
-    fetchOauthTokens: (credentials: DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof fetch$1) => Promise<DAVTokens>;
-    refreshAccessToken: (credentials: DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof fetch$1) => Promise<DAVTokens>;
-    getOauthHeaders: (credentials: DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof fetch$1) => Promise<{
-        tokens: DAVTokens;
+    fetchOauthTokens: (credentials: import("./types/models").DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof import("./util/fetch").fetch) => Promise<import("./types/DAVTypes").DAVTokens>;
+    refreshAccessToken: (credentials: import("./types/models").DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof import("./util/fetch").fetch) => Promise<import("./types/DAVTypes").DAVTokens>;
+    getOauthHeaders: (credentials: import("./types/models").DAVCredentials, fetchOptions?: RequestInit, fetchOverride?: typeof import("./util/fetch").fetch) => Promise<{
+        tokens: import("./types/DAVTypes").DAVTokens;
         headers: {
             authorization?: string;
         };
     }>;
     fetchCalendarUserAddresses: (params: {
-        account: DAVAccount;
+        account: import("./types/models").DAVAccount;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
@@ -929,49 +47,49 @@ declare const _default: {
     }) => Promise<string[]>;
     calendarQuery: (params: {
         url: string;
-        props: xml_js.ElementCompact;
-        filters?: xml_js.ElementCompact;
+        props: import("xml-js").ElementCompact;
+        filters?: import("xml-js").ElementCompact;
         timezone?: string;
-        depth?: DAVDepth;
+        depth?: import("./types/DAVTypes").DAVDepth;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
         fetch?: typeof fetch;
-    }) => Promise<DAVResponse[]>;
+    }) => Promise<import("./types/DAVTypes").DAVResponse[]>;
     calendarMultiGet: (params: {
         url: string;
-        props: xml_js.ElementCompact;
+        props: import("xml-js").ElementCompact;
         objectUrls?: string[];
         timezone?: string;
-        depth: DAVDepth;
-        filters?: xml_js.ElementCompact;
+        depth: import("./types/DAVTypes").DAVDepth;
+        filters?: import("xml-js").ElementCompact;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
         fetch?: typeof fetch;
-    }) => Promise<DAVResponse[]>;
+    }) => Promise<import("./types/DAVTypes").DAVResponse[]>;
     makeCalendar: (params: {
         url: string;
-        props: xml_js.ElementCompact;
-        depth?: DAVDepth;
+        props: import("xml-js").ElementCompact;
+        depth?: import("./types/DAVTypes").DAVDepth;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
         fetch?: typeof fetch;
-    }) => Promise<DAVResponse[]>;
+    }) => Promise<import("./types/DAVTypes").DAVResponse[]>;
     fetchCalendars: (params?: {
-        account?: DAVAccount;
-        props?: xml_js.ElementCompact;
+        account?: import("./types/models").DAVAccount;
+        props?: import("xml-js").ElementCompact;
         projectedProps?: Record<string, boolean>;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
         fetch?: typeof fetch;
-    }) => Promise<DAVCalendar[]>;
+    }) => Promise<import("./types/models").DAVCalendar[]>;
     fetchCalendarObjects: (params: {
-        calendar: DAVCalendar;
+        calendar: import("./types/models").DAVCalendar;
         objectUrls?: string[];
-        filters?: xml_js.ElementCompact;
+        filters?: import("xml-js").ElementCompact;
         timeRange?: {
             start: string;
             end: string;
@@ -983,9 +101,9 @@ declare const _default: {
         useMultiGet?: boolean;
         fetchOptions?: RequestInit;
         fetch?: typeof fetch;
-    }) => Promise<DAVCalendarObject[]>;
+    }) => Promise<import("./types/models").DAVCalendarObject[]>;
     createCalendarObject: (params: {
-        calendar: DAVCalendar;
+        calendar: import("./types/models").DAVCalendar;
         iCalString: string;
         filename: string;
         headers?: Record<string, string>;
@@ -994,63 +112,63 @@ declare const _default: {
         fetch?: typeof fetch;
     }) => Promise<Response>;
     updateCalendarObject: (params: {
-        calendarObject: DAVCalendarObject;
+        calendarObject: import("./types/models").DAVCalendarObject;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
         fetch?: typeof fetch;
     }) => Promise<Response>;
     deleteCalendarObject: (params: {
-        calendarObject: DAVCalendarObject;
+        calendarObject: import("./types/models").DAVCalendarObject;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
         fetch?: typeof fetch;
     }) => Promise<Response>;
-    syncCalendars: SyncCalendars;
-    syncCalendarsDetailed: SyncCalendarsDetailed;
+    syncCalendars: import("./types/functionsOverloads").SyncCalendars;
+    syncCalendarsDetailed: import("./types/functionsOverloads").SyncCalendarsDetailed;
     freeBusyQuery: (params: {
         url: string;
         timeRange: {
             start: string;
             end: string;
         };
-        depth?: DAVDepth;
+        depth?: import("./types/DAVTypes").DAVDepth;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
         fetch?: typeof fetch;
-    }) => Promise<DAVResponse>;
+    }) => Promise<import("./types/DAVTypes").DAVResponse>;
     addressBookQuery: (params: {
         url: string;
-        props: xml_js.ElementCompact;
-        filters?: xml_js.ElementCompact;
-        depth?: DAVDepth;
+        props: import("xml-js").ElementCompact;
+        filters?: import("xml-js").ElementCompact;
+        depth?: import("./types/DAVTypes").DAVDepth;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
         fetch?: typeof fetch;
-    }) => Promise<DAVResponse[]>;
+    }) => Promise<import("./types/DAVTypes").DAVResponse[]>;
     addressBookMultiGet: (params: {
         url: string;
-        props: xml_js.ElementCompact;
+        props: import("xml-js").ElementCompact;
         objectUrls: string[];
-        depth: DAVDepth;
+        depth: import("./types/DAVTypes").DAVDepth;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
         fetch?: typeof fetch;
-    }) => Promise<DAVResponse[]>;
+    }) => Promise<import("./types/DAVTypes").DAVResponse[]>;
     fetchAddressBooks: (params?: {
-        account?: DAVAccount;
-        props?: xml_js.ElementCompact;
+        account?: import("./types/models").DAVAccount;
+        props?: import("xml-js").ElementCompact;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
         fetch?: typeof fetch;
-    }) => Promise<DAVAddressBook[]>;
+    }) => Promise<import("./types/models").DAVAddressBook[]>;
     fetchVCards: (params: {
-        addressBook: DAVAddressBook;
+        addressBook: import("./types/models").DAVAddressBook;
         headers?: Record<string, string>;
         objectUrls?: string[];
         urlFilter?: (url: string) => boolean;
@@ -1058,9 +176,9 @@ declare const _default: {
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
         fetch?: typeof fetch;
-    }) => Promise<DAVVCard[]>;
+    }) => Promise<import("./types/models").DAVVCard[]>;
     createVCard: (params: {
-        addressBook: DAVAddressBook;
+        addressBook: import("./types/models").DAVAddressBook;
         vCardString: string;
         filename: string;
         headers?: Record<string, string>;
@@ -1069,77 +187,77 @@ declare const _default: {
         fetch?: typeof fetch;
     }) => Promise<Response>;
     updateVCard: (params: {
-        vCard: DAVVCard;
+        vCard: import("./types/models").DAVVCard;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
         fetch?: typeof fetch;
     }) => Promise<Response>;
     deleteVCard: (params: {
-        vCard: DAVVCard;
+        vCard: import("./types/models").DAVVCard;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
         fetch?: typeof fetch;
     }) => Promise<Response>;
     serviceDiscovery: (params: {
-        account: DAVAccount;
+        account: import("./types/models").DAVAccount;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
-        fetch?: typeof fetch$1;
+        fetch?: typeof import("./util/fetch").fetch;
     }) => Promise<string>;
     fetchPrincipalUrl: (params: {
-        account: DAVAccount;
+        account: import("./types/models").DAVAccount;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
-        fetch?: typeof fetch$1;
+        fetch?: typeof import("./util/fetch").fetch;
     }) => Promise<string>;
     fetchHomeUrl: (params: {
-        account: DAVAccount;
+        account: import("./types/models").DAVAccount;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
-        fetch?: typeof fetch$1;
+        fetch?: typeof import("./util/fetch").fetch;
     }) => Promise<string>;
     createAccount: (params: {
-        account: DAVAccount;
+        account: import("./types/models").DAVAccount;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         loadCollections?: boolean;
         loadObjects?: boolean;
         fetchOptions?: RequestInit;
-        fetch?: typeof fetch$1;
-    }) => Promise<DAVAccount>;
+        fetch?: typeof import("./util/fetch").fetch;
+    }) => Promise<import("./types/models").DAVAccount>;
     collectionQuery: (params: {
         url: string;
         body: any;
-        depth?: DAVDepth;
+        depth?: import("./types/DAVTypes").DAVDepth;
         defaultNamespace?: DAVNamespaceShort;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
         fetch?: typeof fetch;
-    }) => Promise<DAVResponse[]>;
+    }) => Promise<import("./types/DAVTypes").DAVResponse[]>;
     makeCollection: (params: {
         url: string;
-        props?: xml_js.ElementCompact;
-        depth?: DAVDepth;
+        props?: import("xml-js").ElementCompact;
+        depth?: import("./types/DAVTypes").DAVDepth;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
         fetch?: typeof fetch;
-    }) => Promise<DAVResponse[]>;
+    }) => Promise<import("./types/DAVTypes").DAVResponse[]>;
     supportedReportSet: (params: {
-        collection: DAVCollection;
+        collection: import("./types/models").DAVCollection;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
         fetch?: typeof fetch;
     }) => Promise<string[]>;
     isCollectionDirty: (params: {
-        collection: DAVCollection;
+        collection: import("./types/models").DAVCollection;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
@@ -1150,40 +268,40 @@ declare const _default: {
     }>;
     syncCollection: (params: {
         url: string;
-        props: xml_js.ElementCompact;
+        props: import("xml-js").ElementCompact;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         syncLevel?: number;
         syncToken?: string;
         fetchOptions?: RequestInit;
         fetch?: typeof fetch;
-    }) => Promise<DAVResponse[]>;
-    smartCollectionSync: SmartCollectionSync;
-    smartCollectionSyncDetailed: SmartCollectionSyncDetailed;
+    }) => Promise<import("./types/DAVTypes").DAVResponse[]>;
+    smartCollectionSync: import("./types/functionsOverloads").SmartCollectionSync;
+    smartCollectionSyncDetailed: import("./types/functionsOverloads").SmartCollectionSyncDetailed;
     davRequest: (params: {
         url: string;
-        init: DAVRequest;
+        init: import("./types/DAVTypes").DAVRequest;
         convertIncoming?: boolean;
         parseOutgoing?: boolean;
         fetchOptions?: RequestInit;
-        fetch?: typeof fetch$1;
-    }) => Promise<DAVResponse[]>;
+        fetch?: typeof import("./util/fetch").fetch;
+    }) => Promise<import("./types/DAVTypes").DAVResponse[]>;
     propfind: (params: {
         url: string;
-        props: xml_js.ElementCompact;
-        depth?: DAVDepth;
+        props: import("xml-js").ElementCompact;
+        depth?: import("./types/DAVTypes").DAVDepth;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
-        fetch?: typeof fetch$1;
-    }) => Promise<DAVResponse[]>;
+        fetch?: typeof import("./util/fetch").fetch;
+    }) => Promise<import("./types/DAVTypes").DAVResponse[]>;
     createObject: (params: {
         url: string;
         data: BodyInit;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
-        fetch?: typeof fetch$1;
+        fetch?: typeof import("./util/fetch").fetch;
     }) => Promise<Response>;
     updateObject: (params: {
         url: string;
@@ -1192,7 +310,7 @@ declare const _default: {
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
-        fetch?: typeof fetch$1;
+        fetch?: typeof import("./util/fetch").fetch;
     }) => Promise<Response>;
     deleteObject: (params: {
         url: string;
@@ -1200,49 +318,49 @@ declare const _default: {
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
-        fetch?: typeof fetch$1;
+        fetch?: typeof import("./util/fetch").fetch;
     }) => Promise<Response>;
     createDAVClient: (params: {
         serverUrl: string;
-        credentials: DAVCredentials;
+        credentials: import("./types/models").DAVCredentials;
         authMethod?: "Basic" | "Oauth" | "Digest" | "Custom" | "Bearer";
-        authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
-        defaultAccountType?: DAVAccount["accountType"] | undefined;
+        authFunction?: (credentials: import("./types/models").DAVCredentials) => Promise<Record<string, string>>;
+        defaultAccountType?: import("./types/models").DAVAccount["accountType"] | undefined;
         fetchOptions?: RequestInit;
         fetch?: typeof globalThis.fetch;
     }) => Promise<{
         davRequest: (params0: {
             url: string;
-            init: DAVRequest;
+            init: import("./types/DAVTypes").DAVRequest;
             convertIncoming?: boolean;
             parseOutgoing?: boolean;
             fetchOptions?: RequestInit;
             fetch?: typeof globalThis.fetch;
-        }) => Promise<DAVResponse[]>;
+        }) => Promise<import("./types/DAVTypes").DAVResponse[]>;
         propfind: (params: {
             url: string;
-            props: xml_js.ElementCompact;
-            depth?: DAVDepth;
+            props: import("xml-js").ElementCompact;
+            depth?: import("./types/DAVTypes").DAVDepth;
             headers?: Record<string, string>;
             headersToExclude?: string[];
             fetchOptions?: RequestInit;
-            fetch?: typeof fetch$1;
-        }) => Promise<DAVResponse[]>;
+            fetch?: typeof import("./util/fetch").fetch;
+        }) => Promise<import("./types/DAVTypes").DAVResponse[]>;
         createAccount: (params0: {
-            account: Optional<DAVAccount, "serverUrl">;
+            account: import("./util/typeHelpers").Optional<import("./types/models").DAVAccount, "serverUrl">;
             headers?: Record<string, string>;
             loadCollections?: boolean;
             loadObjects?: boolean;
             fetchOptions?: RequestInit;
             fetch?: typeof globalThis.fetch;
-        }) => Promise<DAVAccount>;
+        }) => Promise<import("./types/models").DAVAccount>;
         createObject: (params: {
             url: string;
             data: BodyInit;
             headers?: Record<string, string>;
             headersToExclude?: string[];
             fetchOptions?: RequestInit;
-            fetch?: typeof fetch$1;
+            fetch?: typeof import("./util/fetch").fetch;
         }) => Promise<Response>;
         updateObject: (params: {
             url: string;
@@ -1251,7 +369,7 @@ declare const _default: {
             headers?: Record<string, string>;
             headersToExclude?: string[];
             fetchOptions?: RequestInit;
-            fetch?: typeof fetch$1;
+            fetch?: typeof import("./util/fetch").fetch;
         }) => Promise<Response>;
         deleteObject: (params: {
             url: string;
@@ -1259,88 +377,88 @@ declare const _default: {
             headers?: Record<string, string>;
             headersToExclude?: string[];
             fetchOptions?: RequestInit;
-            fetch?: typeof fetch$1;
+            fetch?: typeof import("./util/fetch").fetch;
         }) => Promise<Response>;
         calendarQuery: (params: {
             url: string;
-            props: xml_js.ElementCompact;
-            filters?: xml_js.ElementCompact;
+            props: import("xml-js").ElementCompact;
+            filters?: import("xml-js").ElementCompact;
             timezone?: string;
-            depth?: DAVDepth;
+            depth?: import("./types/DAVTypes").DAVDepth;
             headers?: Record<string, string>;
             headersToExclude?: string[];
             fetchOptions?: RequestInit;
             fetch?: typeof fetch;
-        }) => Promise<DAVResponse[]>;
+        }) => Promise<import("./types/DAVTypes").DAVResponse[]>;
         addressBookQuery: (params: {
             url: string;
-            props: xml_js.ElementCompact;
-            filters?: xml_js.ElementCompact;
-            depth?: DAVDepth;
+            props: import("xml-js").ElementCompact;
+            filters?: import("xml-js").ElementCompact;
+            depth?: import("./types/DAVTypes").DAVDepth;
             headers?: Record<string, string>;
             headersToExclude?: string[];
             fetchOptions?: RequestInit;
             fetch?: typeof fetch;
-        }) => Promise<DAVResponse[]>;
+        }) => Promise<import("./types/DAVTypes").DAVResponse[]>;
         collectionQuery: (params: {
             url: string;
             body: any;
-            depth?: DAVDepth;
+            depth?: import("./types/DAVTypes").DAVDepth;
             defaultNamespace?: DAVNamespaceShort;
             headers?: Record<string, string>;
             headersToExclude?: string[];
             fetchOptions?: RequestInit;
             fetch?: typeof fetch;
-        }) => Promise<DAVResponse[]>;
+        }) => Promise<import("./types/DAVTypes").DAVResponse[]>;
         makeCollection: (params: {
             url: string;
-            props?: xml_js.ElementCompact;
-            depth?: DAVDepth;
+            props?: import("xml-js").ElementCompact;
+            depth?: import("./types/DAVTypes").DAVDepth;
             headers?: Record<string, string>;
             headersToExclude?: string[];
             fetchOptions?: RequestInit;
             fetch?: typeof fetch;
-        }) => Promise<DAVResponse[]>;
+        }) => Promise<import("./types/DAVTypes").DAVResponse[]>;
         calendarMultiGet: (params: {
             url: string;
-            props: xml_js.ElementCompact;
+            props: import("xml-js").ElementCompact;
             objectUrls?: string[];
             timezone?: string;
-            depth: DAVDepth;
-            filters?: xml_js.ElementCompact;
+            depth: import("./types/DAVTypes").DAVDepth;
+            filters?: import("xml-js").ElementCompact;
             headers?: Record<string, string>;
             headersToExclude?: string[];
             fetchOptions?: RequestInit;
             fetch?: typeof fetch;
-        }) => Promise<DAVResponse[]>;
+        }) => Promise<import("./types/DAVTypes").DAVResponse[]>;
         makeCalendar: (params: {
             url: string;
-            props: xml_js.ElementCompact;
-            depth?: DAVDepth;
+            props: import("xml-js").ElementCompact;
+            depth?: import("./types/DAVTypes").DAVDepth;
             headers?: Record<string, string>;
             headersToExclude?: string[];
             fetchOptions?: RequestInit;
             fetch?: typeof fetch;
-        }) => Promise<DAVResponse[]>;
+        }) => Promise<import("./types/DAVTypes").DAVResponse[]>;
         syncCollection: (params: {
             url: string;
-            props: xml_js.ElementCompact;
+            props: import("xml-js").ElementCompact;
             headers?: Record<string, string>;
             headersToExclude?: string[];
             syncLevel?: number;
             syncToken?: string;
             fetchOptions?: RequestInit;
             fetch?: typeof fetch;
-        }) => Promise<DAVResponse[]>;
+        }) => Promise<import("./types/DAVTypes").DAVResponse[]>;
         supportedReportSet: (params: {
-            collection: DAVCollection;
+            collection: import("./types/models").DAVCollection;
             headers?: Record<string, string>;
             headersToExclude?: string[];
             fetchOptions?: RequestInit;
             fetch?: typeof fetch;
         }) => Promise<string[]>;
         isCollectionDirty: (params: {
-            collection: DAVCollection;
+            collection: import("./types/models").DAVCollection;
             headers?: Record<string, string>;
             headersToExclude?: string[];
             fetchOptions?: RequestInit;
@@ -1349,28 +467,28 @@ declare const _default: {
             isDirty: boolean;
             newCtag: string;
         }>;
-        smartCollectionSync: SmartCollectionSync;
-        smartCollectionSyncDetailed: SmartCollectionSyncDetailed;
+        smartCollectionSync: import("./types/functionsOverloads").SmartCollectionSync;
+        smartCollectionSyncDetailed: import("./types/functionsOverloads").SmartCollectionSyncDetailed;
         fetchCalendars: (params?: {
-            account?: DAVAccount;
-            props?: xml_js.ElementCompact;
+            account?: import("./types/models").DAVAccount;
+            props?: import("xml-js").ElementCompact;
             projectedProps?: Record<string, boolean>;
             headers?: Record<string, string>;
             headersToExclude?: string[];
             fetchOptions?: RequestInit;
             fetch?: typeof fetch;
-        } | undefined) => Promise<DAVCalendar[]>;
+        } | undefined) => Promise<import("./types/models").DAVCalendar[]>;
         fetchCalendarUserAddresses: (params: {
-            account: DAVAccount;
+            account: import("./types/models").DAVAccount;
             headers?: Record<string, string>;
             headersToExclude?: string[];
             fetchOptions?: RequestInit;
             fetch?: typeof fetch;
         }) => Promise<string[]>;
         fetchCalendarObjects: (params: {
-            calendar: DAVCalendar;
+            calendar: import("./types/models").DAVCalendar;
             objectUrls?: string[];
-            filters?: xml_js.ElementCompact;
+            filters?: import("xml-js").ElementCompact;
             timeRange?: {
                 start: string;
                 end: string;
@@ -1382,9 +500,9 @@ declare const _default: {
             useMultiGet?: boolean;
             fetchOptions?: RequestInit;
             fetch?: typeof fetch;
-        }) => Promise<DAVObject[]>;
+        }) => Promise<import("./types/models").DAVObject[]>;
         createCalendarObject: (params: {
-            calendar: DAVCalendar;
+            calendar: import("./types/models").DAVCalendar;
             iCalString: string;
             filename: string;
             headers?: Record<string, string>;
@@ -1393,41 +511,41 @@ declare const _default: {
             fetch?: typeof fetch;
         }) => Promise<Response>;
         updateCalendarObject: (params: {
-            calendarObject: DAVCalendarObject;
+            calendarObject: import("./types/models").DAVCalendarObject;
             headers?: Record<string, string>;
             headersToExclude?: string[];
             fetchOptions?: RequestInit;
             fetch?: typeof fetch;
         }) => Promise<Response>;
         deleteCalendarObject: (params: {
-            calendarObject: DAVCalendarObject;
+            calendarObject: import("./types/models").DAVCalendarObject;
             headers?: Record<string, string>;
             headersToExclude?: string[];
             fetchOptions?: RequestInit;
             fetch?: typeof fetch;
         }) => Promise<Response>;
-        syncCalendars: SyncCalendars;
-        syncCalendarsDetailed: SyncCalendarsDetailed;
+        syncCalendars: import("./types/functionsOverloads").SyncCalendars;
+        syncCalendarsDetailed: import("./types/functionsOverloads").SyncCalendarsDetailed;
         fetchAddressBooks: (params?: {
-            account?: DAVAccount;
-            props?: xml_js.ElementCompact;
+            account?: import("./types/models").DAVAccount;
+            props?: import("xml-js").ElementCompact;
             headers?: Record<string, string>;
             headersToExclude?: string[];
             fetchOptions?: RequestInit;
             fetch?: typeof fetch;
-        } | undefined) => Promise<DAVCollection[]>;
+        } | undefined) => Promise<import("./types/models").DAVCollection[]>;
         addressBookMultiGet: (params: {
             url: string;
-            props: xml_js.ElementCompact;
+            props: import("xml-js").ElementCompact;
             objectUrls: string[];
-            depth: DAVDepth;
+            depth: import("./types/DAVTypes").DAVDepth;
             headers?: Record<string, string>;
             headersToExclude?: string[];
             fetchOptions?: RequestInit;
             fetch?: typeof fetch;
-        }) => Promise<DAVResponse[]>;
+        }) => Promise<import("./types/DAVTypes").DAVResponse[]>;
         fetchVCards: (params: {
-            addressBook: DAVAddressBook;
+            addressBook: import("./types/models").DAVAddressBook;
             headers?: Record<string, string>;
             objectUrls?: string[];
             urlFilter?: (url: string) => boolean;
@@ -1435,9 +553,9 @@ declare const _default: {
             headersToExclude?: string[];
             fetchOptions?: RequestInit;
             fetch?: typeof fetch;
-        }) => Promise<DAVObject[]>;
+        }) => Promise<import("./types/models").DAVObject[]>;
         createVCard: (params: {
-            addressBook: DAVAddressBook;
+            addressBook: import("./types/models").DAVAddressBook;
             vCardString: string;
             filename: string;
             headers?: Record<string, string>;
@@ -1446,21 +564,21 @@ declare const _default: {
             fetch?: typeof fetch;
         }) => Promise<Response>;
         updateVCard: (params: {
-            vCard: DAVVCard;
+            vCard: import("./types/models").DAVVCard;
             headers?: Record<string, string>;
             headersToExclude?: string[];
             fetchOptions?: RequestInit;
             fetch?: typeof fetch;
         }) => Promise<Response>;
         deleteVCard: (params: {
-            vCard: DAVVCard;
+            vCard: import("./types/models").DAVVCard;
             headers?: Record<string, string>;
             headersToExclude?: string[];
             fetchOptions?: RequestInit;
             fetch?: typeof fetch;
         }) => Promise<Response>;
     }>;
-    DAVClient: typeof DAVClient;
+    DAVClient: typeof client.DAVClient;
     DAVNamespace: typeof DAVNamespace;
     DAVNamespaceShort: typeof DAVNamespaceShort;
     DAVAttributeMap: {
@@ -1471,6 +589,4 @@ declare const _default: {
         "DAV:": string;
     };
 };
-
-export { DAVAttributeMap, DAVClient, DAVNamespace, DAVNamespaceShort, addressBookMultiGet, addressBookQuery, calendarMultiGet, calendarQuery, cleanupFalsy, collectionQuery, createAccount, createCalendarObject, createDAVClient, createObject, createVCard, davRequest, _default as default, deleteCalendarObject, deleteObject, deleteVCard, fetchAddressBooks, fetchCalendarObjects, fetchCalendarUserAddresses, fetchCalendars, fetchOauthTokens, fetchVCards, freeBusyQuery, getBasicAuthHeaders, getBearerAuthHeaders, getDAVAttribute, getOauthHeaders, isCollectionDirty, makeCalendar, propfind, refreshAccessToken, smartCollectionSync, smartCollectionSyncDetailed, supportedReportSet, syncCalendars, syncCalendarsDetailed, syncCollection, updateCalendarObject, updateObject, updateVCard, urlContains, urlEquals };
-export type { DAVAccount, DAVAddressBook, DAVCalendar, DAVCalendarObject, DAVCollection, DAVCredentials, DAVDepth, DAVMethods, DAVObject, DAVRequest, DAVResponse, DAVTokens, DAVVCard };
+export default _default;
