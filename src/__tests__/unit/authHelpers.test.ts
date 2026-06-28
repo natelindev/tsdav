@@ -36,6 +36,23 @@ test('getBasicAuthHeaders should return correct hash', () => {
   expect(authorization).toEqual('Basic dGVzdDoxMjM0NQ==');
 });
 
+test('getBasicAuthHeaders should preserve Latin1 base64 behavior', () => {
+  const { authorization } = getBasicAuthHeaders({
+    username: 'ü',
+    password: 'p',
+  });
+  expect(authorization).toEqual('Basic /Dpw');
+});
+
+test('getBasicAuthHeaders should reject credentials outside Latin1', () => {
+  expect(() =>
+    getBasicAuthHeaders({
+      username: '用户',
+      password: '密码',
+    }),
+  ).toThrow('The string to be encoded contains characters outside of the Latin1 range.');
+});
+
 test('getBearerAuthHeaders should return correct header', () => {
   const { authorization } = getBearerAuthHeaders({
     accessToken: 'test_token',
@@ -98,6 +115,10 @@ describe('fetchOauthTokens success', () => {
       'http://example.com/token',
       expect.objectContaining({ method: 'POST' }),
     );
+    expect(mockFetch.mock.calls[0][1].headers).toEqual({
+      'content-type': 'application/x-www-form-urlencoded',
+    });
+    expect(mockFetch.mock.calls[0][1].headers).not.toHaveProperty('content-length');
   });
 
   it('should return empty object on failed response', async () => {

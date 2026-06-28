@@ -1,5 +1,3 @@
-var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
-
 function getDefaultExportFromCjs (x) {
 	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
 }
@@ -10190,188 +10188,51 @@ var account = /*#__PURE__*/Object.freeze({
 	serviceDiscovery: serviceDiscovery
 });
 
-var base64$2 = {exports: {}};
-
-/*! https://mths.be/base64 v1.0.0 by @mathias | MIT license */
-var base64$1 = base64$2.exports;
-
-var hasRequiredBase64;
-
-function requireBase64 () {
-	if (hasRequiredBase64) return base64$2.exports;
-	hasRequiredBase64 = 1;
-	(function (module, exports$1) {
-(function(root) {
-
-			// Detect free variables `exports`.
-			var freeExports = exports$1;
-
-			// Detect free variable `module`.
-			var freeModule = module &&
-				module.exports == freeExports && module;
-
-			// Detect free variable `global`, from Node.js or Browserified code, and use
-			// it as `root`.
-			var freeGlobal = typeof commonjsGlobal == 'object' && commonjsGlobal;
-			if (freeGlobal.global === freeGlobal || freeGlobal.window === freeGlobal) {
-				root = freeGlobal;
-			}
-
-			/*--------------------------------------------------------------------------*/
-
-			var InvalidCharacterError = function(message) {
-				this.message = message;
-			};
-			InvalidCharacterError.prototype = new Error;
-			InvalidCharacterError.prototype.name = 'InvalidCharacterError';
-
-			var error = function(message) {
-				// Note: the error messages used throughout this file match those used by
-				// the native `atob`/`btoa` implementation in Chromium.
-				throw new InvalidCharacterError(message);
-			};
-
-			var TABLE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-			// http://whatwg.org/html/common-microsyntaxes.html#space-character
-			var REGEX_SPACE_CHARACTERS = /[\t\n\f\r ]/g;
-
-			// `decode` is designed to be fully compatible with `atob` as described in the
-			// HTML Standard. http://whatwg.org/html/webappapis.html#dom-windowbase64-atob
-			// The optimized base64-decoding algorithm used is based on @atk’s excellent
-			// implementation. https://gist.github.com/atk/1020396
-			var decode = function(input) {
-				input = String(input)
-					.replace(REGEX_SPACE_CHARACTERS, '');
-				var length = input.length;
-				if (length % 4 == 0) {
-					input = input.replace(/==?$/, '');
-					length = input.length;
-				}
-				if (
-					length % 4 == 1 ||
-					// http://whatwg.org/C#alphanumeric-ascii-characters
-					/[^+a-zA-Z0-9/]/.test(input)
-				) {
-					error(
-						'Invalid character: the string to be decoded is not correctly encoded.'
-					);
-				}
-				var bitCounter = 0;
-				var bitStorage;
-				var buffer;
-				var output = '';
-				var position = -1;
-				while (++position < length) {
-					buffer = TABLE.indexOf(input.charAt(position));
-					bitStorage = bitCounter % 4 ? bitStorage * 64 + buffer : buffer;
-					// Unless this is the first of a group of 4 characters…
-					if (bitCounter++ % 4) {
-						// …convert the first 8 bits to a single ASCII character.
-						output += String.fromCharCode(
-							0xFF & bitStorage >> (-2 * bitCounter & 6)
-						);
-					}
-				}
-				return output;
-			};
-
-			// `encode` is designed to be fully compatible with `btoa` as described in the
-			// HTML Standard: http://whatwg.org/html/webappapis.html#dom-windowbase64-btoa
-			var encode = function(input) {
-				input = String(input);
-				if (/[^\0-\xFF]/.test(input)) {
-					// Note: no need to special-case astral symbols here, as surrogates are
-					// matched, and the input is supposed to only contain ASCII anyway.
-					error(
-						'The string to be encoded contains characters outside of the ' +
-						'Latin1 range.'
-					);
-				}
-				var padding = input.length % 3;
-				var output = '';
-				var position = -1;
-				var a;
-				var b;
-				var c;
-				var buffer;
-				// Make sure any padding is handled outside of the loop.
-				var length = input.length - padding;
-
-				while (++position < length) {
-					// Read three bytes, i.e. 24 bits.
-					a = input.charCodeAt(position) << 16;
-					b = input.charCodeAt(++position) << 8;
-					c = input.charCodeAt(++position);
-					buffer = a + b + c;
-					// Turn the 24 bits into four chunks of 6 bits each, and append the
-					// matching character for each of them to the output.
-					output += (
-						TABLE.charAt(buffer >> 18 & 0x3F) +
-						TABLE.charAt(buffer >> 12 & 0x3F) +
-						TABLE.charAt(buffer >> 6 & 0x3F) +
-						TABLE.charAt(buffer & 0x3F)
-					);
-				}
-
-				if (padding == 2) {
-					a = input.charCodeAt(position) << 8;
-					b = input.charCodeAt(++position);
-					buffer = a + b;
-					output += (
-						TABLE.charAt(buffer >> 10) +
-						TABLE.charAt((buffer >> 4) & 0x3F) +
-						TABLE.charAt((buffer << 2) & 0x3F) +
-						'='
-					);
-				} else if (padding == 1) {
-					buffer = input.charCodeAt(position);
-					output += (
-						TABLE.charAt(buffer >> 2) +
-						TABLE.charAt((buffer << 4) & 0x3F) +
-						'=='
-					);
-				}
-
-				return output;
-			};
-
-			var base64 = {
-				'encode': encode,
-				'decode': decode,
-				'version': '1.0.0'
-			};
-
-			// Some AMD build optimizers, like r.js, check for specific condition patterns
-			// like the following:
-			if (freeExports && !freeExports.nodeType) {
-				if (freeModule) { // in Node.js or RingoJS v0.8.0+
-					freeModule.exports = base64;
-				} else { // in Narwhal or RingoJS v0.7.0-
-					for (var key in base64) {
-						base64.hasOwnProperty(key) && (freeExports[key] = base64[key]);
-					}
-				}
-			} else { // in Rhino or a web browser
-				root.base64 = base64;
-			}
-
-		}(base64$1)); 
-	} (base64$2, base64$2.exports));
-	return base64$2.exports;
-}
-
-var base64Exports = requireBase64();
-var base64 = /*@__PURE__*/getDefaultExportFromCjs(base64Exports);
-
-// `base-64` is a CommonJS module that uses `module.exports = base64` with a
-// separately declared object literal. Node's CJS-module-lexer cannot detect
-// `encode`/`decode` as named exports from that pattern, so a native ESM
-// consumer importing the compiled `dist/tsdav.esm.js` would fail with
-// "Named export 'encode' not found" if we used `import { encode } from 'base-64'`.
-// Use the default-import + destructure pattern so Rollup and raw Node ESM
-// both resolve the symbol via the CJS default export.
-const { encode } = base64;
 const debug = getLogger('tsdav:authHelper');
+const BASE64_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+const NON_LATIN1_BASIC_AUTH_MESSAGE = 'The string to be encoded contains characters outside of the Latin1 range.';
+class InvalidCharacterError extends Error {
+    constructor(message) {
+        super(message);
+        this.name = 'InvalidCharacterError';
+    }
+}
+const assertLatin1 = (charCode) => {
+    if (charCode > 0xff) {
+        throw new InvalidCharacterError(NON_LATIN1_BASIC_AUTH_MESSAGE);
+    }
+};
+const encodeBase64 = (input) => {
+    let output = '';
+    let position = 0;
+    while (position < input.length) {
+        const first = input.charCodeAt(position);
+        position += 1;
+        assertLatin1(first);
+        if (position === input.length) {
+            output += BASE64_ALPHABET[Math.floor(first / 4)];
+            output += `${BASE64_ALPHABET[(first % 4) * 16]}==`;
+            break;
+        }
+        const second = input.charCodeAt(position);
+        position += 1;
+        assertLatin1(second);
+        if (position === input.length) {
+            output += BASE64_ALPHABET[Math.floor(first / 4)];
+            output += BASE64_ALPHABET[(first % 4) * 16 + Math.floor(second / 16)];
+            output += `${BASE64_ALPHABET[(second % 16) * 4]}=`;
+            break;
+        }
+        const third = input.charCodeAt(position);
+        position += 1;
+        assertLatin1(third);
+        output += BASE64_ALPHABET[Math.floor(first / 4)];
+        output += BASE64_ALPHABET[(first % 4) * 16 + Math.floor(second / 16)];
+        output += BASE64_ALPHABET[(second % 16) * 4 + Math.floor(third / 64)];
+        output += BASE64_ALPHABET[third % 64];
+    }
+    return output;
+};
 /**
  * Provide given params as default params to given function with optional params.
  *
@@ -10387,7 +10248,7 @@ const getBasicAuthHeaders = (credentials) => {
     // credentials to stdout / log aggregators.
     debug(`Basic auth token generated for user "${(_a = credentials.username) !== null && _a !== void 0 ? _a : ''}"`);
     return {
-        authorization: `Basic ${encode(`${credentials.username}:${credentials.password}`)}`,
+        authorization: `Basic ${encodeBase64(`${credentials.username}:${credentials.password}`)}`,
     };
 };
 const getBearerAuthHeaders = (credentials) => {

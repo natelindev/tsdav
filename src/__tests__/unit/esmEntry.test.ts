@@ -4,12 +4,8 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-// Regression for the ESM entry that package.json#module points at. When the
-// entry contained `import { encode } from 'base-64'`, a native Node ESM
-// consumer blew up immediately with "Named export 'encode' not found"
-// because base-64 is a CJS module that Node's cjs-module-lexer cannot
-// statically analyze. This test guards against that by actually loading
-// the built bundle through the real Node ESM loader.
+// Regression for the ESM entry that package.json#module points at. This guards
+// against native Node ESM loader issues by actually loading the built bundle.
 //
 // The test is skipped unless `dist/tsdav.esm.js` exists so `pnpm test` keeps
 // working without a prior `pnpm build`. CI runs this after `pnpm build` or
@@ -29,10 +25,12 @@ describe.skipIf(!hasDist)('ESM entry (dist/tsdav.esm.js)', () => {
       if (typeof tsdav.DAVClient !== 'function') {
         throw new Error('DAVClient not exported from built ESM bundle');
       }
-      // Exercise the code path that previously crashed at import time —
-      // base-64 encode is used inside getBasicAuthHeaders during DAVClient
-      // construction + login(), but even *importing* the bundle was enough
-      // to surface the bug. Instantiation adds defense in depth.
+      // Exercise the Basic auth code path as defense in depth; past ESM
+      // loader issues showed up around this helper's encoding implementation.
+      const headers = tsdav.getBasicAuthHeaders({ username: 'u', password: 'p' });
+      if (headers.authorization !== 'Basic dTpw') {
+        throw new Error('Basic auth header was not encoded correctly');
+      }
       new tsdav.DAVClient({
         serverUrl: 'http://example.com',
         credentials: { username: 'u', password: 'p' },

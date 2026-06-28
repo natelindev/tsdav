@@ -42,6 +42,11 @@ or
 yarn add tsdav
 ```
 
+### Runtime usage
+
+`tsdav` works in Node.js (>= 18), browsers, Bun, Deno, and Cloudflare Workers.
+See the [runtime-specific usage docs](https://tsdav.vercel.app/docs/#browser-usage) for Bun, Deno, Cloudflare Workers, browser CORS notes, and custom `fetch` transports.
+
 ### Quickstart
 
 ##### Google CALDAV

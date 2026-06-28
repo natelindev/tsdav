@@ -1,11 +1,3 @@
-// `base-64` is a CommonJS module that uses `module.exports = base64` with a
-// separately declared object literal. Node's CJS-module-lexer cannot detect
-// `encode`/`decode` as named exports from that pattern, so a native ESM
-// consumer importing the compiled `dist/tsdav.esm.js` would fail with
-// "Named export 'encode' not found" if we used `import { encode } from 'base-64'`.
-// Use the default-import + destructure pattern so Rollup and raw Node ESM
-// both resolve the symbol via the CJS default export.
-import base64 from 'base-64';
 import getLogger from 'debug';
 
 import { DAVTokens } from '../types/DAVTypes';
@@ -13,9 +5,62 @@ import { DAVCredentials } from '../types/models';
 import { fetch } from './fetch';
 import { findMissingFieldNames, hasFields } from './typeHelpers';
 
-const { encode } = base64;
-
 const debug = getLogger('tsdav:authHelper');
+const BASE64_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+const NON_LATIN1_BASIC_AUTH_MESSAGE =
+  'The string to be encoded contains characters outside of the Latin1 range.';
+
+class InvalidCharacterError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'InvalidCharacterError';
+  }
+}
+
+const assertLatin1 = (charCode: number): void => {
+  if (charCode > 0xff) {
+    throw new InvalidCharacterError(NON_LATIN1_BASIC_AUTH_MESSAGE);
+  }
+};
+
+const encodeBase64 = (input: string): string => {
+  let output = '';
+  let position = 0;
+
+  while (position < input.length) {
+    const first = input.charCodeAt(position);
+    position += 1;
+    assertLatin1(first);
+
+    if (position === input.length) {
+      output += BASE64_ALPHABET[Math.floor(first / 4)];
+      output += `${BASE64_ALPHABET[(first % 4) * 16]}==`;
+      break;
+    }
+
+    const second = input.charCodeAt(position);
+    position += 1;
+    assertLatin1(second);
+
+    if (position === input.length) {
+      output += BASE64_ALPHABET[Math.floor(first / 4)];
+      output += BASE64_ALPHABET[(first % 4) * 16 + Math.floor(second / 16)];
+      output += `${BASE64_ALPHABET[(second % 16) * 4]}=`;
+      break;
+    }
+
+    const third = input.charCodeAt(position);
+    position += 1;
+    assertLatin1(third);
+
+    output += BASE64_ALPHABET[Math.floor(first / 4)];
+    output += BASE64_ALPHABET[(first % 4) * 16 + Math.floor(second / 16)];
+    output += BASE64_ALPHABET[(second % 16) * 4 + Math.floor(third / 64)];
+    output += BASE64_ALPHABET[third % 64];
+  }
+
+  return output;
+};
 
 /**
  * Provide given params as default params to given function with optional params.
@@ -34,7 +79,7 @@ export const getBasicAuthHeaders = (credentials: DAVCredentials): { authorizatio
   // credentials to stdout / log aggregators.
   debug(`Basic auth token generated for user "${credentials.username ?? ''}"`);
   return {
-    authorization: `Basic ${encode(`${credentials.username}:${credentials.password}`)}`,
+    authorization: `Basic ${encodeBase64(`${credentials.username}:${credentials.password}`)}`,
   };
 };
 
@@ -77,7 +122,6 @@ export const fetchOauthTokens = async (
     method: 'POST',
     body: param.toString(),
     headers: {
-      'content-length': `${param.toString().length}`,
       'content-type': 'application/x-www-form-urlencoded',
     },
     ...(fetchOptions ?? {}),
