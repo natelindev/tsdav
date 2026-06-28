@@ -1785,7 +1785,6 @@ const fetchOauthTokens = async (credentials, fetchOptions, fetchOverride) => {
         method: 'POST',
         body: param.toString(),
         headers: {
-            'content-length': `${param.toString().length}`,
             'content-type': 'application/x-www-form-urlencoded',
         },
         ...(fetchOptions !== null && fetchOptions !== void 0 ? fetchOptions : {}),

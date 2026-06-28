@@ -31,7 +31,7 @@
       "browser": "./dist/tsdav.js",
       "deno": "./dist/tsdav.esm.js",
       "bun": "./dist/tsdav.esm.js",
-      "worker": "./dist/tsdav.esm.js",
+      "worker": "./dist/tsdav.js",
       "import": "./dist/tsdav.esm.js",
       "require": "./dist/tsdav.cjs.js",
       "default": "./dist/tsdav.esm.js"
