@@ -240,9 +240,16 @@ export const createAccount = async (params: {
   } else if (account.principalUrl) {
     newAccount.rootUrl = discoveredRootUrl;
   } else {
-    let lastPrincipalError: Error | undefined;
+    const findPrincipalUrl = async (
+      rootUrls: string[],
+      index = 0,
+      lastPrincipalError?: Error,
+    ): Promise<{ rootUrl: string; principalUrl: string }> => {
+      const rootUrl = rootUrls[index];
+      if (!rootUrl) {
+        throw lastPrincipalError ?? new Error('cannot find principalUrl');
+      }
 
-    for (const rootUrl of getCandidateRootUrls(account.serverUrl, discoveredRootUrl)) {
       try {
         const principalUrl = await fetchPrincipalUrl({
           account: {
@@ -254,17 +261,17 @@ export const createAccount = async (params: {
           fetch: fetchOverride,
         });
 
-        newAccount.rootUrl = rootUrl;
-        newAccount.principalUrl = principalUrl;
-        break;
+        return { rootUrl, principalUrl };
       } catch (err) {
-        lastPrincipalError = err as Error;
+        return findPrincipalUrl(rootUrls, index + 1, err as Error);
       }
-    }
+    };
 
-    if (!newAccount.rootUrl || !newAccount.principalUrl) {
-      throw lastPrincipalError ?? new Error('cannot find principalUrl');
-    }
+    const { rootUrl, principalUrl } = await findPrincipalUrl(
+      getCandidateRootUrls(account.serverUrl, discoveredRootUrl),
+    );
+    newAccount.rootUrl = rootUrl;
+    newAccount.principalUrl = principalUrl;
   }
 
   newAccount.principalUrl =
