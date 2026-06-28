@@ -1,4 +1,4 @@
-import { describe, it, test, expect, beforeAll, beforeEach } from 'vitest';
+import { test, expect, beforeAll } from 'vitest';
 import fsp from 'fs/promises';
 
 import { createAccount } from '../../../account';
@@ -10,7 +10,7 @@ import {
   fetchVCards,
   updateVCard,
 } from '../../../addressBook';
-import { DAVNamespace, DAVNamespaceShort } from '../../../consts';
+import { DAVNamespaceShort } from '../../../consts';
 import { deleteObject } from '../../../request';
 import { DAVAccount } from '../../../types/models';
 import { getBasicAuthHeaders } from '../../../util/authHelpers';

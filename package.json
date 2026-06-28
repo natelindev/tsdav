@@ -48,7 +48,7 @@
   "scripts": {
     "build": "pnpm -s clean && rollup -c rollup.config.mjs && node scripts/finalize-dist.cjs",
     "clean": "node scripts/clean-dist.cjs",
-    "lint": "biome lint src",
+    "lint": "biome check src",
     "prepublishOnly": "pnpm build",
     "test": "vitest run src/__tests__/unit",
     "test:apple": "vitest run src/__tests__/integration/apple --no-file-parallelism",

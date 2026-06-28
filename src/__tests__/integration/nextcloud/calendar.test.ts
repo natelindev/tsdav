@@ -1,4 +1,4 @@
-import { describe, it, test, expect, beforeAll, beforeEach } from 'vitest';
+import { test, expect, beforeAll } from 'vitest';
 import fsp from 'fs/promises';
 
 import { createAccount } from '../../../account';
@@ -13,7 +13,7 @@ import {
   updateCalendarObject,
 } from '../../../calendar';
 import { smartCollectionSync } from '../../../collection';
-import { DAVNamespace, DAVNamespaceShort } from '../../../consts';
+import { DAVNamespaceShort } from '../../../consts';
 import { createObject, deleteObject } from '../../../request';
 import { DAVAccount } from '../../../types/models';
 import { getBasicAuthHeaders } from '../../../util/authHelpers';
@@ -368,10 +368,13 @@ test('createCalendarObject should be able to create calendar object', async () =
 
   const created = objects.find((o) => o.data?.includes('a1b2c3d4-e5f6-7890-abcd-ef1234567890'));
   expect(created).toBeDefined();
-  expect(created!.data.length > 0).toBe(true);
+  if (!created) {
+    throw new Error('Created calendar object was not found');
+  }
+  expect(created.data.length > 0).toBe(true);
 
   await deleteObject({
-    url: created!.url,
+    url: created.url,
     headers: authHeaders,
   });
 });
@@ -398,11 +401,14 @@ test('updateCalendarObject should be able to update calendar object', async () =
   });
   const obj = allObjects.find((o) => o.data?.includes('b2c3d4e5-f6a7-8901-bcde-f12345678901'));
   expect(obj).toBeDefined();
+  if (!obj) {
+    throw new Error('Calendar object to update was not found');
+  }
 
   const updateResult = await updateCalendarObject({
     calendarObject: {
-      url: obj!.url,
-      etag: obj!.etag,
+      url: obj.url,
+      etag: obj.etag,
       data: updatedICalString,
     },
     headers: authHeaders,
@@ -411,7 +417,7 @@ test('updateCalendarObject should be able to update calendar object', async () =
   expect(updateResult.ok).toBe(true);
 
   await deleteObject({
-    url: obj!.url,
+    url: obj.url,
     headers: authHeaders,
   });
 });
@@ -437,11 +443,14 @@ test('deleteCalendarObject should be able to delete calendar object', async () =
   });
   const obj = allObjects.find((o) => o.data?.includes('c3d4e5f6-a7b8-9012-cdef-123456789012'));
   expect(obj).toBeDefined();
+  if (!obj) {
+    throw new Error('Calendar object to delete was not found');
+  }
 
   const deleteResult = await deleteCalendarObject({
     calendarObject: {
-      url: obj!.url,
-      etag: obj!.etag,
+      url: obj.url,
+      etag: obj.etag,
     },
     headers: authHeaders,
   });

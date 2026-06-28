@@ -1,4 +1,4 @@
-import { vi, describe, it, test, expect, beforeAll, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { DAVClient, createDAVClient } from '../../client';
 
 const buildMockFetch = (body = '', status = 200) =>
@@ -163,7 +163,8 @@ describe('createDAVClient auth methods', () => {
   });
 
   it('should handle Oauth auth', async () => {
-    const mockFetch = vi.fn()
+    const mockFetch = vi
+      .fn()
       // First call: getOauthHeaders -> fetchOauthTokens
       .mockResolvedValueOnce({
         ok: true,

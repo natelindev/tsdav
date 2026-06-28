@@ -1,4 +1,4 @@
-import { vi, describe, it, test, expect, beforeAll, beforeEach } from 'vitest';
+import { test, expect } from 'vitest';
 import { nativeType } from '../../util/nativeType';
 
 test('nativeType should be able to handle numbers', () => {

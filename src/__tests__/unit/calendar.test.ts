@@ -1,4 +1,4 @@
-import { vi, describe, it, test, expect, beforeAll, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import {
   calendarMultiGet,
   calendarQuery,
@@ -31,7 +31,7 @@ const mockedCollectionQuery = collection.collectionQuery as vi.MockedFunction<
 const mockedSupportedReportSet = collection.supportedReportSet as vi.MockedFunction<
   typeof collection.supportedReportSet
 >;
-const mockedSmartCollectionSync = collection.smartCollectionSync as vi.MockedFunction<
+const _mockedSmartCollectionSync = collection.smartCollectionSync as vi.MockedFunction<
   typeof collection.smartCollectionSync
 >;
 

@@ -1,4 +1,4 @@
-import { vi, describe, it, test, expect, beforeAll, beforeEach } from 'vitest';
+import { vi, describe, it, expect } from 'vitest';
 import { createAccount, fetchHomeUrl, fetchPrincipalUrl, serviceDiscovery } from '../../account';
 
 const buildResponse = (params: {

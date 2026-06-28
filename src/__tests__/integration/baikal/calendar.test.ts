@@ -1,4 +1,4 @@
-import { describe, it, test, expect, beforeAll, beforeEach } from 'vitest';
+import { test, expect, beforeAll } from 'vitest';
 import fsp from 'fs/promises';
 
 import { createAccount } from '../../../account';
@@ -13,7 +13,7 @@ import {
   updateCalendarObject,
 } from '../../../calendar';
 import { smartCollectionSync } from '../../../collection';
-import { DAVNamespace, DAVNamespaceShort } from '../../../consts';
+import { DAVNamespaceShort } from '../../../consts';
 import { createObject, deleteObject } from '../../../request';
 import { DAVAccount } from '../../../types/models';
 import { getBasicAuthHeaders } from '../../../util/authHelpers';

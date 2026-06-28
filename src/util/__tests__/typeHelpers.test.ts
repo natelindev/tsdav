@@ -1,4 +1,4 @@
-import { describe, it, test, expect } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { hasFields, findMissingFieldNames } from '../typeHelpers';
 
 describe('hasFields', () => {
@@ -39,7 +39,9 @@ describe('findMissingFieldNames', () => {
   });
 
   it('should return comma-separated missing field names', () => {
-    expect(findMissingFieldNames({ a: 'val', b: undefined, c: undefined } as any, ['a', 'b', 'c'])).toBe('b,c');
+    expect(
+      findMissingFieldNames({ a: 'val', b: undefined, c: undefined } as any, ['a', 'b', 'c']),
+    ).toBe('b,c');
   });
 
   it('should treat falsy values as missing', () => {

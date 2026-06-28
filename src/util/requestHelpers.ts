@@ -49,10 +49,13 @@ export const getDAVAttribute = (nsArr: DAVNamespace[]): { [key: string]: DAVName
   nsArr.reduce((prev, curr) => ({ ...prev, [DAVAttributeMap[curr]]: curr }), {});
 
 export const cleanupFalsy = <T extends object = object>(obj: T): NoUndefinedField<T> =>
-  Object.entries(obj).reduce((prev, [key, value]) => {
-    if (value) return { ...prev, [key]: value };
-    return prev;
-  }, {} as NoUndefinedField<T>);
+  Object.entries(obj).reduce(
+    (prev, [key, value]) => {
+      if (value) return { ...prev, [key]: value };
+      return prev;
+    },
+    {} as NoUndefinedField<T>,
+  );
 
 export const conditionalParam = <T>(key: string, param: T) => {
   if (param) {

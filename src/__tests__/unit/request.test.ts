@@ -1,4 +1,4 @@
-import { vi, describe, it, test, expect, beforeAll, beforeEach } from 'vitest';
+import { vi, describe, it, expect } from 'vitest';
 import { davRequest, propfind, createObject, updateObject, deleteObject } from '../../request';
 
 // Helper to build mock fetch responses
@@ -311,7 +311,7 @@ describe('davRequest', () => {
     });
 
     const requestHeaders = mockFetch.mock.calls[0][1].headers;
-    expect(requestHeaders['Authorization']).toBe('Basic abc');
+    expect(requestHeaders.Authorization).toBe('Basic abc');
     expect(requestHeaders['X-Custom']).toBe('value');
     expect(requestHeaders['Content-Type']).toBe('text/xml;charset=UTF-8');
   });
@@ -491,7 +491,7 @@ describe('propfind', () => {
     });
 
     const reqHeaders = mockFetch.mock.calls[0][1].headers;
-    expect(reqHeaders['Authorization']).toBe('Basic abc');
+    expect(reqHeaders.Authorization).toBe('Basic abc');
     expect(reqHeaders['X-Remove']).toBeUndefined();
   });
 });
@@ -527,7 +527,7 @@ describe('createObject', () => {
     });
 
     const reqHeaders = mockFetch.mock.calls[0][1].headers;
-    expect(reqHeaders['Authorization']).toBe('Basic abc');
+    expect(reqHeaders.Authorization).toBe('Basic abc');
     expect(reqHeaders['X-Remove']).toBeUndefined();
   });
 });

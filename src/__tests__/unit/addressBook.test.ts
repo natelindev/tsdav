@@ -1,4 +1,4 @@
-import { vi, describe, it, test, expect, beforeAll, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import {
   addressBookMultiGet,
   addressBookQuery,
@@ -14,7 +14,7 @@ import * as collection from '../../collection';
 vi.mock('../../request');
 vi.mock('../../collection');
 
-const mockedDavRequest = request.davRequest as vi.MockedFunction<typeof request.davRequest>;
+const _mockedDavRequest = request.davRequest as vi.MockedFunction<typeof request.davRequest>;
 const mockedPropfind = request.propfind as vi.MockedFunction<typeof request.propfind>;
 const mockedCreateObject = request.createObject as vi.MockedFunction<typeof request.createObject>;
 const mockedUpdateObject = request.updateObject as vi.MockedFunction<typeof request.updateObject>;
@@ -125,15 +125,15 @@ describe('fetchVCards', () => {
   });
 
   it('should throw when addressBook is undefined', async () => {
-    await expect(
-      fetchVCards({ addressBook: undefined as any }),
-    ).rejects.toThrow('cannot fetchVCards for undefined addressBook');
+    await expect(fetchVCards({ addressBook: undefined as any })).rejects.toThrow(
+      'cannot fetchVCards for undefined addressBook',
+    );
   });
 
   it('should throw when addressBook has no url', async () => {
-    await expect(
-      fetchVCards({ addressBook: {} as any }),
-    ).rejects.toThrow('addressBook must have url before fetchVCards');
+    await expect(fetchVCards({ addressBook: {} as any })).rejects.toThrow(
+      'addressBook must have url before fetchVCards',
+    );
   });
 
   it('should use addressBookQuery when useMultiGet is false', async () => {

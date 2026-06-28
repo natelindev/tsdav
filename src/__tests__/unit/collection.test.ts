@@ -1,4 +1,4 @@
-import { vi, describe, it, test, expect, beforeAll, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import {
   collectionQuery,
   isCollectionDirty,
@@ -258,11 +258,7 @@ describe('supportedReportSet', () => {
         props: {
           supportedReportSet: {
             // Some servers return entries where `report` is missing or empty.
-            supportedReport: [
-              { report: { syncCollection: {} } },
-              { report: {} },
-              {},
-            ],
+            supportedReport: [{ report: { syncCollection: {} } }, { report: {} }, {}],
           },
         },
       },
@@ -475,9 +471,11 @@ describe('smartCollectionSync', () => {
       },
     ]);
 
-    const mockFetchObjects = vi.fn().mockResolvedValue([
-      { url: 'http://example.com/col/item.ics', etag: '"1"', data: 'ical-data' },
-    ]);
+    const mockFetchObjects = vi
+      .fn()
+      .mockResolvedValue([
+        { url: 'http://example.com/col/item.ics', etag: '"1"', data: 'ical-data' },
+      ]);
 
     const result = await smartCollectionSync({
       collection: {
@@ -539,9 +537,11 @@ describe('smartCollectionSync', () => {
       },
     ]);
 
-    const mockFetchObjects = vi.fn().mockResolvedValue([
-      { url: 'http://example.com/col/item.ics', etag: '"new-etag"', data: 'updated' },
-    ]);
+    const mockFetchObjects = vi
+      .fn()
+      .mockResolvedValue([
+        { url: 'http://example.com/col/item.ics', etag: '"new-etag"', data: 'updated' },
+      ]);
 
     const result = await smartCollectionSync({
       collection: {
