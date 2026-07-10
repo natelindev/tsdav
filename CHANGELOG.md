@@ -12,6 +12,7 @@
 - fixed invalid or reversed time ranges and empty free-busy responses returning misleading results
 - fixed native ESM package exports and expanded the default test scripts to include utility tests
 - fixed the Node.js 18 CI job to validate the packed runtime instead of invoking Node.js 20-only build and test tooling
+- fixed CI and release jobs declaring conflicting pnpm versions after the repository began pinning an exact `packageManager`
 
 ##### improvements
 
