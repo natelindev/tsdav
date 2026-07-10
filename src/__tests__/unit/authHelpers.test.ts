@@ -28,6 +28,16 @@ test('defaultParam added param should be able to be overridden', () => {
   expect(result).toEqual(4);
 });
 
+test('defaultParam should merge default and per-call headers', () => {
+  const fn = (params: { headers?: Record<string, string> }) => params.headers;
+  const withAuth = defaultParam(fn, { headers: { Authorization: 'Basic abc' } });
+
+  expect(withAuth({ headers: { 'X-Custom': 'value' } })).toEqual({
+    Authorization: 'Basic abc',
+    'X-Custom': 'value',
+  });
+});
+
 test('getBasicAuthHeaders should return correct hash', () => {
   const { authorization } = getBasicAuthHeaders({
     username: 'test',
@@ -119,6 +129,35 @@ describe('fetchOauthTokens success', () => {
       'content-type': 'application/x-www-form-urlencoded',
     });
     expect(mockFetch.mock.calls[0][1].headers).not.toHaveProperty('content-length');
+  });
+
+  it('should merge fetch option headers and preserve the token request', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ access_token: 'token' }),
+    });
+
+    await fetchOauthTokens(
+      {
+        authorizationCode: 'code123',
+        redirectUrl: 'http://localhost/callback',
+        clientId: 'cid',
+        clientSecret: 'csecret',
+        tokenUrl: 'http://example.com/token',
+      },
+      {
+        method: 'GET',
+        body: 'wrong-body',
+        headers: new Headers({ 'X-Custom': 'value' }),
+      },
+      mockFetch as any,
+    );
+
+    const request = mockFetch.mock.calls[0][1];
+    expect(request.method).toBe('POST');
+    expect(request.body).toContain('grant_type=authorization_code');
+    expect(request.headers['content-type']).toBe('application/x-www-form-urlencoded');
+    expect(request.headers['x-custom']).toBe('value');
   });
 
   it('should return empty object on failed response', async () => {

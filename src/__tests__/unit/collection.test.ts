@@ -312,6 +312,40 @@ describe('isCollectionDirty', () => {
     expect(result.isDirty).toBe(false);
   });
 
+  it('should treat a missing remote ctag as dirty', async () => {
+    mockedPropfind.mockResolvedValue([
+      {
+        href: 'http://example.com/col/',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        props: {},
+      },
+    ]);
+
+    const result = await isCollectionDirty({
+      collection: { url: 'http://example.com/col/' },
+    });
+
+    expect(result.isDirty).toBe(true);
+    expect(result.newCtag).toBeUndefined();
+  });
+
+  it('should reject a matching error response', async () => {
+    mockedPropfind.mockResolvedValue([
+      {
+        href: 'http://example.com/col/',
+        ok: false,
+        status: 401,
+        statusText: 'Unauthorized',
+      },
+    ]);
+
+    await expect(
+      isCollectionDirty({ collection: { url: 'http://example.com/col/' } }),
+    ).rejects.toThrow('Collection status check failed: 401 Unauthorized');
+  });
+
   it('should throw when collection does not exist on server', async () => {
     mockedPropfind.mockResolvedValue([
       {
@@ -741,6 +775,48 @@ describe('smartCollectionSync', () => {
     expect(Array.isArray(result.objects)).toBe(true);
   });
 
+  it('should retain objects omitted from an incremental webdav response', async () => {
+    mockedDavRequest.mockResolvedValue([
+      {
+        href: '/col/changed.ics',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+      },
+    ]);
+
+    const result = await smartCollectionSync({
+      collection: {
+        url: 'http://example.com/col/',
+        reports: ['syncCollection'],
+        objects: [
+          { url: 'http://example.com/col/unchanged.ics', etag: '"same"' },
+          { url: 'http://example.com/col/changed.ics', etag: '"old"' },
+        ],
+        objectMultiGet: vi.fn().mockResolvedValue([
+          {
+            href: '/col/changed.ics',
+            ok: true,
+            status: 200,
+            statusText: 'OK',
+            props: { getetag: '"new"', calendarData: 'new-data' },
+          },
+        ]),
+      },
+      account: {
+        serverUrl: 'https://example.com/',
+        accountType: 'caldav',
+        homeUrl: 'https://example.com/col/',
+      },
+    });
+
+    expect(result.objects?.map((object) => object.url)).toEqual([
+      'http://example.com/col/unchanged.ics',
+      'http://example.com/col/changed.ics',
+    ]);
+    expect(result.objects?.[1].etag).toBe('"new"');
+  });
+
   it('should detect deleted objects in basic mode', async () => {
     mockedPropfind.mockResolvedValue([
       {
@@ -904,5 +980,131 @@ describe('smartCollectionSync', () => {
     expect(result.objects.updated).toHaveLength(1);
     expect(result.objects.updated[0].etag).toBe('"new-etag"');
     expect(result.objects.created).toHaveLength(0);
+  });
+
+  it('should reject webdav changes when objectMultiGet is missing', async () => {
+    mockedDavRequest.mockResolvedValue([
+      {
+        href: '/col/item.ics',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+      },
+    ]);
+
+    await expect(
+      smartCollectionSync({
+        collection: {
+          url: 'http://example.com/col/',
+          reports: ['syncCollection'],
+        },
+        account: {
+          serverUrl: 'https://example.com/',
+          accountType: 'caldav',
+          homeUrl: 'https://example.com/col/',
+        },
+      }),
+    ).rejects.toThrow('collection.objectMultiGet is required for webdav sync changes');
+  });
+
+  it('should reject a dirty basic sync when fetchObjects is missing', async () => {
+    mockedPropfind.mockResolvedValue([
+      {
+        href: 'http://example.com/col/',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        props: { getctag: 'new-ctag' },
+      },
+    ]);
+
+    await expect(
+      smartCollectionSync({
+        collection: {
+          url: 'http://example.com/col/',
+          ctag: 'old-ctag',
+        },
+        method: 'basic',
+        account: {
+          serverUrl: 'https://example.com/',
+          accountType: 'caldav',
+          homeUrl: 'https://example.com/col/',
+        },
+      }),
+    ).rejects.toThrow('collection.fetchObjects is required for basic sync changes');
+  });
+
+  it('should treat sibling object URLs as distinct resources', async () => {
+    mockedPropfind.mockResolvedValue([
+      {
+        href: 'http://example.com/col/',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        props: { getctag: 'new-ctag' },
+      },
+    ]);
+
+    const result = await smartCollectionSync({
+      collection: {
+        url: 'http://example.com/col/',
+        ctag: 'old-ctag',
+        objects: [{ url: 'http://example.com/col/event.ics', etag: '"same"' }],
+        fetchObjects: vi
+          .fn()
+          .mockResolvedValue([{ url: 'http://example.com/col/event.ics-copy', etag: '"same"' }]),
+      },
+      method: 'basic',
+      detailedResult: true,
+      account: {
+        serverUrl: 'https://example.com/',
+        accountType: 'caldav',
+        homeUrl: 'https://example.com/col/',
+      },
+    });
+
+    expect(result.objects.created.map((object) => object.url)).toEqual([
+      'http://example.com/col/event.ics-copy',
+    ]);
+    expect(result.objects.deleted.map((object) => object.url)).toEqual([
+      'http://example.com/col/event.ics',
+    ]);
+  });
+
+  it('should recognize object extensions before a query string', async () => {
+    mockedDavRequest.mockResolvedValue([
+      {
+        href: '/col/item.ics?revision=1',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+      },
+    ]);
+    const objectMultiGet = vi.fn().mockResolvedValue([
+      {
+        href: '/col/item.ics?revision=1',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        props: { getetag: '"etag"', calendarData: 'calendar-data' },
+      },
+    ]);
+
+    const result = await smartCollectionSync({
+      collection: {
+        url: 'http://example.com/col/',
+        reports: ['syncCollection'],
+        objectMultiGet,
+      },
+      detailedResult: true,
+      account: {
+        serverUrl: 'https://example.com/',
+        accountType: 'caldav',
+        homeUrl: 'https://example.com/col/',
+      },
+    });
+
+    expect(objectMultiGet).toHaveBeenCalledOnce();
+    expect(result.objects.created[0].url).toBe('http://example.com/col/item.ics?revision=1');
   });
 });

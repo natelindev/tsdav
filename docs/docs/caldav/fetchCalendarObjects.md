@@ -23,6 +23,7 @@ const objects = await fetchCalendarObjects({
 - `timeRange` time range in iso format
   - `start` start time in [ISO 8601 format](https://en.wikipedia.org/wiki/ISO_8601), format that's not in ISO 8601 will cause an error be thrown.
   - `end` end time in [ISO 8601 format](https://en.wikipedia.org/wiki/ISO_8601), format that's not in ISO 8601 will cause an error be thrown.
+  - `start` must be earlier than `end`.
 - `headers` request headers
 - `headersToExclude` array of keys of the headers you want to exclude
 - `fetchOptions` options to pass to underlying fetch function

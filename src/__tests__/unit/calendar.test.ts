@@ -130,6 +130,15 @@ describe('fetchCalendarObjects', () => {
     ).rejects.toThrow('invalid timeRange format, not in ISO8601');
   });
 
+  it('should reject a timeRange whose start is not before its end', async () => {
+    await expect(
+      fetchCalendarObjects({
+        calendar: { url: 'http://example.com/cal/' },
+        timeRange: { start: '2022-01-02T00:00:00Z', end: '2022-01-01T00:00:00Z' },
+      }),
+    ).rejects.toThrow('invalid timeRange: start must be before end');
+  });
+
   it('should throw when calendar is undefined', async () => {
     await expect(
       fetchCalendarObjects({
@@ -213,11 +222,33 @@ describe('fetchCalendarObjects', () => {
 
     const result = await fetchCalendarObjects({
       calendar: { url: 'http://example.com/cal/' },
-      objectUrls: ['http://example.com/cal/event1.ics'],
+      objectUrls: ['http://example.com/cal/event1.ics?revision=2'],
     });
 
     expect(result).toHaveLength(1);
     expect(mockedCollectionQuery).toHaveBeenCalledTimes(1);
+    expect(mockedCollectionQuery.mock.calls[0][0].body['calendar-multiget']['d:href']).toEqual([
+      '/cal/event1.ics?revision=2',
+    ]);
+  });
+
+  it('should leave a missing ETag undefined', async () => {
+    mockedCollectionQuery.mockResolvedValueOnce([
+      {
+        href: '/cal/event1.ics',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        props: { calendarData: 'data1' },
+      },
+    ]);
+
+    const result = await fetchCalendarObjects({
+      calendar: { url: 'http://example.com/cal/' },
+      objectUrls: ['/cal/event1.ics'],
+    });
+
+    expect(result[0].etag).toBeUndefined();
   });
 });
 
@@ -571,6 +602,63 @@ describe('syncCalendars', () => {
     expect(result.deleted).toHaveLength(0);
   });
 
+  it('should sync updated calendars from local state using the advertised method', async () => {
+    const account = {
+      serverUrl: 'https://example.com/',
+      homeUrl: 'https://example.com/cal/',
+      rootUrl: 'https://example.com/',
+      accountType: 'caldav' as const,
+    };
+    const localObject = {
+      url: 'https://example.com/cal/work/event.ics',
+      etag: '"old-etag"',
+    };
+
+    mockedPropfind.mockResolvedValue([
+      {
+        href: '/cal/work/',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        props: {
+          displayname: 'Work',
+          resourcetype: { calendar: {} },
+          supportedCalendarComponentSet: { comp: { _attributes: { name: 'VEVENT' } } },
+          getctag: 'new-ctag',
+          syncToken: 'new-token',
+        },
+      },
+    ]);
+    mockedSupportedReportSet.mockResolvedValue([]);
+    _mockedSmartCollectionSync.mockImplementation(async (params: any) => ({
+      ...params.collection,
+      objects: [localObject],
+    }));
+
+    const result = await syncCalendars({
+      oldCalendars: [
+        {
+          url: 'https://example.com/cal/work/',
+          displayName: 'Work',
+          ctag: 'old-ctag',
+          syncToken: 'old-token',
+          objects: [localObject],
+        },
+      ],
+      account,
+      detailedResult: true,
+    });
+
+    const syncParams = _mockedSmartCollectionSync.mock.calls[0][0] as any;
+    expect(syncParams.method).toBeUndefined();
+    expect(syncParams.collection.ctag).toBe('old-ctag');
+    expect(syncParams.collection.syncToken).toBe('old-token');
+    expect(syncParams.collection.objects).toEqual([localObject]);
+    expect(syncParams.collection.fetchObjects).toBeTypeOf('function');
+    expect(result.updated[0].ctag).toBe('new-ctag');
+    expect(result.updated[0].syncToken).toBe('new-token');
+  });
+
   it('should return detailed result from syncCalendarsDetailed', async () => {
     const account = {
       serverUrl: 'https://example.com/',
@@ -619,6 +707,50 @@ describe('syncCalendars', () => {
     expect(result.deleted).toHaveLength(1);
     expect(result.created).toHaveLength(0);
   });
+
+  it('should treat sibling calendar URLs as distinct resources', async () => {
+    const account = {
+      serverUrl: 'https://example.com/',
+      homeUrl: 'https://example.com/cal/',
+      rootUrl: 'https://example.com/',
+      accountType: 'caldav' as const,
+    };
+
+    mockedPropfind.mockResolvedValue([
+      {
+        href: '/cal/work-archive/',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        props: {
+          displayname: 'Work Archive',
+          resourcetype: { calendar: {} },
+          supportedCalendarComponentSet: { comp: { _attributes: { name: 'VEVENT' } } },
+          getctag: 'same-ctag',
+        },
+      },
+    ]);
+    mockedSupportedReportSet.mockResolvedValue([]);
+
+    const result = await syncCalendars({
+      oldCalendars: [
+        {
+          url: 'https://example.com/cal/work/',
+          displayName: 'Work',
+          ctag: 'same-ctag',
+        },
+      ],
+      account,
+      detailedResult: true,
+    });
+
+    expect(result.created.map((calendar) => calendar.url)).toEqual([
+      'https://example.com/cal/work-archive/',
+    ]);
+    expect(result.deleted.map((calendar) => calendar.url)).toEqual([
+      'https://example.com/cal/work/',
+    ]);
+  });
 });
 
 describe('freeBusyQuery', () => {
@@ -651,5 +783,16 @@ describe('freeBusyQuery', () => {
         timeRange: { start: 'bad', end: 'bad' },
       }),
     ).rejects.toThrow('invalid timeRange format, not in ISO8601');
+  });
+
+  it('should throw when the server returns no free-busy response', async () => {
+    mockedCollectionQuery.mockResolvedValue([]);
+
+    await expect(
+      freeBusyQuery({
+        url: 'http://example.com/cal/',
+        timeRange: { start: '2022-01-01T00:00:00Z', end: '2022-01-02T00:00:00Z' },
+      }),
+    ).rejects.toThrow('freeBusyQuery returned no response');
   });
 });

@@ -42,7 +42,7 @@ Use the ESM bundle in modern browsers:
 
 ```html
 <script type="module">
-  import { createDAVClient } from 'https://unpkg.com/tsdav/dist/tsdav.esm.js';
+  import { createDAVClient } from 'https://unpkg.com/tsdav/dist/tsdav.mjs';
 
   const client = await createDAVClient({
     serverUrl: 'https://caldav.icloud.com',

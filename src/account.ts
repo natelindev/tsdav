@@ -6,7 +6,7 @@ import { DAVNamespaceShort } from './consts';
 import { propfind } from './request';
 import { DAVAccount } from './types/models';
 import { fetch } from './util/fetch';
-import { excludeHeaders, urlContains } from './util/requestHelpers';
+import { excludeHeaders, mergeHeaders, urlMatches } from './util/requestHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelpers';
 
 const debug = getLogger('tsdav:account');
@@ -28,6 +28,7 @@ export const serviceDiscovery = async (params: {
   const { account, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
   const requestFetch = fetchOverride ?? fetch;
   const endpoint = new URL(account.serverUrl);
+  const { headers: fetchHeaders, ...fetchOptionsWithoutHeaders } = fetchOptions;
 
   const uri = new URL(`/.well-known/${account.accountType}`, endpoint);
   uri.protocol = endpoint.protocol ?? 'http';
@@ -61,14 +62,14 @@ export const serviceDiscovery = async (params: {
   // Try PROPFIND first (standard method for CalDAV/CardDAV service discovery)
   try {
     const response = await requestFetch(uri.href, {
-      ...fetchOptions,
+      ...fetchOptionsWithoutHeaders,
       // the following fields are essential to discovery; do not allow
       // fetchOptions to override them.
       method: 'PROPFIND',
-      headers: {
-        ...excludeHeaders(headers, headersToExclude),
-        'Content-Type': 'text/xml;charset=UTF-8',
-      },
+      headers: excludeHeaders(
+        mergeHeaders({ 'Content-Type': 'text/xml;charset=UTF-8' }, headers, fetchHeaders),
+        headersToExclude,
+      ),
       body: `<?xml version="1.0" encoding="utf-8" ?>
 <d:propfind xmlns:d="DAV:">
   <d:prop>
@@ -90,9 +91,9 @@ export const serviceDiscovery = async (params: {
   // at .well-known endpoints, so try GET as a fallback
   try {
     const response = await requestFetch(uri.href, {
-      ...fetchOptions,
+      ...fetchOptionsWithoutHeaders,
       method: 'GET',
-      headers: excludeHeaders(headers, headersToExclude),
+      headers: excludeHeaders(mergeHeaders(headers, fetchHeaders), headersToExclude),
       redirect: 'manual' as RequestRedirect,
     });
 
@@ -135,9 +136,9 @@ export const fetchPrincipalUrl = async (params: {
     fetchOptions,
     fetch: fetchOverride,
   });
-  if (!response.ok) {
-    debug(`Fetch principal url failed: ${response.statusText}`);
-    if (response.status === 401) {
+  if (!response?.ok) {
+    debug(`Fetch principal url failed: ${response?.statusText ?? 'empty response'}`);
+    if (response?.status === 401) {
       throw new Error(`Invalid credentials: PROPFIND ${account.rootUrl} returned 401 Unauthorized`);
     }
     throw new Error('cannot find principalUrl');
@@ -181,7 +182,7 @@ export const fetchHomeUrl = async (params: {
     fetch: fetchOverride,
   });
 
-  const matched = responses.find((r) => urlContains(account.principalUrl, r.href));
+  const matched = responses.find((r) => urlMatches(account.principalUrl, r.href, account.rootUrl));
   if (!matched || !matched.ok) {
     debug(
       `Fetch home url failed with status ${matched?.statusText} and error ${JSON.stringify(responses.map((r) => r.error))}`,

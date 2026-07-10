@@ -38,6 +38,8 @@ const { created, updated, deleted } = (
 ### Arguments
 
 - `collection` **required**, the target collection to sync
+- `collection.objectMultiGet` required when WebDAV sync reports created or updated objects
+- `collection.fetchObjects` required when basic sync detects a changed collection
 - `method` defaults to auto detect, one of `basic` and `webdav`
 - `account` [DAVAccount](../../types/DAVAccount.md) to sync
 - `detailedResult` deprecated, use `smartCollectionSyncDetailed` for the detailed result instead.
@@ -77,6 +79,10 @@ if collection changed,
 fetch the latest list of [DAVObject](../../types/DAVObject.md) from remote,
 
 compare the provided list and the latest list to find out `created`, `updated`, and `deleted` objects.
+
+The sync rejects with a clear error if the callback required by the selected method is missing. This
+prevents advancing a sync token or treating all local objects as deleted without first retrieving the
+remote changes.
 
 When using `smartCollectionSync`,
 

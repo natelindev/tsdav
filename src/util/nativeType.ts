@@ -10,7 +10,11 @@ export const nativeType = (value: string): unknown => {
   }
   if (NUMERIC_RE.test(value)) {
     const nValue = Number(value);
-    if (!Number.isNaN(nValue) && Number.isFinite(nValue)) {
+    if (
+      !Number.isNaN(nValue) &&
+      Number.isFinite(nValue) &&
+      (!Number.isInteger(nValue) || Number.isSafeInteger(nValue))
+    ) {
       return nValue;
     }
   }

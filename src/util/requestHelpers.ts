@@ -45,6 +45,22 @@ export const urlContains = (urlA?: string, urlB?: string): boolean => {
   return strippedUrlA.includes(strippedUrlB) || strippedUrlB.includes(strippedUrlA);
 };
 
+/**
+ * Compare two DAV hrefs as resource identifiers after resolving relative
+ * hrefs against the same collection or account URL.
+ */
+export const urlMatches = (urlA?: string, urlB?: string, baseUrl?: string): boolean => {
+  if (!urlA || !urlB || !baseUrl) {
+    return urlEquals(urlA, urlB);
+  }
+
+  try {
+    return urlEquals(new URL(urlA, baseUrl).href, new URL(urlB, baseUrl).href);
+  } catch {
+    return urlEquals(urlA, urlB);
+  }
+};
+
 export const getDAVAttribute = (nsArr: DAVNamespace[]): { [key: string]: DAVNamespace } =>
   nsArr.reduce((prev, curr) => ({ ...prev, [DAVAttributeMap[curr]]: curr }), {});
 
@@ -82,4 +98,39 @@ export const excludeHeaders = (
   return Object.fromEntries(
     Object.entries(headers).filter(([key]) => !excludeSet.has(key.toLowerCase())),
   );
+};
+
+/** Merge all valid HeadersInit forms with case-insensitive last-write-wins semantics. */
+export const mergeHeaders = (
+  ...headerSources: Array<HeadersInit | undefined>
+): Record<string, string> => {
+  const headersByLowercaseName = new Map<string, [string, string]>();
+
+  const setHeader = (name: string, value: string): void => {
+    headersByLowercaseName.set(name.toLowerCase(), [name, value]);
+  };
+
+  for (const source of headerSources) {
+    if (!source) continue;
+
+    if (Array.isArray(source)) {
+      for (const [name, value] of source) {
+        setHeader(name, value);
+      }
+      continue;
+    }
+
+    if (typeof (source as Headers).forEach === 'function') {
+      (source as Headers).forEach((value, name) => {
+        setHeader(name, value);
+      });
+      continue;
+    }
+
+    for (const [name, value] of Object.entries(source)) {
+      setHeader(name, value);
+    }
+  }
+
+  return Object.fromEntries(headersByLowercaseName.values());
 };

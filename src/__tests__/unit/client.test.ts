@@ -82,6 +82,26 @@ describe('createDAVClient auth methods', () => {
     expect(calledHeaders.authorization).toMatch(/^Basic /);
   });
 
+  it('should retain factory auth headers when a method adds custom headers', async () => {
+    const mockFetch = buildMockFetch();
+    const client = await createDAVClient({
+      serverUrl: 'http://example.com',
+      credentials: mockCredentials,
+      authMethod: 'Basic',
+      fetch: mockFetch,
+    });
+
+    await client.createObject({
+      url: 'http://example.com/item.ics',
+      data: 'calendar-data',
+      headers: { 'X-Custom': 'value' },
+    });
+
+    const calledHeaders = mockFetch.mock.calls[0][1].headers;
+    expect(calledHeaders.authorization).toMatch(/^Basic /);
+    expect(calledHeaders['X-Custom']).toBe('value');
+  });
+
   // Regression: `authMethod` is optional on the createDAVClient param type
   // (matching the DAVClient class), but the factory used to throw
   // "Invalid auth method" the moment it was omitted. Default to 'Basic' so
@@ -192,6 +212,10 @@ describe('createDAVClient auth methods', () => {
         tokenUrl: 'http://example.com/token',
       },
       authMethod: 'Oauth',
+      fetchOptions: {
+        credentials: 'include',
+        headers: new Headers({ 'X-Token-Request': 'value' }),
+      },
       fetch: mockFetch,
     });
 
@@ -202,6 +226,8 @@ describe('createDAVClient auth methods', () => {
 
     const davCallHeaders = mockFetch.mock.calls[1][1].headers;
     expect(davCallHeaders.authorization).toBe('Bearer oauth-token');
+    expect(mockFetch.mock.calls[0][1].credentials).toBe('include');
+    expect(mockFetch.mock.calls[0][1].headers['x-token-request']).toBe('value');
   });
 
   it('should throw for invalid auth method', async () => {
@@ -396,6 +422,9 @@ describe('DAVClient method delegation', () => {
     });
 
     expect(mockFetch).toHaveBeenCalled();
+    const headers = mockFetch.mock.calls[0][1].headers;
+    expect(headers.authorization).toBe('Basic dGVzdDpwYXNz');
+    expect(headers['content-type']).toBe('text/calendar');
   });
 
   it('updateObject should pass auth headers', async () => {

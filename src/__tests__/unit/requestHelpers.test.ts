@@ -6,6 +6,7 @@ import {
   getDAVAttribute,
   urlContains,
   urlEquals,
+  urlMatches,
 } from '../../util/requestHelpers';
 import { DAVNamespace } from '../../consts';
 
@@ -68,6 +69,14 @@ test('urlContains should handle almost substring of urls', () => {
   expect(urlContains(url, url5)).toBe(true);
   expect(urlContains(url, url6)).toBe(true);
   expect(urlContains(url, url7)).toBe(false);
+});
+
+test('urlMatches should resolve DAV hrefs without confusing sibling resources', () => {
+  const baseUrl = 'https://example.com/calendars/user/';
+
+  expect(urlMatches('/calendars/user/event.ics', `${baseUrl}event.ics`, baseUrl)).toBe(true);
+  expect(urlMatches(`${baseUrl}event.ics`, `${baseUrl}event.ics-copy`, baseUrl)).toBe(false);
+  expect(urlMatches(`${baseUrl}work/`, `${baseUrl}work-archive/`, baseUrl)).toBe(false);
 });
 
 test('excludeHeaders should exclude headers', () => {

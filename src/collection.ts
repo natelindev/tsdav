@@ -11,10 +11,26 @@ import {
   SmartCollectionSyncDetailedResult,
 } from './types/functionsOverloads';
 import { DAVAccount, DAVCollection, DAVObject } from './types/models';
-import { cleanupFalsy, excludeHeaders, getDAVAttribute, urlContains } from './util/requestHelpers';
+import { cleanupFalsy, excludeHeaders, getDAVAttribute, urlMatches } from './util/requestHelpers';
 import { findMissingFieldNames, hasFields, RequireAndNotNullSome } from './util/typeHelpers';
 
 const debug = getLogger('tsdav:collection');
+
+const resolveDAVHref = (href: string, baseUrl: string): string => {
+  try {
+    return new URL(href, baseUrl).href;
+  } catch {
+    return href;
+  }
+};
+
+const hrefHasExtension = (href: string, extension: string, baseUrl: string): boolean => {
+  try {
+    return new URL(href, baseUrl).pathname.toLowerCase().endsWith(extension);
+  } catch {
+    return (href.split(/[?#]/, 1)[0] ?? '').toLowerCase().endsWith(extension);
+  }
+};
 
 export const collectionQuery = async (params: {
   url: string;
@@ -57,12 +73,14 @@ export const collectionQuery = async (params: {
     );
   }
 
+  const firstQueryResult = queryResults[0];
   // empty query result
   if (
     queryResults.length === 1 &&
-    !queryResults[0].raw &&
-    queryResults[0].status &&
-    queryResults[0].status < 300
+    firstQueryResult &&
+    !firstQueryResult.raw &&
+    firstQueryResult.status &&
+    firstQueryResult.status < 300
   ) {
     return [];
   }
@@ -163,13 +181,18 @@ export const isCollectionDirty = async (params: {
     fetchOptions,
     fetch: fetchOverride,
   });
-  const res = responses.filter((r) => urlContains(collection.url, r.href))[0];
+  const res = responses.find((r) => urlMatches(collection.url, r.href, collection.url));
   if (!res) {
     throw new Error('Collection does not exist on server');
   }
+  if (!res.ok) {
+    throw new Error(`Collection status check failed: ${res.status} ${res.statusText}`);
+  }
+  const remoteCtag = res.props?.getctag;
   return {
-    isDirty: `${collection.ctag}` !== `${res.props?.getctag}`,
-    newCtag: res.props?.getctag?.toString(),
+    isDirty:
+      collection.ctag == null || remoteCtag == null || `${collection.ctag}` !== `${remoteCtag}`,
+    newCtag: remoteCtag?.toString(),
   };
 };
 
@@ -277,15 +300,20 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
 
     const objectResponses = result.filter((r): r is RequireAndNotNullSome<DAVResponse, 'href'> => {
       const extName = account.accountType === 'caldav' ? '.ics' : '.vcf';
-      return r.href?.slice(-4) === extName;
+      return typeof r.href === 'string' && hrefHasExtension(r.href, extName, collection.url);
     });
 
     const changedObjectUrls = objectResponses.filter((o) => o.status !== 404).map((r) => r.href);
 
     const deletedObjectUrls = objectResponses.filter((o) => o.status === 404).map((r) => r.href);
 
+    const objectMultiGet = collection.objectMultiGet;
+    if (changedObjectUrls.length > 0 && !objectMultiGet) {
+      throw new Error('collection.objectMultiGet is required for webdav sync changes');
+    }
+
     const multiGetObjectResponse = changedObjectUrls.length
-      ? ((await collection.objectMultiGet?.({
+      ? ((await objectMultiGet?.({
           url: collection.url,
           props: {
             [`${DAVNamespaceShort.DAV}:getetag`]: {},
@@ -305,8 +333,8 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
 
     const remoteObjects = multiGetObjectResponse.map((res: DAVResponse) => {
       return {
-        url: res.href ?? '',
-        etag: res.props?.getetag,
+        url: resolveDAVHref(res.href ?? '', collection.url),
+        etag: res.props?.getetag == null ? undefined : String(res.props.getetag),
         data:
           account?.accountType === 'caldav'
             ? (res.props?.calendarData?._cdata ?? res.props?.calendarData)
@@ -318,13 +346,15 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
 
     // no existing url
     const created: DAVObject[] = remoteObjects.filter((o: DAVObject) =>
-      localObjects.every((lo) => !urlContains(lo.url, o.url)),
+      localObjects.every((lo) => !urlMatches(lo.url, o.url, collection.url)),
     );
     // debug(`created objects: ${created.map((o) => o.url).join('\n')}`);
 
     // have same url, but etag different
     const updated = localObjects.reduce<DAVObject[]>((prev, curr) => {
-      const found = remoteObjects.find((ro: DAVObject) => urlContains(ro.url, curr.url));
+      const found = remoteObjects.find((ro: DAVObject) =>
+        urlMatches(ro.url, curr.url, collection.url),
+      );
       if (found && found.etag && found.etag !== curr.etag) {
         return [...prev, found];
       }
@@ -333,12 +363,18 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
     // debug(`updated objects: ${updated.map((o) => o.url).join('\n')}`);
 
     const deleted: DAVObject[] = deletedObjectUrls.map((o) => ({
-      url: o,
+      url: resolveDAVHref(o, collection.url),
       etag: '',
     }));
     // debug(`deleted objects: ${deleted.map((o) => o.url).join('\n')}`);
-    const unchanged = localObjects.filter((lo) =>
-      remoteObjects.some((ro: DAVObject) => urlContains(lo.url, ro.url) && ro.etag === lo.etag),
+    const unchanged = localObjects.filter(
+      (localObject) =>
+        deleted.every(
+          (deletedObject) => !urlMatches(localObject.url, deletedObject.url, collection.url),
+        ) &&
+        updated.every(
+          (updatedObject) => !urlMatches(localObject.url, updatedObject.url, collection.url),
+        ),
     );
 
     return {
@@ -383,17 +419,19 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
     // Workers, KaiOS) still work in the basic/ctag-based sync fallback —
     // dropping it would silently re-route the request through the global
     // fetch, breaking those environments.
+    if (!collection.fetchObjects) {
+      throw new Error('collection.fetchObjects is required for basic sync changes');
+    }
+
     const remoteObjects: DAVObject[] =
       (await (
-        collection.fetchObjects as
-          | ((params: {
-              collection: DAVCollection;
-              headers?: Record<string, string>;
-              fetchOptions?: RequestInit;
-              fetch?: typeof globalThis.fetch;
-            }) => Promise<DAVObject[]>)
-          | undefined
-      )?.({
+        collection.fetchObjects as (params: {
+          collection: DAVCollection;
+          headers?: Record<string, string>;
+          fetchOptions?: RequestInit;
+          fetch?: typeof globalThis.fetch;
+        }) => Promise<DAVObject[]>
+      )({
         collection,
         headers: excludeHeaders(headers, headersToExclude),
         fetchOptions,
@@ -402,13 +440,15 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
 
     // no existing url
     const created = remoteObjects.filter((ro: DAVObject) =>
-      localObjects.every((lo) => !urlContains(lo.url, ro.url)),
+      localObjects.every((lo) => !urlMatches(lo.url, ro.url, collection.url)),
     );
     // debug(`created objects: ${created.map((o) => o.url).join('\n')}`);
 
     // have same url, but etag different
     const updated = localObjects.reduce<DAVObject[]>((prev, curr) => {
-      const found = remoteObjects.find((ro: DAVObject) => urlContains(ro.url, curr.url));
+      const found = remoteObjects.find((ro: DAVObject) =>
+        urlMatches(ro.url, curr.url, collection.url),
+      );
       if (found && found.etag && found.etag !== curr.etag) {
         return [...prev, found];
       }
@@ -418,12 +458,14 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
 
     // does not present in remote
     const deleted = localObjects.filter((cal) =>
-      remoteObjects.every((ro: DAVObject) => !urlContains(ro.url, cal.url)),
+      remoteObjects.every((ro: DAVObject) => !urlMatches(ro.url, cal.url, collection.url)),
     );
     // debug(`deleted objects: ${deleted.map((o) => o.url).join('\n')}`);
 
     const unchanged = localObjects.filter((lo) =>
-      remoteObjects.some((ro: DAVObject) => urlContains(lo.url, ro.url) && ro.etag === lo.etag),
+      remoteObjects.some(
+        (ro: DAVObject) => urlMatches(lo.url, ro.url, collection.url) && ro.etag === lo.etag,
+      ),
     );
 
     return {

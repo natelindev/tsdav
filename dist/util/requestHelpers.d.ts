@@ -17,6 +17,11 @@ export declare const urlEquals: (urlA?: string, urlB?: string) => boolean;
  * positives because the collection URL is a prefix of the object URL.
  */
 export declare const urlContains: (urlA?: string, urlB?: string) => boolean;
+/**
+ * Compare two DAV hrefs as resource identifiers after resolving relative
+ * hrefs against the same collection or account URL.
+ */
+export declare const urlMatches: (urlA?: string, urlB?: string, baseUrl?: string) => boolean;
 export declare const getDAVAttribute: (nsArr: DAVNamespace[]) => {
     [key: string]: DAVNamespace;
 };
@@ -25,3 +30,5 @@ export declare const conditionalParam: <T>(key: string, param: T) => {
     [key: string]: T;
 };
 export declare const excludeHeaders: (headers: Record<string, string> | undefined, headersToExclude: string[] | undefined) => Record<string, string>;
+/** Merge all valid HeadersInit forms with case-insensitive last-write-wins semantics. */
+export declare const mergeHeaders: (...headerSources: Array<HeadersInit | undefined>) => Record<string, string>;

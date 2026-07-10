@@ -177,6 +177,27 @@ describe('fetchVCards', () => {
     expect(result).toHaveLength(0);
   });
 
+  it('should preserve query strings in multiget hrefs', async () => {
+    mockedCollectionQuery.mockResolvedValueOnce([
+      {
+        href: '/user/addr/card1.vcf?revision=2',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        props: { addressData: 'BEGIN:VCARD\nEND:VCARD' },
+      },
+    ]);
+
+    await fetchVCards({
+      addressBook: { url: 'http://example.com/user/addr/' },
+      objectUrls: ['http://example.com/user/addr/card1.vcf?revision=2'],
+    });
+
+    expect(mockedCollectionQuery.mock.calls[0][0].body['addressbook-multiget']['d:href']).toEqual([
+      '/user/addr/card1.vcf?revision=2',
+    ]);
+  });
+
   it('should use _cdata when present in addressData', async () => {
     mockedCollectionQuery.mockResolvedValueOnce([
       {
@@ -204,6 +225,25 @@ describe('fetchVCards', () => {
     });
 
     expect(result[0].data).toBe('BEGIN:VCARD\nCDATA\nEND:VCARD');
+  });
+
+  it('should leave a missing ETag undefined', async () => {
+    mockedCollectionQuery.mockResolvedValueOnce([
+      {
+        href: '/user/addr/card1.vcf',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        props: { addressData: 'BEGIN:VCARD\nEND:VCARD' },
+      },
+    ]);
+
+    const result = await fetchVCards({
+      addressBook: { url: 'http://example.com/user/addr/' },
+      objectUrls: ['/user/addr/card1.vcf'],
+    });
+
+    expect(result[0].etag).toBeUndefined();
   });
 });
 

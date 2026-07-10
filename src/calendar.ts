@@ -12,7 +12,7 @@ import {
   SyncCalendarsDetailedResult,
 } from './types/functionsOverloads';
 import { DAVAccount, DAVCalendar, DAVCalendarObject } from './types/models';
-import { cleanupFalsy, excludeHeaders, getDAVAttribute, urlContains } from './util/requestHelpers';
+import { cleanupFalsy, excludeHeaders, getDAVAttribute, urlMatches } from './util/requestHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelpers';
 
 const debug = getLogger('tsdav:calendar');
@@ -34,6 +34,9 @@ const validateTimeRange = (timeRange: { start: string; end: string }): void => {
   }
   if (Number.isNaN(new Date(start).getTime()) || Number.isNaN(new Date(end).getTime())) {
     throw new Error('invalid timeRange: start or end is not a valid date');
+  }
+  if (new Date(start).getTime() >= new Date(end).getTime()) {
+    throw new Error('invalid timeRange: start must be before end');
   }
 };
 
@@ -72,7 +75,7 @@ export const fetchCalendarUserAddresses = async (params: {
     fetch: fetchOverride,
   });
 
-  const matched = responses.find((r) => urlContains(account.principalUrl, r.href));
+  const matched = responses.find((r) => urlMatches(account.principalUrl, r.href, account.rootUrl));
   if (!matched || !matched.ok) {
     throw new Error('cannot find calendarUserAddresses');
   }
@@ -431,7 +434,10 @@ export const fetchCalendarObjects = async (params: {
   const calendarObjectUrls = (objectUrls ?? initialResponses.map((res) => res.href ?? ''))
     .map((url) => (url.startsWith('http') || !url ? url : new URL(url, calendar.url).href)) // patch up to full url if url is not full
     .filter(urlFilter) // custom filter function on calendar objects
-    .map((url) => new URL(url).pathname); // obtain pathname of the url
+    .map((url) => {
+      const parsedUrl = new URL(url);
+      return `${parsedUrl.pathname}${parsedUrl.search}`;
+    }); // obtain the path and query of the url
 
   let calendarObjectResults: DAVResponse[] = [];
 
@@ -508,7 +514,7 @@ export const fetchCalendarObjects = async (params: {
 
   return calendarObjectResults.map((res) => ({
     url: new URL(res.href ?? '', calendar.url).href,
-    etag: `${res.props?.getetag}`,
+    etag: res.props?.getetag == null ? undefined : String(res.props.getetag),
     data: res.props?.calendarData?._cdata ?? res.props?.calendarData,
   }));
 };
@@ -636,47 +642,75 @@ export const syncCalendars: SyncCalendars = async (params: {
 
   // no existing url
   const created = remoteCalendars.filter((rc) =>
-    localCalendars.every((lc) => !urlContains(lc.url, rc.url)),
+    localCalendars.every((lc) => !urlMatches(lc.url, rc.url, account.rootUrl)),
   );
   debug(`new calendars: ${created.map((cc) => cc.displayName)}`);
 
   // have same url, but syncToken/ctag different
-  const updated = localCalendars.reduce<DAVCalendar[]>((prev, curr) => {
-    const found = remoteCalendars.find((rc) => urlContains(rc.url, curr.url));
-    if (
-      found &&
-      ((found.syncToken && `${found.syncToken}` !== `${curr.syncToken}`) ||
-        (found.ctag && `${found.ctag}` !== `${curr.ctag}`))
-    ) {
-      return [...prev, found];
-    }
-    return prev;
-  }, []);
-  debug(`updated calendars: ${updated.map((cc) => cc.displayName)}`);
+  const updated = localCalendars.reduce<Array<{ local: DAVCalendar; remote: DAVCalendar }>>(
+    (prev, curr) => {
+      const found = remoteCalendars.find((rc) => urlMatches(rc.url, curr.url, account.rootUrl));
+      if (
+        found &&
+        ((found.syncToken && `${found.syncToken}` !== `${curr.syncToken}`) ||
+          (found.ctag && `${found.ctag}` !== `${curr.ctag}`))
+      ) {
+        return [...prev, { local: curr, remote: found }];
+      }
+      return prev;
+    },
+    [],
+  );
+  debug(`updated calendars: ${updated.map(({ remote }) => remote.displayName)}`);
 
   const updatedWithObjects: DAVCalendar[] = await Promise.all(
-    updated.map(async (u) => {
+    updated.map(async ({ local, remote }) => {
+      const fetchObjects = async (fetchParams?: {
+        collection: DAVCalendar;
+        headers?: Record<string, string>;
+        fetchOptions?: RequestInit;
+        fetch?: typeof fetch;
+      }): Promise<DAVCalendarObject[]> => {
+        if (!fetchParams) return [];
+        const { collection, ...requestParams } = fetchParams;
+        return fetchCalendarObjects({
+          ...requestParams,
+          calendar: collection,
+        });
+      };
+      const collection: DAVCalendar = {
+        ...remote,
+        ctag: local.ctag,
+        syncToken: local.syncToken,
+        objects: local.objects,
+        objectMultiGet: calendarMultiGet,
+        fetchObjects,
+      };
       const result = await smartCollectionSync({
-        collection: { ...u, objectMultiGet: calendarMultiGet } as any,
-        method: 'webdav',
+        collection,
+        detailedResult: false,
         headers: excludeHeaders(headers, headersToExclude),
         account,
         fetchOptions,
         fetch: fetchOverride,
       });
-      return result;
+      return {
+        ...result,
+        ctag: remote.ctag ?? result.ctag,
+        syncToken: remote.syncToken ?? result.syncToken,
+      };
     }),
   );
   // does not present in remote
   const deleted = localCalendars.filter((cal) =>
-    remoteCalendars.every((rc) => !urlContains(rc.url, cal.url)),
+    remoteCalendars.every((rc) => !urlMatches(rc.url, cal.url, account.rootUrl)),
   );
   debug(`deleted calendars: ${deleted.map((cc) => cc.displayName)}`);
 
   // calendars that still exist remotely AND whose syncToken/ctag are unchanged
   const unchanged = localCalendars.filter((cal) =>
     remoteCalendars.some((rc) => {
-      if (!urlContains(rc.url, cal.url)) return false;
+      if (!urlMatches(rc.url, cal.url, account.rootUrl)) return false;
       const syncTokenMatches = !rc.syncToken || `${rc.syncToken}` === `${cal.syncToken}`;
       const ctagMatches = !rc.ctag || `${rc.ctag}` === `${cal.ctag}`;
       return syncTokenMatches && ctagMatches;
@@ -745,5 +779,9 @@ export const freeBusyQuery = async (params: {
     fetchOptions,
     fetch: fetchOverride,
   });
-  return result[0];
+  const response = result[0];
+  if (!response) {
+    throw new Error('freeBusyQuery returned no response');
+  }
+  return response;
 };

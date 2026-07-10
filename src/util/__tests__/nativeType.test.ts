@@ -40,6 +40,11 @@ describe('nativeType', () => {
     expect(nativeType('007')).toBe('007');
   });
 
+  it('should preserve integers that cannot be represented safely', () => {
+    expect(nativeType('9007199254740993')).toBe('9007199254740993');
+    expect(nativeType('-9007199254740993')).toBe('-9007199254740993');
+  });
+
   it('should preserve etag-like quoted strings', () => {
     expect(nativeType('"abc123"')).toBe('"abc123"');
   });

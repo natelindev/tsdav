@@ -211,7 +211,10 @@ export const fetchVCards = async (params: {
     .map((url) => (url.startsWith('http') || !url ? url : new URL(url, addressBook.url).href))
     .filter((url) => url && !urlEquals(url, addressBook.url))
     .filter(urlFilter)
-    .map((url) => new URL(url).pathname);
+    .map((url) => {
+      const parsedUrl = new URL(url);
+      return `${parsedUrl.pathname}${parsedUrl.search}`;
+    });
 
   let vCardResults: DAVResponse[] = [];
   if (vcardUrls.length > 0) {
@@ -245,7 +248,7 @@ export const fetchVCards = async (params: {
 
   return vCardResults.map((res) => ({
     url: new URL(res.href ?? '', addressBook.url).href,
-    etag: res.props?.getetag,
+    etag: res.props?.getetag == null ? undefined : String(res.props.getetag),
     data: res.props?.addressData?._cdata ?? res.props?.addressData,
   }));
 };

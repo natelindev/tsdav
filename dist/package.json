@@ -1,6 +1,6 @@
 {
   "name": "tsdav",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "WebDAV, CALDAV, and CARDDAV client for Nodejs and the Browser",
   "keywords": [
     "dav",
@@ -29,17 +29,17 @@
     ".": {
       "types": "./dist/tsdav.d.ts",
       "browser": "./dist/tsdav.js",
-      "deno": "./dist/tsdav.esm.js",
-      "bun": "./dist/tsdav.esm.js",
+      "deno": "./dist/tsdav.mjs",
+      "bun": "./dist/tsdav.mjs",
       "worker": "./dist/tsdav.js",
-      "import": "./dist/tsdav.esm.js",
+      "import": "./dist/tsdav.mjs",
       "require": "./dist/tsdav.cjs.js",
-      "default": "./dist/tsdav.esm.js"
+      "default": "./dist/tsdav.mjs"
     },
     "./package.json": "./package.json"
   },
   "main": "dist/tsdav.cjs.js",
-  "module": "dist/tsdav.esm.js",
+  "module": "dist/tsdav.mjs",
   "types": "dist/tsdav.d.ts",
   "files": [
     "dist",
@@ -50,15 +50,15 @@
     "clean": "node scripts/clean-dist.cjs",
     "lint": "biome check src",
     "prepublishOnly": "pnpm build",
-    "test": "vitest run src/__tests__/unit",
+    "test": "vitest run src/__tests__/unit src/util/__tests__",
     "test:apple": "vitest run src/__tests__/integration/apple --no-file-parallelism",
     "test:baikal": "vitest run src/__tests__/integration/baikal --no-file-parallelism",
     "test:coverage": "vitest run src/__tests__/unit src/util/__tests__ --coverage",
-    "test:coverage:report": "vitest run src/__tests__/unit src/util/__tests__ --coverage --reporter=lcov --reporter=text-summary",
+    "test:coverage:report": "vitest run src/__tests__/unit src/util/__tests__ --coverage --coverage.reporter=lcov --coverage.reporter=text-summary",
     "test:fastmail": "vitest run src/__tests__/integration/fastmail --no-file-parallelism",
     "test:google": "vitest run src/__tests__/integration/google --no-file-parallelism",
     "test:nextcloud": "vitest run src/__tests__/integration/nextcloud --no-file-parallelism",
-    "test:unit": "vitest run src/__tests__/unit",
+    "test:unit": "vitest run src/__tests__/unit src/util/__tests__",
     "test:zoho": "vitest run src/__tests__/integration/zoho --no-file-parallelism",
     "typecheck": "tsc --noEmit",
     "watch": "tsc --watch --outDir ./dist"
@@ -68,16 +68,18 @@
     "xml-js": "1.6.11"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.1",
-    "@types/debug": "4.1.12",
-    "@types/node": "25.0.9",
+    "@biomejs/biome": "2.5.3",
+    "@types/debug": "4.1.13",
+    "@types/node": "25.9.5",
+    "@vitest/coverage-v8": "4.1.10",
     "cross-env": "10.1.0",
-    "dotenv": "17.2.3",
-    "rolldown": "1.1.3",
-    "sort-package-json": "3.6.0",
+    "dotenv": "17.4.2",
+    "rolldown": "1.1.5",
+    "sort-package-json": "3.7.1",
     "typescript": "5.9.3",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.10"
   },
+  "packageManager": "pnpm@10.34.4",
   "engines": {
     "node": ">=18"
   }

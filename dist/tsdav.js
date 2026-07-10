@@ -2116,7 +2116,8 @@ var require_xml2json = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 var require_js2xml = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 	var helper = require_options_helper();
 	var isArray = require_array_helper().isArray;
-	var currentElement, currentElementName;
+	var currentElement;
+	var currentElementName;
 	function validateOptions(userOptions) {
 		var options = helper.copyOptions(userOptions);
 		helper.ensureFlagExists("ignoreDeclaration", options);
@@ -2421,7 +2422,7 @@ const nativeType = (value) => {
 	if (typeof value !== "string") return value;
 	if (NUMERIC_RE.test(value)) {
 		const nValue = Number(value);
-		if (!Number.isNaN(nValue) && Number.isFinite(nValue)) return nValue;
+		if (!Number.isNaN(nValue) && Number.isFinite(nValue) && (!Number.isInteger(nValue) || Number.isSafeInteger(nValue))) return nValue;
 	}
 	const bValue = value.toLowerCase();
 	if (bValue === "true") return true;
@@ -2435,8 +2436,10 @@ var requestHelpers_exports = /* @__PURE__ */ __exportAll({
 	conditionalParam: () => conditionalParam,
 	excludeHeaders: () => excludeHeaders,
 	getDAVAttribute: () => getDAVAttribute,
+	mergeHeaders: () => mergeHeaders,
 	urlContains: () => urlContains,
-	urlEquals: () => urlEquals
+	urlEquals: () => urlEquals,
+	urlMatches: () => urlMatches
 });
 const normalizeUrl = (url) => {
 	const trimmed = url.trim();
@@ -2469,6 +2472,18 @@ const urlContains = (urlA, urlB) => {
 	const strippedUrlB = normalizeUrl(urlB);
 	return strippedUrlA.includes(strippedUrlB) || strippedUrlB.includes(strippedUrlA);
 };
+/**
+* Compare two DAV hrefs as resource identifiers after resolving relative
+* hrefs against the same collection or account URL.
+*/
+const urlMatches = (urlA, urlB, baseUrl) => {
+	if (!urlA || !urlB || !baseUrl) return urlEquals(urlA, urlB);
+	try {
+		return urlEquals(new URL(urlA, baseUrl).href, new URL(urlB, baseUrl).href);
+	} catch {
+		return urlEquals(urlA, urlB);
+	}
+};
 const getDAVAttribute = (nsArr) => nsArr.reduce((prev, curr) => ({
 	...prev,
 	[DAVAttributeMap[curr]]: curr
@@ -2490,6 +2505,28 @@ const excludeHeaders = (headers, headersToExclude) => {
 	const excludeSet = new Set(headersToExclude.map((h) => h.toLowerCase()));
 	return Object.fromEntries(Object.entries(headers).filter(([key]) => !excludeSet.has(key.toLowerCase())));
 };
+/** Merge all valid HeadersInit forms with case-insensitive last-write-wins semantics. */
+const mergeHeaders = (...headerSources) => {
+	const headersByLowercaseName = /* @__PURE__ */ new Map();
+	const setHeader = (name, value) => {
+		headersByLowercaseName.set(name.toLowerCase(), [name, value]);
+	};
+	for (const source of headerSources) {
+		if (!source) continue;
+		if (Array.isArray(source)) {
+			for (const [name, value] of source) setHeader(name, value);
+			continue;
+		}
+		if (typeof source.forEach === "function") {
+			source.forEach((value, name) => {
+				setHeader(name, value);
+			});
+			continue;
+		}
+		for (const [name, value] of Object.entries(source)) setHeader(name, value);
+	}
+	return Object.fromEntries(headersByLowercaseName.values());
+};
 //#endregion
 //#region src/request.ts
 var request_exports = /* @__PURE__ */ __exportAll({
@@ -2500,11 +2537,20 @@ var request_exports = /* @__PURE__ */ __exportAll({
 	updateObject: () => updateObject
 });
 const debug$5 = (0, import_browser.default)("tsdav:request");
+const parseStatusLine = (statusLine) => {
+	const match = /^\S+\s(?<status>\d+)\s(?<statusText>.+)$/.exec(statusLine ?? "");
+	const status = match?.groups?.status;
+	const statusText = match?.groups?.statusText;
+	return status && statusText ? {
+		status: Number.parseInt(status, 10),
+		statusText
+	} : void 0;
+};
 const davRequest = async (params) => {
 	const { url, init, convertIncoming = true, parseOutgoing = true, fetchOptions = {}, fetch: fetchOverride } = params;
 	const requestFetch = fetchOverride ?? fetch;
 	const { headers = {}, body, namespace, method, attributes } = init;
-	const xmlBody = convertIncoming ? import_lib.default.js2xml({
+	const xmlBody = convertIncoming && body != null ? import_lib.default.js2xml({
 		_declaration: { _attributes: {
 			version: "1.0",
 			encoding: "utf-8"
@@ -2521,22 +2567,7 @@ const davRequest = async (params) => {
 	}) : body;
 	const fetchOptionsWithoutHeaders = { ...fetchOptions };
 	delete fetchOptionsWithoutHeaders.headers;
-	const mergedHeaders = {};
-	const setHeader = (key, value) => {
-		if (value == null) return;
-		const lower = key.toLowerCase();
-		Object.keys(mergedHeaders).forEach((existing) => {
-			if (existing.toLowerCase() === lower) delete mergedHeaders[existing];
-		});
-		mergedHeaders[key] = value;
-	};
-	setHeader("Content-Type", "text/xml;charset=UTF-8");
-	Object.entries(cleanupFalsy(headers)).forEach(([k, v]) => {
-		setHeader(k, v);
-	});
-	Object.entries(fetchOptions.headers || {}).forEach(([k, v]) => {
-		setHeader(k, v);
-	});
+	const mergedHeaders = mergeHeaders({ "Content-Type": "text/xml;charset=UTF-8" }, cleanupFalsy(headers), fetchOptions.headers);
 	const davResponse = await requestFetch(url, {
 		...fetchOptionsWithoutHeaders,
 		headers: mergedHeaders,
@@ -2544,7 +2575,7 @@ const davRequest = async (params) => {
 		method
 	});
 	const resText = await davResponse.text();
-	if (!davResponse.ok || !davResponse.headers.get("content-type")?.includes("xml") || !parseOutgoing || !resText) {
+	if (!davResponse.ok || !davResponse.headers.get("content-type")?.toLowerCase().includes("xml") || !parseOutgoing || !resText) {
 		const MAX_RAW = 4096;
 		const raw = resText.length > MAX_RAW ? `${resText.slice(0, MAX_RAW)}…` : resText;
 		return [{
@@ -2565,6 +2596,7 @@ const davRequest = async (params) => {
 					const parentOfParent = parentElement._parent;
 					const pOpKeys = Object.keys(parentOfParent);
 					const keyName = pOpKeys[pOpKeys.length - 1];
+					if (!keyName) return;
 					const arrOfKey = parentOfParent[keyName];
 					if (arrOfKey.length > 0) {
 						const arr = arrOfKey;
@@ -2601,23 +2633,24 @@ const davRequest = async (params) => {
 		raw: result
 	}];
 	return (Array.isArray(result.multistatus.response) ? result.multistatus.response : [result.multistatus.response]).map((responseBody) => {
-		const statusRegex = /^\S+\s(?<status>\d+)\s(?<statusText>.+)$/;
 		if (!responseBody) return {
 			status: davResponse.status,
 			statusText: davResponse.statusText,
 			ok: davResponse.ok
 		};
-		const matchArr = statusRegex.exec(responseBody.status);
-		const status = matchArr?.groups ? Number.parseInt(matchArr.groups.status, 10) : davResponse.status;
+		const parsedStatus = parseStatusLine(responseBody.status);
+		const status = parsedStatus?.status ?? davResponse.status;
 		return {
 			raw: result,
 			href: responseBody.href,
 			status,
-			statusText: matchArr?.groups?.statusText ?? davResponse.statusText,
+			statusText: parsedStatus?.statusText ?? davResponse.statusText,
 			ok: status >= 200 && status < 300,
 			error: responseBody.error,
 			responsedescription: responseBody.responsedescription,
 			props: (Array.isArray(responseBody.propstat) ? responseBody.propstat : [responseBody.propstat]).reduce((prev, curr) => {
+				const propstatStatus = parseStatusLine(curr?.status)?.status;
+				if (propstatStatus && (propstatStatus < 200 || propstatStatus >= 300)) return prev;
 				return {
 					...prev,
 					...curr?.prop
@@ -2654,34 +2687,40 @@ const propfind = async (params) => {
 };
 const createObject = async (params) => {
 	const { url, data, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
-	return (fetchOverride ?? fetch)(url, {
+	const requestFetch = fetchOverride ?? fetch;
+	const { headers: fetchHeaders, ...fetchOptionsWithoutHeaders } = fetchOptions;
+	return requestFetch(url, {
+		...fetchOptionsWithoutHeaders,
 		method: "PUT",
 		body: data,
-		headers: excludeHeaders(headers, headersToExclude),
-		...fetchOptions
+		headers: excludeHeaders(mergeHeaders(headers, fetchHeaders), headersToExclude)
 	});
 };
 const updateObject = async (params) => {
 	const { url, data, etag, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
-	return (fetchOverride ?? fetch)(url, {
+	const requestFetch = fetchOverride ?? fetch;
+	const { headers: fetchHeaders, ...fetchOptionsWithoutHeaders } = fetchOptions;
+	return requestFetch(url, {
+		...fetchOptionsWithoutHeaders,
 		method: "PUT",
 		body: data,
-		headers: excludeHeaders(cleanupFalsy({
+		headers: excludeHeaders(mergeHeaders(cleanupFalsy({
 			"If-Match": etag,
 			...headers
-		}), headersToExclude),
-		...fetchOptions
+		}), fetchHeaders), headersToExclude)
 	});
 };
 const deleteObject = async (params) => {
 	const { url, headers, etag, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
-	return (fetchOverride ?? fetch)(url, {
+	const requestFetch = fetchOverride ?? fetch;
+	const { headers: fetchHeaders, ...fetchOptionsWithoutHeaders } = fetchOptions;
+	return requestFetch(url, {
+		...fetchOptionsWithoutHeaders,
 		method: "DELETE",
-		headers: excludeHeaders(cleanupFalsy({
+		headers: excludeHeaders(mergeHeaders(cleanupFalsy({
 			"If-Match": etag,
 			...headers
-		}), headersToExclude),
-		...fetchOptions
+		}), fetchHeaders), headersToExclude)
 	});
 };
 //#endregion
@@ -2704,6 +2743,20 @@ var collection_exports = /* @__PURE__ */ __exportAll({
 	syncCollection: () => syncCollection
 });
 const debug$4 = (0, import_browser.default)("tsdav:collection");
+const resolveDAVHref = (href, baseUrl) => {
+	try {
+		return new URL(href, baseUrl).href;
+	} catch {
+		return href;
+	}
+};
+const hrefHasExtension = (href, extension, baseUrl) => {
+	try {
+		return new URL(href, baseUrl).pathname.toLowerCase().endsWith(extension);
+	} catch {
+		return (href.split(/[?#]/, 1)[0] ?? "").toLowerCase().endsWith(extension);
+	}
+};
 const collectionQuery = async (params) => {
 	const { url, body, depth, defaultNamespace = "d", headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
 	const queryResults = await davRequest({
@@ -2722,7 +2775,8 @@ const collectionQuery = async (params) => {
 	});
 	const errorResponse = queryResults.find((res) => !res.ok || res.status && res.status >= 400);
 	if (errorResponse) throw new Error(`Collection query failed: ${errorResponse.status} ${errorResponse.statusText}. ${errorResponse.raw ? `Raw response: ${errorResponse.raw}` : ""}`);
-	if (queryResults.length === 1 && !queryResults[0].raw && queryResults[0].status && queryResults[0].status < 300) return [];
+	const firstQueryResult = queryResults[0];
+	if (queryResults.length === 1 && firstQueryResult && !firstQueryResult.raw && firstQueryResult.status && firstQueryResult.status < 300) return [];
 	return queryResults;
 };
 const makeCollection = async (params) => {
@@ -2764,11 +2818,13 @@ const isCollectionDirty = async (params) => {
 		headers: excludeHeaders(headers, headersToExclude),
 		fetchOptions,
 		fetch: fetchOverride
-	})).filter((r) => urlContains(collection.url, r.href))[0];
+	})).find((r) => urlMatches(collection.url, r.href, collection.url));
 	if (!res) throw new Error("Collection does not exist on server");
+	if (!res.ok) throw new Error(`Collection status check failed: ${res.status} ${res.statusText}`);
+	const remoteCtag = res.props?.getctag;
 	return {
-		isDirty: `${collection.ctag}` !== `${res.props?.getctag}`,
-		newCtag: res.props?.getctag?.toString()
+		isDirty: collection.ctag == null || remoteCtag == null || `${collection.ctag}` !== `${remoteCtag}`,
+		newCtag: remoteCtag?.toString()
 	};
 };
 /**
@@ -2823,11 +2879,13 @@ const smartCollectionSync = async (params) => {
 		});
 		const objectResponses = result.filter((r) => {
 			const extName = account.accountType === "caldav" ? ".ics" : ".vcf";
-			return r.href?.slice(-4) === extName;
+			return typeof r.href === "string" && hrefHasExtension(r.href, extName, collection.url);
 		});
 		const changedObjectUrls = objectResponses.filter((o) => o.status !== 404).map((r) => r.href);
 		const deletedObjectUrls = objectResponses.filter((o) => o.status === 404).map((r) => r.href);
-		const remoteObjects = (changedObjectUrls.length ? await collection.objectMultiGet?.({
+		const objectMultiGet = collection.objectMultiGet;
+		if (changedObjectUrls.length > 0 && !objectMultiGet) throw new Error("collection.objectMultiGet is required for webdav sync changes");
+		const remoteObjects = (changedObjectUrls.length ? await objectMultiGet?.({
 			url: collection.url,
 			props: {
 				[`d:getetag`]: {},
@@ -2840,23 +2898,23 @@ const smartCollectionSync = async (params) => {
 			fetch: fetchOverride
 		}) ?? [] : []).map((res) => {
 			return {
-				url: res.href ?? "",
-				etag: res.props?.getetag,
+				url: resolveDAVHref(res.href ?? "", collection.url),
+				etag: res.props?.getetag == null ? void 0 : String(res.props.getetag),
 				data: account?.accountType === "caldav" ? res.props?.calendarData?._cdata ?? res.props?.calendarData : res.props?.addressData?._cdata ?? res.props?.addressData
 			};
 		});
 		const localObjects = collection.objects ?? [];
-		const created = remoteObjects.filter((o) => localObjects.every((lo) => !urlContains(lo.url, o.url)));
+		const created = remoteObjects.filter((o) => localObjects.every((lo) => !urlMatches(lo.url, o.url, collection.url)));
 		const updated = localObjects.reduce((prev, curr) => {
-			const found = remoteObjects.find((ro) => urlContains(ro.url, curr.url));
+			const found = remoteObjects.find((ro) => urlMatches(ro.url, curr.url, collection.url));
 			if (found && found.etag && found.etag !== curr.etag) return [...prev, found];
 			return prev;
 		}, []);
 		const deleted = deletedObjectUrls.map((o) => ({
-			url: o,
+			url: resolveDAVHref(o, collection.url),
 			etag: ""
 		}));
-		const unchanged = localObjects.filter((lo) => remoteObjects.some((ro) => urlContains(lo.url, ro.url) && ro.etag === lo.etag));
+		const unchanged = localObjects.filter((localObject) => deleted.every((deletedObject) => !urlMatches(localObject.url, deletedObject.url, collection.url)) && updated.every((updatedObject) => !urlMatches(localObject.url, updatedObject.url, collection.url)));
 		return {
 			...collection,
 			objects: detailedResult ? {
@@ -2887,20 +2945,21 @@ const smartCollectionSync = async (params) => {
 			}
 		} : collection;
 		const localObjects = collection.objects ?? [];
-		const remoteObjects = await collection.fetchObjects?.({
+		if (!collection.fetchObjects) throw new Error("collection.fetchObjects is required for basic sync changes");
+		const remoteObjects = await collection.fetchObjects({
 			collection,
 			headers: excludeHeaders(headers, headersToExclude),
 			fetchOptions,
 			fetch: fetchOverride
 		}) ?? [];
-		const created = remoteObjects.filter((ro) => localObjects.every((lo) => !urlContains(lo.url, ro.url)));
+		const created = remoteObjects.filter((ro) => localObjects.every((lo) => !urlMatches(lo.url, ro.url, collection.url)));
 		const updated = localObjects.reduce((prev, curr) => {
-			const found = remoteObjects.find((ro) => urlContains(ro.url, curr.url));
+			const found = remoteObjects.find((ro) => urlMatches(ro.url, curr.url, collection.url));
 			if (found && found.etag && found.etag !== curr.etag) return [...prev, found];
 			return prev;
 		}, []);
-		const deleted = localObjects.filter((cal) => remoteObjects.every((ro) => !urlContains(ro.url, cal.url)));
-		const unchanged = localObjects.filter((lo) => remoteObjects.some((ro) => urlContains(lo.url, ro.url) && ro.etag === lo.etag));
+		const deleted = localObjects.filter((cal) => remoteObjects.every((ro) => !urlMatches(ro.url, cal.url, collection.url)));
+		const unchanged = localObjects.filter((lo) => remoteObjects.some((ro) => urlMatches(lo.url, ro.url, collection.url) && ro.etag === lo.etag));
 		return {
 			...collection,
 			objects: detailedResult ? {
@@ -3028,7 +3087,10 @@ const fetchVCards = async (params) => {
 		headers: excludeHeaders(headers, headersToExclude),
 		fetchOptions,
 		fetch: fetchOverride
-	})).map((res) => res.href ?? "")).map((url) => url.startsWith("http") || !url ? url : new URL(url, addressBook.url).href).filter((url) => url && !urlEquals(url, addressBook.url)).filter(urlFilter).map((url) => new URL(url).pathname);
+	})).map((res) => res.href ?? "")).map((url) => url.startsWith("http") || !url ? url : new URL(url, addressBook.url).href).filter((url) => url && !urlEquals(url, addressBook.url)).filter(urlFilter).map((url) => {
+		const parsedUrl = new URL(url);
+		return `${parsedUrl.pathname}${parsedUrl.search}`;
+	});
 	let vCardResults = [];
 	if (vcardUrls.length > 0) if (useMultiGet) vCardResults = await addressBookMultiGet({
 		url: addressBook.url,
@@ -3055,7 +3117,7 @@ const fetchVCards = async (params) => {
 	});
 	return vCardResults.map((res) => ({
 		url: new URL(res.href ?? "", addressBook.url).href,
-		etag: res.props?.getetag,
+		etag: res.props?.getetag == null ? void 0 : String(res.props.getetag),
 		data: res.props?.addressData?._cdata ?? res.props?.addressData
 	}));
 };
@@ -3124,6 +3186,7 @@ const validateTimeRange = (timeRange) => {
 	const { start, end } = timeRange;
 	if (!(ISO_8601.test(start) && ISO_8601.test(end) || ISO_8601_FULL.test(start) && ISO_8601_FULL.test(end))) throw new Error("invalid timeRange format, not in ISO8601");
 	if (Number.isNaN(new Date(start).getTime()) || Number.isNaN(new Date(end).getTime())) throw new Error("invalid timeRange: start or end is not a valid date");
+	if (new Date(start).getTime() >= new Date(end).getTime()) throw new Error("invalid timeRange: start must be before end");
 };
 const extractComponentNames = (compSet) => {
 	let names = [];
@@ -3143,7 +3206,7 @@ const fetchCalendarUserAddresses = async (params) => {
 		headers: excludeHeaders(headers, headersToExclude),
 		fetchOptions,
 		fetch: fetchOverride
-	})).find((r) => urlContains(account.principalUrl, r.href));
+	})).find((r) => urlMatches(account.principalUrl, r.href, account.rootUrl));
 	if (!matched || !matched.ok) throw new Error("cannot find calendarUserAddresses");
 	const rawHrefs = matched?.props?.calendarUserAddressSet?.href;
 	let hrefArray = [];
@@ -3306,10 +3369,14 @@ const fetchCalendarObjects = async (params) => {
 		fetchOptions,
 		fetch: fetchOverride
 	});
-	const calendarObjectUrls = (objectUrls ?? initialResponses.map((res) => res.href ?? "")).map((url) => url.startsWith("http") || !url ? url : new URL(url, calendar.url).href).filter(urlFilter).map((url) => new URL(url).pathname);
+	const calendarObjectUrls = (objectUrls ?? initialResponses.map((res) => res.href ?? "")).map((url) => url.startsWith("http") || !url ? url : new URL(url, calendar.url).href).filter(urlFilter).map((url) => {
+		const parsedUrl = new URL(url);
+		return `${parsedUrl.pathname}${parsedUrl.search}`;
+	});
 	let calendarObjectResults = [];
 	if (calendarObjectUrls.length > 0) if (expand && !objectUrls) calendarObjectResults = initialResponses.filter((res) => {
-		return urlFilter(((res.href ?? "").startsWith("http") ? res.href : new URL(res.href ?? "", calendar.url).href) ?? "");
+		const fullUrl = (res.href ?? "").startsWith("http") ? res.href : new URL(res.href ?? "", calendar.url).href;
+		return urlFilter(fullUrl ?? "");
 	});
 	else if (!useMultiGet) calendarObjectResults = await calendarQuery({
 		url: calendar.url,
@@ -3343,7 +3410,7 @@ const fetchCalendarObjects = async (params) => {
 	});
 	return calendarObjectResults.map((res) => ({
 		url: new URL(res.href ?? "", calendar.url).href,
-		etag: `${res.props?.getetag}`,
+		etag: res.props?.getetag == null ? void 0 : String(res.props.getetag),
 		data: res.props?.calendarData?._cdata ?? res.props?.calendarData
 	}));
 };
@@ -3398,31 +3465,51 @@ const syncCalendars = async (params) => {
 		fetchOptions,
 		fetch: fetchOverride
 	});
-	const created = remoteCalendars.filter((rc) => localCalendars.every((lc) => !urlContains(lc.url, rc.url)));
+	const created = remoteCalendars.filter((rc) => localCalendars.every((lc) => !urlMatches(lc.url, rc.url, account.rootUrl)));
 	debug$2(`new calendars: ${created.map((cc) => cc.displayName)}`);
 	const updated = localCalendars.reduce((prev, curr) => {
-		const found = remoteCalendars.find((rc) => urlContains(rc.url, curr.url));
-		if (found && (found.syncToken && `${found.syncToken}` !== `${curr.syncToken}` || found.ctag && `${found.ctag}` !== `${curr.ctag}`)) return [...prev, found];
+		const found = remoteCalendars.find((rc) => urlMatches(rc.url, curr.url, account.rootUrl));
+		if (found && (found.syncToken && `${found.syncToken}` !== `${curr.syncToken}` || found.ctag && `${found.ctag}` !== `${curr.ctag}`)) return [...prev, {
+			local: curr,
+			remote: found
+		}];
 		return prev;
 	}, []);
-	debug$2(`updated calendars: ${updated.map((cc) => cc.displayName)}`);
-	const updatedWithObjects = await Promise.all(updated.map(async (u) => {
-		return await smartCollectionSync({
+	debug$2(`updated calendars: ${updated.map(({ remote }) => remote.displayName)}`);
+	const updatedWithObjects = await Promise.all(updated.map(async ({ local, remote }) => {
+		const fetchObjects = async (fetchParams) => {
+			if (!fetchParams) return [];
+			const { collection, ...requestParams } = fetchParams;
+			return fetchCalendarObjects({
+				...requestParams,
+				calendar: collection
+			});
+		};
+		const result = await smartCollectionSync({
 			collection: {
-				...u,
-				objectMultiGet: calendarMultiGet
+				...remote,
+				ctag: local.ctag,
+				syncToken: local.syncToken,
+				objects: local.objects,
+				objectMultiGet: calendarMultiGet,
+				fetchObjects
 			},
-			method: "webdav",
+			detailedResult: false,
 			headers: excludeHeaders(headers, headersToExclude),
 			account,
 			fetchOptions,
 			fetch: fetchOverride
 		});
+		return {
+			...result,
+			ctag: remote.ctag ?? result.ctag,
+			syncToken: remote.syncToken ?? result.syncToken
+		};
 	}));
-	const deleted = localCalendars.filter((cal) => remoteCalendars.every((rc) => !urlContains(rc.url, cal.url)));
+	const deleted = localCalendars.filter((cal) => remoteCalendars.every((rc) => !urlMatches(rc.url, cal.url, account.rootUrl)));
 	debug$2(`deleted calendars: ${deleted.map((cc) => cc.displayName)}`);
 	const unchanged = localCalendars.filter((cal) => remoteCalendars.some((rc) => {
-		if (!urlContains(rc.url, cal.url)) return false;
+		if (!urlMatches(rc.url, cal.url, account.rootUrl)) return false;
 		const syncTokenMatches = !rc.syncToken || `${rc.syncToken}` === `${cal.syncToken}`;
 		const ctagMatches = !rc.ctag || `${rc.ctag}` === `${cal.ctag}`;
 		return syncTokenMatches && ctagMatches;
@@ -3446,7 +3533,7 @@ const freeBusyQuery = async (params) => {
 	const { url, timeRange, depth, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
 	if (!timeRange) throw new Error("timeRange is required");
 	validateTimeRange(timeRange);
-	return (await collectionQuery({
+	const response = (await collectionQuery({
 		url,
 		body: { "free-busy-query": cleanupFalsy({
 			_attributes: getDAVAttribute(["urn:ietf:params:xml:ns:caldav"]),
@@ -3461,6 +3548,8 @@ const freeBusyQuery = async (params) => {
 		fetchOptions,
 		fetch: fetchOverride
 	}))[0];
+	if (!response) throw new Error("freeBusyQuery returned no response");
+	return response;
 };
 //#endregion
 //#region src/account.ts
@@ -3484,6 +3573,7 @@ const serviceDiscovery = async (params) => {
 	const { account, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
 	const requestFetch = fetchOverride ?? fetch;
 	const endpoint = new URL(account.serverUrl);
+	const { headers: fetchHeaders, ...fetchOptionsWithoutHeaders } = fetchOptions;
 	const uri = new URL(`/.well-known/${account.accountType}`, endpoint);
 	uri.protocol = endpoint.protocol ?? "http";
 	const extractRedirect = (response) => {
@@ -3501,12 +3591,9 @@ const serviceDiscovery = async (params) => {
 	};
 	try {
 		const redirectUrl = extractRedirect(await requestFetch(uri.href, {
-			...fetchOptions,
+			...fetchOptionsWithoutHeaders,
 			method: "PROPFIND",
-			headers: {
-				...excludeHeaders(headers, headersToExclude),
-				"Content-Type": "text/xml;charset=UTF-8"
-			},
+			headers: excludeHeaders(mergeHeaders({ "Content-Type": "text/xml;charset=UTF-8" }, headers, fetchHeaders), headersToExclude),
 			body: `<?xml version="1.0" encoding="utf-8" ?>
 <d:propfind xmlns:d="DAV:">
   <d:prop>
@@ -3521,9 +3608,9 @@ const serviceDiscovery = async (params) => {
 	}
 	try {
 		const redirectUrl = extractRedirect(await requestFetch(uri.href, {
-			...fetchOptions,
+			...fetchOptionsWithoutHeaders,
 			method: "GET",
-			headers: excludeHeaders(headers, headersToExclude),
+			headers: excludeHeaders(mergeHeaders(headers, fetchHeaders), headersToExclude),
 			redirect: "manual"
 		}));
 		if (redirectUrl) return redirectUrl;
@@ -3545,9 +3632,9 @@ const fetchPrincipalUrl = async (params) => {
 		fetchOptions,
 		fetch: fetchOverride
 	});
-	if (!response.ok) {
-		debug$1(`Fetch principal url failed: ${response.statusText}`);
-		if (response.status === 401) throw new Error(`Invalid credentials: PROPFIND ${account.rootUrl} returned 401 Unauthorized`);
+	if (!response?.ok) {
+		debug$1(`Fetch principal url failed: ${response?.statusText ?? "empty response"}`);
+		if (response?.status === 401) throw new Error(`Invalid credentials: PROPFIND ${account.rootUrl} returned 401 Unauthorized`);
 		throw new Error("cannot find principalUrl");
 	}
 	const principalHref = response.props?.currentUserPrincipal?.href;
@@ -3571,7 +3658,7 @@ const fetchHomeUrl = async (params) => {
 		fetchOptions,
 		fetch: fetchOverride
 	});
-	const matched = responses.find((r) => urlContains(account.principalUrl, r.href));
+	const matched = responses.find((r) => urlMatches(account.principalUrl, r.href, account.rootUrl));
 	if (!matched || !matched.ok) {
 		debug$1(`Fetch home url failed with status ${matched?.statusText} and error ${JSON.stringify(responses.map((r) => r.error))}`);
 		throw new Error("cannot find homeUrl");
@@ -3729,10 +3816,13 @@ const encodeBase64 = (input) => {
 * params are shallow merged
 */
 const defaultParam = (fn, params) => (...args) => {
-	return fn({
+	const overrides = args[0];
+	const mergedParams = {
 		...params,
-		...args[0]
-	});
+		...overrides
+	};
+	if (params.headers || overrides?.headers) mergedParams.headers = mergeHeaders(params.headers, overrides?.headers);
+	return fn(mergedParams);
 };
 const getBasicAuthHeaders = (credentials) => {
 	debug(`Basic auth token generated for user "${credentials.username ?? ""}"`);
@@ -3758,11 +3848,13 @@ const fetchOauthTokens = async (credentials, fetchOptions, fetchOverride) => {
 		client_secret: credentials.clientSecret
 	});
 	debug(`Fetching oauth tokens from ${credentials.tokenUrl}`);
-	const response = await (fetchOverride ?? fetch)(credentials.tokenUrl, {
+	const requestFetch = fetchOverride ?? fetch;
+	const { headers: fetchHeaders, ...fetchOptionsWithoutHeaders } = fetchOptions ?? {};
+	const response = await requestFetch(credentials.tokenUrl, {
+		...fetchOptionsWithoutHeaders,
 		method: "POST",
 		body: param.toString(),
-		headers: { "content-type": "application/x-www-form-urlencoded" },
-		...fetchOptions ?? {}
+		headers: mergeHeaders({ "content-type": "application/x-www-form-urlencoded" }, fetchHeaders)
 	});
 	if (response.ok) return await response.json();
 	debug(`Fetch Oauth tokens failed with status ${response.status}`);
@@ -3782,11 +3874,13 @@ const refreshAccessToken = async (credentials, fetchOptions, fetchOverride) => {
 		refresh_token: credentials.refreshToken,
 		grant_type: "refresh_token"
 	});
-	const response = await (fetchOverride ?? fetch)(credentials.tokenUrl, {
+	const requestFetch = fetchOverride ?? fetch;
+	const { headers: fetchHeaders, ...fetchOptionsWithoutHeaders } = fetchOptions ?? {};
+	const response = await requestFetch(credentials.tokenUrl, {
+		...fetchOptionsWithoutHeaders,
 		method: "POST",
 		body: param.toString(),
-		headers: { "Content-Type": "application/x-www-form-urlencoded" },
-		...fetchOptions ?? {}
+		headers: mergeHeaders({ "Content-Type": "application/x-www-form-urlencoded" }, fetchHeaders)
 	});
 	if (response.ok) return await response.json();
 	debug(`Refresh access token failed with status ${response.status}`);
@@ -3843,7 +3937,7 @@ const createDAVClient = async (params) => {
 			authHeaders = getBearerAuthHeaders(credentials);
 			break;
 		case "Oauth":
-			authHeaders = (await getOauthHeaders(credentials, void 0, fetchOverride)).headers;
+			authHeaders = (await getOauthHeaders(credentials, defaultFetchOptions, fetchOverride)).headers;
 			break;
 		case "Digest":
 			authHeaders = { Authorization: `Digest ${credentials.digestString}` };

@@ -74,6 +74,18 @@ describe('davRequest', () => {
     expect(mockFetch.mock.calls[0][1].body).toBe(rawXml);
   });
 
+  it('should not synthesize an XML body when the request body is undefined', async () => {
+    const mockFetch = buildMockFetch({ text: '' });
+
+    await davRequest({
+      url: 'http://example.com/dav/',
+      init: { method: 'MKCOL', body: undefined },
+      fetch: mockFetch,
+    });
+
+    expect(mockFetch.mock.calls[0][1].body).toBeUndefined();
+  });
+
   it('should return unparsed response when response is not OK', async () => {
     const mockFetch = buildMockFetch({
       ok: false,
@@ -114,6 +126,27 @@ describe('davRequest', () => {
 
     expect(result).toHaveLength(1);
     expect(result[0].raw).toBe('<html>hello</html>');
+  });
+
+  it('should parse XML when the content type uses uppercase characters', async () => {
+    const mockFetch = buildMockFetch({
+      ok: true,
+      status: 207,
+      text: `<?xml version="1.0"?>
+<d:multistatus xmlns:d="DAV:">
+  <d:response><d:href>/dav/</d:href><d:status>HTTP/1.1 200 OK</d:status></d:response>
+</d:multistatus>`,
+      headers: { 'content-type': 'Application/XML; Charset=UTF-8' },
+    });
+
+    const result = await davRequest({
+      url: 'http://example.com/dav/',
+      init: { method: 'PROPFIND', body: {} },
+      fetch: mockFetch,
+    });
+
+    expect(result[0].href).toBe('/dav/');
+    expect(result[0].raw).not.toBeTypeOf('string');
   });
 
   it('should return unparsed response when parseOutgoing is false', async () => {
@@ -293,6 +326,38 @@ describe('davRequest', () => {
     expect(result[0].props?.getcontenttype).toBe('text/calendar');
   });
 
+  it('should omit properties from failed propstats', async () => {
+    const xmlResponse = `<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+  <d:response>
+    <d:href>/dav/res/</d:href>
+    <d:propstat>
+      <d:prop><d:displayname>Test</d:displayname></d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+    <d:propstat>
+      <d:prop><c:calendar-data/></d:prop>
+      <d:status>HTTP/1.1 404 Not Found</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>`;
+    const mockFetch = buildMockFetch({
+      ok: true,
+      status: 207,
+      text: xmlResponse,
+      headers: { 'content-type': 'application/xml' },
+    });
+
+    const result = await davRequest({
+      url: 'http://example.com/',
+      init: { method: 'PROPFIND', body: {} },
+      fetch: mockFetch,
+    });
+
+    expect(result[0].props?.displayname).toBe('Test');
+    expect(result[0].props?.calendarData).toBeUndefined();
+  });
+
   it('should merge headers from init and fetchOptions', async () => {
     const mockFetch = buildMockFetch({
       text: '',
@@ -314,6 +379,29 @@ describe('davRequest', () => {
     expect(requestHeaders.Authorization).toBe('Basic abc');
     expect(requestHeaders['X-Custom']).toBe('value');
     expect(requestHeaders['Content-Type']).toBe('text/xml;charset=UTF-8');
+  });
+
+  it('should merge Headers and tuple-array fetch option headers', async () => {
+    const headersFetch = buildMockFetch({ text: '' });
+    await davRequest({
+      url: 'http://example.com/',
+      init: { method: 'PROPFIND', headers: { Authorization: 'Basic abc' }, body: {} },
+      fetchOptions: { headers: new Headers({ 'X-Headers': 'present' }) },
+      fetch: headersFetch,
+    });
+
+    expect(headersFetch.mock.calls[0][1].headers['x-headers']).toBe('present');
+    expect(headersFetch.mock.calls[0][1].headers.Authorization).toBe('Basic abc');
+
+    const tuplesFetch = buildMockFetch({ text: '' });
+    await davRequest({
+      url: 'http://example.com/',
+      init: { method: 'PROPFIND', body: {} },
+      fetchOptions: { headers: [['X-Tuple', 'present']] },
+      fetch: tuplesFetch,
+    });
+
+    expect(tuplesFetch.mock.calls[0][1].headers['X-Tuple']).toBe('present');
   });
 
   it('should use custom fetch override when provided', async () => {
@@ -530,6 +618,28 @@ describe('createObject', () => {
     expect(reqHeaders.Authorization).toBe('Basic abc');
     expect(reqHeaders['X-Remove']).toBeUndefined();
   });
+
+  it('should merge fetch option headers without overriding PUT semantics', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true, status: 201 });
+
+    await createObject({
+      url: 'http://example.com/cal/event.ics',
+      data: 'calendar-data',
+      headers: { Authorization: 'Basic abc' },
+      fetchOptions: {
+        method: 'POST',
+        body: 'wrong-body',
+        headers: new Headers({ 'X-Custom': 'value' }),
+      },
+      fetch: mockFetch,
+    });
+
+    const request = mockFetch.mock.calls[0][1];
+    expect(request.method).toBe('PUT');
+    expect(request.body).toBe('calendar-data');
+    expect(request.headers.Authorization).toBe('Basic abc');
+    expect(request.headers['x-custom']).toBe('value');
+  });
 });
 
 describe('updateObject', () => {
@@ -577,6 +687,22 @@ describe('updateObject', () => {
 
     expect(mockFetch.mock.calls[0][1].headers['X-Remove']).toBeUndefined();
   });
+
+  it('should retain If-Match when fetch options provide other headers', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+
+    await updateObject({
+      url: 'http://example.com/cal/event.ics',
+      data: 'updated-data',
+      etag: '"etag"',
+      fetchOptions: { headers: [['X-Custom', 'value']] },
+      fetch: mockFetch,
+    });
+
+    const requestHeaders = mockFetch.mock.calls[0][1].headers;
+    expect(requestHeaders['If-Match']).toBe('"etag"');
+    expect(requestHeaders['X-Custom']).toBe('value');
+  });
 });
 
 describe('deleteObject', () => {
@@ -618,5 +744,20 @@ describe('deleteObject', () => {
     });
 
     expect(mockFetch.mock.calls[0][1].headers['X-Remove']).toBeUndefined();
+  });
+
+  it('should retain If-Match when fetch options provide other headers', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true, status: 204 });
+
+    await deleteObject({
+      url: 'http://example.com/cal/event.ics',
+      etag: '"etag"',
+      fetchOptions: { headers: new Headers({ 'X-Custom': 'value' }) },
+      fetch: mockFetch,
+    });
+
+    const requestHeaders = mockFetch.mock.calls[0][1].headers;
+    expect(requestHeaders['If-Match']).toBe('"etag"');
+    expect(requestHeaders['x-custom']).toBe('value');
   });
 });

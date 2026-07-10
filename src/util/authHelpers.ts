@@ -3,6 +3,7 @@ import getLogger from 'debug';
 import { DAVTokens } from '../types/DAVTypes';
 import { DAVCredentials } from '../types/models';
 import { fetch } from './fetch';
+import { mergeHeaders } from './requestHelpers';
 import { findMissingFieldNames, hasFields } from './typeHelpers';
 
 const debug = getLogger('tsdav:authHelper');
@@ -71,7 +72,19 @@ const encodeBase64 = (input: string): string => {
 export const defaultParam =
   <F extends (...args: any[]) => any>(fn: F, params: Partial<Parameters<F>[0]>) =>
   (...args: Parameters<F>): ReturnType<F> => {
-    return fn({ ...params, ...args[0] });
+    const overrides = args[0] as Record<string, unknown> | undefined;
+    const mergedParams = { ...params, ...overrides } as Parameters<F>[0] & {
+      headers?: HeadersInit;
+    };
+
+    if ((params as { headers?: HeadersInit }).headers || overrides?.headers) {
+      mergedParams.headers = mergeHeaders(
+        (params as { headers?: HeadersInit }).headers,
+        overrides?.headers as HeadersInit | undefined,
+      );
+    }
+
+    return fn(mergedParams);
   };
 
 export const getBasicAuthHeaders = (credentials: DAVCredentials): { authorization?: string } => {
@@ -118,13 +131,12 @@ export const fetchOauthTokens = async (
   debug(`Fetching oauth tokens from ${credentials.tokenUrl}`);
 
   const requestFetch = fetchOverride ?? fetch;
+  const { headers: fetchHeaders, ...fetchOptionsWithoutHeaders } = fetchOptions ?? {};
   const response = await requestFetch(credentials.tokenUrl, {
+    ...fetchOptionsWithoutHeaders,
     method: 'POST',
     body: param.toString(),
-    headers: {
-      'content-type': 'application/x-www-form-urlencoded',
-    },
-    ...(fetchOptions ?? {}),
+    headers: mergeHeaders({ 'content-type': 'application/x-www-form-urlencoded' }, fetchHeaders),
   });
 
   if (response.ok) {
@@ -162,13 +174,12 @@ export const refreshAccessToken = async (
     grant_type: 'refresh_token',
   });
   const requestFetch = fetchOverride ?? fetch;
+  const { headers: fetchHeaders, ...fetchOptionsWithoutHeaders } = fetchOptions ?? {};
   const response = await requestFetch(credentials.tokenUrl, {
+    ...fetchOptionsWithoutHeaders,
     method: 'POST',
     body: param.toString(),
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    ...(fetchOptions ?? {}),
+    headers: mergeHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }, fetchHeaders),
   });
 
   if (response.ok) {

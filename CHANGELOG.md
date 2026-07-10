@@ -1,3 +1,27 @@
+## v2.3.1
+
+##### bug fixes
+
+- fixed case-insensitive header merging across object, tuple, and `Headers` inputs so per-call overrides no longer discard client authentication or required request headers
+- fixed OAuth token requests ignoring client-level `fetchOptions`, and prevented generic fetch options from replacing required DAV methods and request bodies
+- fixed DAV XML handling for bodyless requests, mixed-case XML content types, missing response status lines, and failed `propstat` entries
+- fixed undefined ETags becoming the literal string `"undefined"` and prevented unsafe integers from being coerced while parsing DAV XML values
+- fixed DAV resource comparisons for relative URLs, trailing slashes, query strings, and similarly prefixed resource names
+- fixed calendar and collection sync losing unchanged local objects, using stale or missing sync state, and silently continuing without required fetch callbacks
+- fixed CalDAV/CardDAV multi-get requests dropping resource query strings
+- fixed invalid or reversed time ranges and empty free-busy responses returning misleading results
+- fixed native ESM package exports and expanded the default test scripts to include utility tests
+
+##### improvements
+
+- upgraded compatible test, build, type, React, and Docusaurus dependencies to their latest safe releases
+- isolated the documentation package as its own pnpm workspace so installs, audits, and lockfile checks consistently target the docs dependency graph
+- added regression tests for request handling, authentication, URL normalization, XML parsing, collection sync, calendar sync, and package entry points
+
+##### security
+
+- refreshed and constrained vulnerable documentation transitive dependencies; root and documentation production audits now report no known vulnerabilities
+
 ## v2.3.0
 
 ##### improvements

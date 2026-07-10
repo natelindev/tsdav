@@ -7,14 +7,14 @@ import { describe, expect, it } from 'vitest';
 // Regression for the ESM entry that package.json#module points at. This guards
 // against native Node ESM loader issues by actually loading the built bundle.
 //
-// The test is skipped unless `dist/tsdav.esm.js` exists so `pnpm test` keeps
+// The test is skipped unless `dist/tsdav.mjs` exists so `pnpm test` keeps
 // working without a prior `pnpm build`. CI runs this after `pnpm build` or
 // as a post-publish sanity check.
 const distDir = path.resolve(__dirname, '../../../dist');
-const esmEntry = path.join(distDir, 'tsdav.esm.js');
+const esmEntry = path.join(distDir, 'tsdav.mjs');
 const hasDist = existsSync(esmEntry);
 
-describe.skipIf(!hasDist)('ESM entry (dist/tsdav.esm.js)', () => {
+describe.skipIf(!hasDist)('ESM entry (dist/tsdav.mjs)', () => {
   it('loads successfully under native Node ESM and exposes DAVClient', () => {
     const tmp = mkdtempSync(path.join(tmpdir(), 'tsdav-esm-'));
     // Mark the scratch dir as an ESM package so Node treats `index.mjs` as

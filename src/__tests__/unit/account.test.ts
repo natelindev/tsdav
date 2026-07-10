@@ -156,6 +156,30 @@ describe('serviceDiscovery', () => {
     expect(mockFetch.mock.calls[0][1].method).toBe('PROPFIND');
   });
 
+  it('should merge fetch option headers without overriding discovery semantics', async () => {
+    const mockFetch = vi.fn().mockResolvedValueOnce({
+      status: 301,
+      headers: new Map([['Location', '/dav/']]),
+    });
+
+    await serviceDiscovery({
+      account: { serverUrl: 'https://example.com/', accountType: 'caldav' },
+      headers: { authorization: 'Basic token' },
+      fetchOptions: {
+        method: 'POST',
+        body: 'wrong-body',
+        headers: new Headers({ 'X-Custom': 'value' }),
+      },
+      fetch: mockFetch,
+    });
+
+    const request = mockFetch.mock.calls[0][1];
+    expect(request.method).toBe('PROPFIND');
+    expect(request.body).toContain('<d:propfind');
+    expect(request.headers.authorization).toBe('Basic token');
+    expect(request.headers['x-custom']).toBe('value');
+  });
+
   it('should try GET when PROPFIND does not redirect', async () => {
     const mockFetch = vi
       .fn()

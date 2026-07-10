@@ -95,7 +95,8 @@ export const createDAVClient = async (params: {
       authHeaders = getBearerAuthHeaders(credentials);
       break;
     case 'Oauth':
-      authHeaders = (await getOauthHeaders(credentials, undefined, fetchOverride)).headers;
+      authHeaders = (await getOauthHeaders(credentials, defaultFetchOptions, fetchOverride))
+        .headers;
       break;
     case 'Digest':
       authHeaders = {

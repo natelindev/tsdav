@@ -6,18 +6,27 @@ import { DAVDepth, DAVRequest, DAVResponse } from './types/DAVTypes';
 import { camelCase } from './util/camelCase';
 import { fetch } from './util/fetch';
 import { nativeType } from './util/nativeType';
-import { cleanupFalsy, excludeHeaders, getDAVAttribute } from './util/requestHelpers';
+import { cleanupFalsy, excludeHeaders, getDAVAttribute, mergeHeaders } from './util/requestHelpers';
 
 const debug = getLogger('tsdav:request');
 
-type RawProp = { prop: { [key: string]: any }; status: string; responsedescription?: string };
+type RawProp = { prop: { [key: string]: any }; status?: string; responsedescription?: string };
 type RawResponse = {
   href: string;
-  status: string;
+  status?: string;
   ok: boolean;
   error: { [key: string]: any };
   responsedescription: string;
   propstat: RawProp | RawProp[];
+};
+
+const parseStatusLine = (
+  statusLine?: string,
+): { status: number; statusText: string } | undefined => {
+  const match = /^\S+\s(?<status>\d+)\s(?<statusText>.+)$/.exec(statusLine ?? '');
+  const status = match?.groups?.status;
+  const statusText = match?.groups?.statusText;
+  return status && statusText ? { status: Number.parseInt(status, 10), statusText } : undefined;
 };
 
 export const davRequest = async (params: {
@@ -38,58 +47,40 @@ export const davRequest = async (params: {
   } = params;
   const requestFetch = fetchOverride ?? fetch;
   const { headers = {}, body, namespace, method, attributes } = init;
-  const xmlBody = convertIncoming
-    ? convert.js2xml(
-        {
-          _declaration: { _attributes: { version: '1.0', encoding: 'utf-8' } },
-          // body is spread AFTER _attributes so a body-level `_attributes`
-          // set by the caller wins over the implicit `attributes` param.
-          _attributes: attributes,
-          ...body,
-        },
-        {
-          compact: true,
-          spaces: 2,
-          elementNameFn: (name) => {
-            // add namespace to all keys without namespace
-            if (namespace && !/^.+:.+/.test(name)) {
-              return `${namespace}:${name}`;
-            }
-            return name;
+  const xmlBody =
+    convertIncoming && body != null
+      ? convert.js2xml(
+          {
+            _declaration: { _attributes: { version: '1.0', encoding: 'utf-8' } },
+            // body is spread AFTER _attributes so a body-level `_attributes`
+            // set by the caller wins over the implicit `attributes` param.
+            _attributes: attributes,
+            ...body,
           },
-        },
-      )
-    : body;
+          {
+            compact: true,
+            spaces: 2,
+            elementNameFn: (name) => {
+              // add namespace to all keys without namespace
+              if (namespace && !/^.+:.+/.test(name)) {
+                return `${namespace}:${name}`;
+              }
+              return name;
+            },
+          },
+        )
+      : body;
 
   const fetchOptionsWithoutHeaders = {
     ...fetchOptions,
   };
   delete fetchOptionsWithoutHeaders.headers;
 
-  // Merge headers with case-insensitive deduplication. HTTP header names are
-  // case-insensitive but plain JS objects aren't, so without normalization a
-  // user-supplied `content-type` would coexist with our `Content-Type`,
-  // producing undefined provider behavior. Lowercase-keyed map wins, with
-  // caller-supplied headers overriding the library defaults.
-  const mergedHeaders: Record<string, string> = {};
-  const setHeader = (key: string, value: string | undefined): void => {
-    if (value == null) return;
-    const lower = key.toLowerCase();
-    // remove any previously-set entries with a different case
-    Object.keys(mergedHeaders).forEach((existing) => {
-      if (existing.toLowerCase() === lower) {
-        delete mergedHeaders[existing];
-      }
-    });
-    mergedHeaders[key] = value;
-  };
-  setHeader('Content-Type', 'text/xml;charset=UTF-8');
-  Object.entries(cleanupFalsy(headers)).forEach(([k, v]) => {
-    setHeader(k, v as string);
-  });
-  Object.entries(fetchOptions.headers || {}).forEach(([k, v]) => {
-    setHeader(k, v as string);
-  });
+  const mergedHeaders = mergeHeaders(
+    { 'Content-Type': 'text/xml;charset=UTF-8' },
+    cleanupFalsy(headers),
+    fetchOptions.headers,
+  );
 
   const davResponse = await requestFetch(url, {
     ...fetchOptionsWithoutHeaders,
@@ -103,7 +94,7 @@ export const davRequest = async (params: {
   // filter out invalid responses
   if (
     !davResponse.ok ||
-    !davResponse.headers.get('content-type')?.includes('xml') ||
+    !davResponse.headers.get('content-type')?.toLowerCase().includes('xml') ||
     !parseOutgoing ||
     !resText
   ) {
@@ -136,6 +127,7 @@ export const davRequest = async (params: {
           const pOpKeys = Object.keys(parentOfParent);
           const keyNo = pOpKeys.length;
           const keyName = pOpKeys[keyNo - 1];
+          if (!keyName) return;
           const arrOfKey = parentOfParent[keyName];
           const arrOfKeyLen = arrOfKey.length;
           if (arrOfKeyLen > 0) {
@@ -191,7 +183,6 @@ export const davRequest = async (params: {
     : [result.multistatus.response];
 
   return responseBodies.map((responseBody) => {
-    const statusRegex = /^\S+\s(?<status>\d+)\s(?<statusText>.+)$/;
     if (!responseBody) {
       return {
         status: davResponse.status,
@@ -200,16 +191,14 @@ export const davRequest = async (params: {
       };
     }
 
-    const matchArr = statusRegex.exec(responseBody.status);
-    const status = matchArr?.groups
-      ? Number.parseInt(matchArr.groups.status, 10)
-      : davResponse.status;
+    const parsedStatus = parseStatusLine(responseBody.status);
+    const status = parsedStatus?.status ?? davResponse.status;
 
     return {
       raw: result,
       href: responseBody.href,
       status,
-      statusText: matchArr?.groups?.statusText ?? davResponse.statusText,
+      statusText: parsedStatus?.statusText ?? davResponse.statusText,
       // Derive `ok` from the parsed status (per RFC 4918, a 2xx propstat
       // means success). The previous implementation read `!responseBody.error`
       // which flagged empty `<error/>` elements as failures and ignored
@@ -221,6 +210,10 @@ export const davRequest = async (params: {
         ? responseBody.propstat
         : [responseBody.propstat]
       ).reduce((prev, curr) => {
+        const propstatStatus = parseStatusLine(curr?.status)?.status;
+        if (propstatStatus && (propstatStatus < 200 || propstatStatus >= 300)) {
+          return prev;
+        }
         return {
           ...prev,
           ...curr?.prop,
@@ -282,11 +275,12 @@ export const createObject = async (params: {
 }): Promise<Response> => {
   const { url, data, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
   const requestFetch = fetchOverride ?? fetch;
+  const { headers: fetchHeaders, ...fetchOptionsWithoutHeaders } = fetchOptions;
   return requestFetch(url, {
+    ...fetchOptionsWithoutHeaders,
     method: 'PUT',
     body: data,
-    headers: excludeHeaders(headers, headersToExclude),
-    ...fetchOptions,
+    headers: excludeHeaders(mergeHeaders(headers, fetchHeaders), headersToExclude),
   });
 };
 
@@ -309,11 +303,15 @@ export const updateObject = async (params: {
     fetch: fetchOverride,
   } = params;
   const requestFetch = fetchOverride ?? fetch;
+  const { headers: fetchHeaders, ...fetchOptionsWithoutHeaders } = fetchOptions;
   return requestFetch(url, {
+    ...fetchOptionsWithoutHeaders,
     method: 'PUT',
     body: data,
-    headers: excludeHeaders(cleanupFalsy({ 'If-Match': etag, ...headers }), headersToExclude),
-    ...fetchOptions,
+    headers: excludeHeaders(
+      mergeHeaders(cleanupFalsy({ 'If-Match': etag, ...headers }), fetchHeaders),
+      headersToExclude,
+    ),
   });
 };
 
@@ -327,9 +325,13 @@ export const deleteObject = async (params: {
 }): Promise<Response> => {
   const { url, headers, etag, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
   const requestFetch = fetchOverride ?? fetch;
+  const { headers: fetchHeaders, ...fetchOptionsWithoutHeaders } = fetchOptions;
   return requestFetch(url, {
+    ...fetchOptionsWithoutHeaders,
     method: 'DELETE',
-    headers: excludeHeaders(cleanupFalsy({ 'If-Match': etag, ...headers }), headersToExclude),
-    ...fetchOptions,
+    headers: excludeHeaders(
+      mergeHeaders(cleanupFalsy({ 'If-Match': etag, ...headers }), fetchHeaders),
+      headersToExclude,
+    ),
   });
 };

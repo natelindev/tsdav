@@ -15,6 +15,7 @@ export { DAVNamespace, DAVAttributeMap, DAVNamespaceShort } from './consts';
 declare const _default: {
     urlEquals: (urlA?: string, urlB?: string) => boolean;
     urlContains: (urlA?: string, urlB?: string) => boolean;
+    urlMatches: (urlA?: string, urlB?: string, baseUrl?: string) => boolean;
     getDAVAttribute: (nsArr: DAVNamespace[]) => {
         [key: string]: DAVNamespace;
     };
@@ -23,6 +24,7 @@ declare const _default: {
         [key: string]: T;
     };
     excludeHeaders: (headers: Record<string, string> | undefined, headersToExclude: string[] | undefined) => Record<string, string>;
+    mergeHeaders: (...headerSources: Array<HeadersInit | undefined>) => Record<string, string>;
     defaultParam: <F extends (...args: any[]) => any>(fn: F, params: Partial<Parameters<F>[0]>) => (...args: Parameters<F>) => ReturnType<F>;
     getBasicAuthHeaders: (credentials: import("./types/models").DAVCredentials) => {
         authorization?: string;
