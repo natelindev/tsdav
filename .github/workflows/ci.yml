@@ -1,6 +1,8 @@
 name: CI
 
 on:
+  push:
+    branches: [main]
   pull_request:
     types: ['opened', 'synchronize']
     branches: [main]
@@ -24,22 +26,25 @@ jobs:
         with:
           version: 10
 
-      - name: Use Node.js ${{ matrix.node_version }}
+      - name: Use test/build Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node_version }}
+          node-version: ${{ matrix.node_version == 18 && 22 || matrix.node_version }}
           cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm i --frozen-lockfile
 
       - name: Run `typecheck`
+        if: matrix.node_version != 18
         run: pnpm typecheck
 
       - name: Run `lint`
+        if: matrix.node_version != 18
         run: pnpm lint
 
       - name: Run `test`
+        if: matrix.node_version != 18
         run: pnpm test
         env:
           RECORD_NETWORK_REQUESTS: 'false'
@@ -55,6 +60,29 @@ jobs:
           CREDENTIAL_NEXTCLOUD_USERNAME: ${{secrets.CREDENTIAL_NEXTCLOUD_USERNAME}}
           CREDENTIAL_NEXTCLOUD_PASSWORD: ${{secrets.CREDENTIAL_NEXTCLOUD_PASSWORD}}
           CREDENTIAL_NEXTCLOUD_SERVER_URL: ${{secrets.CREDENTIAL_NEXTCLOUD_SERVER_URL}}
+
+      - name: Build package for Node.js 18 smoke test
+        if: matrix.node_version == 18
+        run: |
+          pnpm build
+          mkdir -p /tmp/tsdav-node18
+          npm pack --pack-destination /tmp/tsdav-node18 > /tmp/tsdav-node18/pack.out
+
+      - name: Use Node.js 18
+        if: matrix.node_version == 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Test packed package on Node.js 18
+        if: matrix.node_version == 18
+        run: |
+          mkdir -p /tmp/tsdav-node18/consumer
+          cd /tmp/tsdav-node18/consumer
+          npm init -y
+          npm install "$(find /tmp/tsdav-node18 -maxdepth 1 -name 'tsdav-*.tgz' -print -quit)" --no-audit --no-fund
+          node -e "const mod = require('tsdav'); if (typeof mod.DAVClient !== 'function') process.exit(1)"
+          node --input-type=module -e "import { DAVClient } from 'tsdav'; if (typeof DAVClient !== 'function') process.exit(1)"
 
   bun-smoke-test:
     runs-on: ubuntu-latest
@@ -85,7 +113,7 @@ jobs:
 
       - name: Import + instantiate from ESM bundle under Bun
         run: |
-          cat > /tmp/tsdav-bun-smoke.mjs <<'EOF'
+          cat > .tsdav-bun-smoke.mjs <<'EOF'
           import { DAVClient, createDAVClient, DAVNamespace } from './dist/tsdav.esm.js';
           if (typeof DAVClient !== 'function') throw new Error('DAVClient missing');
           if (typeof createDAVClient !== 'function') throw new Error('createDAVClient missing');
@@ -98,17 +126,17 @@ jobs:
           });
           console.log('bun-ok');
           EOF
-          bun /tmp/tsdav-bun-smoke.mjs | tee /tmp/bun.out
+          bun .tsdav-bun-smoke.mjs | tee /tmp/bun.out
           grep -q '^bun-ok$' /tmp/bun.out
 
       - name: Import from CJS bundle under Bun
         run: |
-          cat > /tmp/tsdav-bun-cjs.cjs <<'EOF'
+          cat > .tsdav-bun-cjs.cjs <<'EOF'
           const { DAVClient } = require('./dist/tsdav.cjs.js');
           if (typeof DAVClient !== 'function') throw new Error('DAVClient missing from CJS');
           console.log('bun-cjs-ok');
           EOF
-          bun /tmp/tsdav-bun-cjs.cjs | tee /tmp/bun-cjs.out
+          bun .tsdav-bun-cjs.cjs | tee /tmp/bun-cjs.out
           grep -q '^bun-cjs-ok$' /tmp/bun-cjs.out
 
   deno-smoke-test:

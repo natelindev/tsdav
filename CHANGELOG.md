@@ -11,11 +11,13 @@
 - fixed CalDAV/CardDAV multi-get requests dropping resource query strings
 - fixed invalid or reversed time ranges and empty free-busy responses returning misleading results
 - fixed native ESM package exports and expanded the default test scripts to include utility tests
+- fixed the Node.js 18 CI job to validate the packed runtime instead of invoking Node.js 20-only build and test tooling
 
 ##### improvements
 
 - upgraded compatible test, build, type, React, and Docusaurus dependencies to their latest safe releases
 - isolated the documentation package as its own pnpm workspace so installs, audits, and lockfile checks consistently target the docs dependency graph
+- enabled CI for direct `main` pushes so release commits are verified before publication
 - added regression tests for request handling, authentication, URL normalization, XML parsing, collection sync, calendar sync, and package entry points
 
 ##### security
