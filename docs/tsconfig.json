@@ -1,4 +1,9 @@
 {
   "extends": "@tsconfig/docusaurus/tsconfig.json",
-  "include": ["./src/"]
+  "include": ["./src/"],
+  "compilerOptions": {
+    "baseUrl": null,
+    "paths": { "@site/*": ["./*"] },
+    "strict": false
+  }
 }

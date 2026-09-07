@@ -27,22 +27,22 @@ jobs:
       - name: Use test/build Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node_version == 18 && 22 || matrix.node_version }}
+          node-version: ${{ matrix.node-version < 22 && 22 || matrix.node-version }}
           cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm i --frozen-lockfile
 
       - name: Run `typecheck`
-        if: matrix.node_version != 18
+        if: matrix.node-version >= 22
         run: pnpm typecheck
 
       - name: Run `lint`
-        if: matrix.node_version != 18
+        if: matrix.node-version >= 22
         run: pnpm lint
 
       - name: Run `test`
-        if: matrix.node_version != 18
+        if: matrix.node-version >= 22
         run: pnpm test
         env:
           RECORD_NETWORK_REQUESTS: 'false'
@@ -59,26 +59,26 @@ jobs:
           CREDENTIAL_NEXTCLOUD_PASSWORD: ${{secrets.CREDENTIAL_NEXTCLOUD_PASSWORD}}
           CREDENTIAL_NEXTCLOUD_SERVER_URL: ${{secrets.CREDENTIAL_NEXTCLOUD_SERVER_URL}}
 
-      - name: Build package for Node.js 18 smoke test
-        if: matrix.node_version == 18
+      - name: Build package for runtime smoke test
+        if: matrix.node-version < 22
         run: |
           pnpm build
-          mkdir -p /tmp/tsdav-node18
-          npm pack --pack-destination /tmp/tsdav-node18 > /tmp/tsdav-node18/pack.out
+          mkdir -p /tmp/tsdav-runtime
+          npm pack --pack-destination /tmp/tsdav-runtime > /tmp/tsdav-runtime/pack.out
 
-      - name: Use Node.js 18
-        if: matrix.node_version == 18
+      - name: Use runtime Node.js
+        if: matrix.node-version < 22
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: ${{ matrix.node-version }}
 
-      - name: Test packed package on Node.js 18
-        if: matrix.node_version == 18
+      - name: Test packed package on runtime Node.js
+        if: matrix.node-version < 22
         run: |
-          mkdir -p /tmp/tsdav-node18/consumer
-          cd /tmp/tsdav-node18/consumer
+          mkdir -p /tmp/tsdav-runtime/consumer
+          cd /tmp/tsdav-runtime/consumer
           npm init -y
-          npm install "$(find /tmp/tsdav-node18 -maxdepth 1 -name 'tsdav-*.tgz' -print -quit)" --no-audit --no-fund
+          npm install "$(find /tmp/tsdav-runtime -maxdepth 1 -name 'tsdav-*.tgz' -print -quit)" --no-audit --no-fund
           node -e "const mod = require('tsdav'); if (typeof mod.DAVClient !== 'function') process.exit(1)"
           node --input-type=module -e "import { DAVClient } from 'tsdav'; if (typeof DAVClient !== 'function') process.exit(1)"
 
@@ -169,7 +169,7 @@ jobs:
           # copy with paths that are only valid from inside the repo root.
           mkdir -p /tmp/deno-smoke
           npm pack --pack-destination /tmp/deno-smoke > /tmp/pack.out
-          TARBALL=$(ls /tmp/deno-smoke/tsdav-*.tgz | head -n1)
+          TARBALL=$(find /tmp/deno-smoke -maxdepth 1 -name 'tsdav-*.tgz' -print -quit)
           echo "tarball=$TARBALL" >> "$GITHUB_OUTPUT"
 
       - name: 'Import tsdav under Deno via npm: specifier'
@@ -217,3 +217,21 @@ jobs:
           EOF
           deno run --allow-read --allow-env smoke.ts | tee /tmp/deno.out
           grep -q '^deno-ok$' /tmp/deno.out
+
+  docs-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: docs
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+          cache-dependency-path: docs/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: pnpm exec tsc --noEmit
+      - run: pnpm build

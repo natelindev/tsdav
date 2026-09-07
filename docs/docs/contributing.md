@@ -4,6 +4,9 @@ sidebar_position: 8
 
 # Contributing
 
+Use Node.js 22.12+ for development and tests (Vitest 5 requires it). The published library
+continues to support Node.js 18+.
+
 First you need to clone the repo and install dependencies with `pnpm install`.
 The repo pins pnpm 10.34.4 for local, CI, and Vercel builds.
 Vercel installs the docs package with `pnpm install --frozen-lockfile`.
@@ -19,10 +22,12 @@ pnpm build
 
 #### Test
 
-to run tests locally, you need to setup environnement variables using `.env` file from `.env.example`
+Run `pnpm test:unit` for the unit suite; it does not require provider credentials.
+
+For live provider integration tests, configure a `.env` file from `.env.example`:
 
 ```bash
-mv .env.example .env
+cp .env.example .env
 ```
 
 and fill in the missing values
@@ -30,6 +35,17 @@ and fill in the missing values
 If you didn't add any new api, you should set MOCK_FETCH="true".
 If you added new api and need to test against cloud providers, you should set
 MOCK_FETCH="false" and RECORD_NETWORK_REQUESTS="true" to updated network request mock data.
+
+### Docs dependency verification
+
+Run `pnpm --dir docs test` to verify the image parser used by Docusaurus. These tests run
+malformed images in child processes with timeouts, and also check valid image dimensions through
+CommonJS, ESM, buffer, and file APIs.
+
+The docs package overrides `image-size` with `image-size-next@2.1.1`, a compatible fork that fixes
+CVE-2025-71329 and CVE-2025-71330. Keep the override until Docusaurus depends on a fixed parser;
+removing it would reintroduce the vulnerable upstream package. See the
+[fork's changelog](https://github.com/lcf2212dev/image-size-next/blob/main/CHANGELOG.md).
 
 ### WEBDAV quick guide
 

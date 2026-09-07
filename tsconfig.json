@@ -6,22 +6,12 @@
     "strict": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    // `"node"` is the legacy alias TypeScript 6+ warns about. `"node10"` is
-    // the explicit rename of the same behavior and keeps the build output
-    // identical while silencing the editor diagnostic.
-    "moduleResolution": "node10",
-    "lib": ["ES2018", "dom", "DOM.Iterable"],
-    "module": "commonjs",
+    "moduleResolution": "bundler",
+    "lib": ["ES2019", "dom", "DOM.Iterable"],
+    "module": "preserve",
     "target": "ES2018",
     "declaration": true,
     "isolatedModules": true,
-    // `baseUrl: "."` + `paths: { "*": ["node_modules/*"] }` previously
-    // duplicated TypeScript's default node_modules resolution and tripped
-    // the TS 6 deprecation diagnostic. Removed: the resolver falls back to
-    // node_modules automatically.
-    //
-    // Note: intentionally no `rootDir` so the build declaration step emits
-    // declarations at `dist/index.d.ts` rather than `dist/src/index.d.ts`.
     "outDir": "./dist"
   },
   "include": ["src/**/*", "env.d.ts", "rolldown.config.mjs"],

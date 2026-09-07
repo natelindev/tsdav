@@ -1108,3 +1108,70 @@ describe('smartCollectionSync', () => {
     expect(result.objects.created[0].url).toBe('http://example.com/col/item.ics?revision=1');
   });
 });
+
+describe('smartCollectionSync failures', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it.each([
+    [401, 'http://example.com/col/'],
+    [403, 'http://example.com/col/'],
+    [404, 'http://example.com/col/'],
+    [500, '/col/event.ics'],
+    [507, '/col/'],
+  ])(
+    'should reject status %s at %s instead of returning a successful sync',
+    async (status, href) => {
+      mockedDavRequest.mockResolvedValue([{ href, status, statusText: 'Failure', ok: false }]);
+      const objectMultiGet = vi.fn();
+      await expect(
+        smartCollectionSync({
+          collection: {
+            url: 'http://example.com/col/',
+            reports: ['syncCollection'],
+            objectMultiGet,
+          },
+          account: {
+            serverUrl: 'http://example.com/',
+            homeUrl: 'http://example.com/',
+            accountType: 'caldav',
+          },
+        }),
+      ).rejects.toThrow(`Collection sync failed: ${status}`);
+      expect(objectMultiGet).not.toHaveBeenCalled();
+    },
+  );
+
+  it('should reject failed custom multi-get responses before advancing the token', async () => {
+    mockedDavRequest.mockResolvedValue([
+      {
+        href: '/col/event.ics',
+        status: 200,
+        statusText: 'OK',
+        ok: true,
+        raw: { multistatus: { syncToken: 'new-token' } },
+      },
+    ]);
+    await expect(
+      smartCollectionSync({
+        collection: {
+          url: 'http://example.com/col/',
+          reports: ['syncCollection'],
+          syncToken: 'old-token',
+          objectMultiGet: vi.fn().mockResolvedValue([
+            {
+              href: '/col/event.ics',
+              status: 500,
+              statusText: 'Failure',
+              ok: false,
+            },
+          ]),
+        },
+        account: {
+          serverUrl: 'http://example.com/',
+          homeUrl: 'http://example.com/',
+          accountType: 'caldav',
+        },
+      }),
+    ).rejects.toThrow('Collection sync multi-get failed: 500');
+  });
+});

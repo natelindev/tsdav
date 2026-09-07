@@ -78,7 +78,8 @@ export const collectionQuery = async (params: {
   if (
     queryResults.length === 1 &&
     firstQueryResult &&
-    !firstQueryResult.raw &&
+    (!firstQueryResult.raw ||
+      (firstQueryResult.raw.multistatus && !firstQueryResult.raw.multistatus.response)) &&
     firstQueryResult.status &&
     firstQueryResult.status < 300
   ) {
@@ -298,10 +299,20 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
       fetch: fetchOverride,
     });
 
-    const objectResponses = result.filter((r): r is RequireAndNotNullSome<DAVResponse, 'href'> => {
+    const isObjectResponse = (r: DAVResponse): r is RequireAndNotNullSome<DAVResponse, 'href'> => {
       const extName = account.accountType === 'caldav' ? '.ics' : '.vcf';
       return typeof r.href === 'string' && hrefHasExtension(r.href, extName, collection.url);
-    });
+    };
+    const errorResponse = result.find(
+      (r) => (!r.ok || r.status >= 400) && !(r.status === 404 && isObjectResponse(r)),
+    );
+    if (errorResponse) {
+      throw new Error(
+        `Collection sync failed: ${errorResponse.status} ${errorResponse.statusText}`,
+      );
+    }
+
+    const objectResponses = result.filter(isObjectResponse);
 
     const changedObjectUrls = objectResponses.filter((o) => o.status !== 404).map((r) => r.href);
 
@@ -330,6 +341,13 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
           fetch: fetchOverride,
         })) ?? [])
       : [];
+
+    const multiGetError = multiGetObjectResponse.find((r: DAVResponse) => !r.ok || r.status >= 400);
+    if (multiGetError) {
+      throw new Error(
+        `Collection sync multi-get failed: ${multiGetError.status} ${multiGetError.statusText}`,
+      );
+    }
 
     const remoteObjects = multiGetObjectResponse.map((res: DAVResponse) => {
       return {

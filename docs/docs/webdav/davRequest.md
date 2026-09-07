@@ -51,3 +51,7 @@ array of [DAVResponse](../types/DAVResponse.md)
 depend on options, use `xml-js` to convert passed in json object into valid xml request,
 also use `xml-js` to convert received xml response into json object.
 if request failed, response-> raw will be raw response text returned from server.
+
+Multistatus responses without resource entries still return one result with the parsed `raw` payload,
+so callers can read collection metadata such as `raw.multistatus.syncToken`. Status codes are parsed
+even when the server omits the reason phrase.
