@@ -71,6 +71,9 @@ importers:
       '@tsconfig/docusaurus':
         specifier: 2.0.9
         version: 2.0.9
+      '@types/node':
+        specifier: 26.4.1
+        version: 26.4.1
       '@types/react':
         specifier: 19.2.18
         version: 19.2.18
@@ -8400,7 +8403,7 @@ snapshots:
 
   '@types/sax@1.2.7':
     dependencies:
-      '@types/node': 17.0.45
+      '@types/node': 26.4.1
 
   '@types/send@0.17.6':
     dependencies:

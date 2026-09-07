@@ -48,6 +48,7 @@
     "@docusaurus/module-type-aliases": "3.10.2",
     "@docusaurus/theme-classic": "3.10.2",
     "@tsconfig/docusaurus": "2.0.9",
+    "@types/node": "26.4.1",
     "@types/react": "19.2.18",
     "@types/react-helmet": "6.1.11",
     "@types/react-router-dom": "5.3.3",
