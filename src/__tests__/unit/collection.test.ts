@@ -9,6 +9,7 @@ import {
   syncCollection,
 } from '../../collection';
 import * as request from '../../request';
+import { DAVNamespaceShort } from '../../consts';
 
 vi.mock('../../request');
 
@@ -157,8 +158,9 @@ describe('collectionQuery', () => {
     ]);
 
     const result = await collectionQuery({
-      url: 'http://example.com/cal/',
-      body: {},
+      url: 'http://example.com/dav/cal/user%40host/default/',
+      body: { 'calendar-query': {} },
+      defaultNamespace: DAVNamespaceShort.CALDAV,
     });
 
     expect(result).toEqual([]);

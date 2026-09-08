@@ -54,5 +54,5 @@ Sends a REPORT request to the target collection and parses the response XML into
 `collectionQuery` will reject with an error if:
 
 - The server returns a non-OK HTTP response (e.g., 504 Gateway Timeout, 401 Unauthorized).
-- Any individual response within a Multi-Status payload has a status code >= 400, except a lone 404 with no properties. Some CalDAV servers answer an empty `calendar-query` that way instead of an empty `<D:multistatus/>` ([RFC 4791 §7.8](https://www.rfc-editor.org/rfc/rfc4791.html#section-7.8)); that is treated as no results.
+- Any individual response within a Multi-Status payload has a status code >= 400, except a lone collection-level 404 with no properties, propstat, or error element for a `calendar-query` using the CalDAV default namespace. Its href must match the queried collection (relative hrefs and trailing slashes are supported). This accommodates older Stalwart servers that used that response for empty queries instead of the empty `<D:multistatus/>` required by [RFC 4791 §7.8](https://www.rfc-editor.org/rfc/rfc4791.html#section-7.8). Object-level 404s and failures in other REPORT types still reject.
 - The server response is not valid XML when a Multi-Status response is expected.

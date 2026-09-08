@@ -66,17 +66,22 @@ export const collectionQuery = async (params: {
 
   // RFC 4791 §7.8: an empty calendar-query is HTTP 207 with an empty
   // <D:multistatus/>. Some servers instead return a single collection-level
-  // 404 with no propstat ("No resources found"). That is still a successful
-  // REPORT with no members, not a failed REPORT. HTTP-level 404/504 keep
+  // 404 with no propstat ("No resources found"). Restrict this compatibility
+  // workaround to calendar queries and the queried collection. HTTP-level errors keep
   // `raw` as a string; parsed 207 members set `raw` to the xml-js tree.
   const emptyNotFound = queryResults[0];
   if (
+    defaultNamespace === DAVNamespaceShort.CALDAV &&
+    body?.['calendar-query'] != null &&
     queryResults.length === 1 &&
     emptyNotFound &&
     emptyNotFound.status === 404 &&
+    urlMatches(url, emptyNotFound.href, url) &&
+    !emptyNotFound.error &&
     Object.keys(emptyNotFound.props ?? {}).length === 0 &&
     typeof emptyNotFound.raw === 'object' &&
-    emptyNotFound.raw !== null
+    emptyNotFound.raw !== null &&
+    emptyNotFound.raw.multistatus?.response?.propstat == null
   ) {
     return [];
   }

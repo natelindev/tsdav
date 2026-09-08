@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { collectionQuery } from '../../collection';
+import { DAVNamespaceShort } from '../../consts';
 
 const mockFetch = (params: {
   ok: boolean;
@@ -26,7 +27,8 @@ describe('collectionQuery empty calendar-query XML', () => {
   it('returns [] for a 207 with a collection-level 404 and no propstat', async () => {
     const result = await collectionQuery({
       url: 'https://example.com/dav/cal/user%40host/default/',
-      body: {},
+      body: { 'calendar-query': {} },
+      defaultNamespace: DAVNamespaceShort.CALDAV,
       fetch: mockFetch({
         ok: true,
         status: 207,
