@@ -457,6 +457,8 @@ const collectionQuery = async (params) => {
 		fetchOptions,
 		fetch: fetchOverride
 	});
+	const emptyNotFound = queryResults[0];
+	if (defaultNamespace === "c" && body?.["calendar-query"] != null && queryResults.length === 1 && emptyNotFound && emptyNotFound.status === 404 && urlMatches(url, emptyNotFound.href, url) && !emptyNotFound.error && Object.keys(emptyNotFound.props ?? {}).length === 0 && typeof emptyNotFound.raw === "object" && emptyNotFound.raw !== null && emptyNotFound.raw.multistatus?.response?.propstat == null) return [];
 	const errorResponse = queryResults.find((res) => !res.ok || res.status && res.status >= 400);
 	if (errorResponse) throw new Error(`Collection query failed: ${errorResponse.status} ${errorResponse.statusText}. ${errorResponse.raw ? `Raw response: ${errorResponse.raw}` : ""}`);
 	const firstQueryResult = queryResults[0];

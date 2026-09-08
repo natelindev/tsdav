@@ -1,3 +1,11 @@
+## v2.3.3
+
+##### bug fixes
+
+- treat older Stalwart servers' empty calendar-query responses containing a collection-level 404 as no results, fixing [#278](https://github.com/natelindev/tsdav/issues/278); thanks to @josephsellers for [#279](https://github.com/natelindev/tsdav/pull/279)
+- restrict the workaround to calendar queries whose response href matches the queried collection, preserving missing-object errors, other REPORT failures, HTTP failures, and explicit DAV errors
+- add regression coverage for collection URL matching, CalDAV/CardDAV multi-get failures, and functional and class-based calendar object retrieval
+
 ## v2.3.2
 
 ##### bug fixes
