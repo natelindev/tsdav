@@ -142,6 +142,74 @@ describe('collectionQuery', () => {
     expect(result[0].props?.getetag).toBe('"123"');
     expect(result[1].props?.getetag).toBe('"456"');
   });
+
+  it('should treat a lone parsed 207 404 with no props as an empty query', async () => {
+    mockedDavRequest.mockResolvedValue([
+      {
+        href: '/dav/cal/user%40host/default/',
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+        responsedescription: 'No resources found',
+        props: {},
+        raw: { multistatus: { response: { href: '/dav/cal/user%40host/default/' } } },
+      },
+    ]);
+
+    const result = await collectionQuery({
+      url: 'http://example.com/cal/',
+      body: {},
+    });
+
+    expect(result).toEqual([]);
+  });
+
+  it('should still throw on HTTP 404 where raw is a string', async () => {
+    mockedDavRequest.mockResolvedValue([
+      {
+        href: 'http://example.com/cal/',
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+        raw: 'Not Found',
+      },
+    ]);
+
+    await expect(
+      collectionQuery({
+        url: 'http://example.com/cal/',
+        body: {},
+      }),
+    ).rejects.toThrow('Collection query failed: 404 Not Found');
+  });
+
+  it('should still throw when a 207 mixes 200 and object-level 404', async () => {
+    mockedDavRequest.mockResolvedValue([
+      {
+        href: '/cal/event.ics',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        props: { getetag: '"abc"' },
+        raw: { multistatus: {} },
+      },
+      {
+        href: '/cal/missing.ics',
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+        props: {},
+        raw: { multistatus: {} },
+      },
+    ]);
+
+    await expect(
+      collectionQuery({
+        url: 'http://example.com/cal/',
+        body: {},
+      }),
+    ).rejects.toThrow('Collection query failed: 404 Not Found');
+  });
 });
 
 describe('makeCollection', () => {

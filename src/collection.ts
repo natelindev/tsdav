@@ -64,6 +64,23 @@ export const collectionQuery = async (params: {
     fetch: fetchOverride,
   });
 
+  // RFC 4791 §7.8: an empty calendar-query is HTTP 207 with an empty
+  // <D:multistatus/>. Some servers instead return a single collection-level
+  // 404 with no propstat ("No resources found"). That is still a successful
+  // REPORT with no members, not a failed REPORT. HTTP-level 404/504 keep
+  // `raw` as a string; parsed 207 members set `raw` to the xml-js tree.
+  const emptyNotFound = queryResults[0];
+  if (
+    queryResults.length === 1 &&
+    emptyNotFound &&
+    emptyNotFound.status === 404 &&
+    Object.keys(emptyNotFound.props ?? {}).length === 0 &&
+    typeof emptyNotFound.raw === 'object' &&
+    emptyNotFound.raw !== null
+  ) {
+    return [];
+  }
+
   const errorResponse = queryResults.find((res) => !res.ok || (res.status && res.status >= 400));
   if (errorResponse) {
     throw new Error(
