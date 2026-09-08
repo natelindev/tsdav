@@ -9,9 +9,9 @@ import { Optional } from './util/typeHelpers';
 export declare const createDAVClient: (params: {
     serverUrl: string;
     credentials: DAVCredentials;
-    authMethod?: "Basic" | "Oauth" | "Digest" | "Custom" | "Bearer";
+    authMethod?: 'Basic' | 'Oauth' | 'Digest' | 'Custom' | 'Bearer';
     authFunction?: (credentials: DAVCredentials) => Promise<Record<string, string>>;
-    defaultAccountType?: DAVAccount["accountType"] | undefined;
+    defaultAccountType?: DAVAccount['accountType'] | undefined;
     fetchOptions?: RequestInit;
     fetch?: typeof globalThis.fetch;
 }) => Promise<{
@@ -26,14 +26,14 @@ export declare const createDAVClient: (params: {
     propfind: (params: {
         url: string;
         props: import("xml-js").ElementCompact;
-        depth?: import("./types/DAVTypes").DAVDepth;
+        depth?: import(".").DAVDepth;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
         fetch?: typeof import("./util/fetch").fetch;
     }) => Promise<DAVResponse[]>;
     createAccount: (params0: {
-        account: Optional<DAVAccount, "serverUrl">;
+        account: Optional<DAVAccount, 'serverUrl'>;
         headers?: Record<string, string>;
         loadCollections?: boolean;
         loadObjects?: boolean;
@@ -70,7 +70,7 @@ export declare const createDAVClient: (params: {
         props: import("xml-js").ElementCompact;
         filters?: import("xml-js").ElementCompact;
         timezone?: string;
-        depth?: import("./types/DAVTypes").DAVDepth;
+        depth?: import(".").DAVDepth;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
@@ -80,7 +80,7 @@ export declare const createDAVClient: (params: {
         url: string;
         props: import("xml-js").ElementCompact;
         filters?: import("xml-js").ElementCompact;
-        depth?: import("./types/DAVTypes").DAVDepth;
+        depth?: import(".").DAVDepth;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
@@ -89,7 +89,7 @@ export declare const createDAVClient: (params: {
     collectionQuery: (params: {
         url: string;
         body: any;
-        depth?: import("./types/DAVTypes").DAVDepth;
+        depth?: import(".").DAVDepth;
         defaultNamespace?: import("./consts").DAVNamespaceShort;
         headers?: Record<string, string>;
         headersToExclude?: string[];
@@ -99,7 +99,7 @@ export declare const createDAVClient: (params: {
     makeCollection: (params: {
         url: string;
         props?: import("xml-js").ElementCompact;
-        depth?: import("./types/DAVTypes").DAVDepth;
+        depth?: import(".").DAVDepth;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
@@ -110,7 +110,7 @@ export declare const createDAVClient: (params: {
         props: import("xml-js").ElementCompact;
         objectUrls?: string[];
         timezone?: string;
-        depth: import("./types/DAVTypes").DAVDepth;
+        depth: import(".").DAVDepth;
         filters?: import("xml-js").ElementCompact;
         headers?: Record<string, string>;
         headersToExclude?: string[];
@@ -120,7 +120,7 @@ export declare const createDAVClient: (params: {
     makeCalendar: (params: {
         url: string;
         props: import("xml-js").ElementCompact;
-        depth?: import("./types/DAVTypes").DAVDepth;
+        depth?: import(".").DAVDepth;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
@@ -186,7 +186,7 @@ export declare const createDAVClient: (params: {
         useMultiGet?: boolean;
         fetchOptions?: RequestInit;
         fetch?: typeof fetch;
-    }) => Promise<import("./types/models").DAVObject[]>;
+    }) => Promise<import(".").DAVObject[]>;
     createCalendarObject: (params: {
         calendar: DAVCalendar;
         iCalString: string;
@@ -224,7 +224,7 @@ export declare const createDAVClient: (params: {
         url: string;
         props: import("xml-js").ElementCompact;
         objectUrls: string[];
-        depth: import("./types/DAVTypes").DAVDepth;
+        depth: import(".").DAVDepth;
         headers?: Record<string, string>;
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
@@ -239,7 +239,7 @@ export declare const createDAVClient: (params: {
         headersToExclude?: string[];
         fetchOptions?: RequestInit;
         fetch?: typeof fetch;
-    }) => Promise<import("./types/models").DAVObject[]>;
+    }) => Promise<import(".").DAVObject[]>;
     createVCard: (params: {
         addressBook: DAVAddressBook;
         vCardString: string;

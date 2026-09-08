@@ -818,3 +818,37 @@ describe('DAVClient method delegation', () => {
     expect(mockFetch).toHaveBeenCalled();
   });
 });
+
+describe('DAVClient empty sync response', () => {
+  it('should retain local objects and accept a new token without fetching objects', async () => {
+    const mockFetch = buildMockFetch(
+      '<d:multistatus xmlns:d="DAV:"><d:sync-token>new-token</d:sync-token></d:multistatus>',
+      207,
+    );
+    const client = new DAVClient({
+      serverUrl: 'http://example.com/',
+      credentials: {},
+      fetch: mockFetch,
+    });
+    const objects = [{ url: 'http://example.com/col/event.ics', etag: 'existing' }];
+    const result = await client.smartCollectionSync({
+      collection: {
+        url: 'http://example.com/col/',
+        reports: ['syncCollection'],
+        syncToken: 'old-token',
+        objects,
+      },
+      account: {
+        serverUrl: 'http://example.com/',
+        homeUrl: 'http://example.com/',
+        accountType: 'caldav',
+      },
+    });
+
+    expect(result.syncToken).toBe('new-token');
+    expect(result.objects).toEqual(objects);
+    expect(mockFetch).toHaveBeenCalledOnce();
+    expect(mockFetch.mock.calls[0][1].body).toContain('old-token');
+    expect(await client.calendarQuery({ url: 'http://example.com/col/', props: {} })).toEqual([]);
+  });
+});

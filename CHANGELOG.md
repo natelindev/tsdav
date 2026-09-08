@@ -1,3 +1,23 @@
+## v2.3.2
+
+##### bug fixes
+
+- reject failed WebDAV sync REPORTs and failed multi-get responses instead of returning a successful sync or advancing the sync token; object-level 404 responses still represent deletions
+- preserve new sync tokens from empty multistatus responses while retaining unchanged local objects
+- parse DAV response and property status codes when the server omits the reason phrase
+- correct the CI Node.js version matrix and verify the packaged library on Node.js 18 and 20 separately from the development toolchain
+
+##### improvements
+
+- update the package and documentation toolchains, including TypeScript 7, Vitest 5, Rolldown, Docusaurus, and React
+- update compiler configuration and contributor documentation for Node.js 22.12+ development; published runtime support remains Node.js >=18
+- add regression coverage for sync failures, empty sync responses, status parsing, and documentation image parsing, with docs tests and builds included in CI
+
+##### security
+
+- replace the documentation dependency `image-size` with the API-compatible `image-size-next@2.1.1`, fixing CVE-2025-71329 and CVE-2025-71330
+- constrain vulnerable transitive build and documentation dependencies to fixed versions; root and documentation dependency audits report no known vulnerabilities at release verification
+
 ## v2.3.1
 
 ##### bug fixes

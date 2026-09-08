@@ -23,10 +23,10 @@ type RawResponse = {
 const parseStatusLine = (
   statusLine?: string,
 ): { status: number; statusText: string } | undefined => {
-  const match = /^\S+\s(?<status>\d+)\s(?<statusText>.+)$/.exec(statusLine ?? '');
+  const match = /^\S+\s+(?<status>\d{3})(?:\s+(?<statusText>.*))?$/.exec(statusLine ?? '');
   const status = match?.groups?.status;
   const statusText = match?.groups?.statusText;
-  return status && statusText ? { status: Number.parseInt(status, 10), statusText } : undefined;
+  return status ? { status: Number.parseInt(status, 10), statusText: statusText ?? '' } : undefined;
 };
 
 export const davRequest = async (params: {
@@ -185,6 +185,7 @@ export const davRequest = async (params: {
   return responseBodies.map((responseBody) => {
     if (!responseBody) {
       return {
+        raw: result,
         status: davResponse.status,
         statusText: davResponse.statusText,
         ok: davResponse.ok,

@@ -25,7 +25,7 @@ var __copyProps = (to, from, except, desc) => {
 	}
 	return to;
 };
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", {
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule || !__hasOwnProp.call(mod, "default") ? __defProp(target, "default", {
 	value: mod,
 	enumerable: true
 }) : target, mod));
@@ -291,15 +291,16 @@ var require_common = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			let templateIndex = 0;
 			let starIndex = -1;
 			let matchIndex = 0;
-			while (searchIndex < search.length) if (templateIndex < template.length && (template[templateIndex] === search[searchIndex] || template[templateIndex] === "*")) if (template[templateIndex] === "*") {
-				starIndex = templateIndex;
-				matchIndex = searchIndex;
-				templateIndex++;
-			} else {
-				searchIndex++;
-				templateIndex++;
-			}
-			else if (starIndex !== -1) {
+			while (searchIndex < search.length) if (templateIndex < template.length && (template[templateIndex] === search[searchIndex] || template[templateIndex] === "*")) {
+				if (template[templateIndex] === "*") {
+					starIndex = templateIndex;
+					matchIndex = searchIndex;
+					templateIndex++;
+				} else {
+					searchIndex++;
+					templateIndex++;
+				}
+			} else if (starIndex !== -1) {
 				templateIndex = starIndex + 1;
 				matchIndex++;
 				searchIndex = matchIndex;
@@ -582,7 +583,7 @@ let ICALObjects = /* @__PURE__ */ function(ICALObjects) {
 	return ICALObjects;
 }({});
 //#endregion
-//#region node_modules/.pnpm/sax@1.4.4/node_modules/sax/lib/sax.js
+//#region node_modules/.pnpm/sax@1.6.1/node_modules/sax/lib/sax.js
 var require_sax = /* @__PURE__ */ __commonJSMin(((exports) => {
 	(function(sax) {
 		sax.parser = function(strict, opt) {
@@ -591,7 +592,7 @@ var require_sax = /* @__PURE__ */ __commonJSMin(((exports) => {
 		sax.SAXParser = SAXParser;
 		sax.SAXStream = SAXStream;
 		sax.createStream = createStream;
-		sax.MAX_BUFFER_LENGTH = 64 * 1024;
+		sax.MAX_BUFFER_LENGTH = 65536;
 		var buffers = [
 			"comment",
 			"sgmlDecl",
@@ -632,9 +633,13 @@ var require_sax = /* @__PURE__ */ __commonJSMin(((exports) => {
 			clearBuffers(parser);
 			parser.q = parser.c = "";
 			parser.bufferCheckPosition = sax.MAX_BUFFER_LENGTH;
+			parser.encoding = null;
 			parser.opt = opt || {};
 			parser.opt.lowercase = parser.opt.lowercase || parser.opt.lowercasetags;
 			parser.looseCase = parser.opt.lowercase ? "toLowerCase" : "toUpperCase";
+			parser.opt.maxEntityCount = parser.opt.maxEntityCount || 512;
+			parser.opt.maxEntityDepth = parser.opt.maxEntityDepth || 4;
+			parser.entityCount = parser.entityDepth = 0;
 			parser.tags = [];
 			parser.closed = parser.closedRoot = parser.sawRoot = false;
 			parser.tag = parser.error = null;
@@ -726,6 +731,19 @@ var require_sax = /* @__PURE__ */ __commonJSMin(((exports) => {
 		function createStream(strict, opt) {
 			return new SAXStream(strict, opt);
 		}
+		function determineBufferEncoding(data, isEnd) {
+			if (data.length >= 2) {
+				if (data[0] === 255 && data[1] === 254) return "utf-16le";
+				if (data[0] === 254 && data[1] === 255) return "utf-16be";
+			}
+			if (data.length >= 3 && data[0] === 239 && data[1] === 187 && data[2] === 191) return "utf8";
+			if (data.length >= 4) {
+				if (data[0] === 60 && data[1] === 0 && data[2] === 63 && data[3] === 0) return "utf-16le";
+				if (data[0] === 0 && data[1] === 60 && data[2] === 0 && data[3] === 63) return "utf-16be";
+				return "utf8";
+			}
+			return isEnd ? "utf8" : null;
+		}
 		function SAXStream(strict, opt) {
 			if (!(this instanceof SAXStream)) return new SAXStream(strict, opt);
 			Stream.apply(this);
@@ -741,6 +759,7 @@ var require_sax = /* @__PURE__ */ __commonJSMin(((exports) => {
 				me._parser.error = null;
 			};
 			this._decoder = null;
+			this._decoderBuffer = null;
 			streamWraps.forEach(function(ev) {
 				Object.defineProperty(me, "on" + ev, {
 					get: function() {
@@ -760,10 +779,30 @@ var require_sax = /* @__PURE__ */ __commonJSMin(((exports) => {
 			});
 		}
 		SAXStream.prototype = Object.create(Stream.prototype, { constructor: { value: SAXStream } });
+		SAXStream.prototype._decodeBuffer = function(data, isEnd) {
+			if (this._decoderBuffer) {
+				data = Buffer.concat([this._decoderBuffer, data]);
+				this._decoderBuffer = null;
+			}
+			if (!this._decoder) {
+				var encoding = determineBufferEncoding(data, isEnd);
+				if (!encoding) {
+					this._decoderBuffer = data;
+					return "";
+				}
+				this._parser.encoding = encoding;
+				this._decoder = new TextDecoder(encoding);
+			}
+			return this._decoder.decode(data, { stream: !isEnd });
+		};
 		SAXStream.prototype.write = function(data) {
-			if (typeof Buffer === "function" && typeof Buffer.isBuffer === "function" && Buffer.isBuffer(data)) {
-				if (!this._decoder) this._decoder = new TextDecoder("utf8");
-				data = this._decoder.decode(data, { stream: true });
+			if (typeof Buffer === "function" && typeof Buffer.isBuffer === "function" && Buffer.isBuffer(data)) data = this._decodeBuffer(data, false);
+			else if (this._decoderBuffer) {
+				var remaining = this._decodeBuffer(Buffer.alloc(0), true);
+				if (remaining) {
+					this._parser.write(remaining);
+					this.emit("data", remaining);
+				}
 			}
 			this._parser.write(data.toString());
 			this.emit("data", data);
@@ -771,7 +810,13 @@ var require_sax = /* @__PURE__ */ __commonJSMin(((exports) => {
 		};
 		SAXStream.prototype.end = function(chunk) {
 			if (chunk && chunk.length) this.write(chunk);
-			if (this._decoder) {
+			if (this._decoderBuffer) {
+				var finalChunk = this._decodeBuffer(Buffer.alloc(0), true);
+				if (finalChunk) {
+					this._parser.write(finalChunk);
+					this.emit("data", finalChunk);
+				}
+			} else if (this._decoder) {
 				var remaining = this._decoder.decode();
 				if (remaining) {
 					this._parser.write(remaining);
@@ -790,8 +835,8 @@ var require_sax = /* @__PURE__ */ __commonJSMin(((exports) => {
 			};
 			return Stream.prototype.on.call(me, ev, handler);
 		};
-		var CDATA = "[CDATA[";
-		var DOCTYPE = "DOCTYPE";
+		var CDATAre = /^\[CDATA\[$/i;
+		var DOCTYPEre = /^DOCTYPE$/i;
 		var XML_NAMESPACE = "http://www.w3.org/XML/1998/namespace";
 		var XMLNS_NAMESPACE = "http://www.w3.org/2000/xmlns/";
 		var rootNS = {
@@ -856,14 +901,14 @@ var require_sax = /* @__PURE__ */ __commonJSMin(((exports) => {
 			SCRIPT: S++,
 			SCRIPT_ENDING: S++
 		};
-		sax.XML_ENTITIES = {
+		sax.XML_ENTITIES = Object.assign(Object.create(null), {
 			amp: "&",
 			gt: ">",
 			lt: "<",
 			quot: "\"",
 			apos: "'"
-		};
-		sax.ENTITIES = {
+		});
+		sax.ENTITIES = Object.assign(Object.create(null), {
 			amp: "&",
 			gt: ">",
 			lt: "<",
@@ -1117,7 +1162,7 @@ var require_sax = /* @__PURE__ */ __commonJSMin(((exports) => {
 			clubs: 9827,
 			hearts: 9829,
 			diams: 9830
-		};
+		});
 		Object.keys(sax.ENTITIES).forEach(function(key) {
 			var e = sax.ENTITIES[key];
 			var s = typeof e === "number" ? String.fromCharCode(e) : e;
@@ -1127,6 +1172,26 @@ var require_sax = /* @__PURE__ */ __commonJSMin(((exports) => {
 		S = sax.STATE;
 		function emit(parser, event, data) {
 			parser[event] && parser[event](data);
+		}
+		function getDeclaredEncoding(body) {
+			var match = body && body.match(/(?:^|\s)encoding\s*=\s*(['"])([^'"]+)\1/i);
+			return match ? match[2] : null;
+		}
+		function normalizeEncodingName(encoding) {
+			if (!encoding) return null;
+			return encoding.toLowerCase().replace(/[^a-z0-9]/g, "");
+		}
+		function encodingsMatch(detectedEncoding, declaredEncoding) {
+			const detected = normalizeEncodingName(detectedEncoding);
+			const declared = normalizeEncodingName(declaredEncoding);
+			if (!detected || !declared) return true;
+			if (declared === "utf16") return detected === "utf16le" || detected === "utf16be";
+			return detected === declared;
+		}
+		function validateXmlDeclarationEncoding(parser, data) {
+			if (!parser.strict || !parser.encoding || !data || data.name !== "xml") return;
+			var declaredEncoding = getDeclaredEncoding(data.body);
+			if (declaredEncoding && !encodingsMatch(parser.encoding, declaredEncoding)) strictFail(parser, "XML declaration encoding " + declaredEncoding + " does not match detected stream encoding " + parser.encoding.toUpperCase());
 		}
 		function emitNode(parser, nodeType, data) {
 			if (parser.textNode) closeText(parser);
@@ -1198,13 +1263,15 @@ var require_sax = /* @__PURE__ */ __commonJSMin(((exports) => {
 				var qn = qname(parser.attribName, true);
 				var prefix = qn.prefix;
 				var local = qn.local;
-				if (prefix === "xmlns") if (local === "xml" && parser.attribValue !== XML_NAMESPACE) strictFail(parser, "xml: prefix must be bound to " + XML_NAMESPACE + "\nActual: " + parser.attribValue);
-				else if (local === "xmlns" && parser.attribValue !== XMLNS_NAMESPACE) strictFail(parser, "xmlns: prefix must be bound to " + XMLNS_NAMESPACE + "\nActual: " + parser.attribValue);
-				else {
-					var tag = parser.tag;
-					var parent = parser.tags[parser.tags.length - 1] || parser;
-					if (tag.ns === parent.ns) tag.ns = Object.create(parent.ns);
-					tag.ns[local] = parser.attribValue;
+				if (prefix === "xmlns") {
+					if (local === "xml" && parser.attribValue !== XML_NAMESPACE) strictFail(parser, "xml: prefix must be bound to " + XML_NAMESPACE + "\nActual: " + parser.attribValue);
+					else if (local === "xmlns" && parser.attribValue !== XMLNS_NAMESPACE) strictFail(parser, "xmlns: prefix must be bound to " + XMLNS_NAMESPACE + "\nActual: " + parser.attribValue);
+					else {
+						var tag = parser.tag;
+						var parent = parser.tags[parser.tags.length - 1] || parser;
+						if (tag.ns === parent.ns) tag.ns = Object.create(parent.ns);
+						tag.ns[local] = parser.attribValue;
+					}
 				}
 				parser.attribList.push([parser.attribName, parser.attribValue]);
 			} else {
@@ -1330,21 +1397,26 @@ var require_sax = /* @__PURE__ */ __commonJSMin(((exports) => {
 			if (parser.ENTITIES[entity]) return parser.ENTITIES[entity];
 			if (parser.ENTITIES[entityLC]) return parser.ENTITIES[entityLC];
 			entity = entityLC;
-			if (entity.charAt(0) === "#") if (entity.charAt(1) === "x") {
-				entity = entity.slice(2);
-				num = parseInt(entity, 16);
-				numStr = num.toString(16);
-			} else {
-				entity = entity.slice(1);
-				num = parseInt(entity, 10);
-				numStr = num.toString(10);
+			if (entity.charAt(0) === "#") {
+				if (entity.charAt(1) === "x") {
+					entity = entity.slice(2);
+					num = parseInt(entity, 16);
+					numStr = num.toString(16);
+				} else {
+					entity = entity.slice(1);
+					num = parseInt(entity, 10);
+					numStr = num.toString(10);
+				}
 			}
 			entity = entity.replace(/^0+/, "");
-			if (isNaN(num) || numStr.toLowerCase() !== entity || num < 0 || num > 1114111) {
+			if (isNaN(num) || numStr.toLowerCase() !== entity || num < 0 || num > 1114111 || !isXmlChar(num)) {
 				strictFail(parser, "Invalid character entity");
 				return "&" + parser.entity + ";";
 			}
 			return String.fromCodePoint(num);
+		}
+		function isXmlChar(num) {
+			return num === 9 || num === 10 || num === 13 || num >= 32 && num <= 55295 || num >= 57344 && num <= 65533 || num >= 65536 && num <= 1114111;
 		}
 		function beginWhiteSpace(parser, c) {
 			if (c === "<") {
@@ -1458,12 +1530,12 @@ var require_sax = /* @__PURE__ */ __commonJSMin(((exports) => {
 							parser.state = S.DOCTYPE_DTD;
 							parser.doctype += "<!" + parser.sgmlDecl + c;
 							parser.sgmlDecl = "";
-						} else if ((parser.sgmlDecl + c).toUpperCase() === CDATA) {
+						} else if (CDATAre.test(parser.sgmlDecl + c)) {
 							emitNode(parser, "onopencdata");
 							parser.state = S.CDATA;
 							parser.sgmlDecl = "";
 							parser.cdata = "";
-						} else if ((parser.sgmlDecl + c).toUpperCase() === DOCTYPE) {
+						} else if (DOCTYPEre.test(parser.sgmlDecl + c)) {
 							parser.state = S.DOCTYPE;
 							if (parser.doctype || parser.sawRoot) strictFail(parser, "Inappropriately located doctype declaration");
 							parser.doctype = "";
@@ -1594,10 +1666,12 @@ var require_sax = /* @__PURE__ */ __commonJSMin(((exports) => {
 						continue;
 					case S.PROC_INST_ENDING:
 						if (c === ">") {
-							emitNode(parser, "onprocessinginstruction", {
+							const procInstEndData = {
 								name: parser.procInstName,
 								body: parser.procInstBody
-							});
+							};
+							validateXmlDeclarationEncoding(parser, procInstEndData);
+							emitNode(parser, "onprocessinginstruction", procInstEndData);
 							parser.procInstName = parser.procInstBody = "";
 							parser.state = S.TEXT;
 						} else {
@@ -1712,13 +1786,15 @@ var require_sax = /* @__PURE__ */ __commonJSMin(((exports) => {
 						else parser.state = S.ATTRIB;
 						continue;
 					case S.CLOSE_TAG:
-						if (!parser.tagName) if (isWhitespace(c)) continue;
-						else if (notMatch(nameStart, c)) if (parser.script) {
-							parser.script += "</" + c;
-							parser.state = S.SCRIPT;
-						} else strictFail(parser, "Invalid tagname in closing tag.");
-						else parser.tagName = c;
-						else if (c === ">") closeTag(parser);
+						if (!parser.tagName) {
+							if (isWhitespace(c)) continue;
+							else if (notMatch(nameStart, c)) {
+								if (parser.script) {
+									parser.script += "</" + c;
+									parser.state = S.SCRIPT;
+								} else strictFail(parser, "Invalid tagname in closing tag.");
+							} else parser.tagName = c;
+						} else if (c === ">") closeTag(parser);
 						else if (isMatch(nameBody, c)) parser.tagName += c;
 						else if (parser.script) {
 							parser.script += "</" + parser.tagName + c;
@@ -1751,14 +1827,16 @@ var require_sax = /* @__PURE__ */ __commonJSMin(((exports) => {
 							case S.ATTRIB_VALUE_ENTITY_U:
 								returnState = S.ATTRIB_VALUE_UNQUOTED;
 								buffer = "attribValue";
-								break;
 						}
 						if (c === ";") {
 							var parsedEntity = parseEntity(parser);
 							if (parser.opt.unparsedEntities && !Object.values(sax.XML_ENTITIES).includes(parsedEntity)) {
+								if ((parser.entityCount += 1) > parser.opt.maxEntityCount) error(parser, "Parsed entity count exceeds max entity count");
+								if ((parser.entityDepth += 1) > parser.opt.maxEntityDepth) error(parser, "Parsed entity depth exceeds max entity depth");
 								parser.entity = "";
 								parser.state = returnState;
 								parser.write(parsedEntity);
+								parser.entityDepth -= 1;
 							} else {
 								parser[buffer] += parsedEntity;
 								parser.entity = "";
@@ -1924,11 +2002,13 @@ var require_xml2js = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			if (currentElement[options[type + "Key"]] && !isArray(currentElement[options[type + "Key"]])) currentElement[options[type + "Key"]] = [currentElement[options[type + "Key"]]];
 			if (type + "Fn" in options && typeof value === "string") value = options[type + "Fn"](value, currentElement);
 			if (type === "instruction" && ("instructionFn" in options || "instructionNameFn" in options)) {
-				for (key in value) if (value.hasOwnProperty(key)) if ("instructionFn" in options) value[key] = options.instructionFn(value[key], key, currentElement);
-				else {
-					var temp = value[key];
-					delete value[key];
-					value[options.instructionNameFn(key, temp, currentElement)] = temp;
+				for (key in value) if (value.hasOwnProperty(key)) {
+					if ("instructionFn" in options) value[key] = options.instructionFn(value[key], key, currentElement);
+					else {
+						var temp = value[key];
+						delete value[key];
+						value[options.instructionNameFn(key, temp, currentElement)] = temp;
+					}
 				}
 			}
 			if (isArray(currentElement[options[type + "Key"]])) currentElement[options[type + "Key"]].push(value);
@@ -2239,8 +2319,10 @@ var require_js2xml = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 		xml.push("<" + elementName);
 		if (element[options.attributesKey]) xml.push(writeAttributes(element[options.attributesKey], options, depth));
 		var withClosingTag = element[options.elementsKey] && element[options.elementsKey].length || element[options.attributesKey] && element[options.attributesKey]["xml:space"] === "preserve";
-		if (!withClosingTag) if ("fullTagEmptyElementFn" in options) withClosingTag = options.fullTagEmptyElementFn(element.name, element);
-		else withClosingTag = options.fullTagEmptyElement;
+		if (!withClosingTag) {
+			if ("fullTagEmptyElementFn" in options) withClosingTag = options.fullTagEmptyElementFn(element.name, element);
+			else withClosingTag = options.fullTagEmptyElement;
+		}
 		if (withClosingTag) {
 			xml.push(">");
 			if (element[options.elementsKey] && element[options.elementsKey].length) {
@@ -2303,8 +2385,10 @@ var require_js2xml = /* @__PURE__ */ __commonJSMin(((exports, module) => {
 			}
 			if (element[options.attributesKey]) xml.push(writeAttributes(element[options.attributesKey], options, depth));
 			var withClosingTag = hasContentCompact(element, options, true) || element[options.attributesKey] && element[options.attributesKey]["xml:space"] === "preserve";
-			if (!withClosingTag) if ("fullTagEmptyElementFn" in options) withClosingTag = options.fullTagEmptyElementFn(name, element);
-			else withClosingTag = options.fullTagEmptyElement;
+			if (!withClosingTag) {
+				if ("fullTagEmptyElementFn" in options) withClosingTag = options.fullTagEmptyElementFn(name, element);
+				else withClosingTag = options.fullTagEmptyElement;
+			}
 			if (withClosingTag) xml.push(">");
 			else {
 				xml.push("/>");
@@ -2538,12 +2622,12 @@ var request_exports = /* @__PURE__ */ __exportAll({
 });
 const debug$5 = (0, import_browser.default)("tsdav:request");
 const parseStatusLine = (statusLine) => {
-	const match = /^\S+\s(?<status>\d+)\s(?<statusText>.+)$/.exec(statusLine ?? "");
+	const match = /^\S+\s+(?<status>\d{3})(?:\s+(?<statusText>.*))?$/.exec(statusLine ?? "");
 	const status = match?.groups?.status;
 	const statusText = match?.groups?.statusText;
-	return status && statusText ? {
+	return status ? {
 		status: Number.parseInt(status, 10),
-		statusText
+		statusText: statusText ?? ""
 	} : void 0;
 };
 const davRequest = async (params) => {
@@ -2634,6 +2718,7 @@ const davRequest = async (params) => {
 	}];
 	return (Array.isArray(result.multistatus.response) ? result.multistatus.response : [result.multistatus.response]).map((responseBody) => {
 		if (!responseBody) return {
+			raw: result,
 			status: davResponse.status,
 			statusText: davResponse.statusText,
 			ok: davResponse.ok
@@ -2776,7 +2861,7 @@ const collectionQuery = async (params) => {
 	const errorResponse = queryResults.find((res) => !res.ok || res.status && res.status >= 400);
 	if (errorResponse) throw new Error(`Collection query failed: ${errorResponse.status} ${errorResponse.statusText}. ${errorResponse.raw ? `Raw response: ${errorResponse.raw}` : ""}`);
 	const firstQueryResult = queryResults[0];
-	if (queryResults.length === 1 && firstQueryResult && !firstQueryResult.raw && firstQueryResult.status && firstQueryResult.status < 300) return [];
+	if (queryResults.length === 1 && firstQueryResult && (!firstQueryResult.raw || firstQueryResult.raw.multistatus && !firstQueryResult.raw.multistatus.response) && firstQueryResult.status && firstQueryResult.status < 300) return [];
 	return queryResults;
 };
 const makeCollection = async (params) => {
@@ -2877,15 +2962,18 @@ const smartCollectionSync = async (params) => {
 			fetchOptions,
 			fetch: fetchOverride
 		});
-		const objectResponses = result.filter((r) => {
+		const isObjectResponse = (r) => {
 			const extName = account.accountType === "caldav" ? ".ics" : ".vcf";
 			return typeof r.href === "string" && hrefHasExtension(r.href, extName, collection.url);
-		});
+		};
+		const errorResponse = result.find((r) => (!r.ok || r.status >= 400) && !(r.status === 404 && isObjectResponse(r)));
+		if (errorResponse) throw new Error(`Collection sync failed: ${errorResponse.status} ${errorResponse.statusText}`);
+		const objectResponses = result.filter(isObjectResponse);
 		const changedObjectUrls = objectResponses.filter((o) => o.status !== 404).map((r) => r.href);
 		const deletedObjectUrls = objectResponses.filter((o) => o.status === 404).map((r) => r.href);
 		const objectMultiGet = collection.objectMultiGet;
 		if (changedObjectUrls.length > 0 && !objectMultiGet) throw new Error("collection.objectMultiGet is required for webdav sync changes");
-		const remoteObjects = (changedObjectUrls.length ? await objectMultiGet?.({
+		const multiGetObjectResponse = changedObjectUrls.length ? await objectMultiGet?.({
 			url: collection.url,
 			props: {
 				[`d:getetag`]: {},
@@ -2896,7 +2984,10 @@ const smartCollectionSync = async (params) => {
 			headers: excludeHeaders(headers, headersToExclude),
 			fetchOptions,
 			fetch: fetchOverride
-		}) ?? [] : []).map((res) => {
+		}) ?? [] : [];
+		const multiGetError = multiGetObjectResponse.find((r) => !r.ok || r.status >= 400);
+		if (multiGetError) throw new Error(`Collection sync multi-get failed: ${multiGetError.status} ${multiGetError.statusText}`);
+		const remoteObjects = multiGetObjectResponse.map((res) => {
 			return {
 				url: resolveDAVHref(res.href ?? "", collection.url),
 				etag: res.props?.getetag == null ? void 0 : String(res.props.getetag),
@@ -3092,29 +3183,31 @@ const fetchVCards = async (params) => {
 		return `${parsedUrl.pathname}${parsedUrl.search}`;
 	});
 	let vCardResults = [];
-	if (vcardUrls.length > 0) if (useMultiGet) vCardResults = await addressBookMultiGet({
-		url: addressBook.url,
-		props: {
-			[`d:getetag`]: {},
-			[`card:address-data`]: {}
-		},
-		objectUrls: vcardUrls,
-		depth: "1",
-		headers: excludeHeaders(headers, headersToExclude),
-		fetchOptions,
-		fetch: fetchOverride
-	});
-	else vCardResults = await addressBookQuery({
-		url: addressBook.url,
-		props: {
-			[`d:getetag`]: {},
-			[`card:address-data`]: {}
-		},
-		depth: "1",
-		headers: excludeHeaders(headers, headersToExclude),
-		fetchOptions,
-		fetch: fetchOverride
-	});
+	if (vcardUrls.length > 0) {
+		if (useMultiGet) vCardResults = await addressBookMultiGet({
+			url: addressBook.url,
+			props: {
+				[`d:getetag`]: {},
+				[`card:address-data`]: {}
+			},
+			objectUrls: vcardUrls,
+			depth: "1",
+			headers: excludeHeaders(headers, headersToExclude),
+			fetchOptions,
+			fetch: fetchOverride
+		});
+		else vCardResults = await addressBookQuery({
+			url: addressBook.url,
+			props: {
+				[`d:getetag`]: {},
+				[`card:address-data`]: {}
+			},
+			depth: "1",
+			headers: excludeHeaders(headers, headersToExclude),
+			fetchOptions,
+			fetch: fetchOverride
+		});
+	}
 	return vCardResults.map((res) => ({
 		url: new URL(res.href ?? "", addressBook.url).href,
 		etag: res.props?.getetag == null ? void 0 : String(res.props.getetag),
@@ -3374,40 +3467,42 @@ const fetchCalendarObjects = async (params) => {
 		return `${parsedUrl.pathname}${parsedUrl.search}`;
 	});
 	let calendarObjectResults = [];
-	if (calendarObjectUrls.length > 0) if (expand && !objectUrls) calendarObjectResults = initialResponses.filter((res) => {
-		const fullUrl = (res.href ?? "").startsWith("http") ? res.href : new URL(res.href ?? "", calendar.url).href;
-		return urlFilter(fullUrl ?? "");
-	});
-	else if (!useMultiGet) calendarObjectResults = await calendarQuery({
-		url: calendar.url,
-		props: {
-			[`d:getetag`]: {},
-			[`c:calendar-data`]: { ...expand && timeRange ? { [`c:expand`]: { _attributes: {
-				start: `${new Date(timeRange.start).toISOString().slice(0, 19).replace(/[-:.]/g, "")}Z`,
-				end: `${new Date(timeRange.end).toISOString().slice(0, 19).replace(/[-:.]/g, "")}Z`
-			} } } : {} }
-		},
-		filters,
-		depth: "1",
-		headers: excludeHeaders(headers, headersToExclude),
-		fetchOptions,
-		fetch: fetchOverride
-	});
-	else calendarObjectResults = await calendarMultiGet({
-		url: calendar.url,
-		props: {
-			[`d:getetag`]: {},
-			[`c:calendar-data`]: { ...expand && timeRange ? { [`c:expand`]: { _attributes: {
-				start: `${new Date(timeRange.start).toISOString().slice(0, 19).replace(/[-:.]/g, "")}Z`,
-				end: `${new Date(timeRange.end).toISOString().slice(0, 19).replace(/[-:.]/g, "")}Z`
-			} } } : {} }
-		},
-		objectUrls: calendarObjectUrls,
-		depth: "1",
-		headers: excludeHeaders(headers, headersToExclude),
-		fetchOptions,
-		fetch: fetchOverride
-	});
+	if (calendarObjectUrls.length > 0) {
+		if (expand && !objectUrls) calendarObjectResults = initialResponses.filter((res) => {
+			const fullUrl = (res.href ?? "").startsWith("http") ? res.href : new URL(res.href ?? "", calendar.url).href;
+			return urlFilter(fullUrl ?? "");
+		});
+		else if (!useMultiGet) calendarObjectResults = await calendarQuery({
+			url: calendar.url,
+			props: {
+				[`d:getetag`]: {},
+				[`c:calendar-data`]: { ...expand && timeRange ? { [`c:expand`]: { _attributes: {
+					start: `${new Date(timeRange.start).toISOString().slice(0, 19).replace(/[-:.]/g, "")}Z`,
+					end: `${new Date(timeRange.end).toISOString().slice(0, 19).replace(/[-:.]/g, "")}Z`
+				} } } : {} }
+			},
+			filters,
+			depth: "1",
+			headers: excludeHeaders(headers, headersToExclude),
+			fetchOptions,
+			fetch: fetchOverride
+		});
+		else calendarObjectResults = await calendarMultiGet({
+			url: calendar.url,
+			props: {
+				[`d:getetag`]: {},
+				[`c:calendar-data`]: { ...expand && timeRange ? { [`c:expand`]: { _attributes: {
+					start: `${new Date(timeRange.start).toISOString().slice(0, 19).replace(/[-:.]/g, "")}Z`,
+					end: `${new Date(timeRange.end).toISOString().slice(0, 19).replace(/[-:.]/g, "")}Z`
+				} } } : {} }
+			},
+			objectUrls: calendarObjectUrls,
+			depth: "1",
+			headers: excludeHeaders(headers, headersToExclude),
+			fetchOptions,
+			fetch: fetchOverride
+		});
+	}
 	return calendarObjectResults.map((res) => ({
 		url: new URL(res.href ?? "", calendar.url).href,
 		etag: res.props?.getetag == null ? void 0 : String(res.props.getetag),
@@ -3485,15 +3580,16 @@ const syncCalendars = async (params) => {
 				calendar: collection
 			});
 		};
+		const collection = {
+			...remote,
+			ctag: local.ctag,
+			syncToken: local.syncToken,
+			objects: local.objects,
+			objectMultiGet: calendarMultiGet,
+			fetchObjects
+		};
 		const result = await smartCollectionSync({
-			collection: {
-				...remote,
-				ctag: local.ctag,
-				syncToken: local.syncToken,
-				objects: local.objects,
-				objectMultiGet: calendarMultiGet,
-				fetchObjects
-			},
+			collection,
 			detailedResult: false,
 			headers: excludeHeaders(headers, headersToExclude),
 			account,

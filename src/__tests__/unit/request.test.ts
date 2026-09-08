@@ -34,6 +34,41 @@ const buildMockFetch = (params: {
 };
 
 describe('davRequest', () => {
+  it('should preserve the sync token when a multistatus has no responses', async () => {
+    const result = await davRequest({
+      url: 'http://example.com/col/',
+      init: { method: 'REPORT', body: {} },
+      fetch: buildMockFetch({
+        status: 207,
+        headers: { 'content-type': 'application/xml' },
+        text: '<d:multistatus xmlns:d="DAV:"><d:sync-token>new-token</d:sync-token></d:multistatus>',
+      }),
+    });
+
+    expect(result[0].raw?.multistatus?.syncToken).toBe('new-token');
+  });
+
+  it('should parse response and propstat statuses without a reason phrase', async () => {
+    const result = await davRequest({
+      url: 'http://example.com/col/',
+      init: { method: 'REPORT', body: {} },
+      fetch: buildMockFetch({
+        status: 207,
+        headers: { 'content-type': 'application/xml' },
+        text: `<d:multistatus xmlns:d="DAV:">
+          <d:response><d:href>/col/deleted.ics</d:href><d:status>HTTP/1.1 404</d:status></d:response>
+          <d:response><d:href>/col/event.ics</d:href>
+            <d:propstat><d:prop><d:getetag>valid</d:getetag></d:prop><d:status>HTTP/1.1 200</d:status></d:propstat>
+            <d:propstat><d:prop><d:displayname>unavailable</d:displayname></d:prop><d:status>HTTP/1.1 404</d:status></d:propstat>
+          </d:response>
+        </d:multistatus>`,
+      }),
+    });
+
+    expect(result[0]).toMatchObject({ status: 404, statusText: '', ok: false });
+    expect(result[1].props).toEqual({ getetag: 'valid' });
+  });
+
   it('should convert JS body to XML when convertIncoming is true (default)', async () => {
     const mockFetch = buildMockFetch({
       text: '',

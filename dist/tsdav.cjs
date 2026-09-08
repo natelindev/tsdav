@@ -28,7 +28,7 @@ var __copyProps = (to, from, except, desc) => {
 	}
 	return to;
 };
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", {
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule || !__hasOwnProp.call(mod, "default") ? __defProp(target, "default", {
 	value: mod,
 	enumerable: true
 }) : target, mod));
@@ -221,12 +221,12 @@ var request_exports = /* @__PURE__ */ __exportAll({
 });
 const debug$6 = (0, debug.default)("tsdav:request");
 const parseStatusLine = (statusLine) => {
-	const match = /^\S+\s(?<status>\d+)\s(?<statusText>.+)$/.exec(statusLine ?? "");
+	const match = /^\S+\s+(?<status>\d{3})(?:\s+(?<statusText>.*))?$/.exec(statusLine ?? "");
 	const status = match?.groups?.status;
 	const statusText = match?.groups?.statusText;
-	return status && statusText ? {
+	return status ? {
 		status: Number.parseInt(status, 10),
-		statusText
+		statusText: statusText ?? ""
 	} : void 0;
 };
 const davRequest = async (params) => {
@@ -317,6 +317,7 @@ const davRequest = async (params) => {
 	}];
 	return (Array.isArray(result.multistatus.response) ? result.multistatus.response : [result.multistatus.response]).map((responseBody) => {
 		if (!responseBody) return {
+			raw: result,
 			status: davResponse.status,
 			statusText: davResponse.statusText,
 			ok: davResponse.ok
@@ -459,7 +460,7 @@ const collectionQuery = async (params) => {
 	const errorResponse = queryResults.find((res) => !res.ok || res.status && res.status >= 400);
 	if (errorResponse) throw new Error(`Collection query failed: ${errorResponse.status} ${errorResponse.statusText}. ${errorResponse.raw ? `Raw response: ${errorResponse.raw}` : ""}`);
 	const firstQueryResult = queryResults[0];
-	if (queryResults.length === 1 && firstQueryResult && !firstQueryResult.raw && firstQueryResult.status && firstQueryResult.status < 300) return [];
+	if (queryResults.length === 1 && firstQueryResult && (!firstQueryResult.raw || firstQueryResult.raw.multistatus && !firstQueryResult.raw.multistatus.response) && firstQueryResult.status && firstQueryResult.status < 300) return [];
 	return queryResults;
 };
 const makeCollection = async (params) => {
@@ -560,15 +561,18 @@ const smartCollectionSync = async (params) => {
 			fetchOptions,
 			fetch: fetchOverride
 		});
-		const objectResponses = result.filter((r) => {
+		const isObjectResponse = (r) => {
 			const extName = account.accountType === "caldav" ? ".ics" : ".vcf";
 			return typeof r.href === "string" && hrefHasExtension(r.href, extName, collection.url);
-		});
+		};
+		const errorResponse = result.find((r) => (!r.ok || r.status >= 400) && !(r.status === 404 && isObjectResponse(r)));
+		if (errorResponse) throw new Error(`Collection sync failed: ${errorResponse.status} ${errorResponse.statusText}`);
+		const objectResponses = result.filter(isObjectResponse);
 		const changedObjectUrls = objectResponses.filter((o) => o.status !== 404).map((r) => r.href);
 		const deletedObjectUrls = objectResponses.filter((o) => o.status === 404).map((r) => r.href);
 		const objectMultiGet = collection.objectMultiGet;
 		if (changedObjectUrls.length > 0 && !objectMultiGet) throw new Error("collection.objectMultiGet is required for webdav sync changes");
-		const remoteObjects = (changedObjectUrls.length ? await objectMultiGet?.({
+		const multiGetObjectResponse = changedObjectUrls.length ? await objectMultiGet?.({
 			url: collection.url,
 			props: {
 				[`d:getetag`]: {},
@@ -579,7 +583,10 @@ const smartCollectionSync = async (params) => {
 			headers: excludeHeaders(headers, headersToExclude),
 			fetchOptions,
 			fetch: fetchOverride
-		}) ?? [] : []).map((res) => {
+		}) ?? [] : [];
+		const multiGetError = multiGetObjectResponse.find((r) => !r.ok || r.status >= 400);
+		if (multiGetError) throw new Error(`Collection sync multi-get failed: ${multiGetError.status} ${multiGetError.statusText}`);
+		const remoteObjects = multiGetObjectResponse.map((res) => {
 			return {
 				url: resolveDAVHref(res.href ?? "", collection.url),
 				etag: res.props?.getetag == null ? void 0 : String(res.props.getetag),
@@ -775,29 +782,31 @@ const fetchVCards = async (params) => {
 		return `${parsedUrl.pathname}${parsedUrl.search}`;
 	});
 	let vCardResults = [];
-	if (vcardUrls.length > 0) if (useMultiGet) vCardResults = await addressBookMultiGet({
-		url: addressBook.url,
-		props: {
-			[`d:getetag`]: {},
-			[`card:address-data`]: {}
-		},
-		objectUrls: vcardUrls,
-		depth: "1",
-		headers: excludeHeaders(headers, headersToExclude),
-		fetchOptions,
-		fetch: fetchOverride
-	});
-	else vCardResults = await addressBookQuery({
-		url: addressBook.url,
-		props: {
-			[`d:getetag`]: {},
-			[`card:address-data`]: {}
-		},
-		depth: "1",
-		headers: excludeHeaders(headers, headersToExclude),
-		fetchOptions,
-		fetch: fetchOverride
-	});
+	if (vcardUrls.length > 0) {
+		if (useMultiGet) vCardResults = await addressBookMultiGet({
+			url: addressBook.url,
+			props: {
+				[`d:getetag`]: {},
+				[`card:address-data`]: {}
+			},
+			objectUrls: vcardUrls,
+			depth: "1",
+			headers: excludeHeaders(headers, headersToExclude),
+			fetchOptions,
+			fetch: fetchOverride
+		});
+		else vCardResults = await addressBookQuery({
+			url: addressBook.url,
+			props: {
+				[`d:getetag`]: {},
+				[`card:address-data`]: {}
+			},
+			depth: "1",
+			headers: excludeHeaders(headers, headersToExclude),
+			fetchOptions,
+			fetch: fetchOverride
+		});
+	}
 	return vCardResults.map((res) => ({
 		url: new URL(res.href ?? "", addressBook.url).href,
 		etag: res.props?.getetag == null ? void 0 : String(res.props.getetag),
@@ -1057,40 +1066,42 @@ const fetchCalendarObjects = async (params) => {
 		return `${parsedUrl.pathname}${parsedUrl.search}`;
 	});
 	let calendarObjectResults = [];
-	if (calendarObjectUrls.length > 0) if (expand && !objectUrls) calendarObjectResults = initialResponses.filter((res) => {
-		const fullUrl = (res.href ?? "").startsWith("http") ? res.href : new URL(res.href ?? "", calendar.url).href;
-		return urlFilter(fullUrl ?? "");
-	});
-	else if (!useMultiGet) calendarObjectResults = await calendarQuery({
-		url: calendar.url,
-		props: {
-			[`d:getetag`]: {},
-			[`c:calendar-data`]: { ...expand && timeRange ? { [`c:expand`]: { _attributes: {
-				start: `${new Date(timeRange.start).toISOString().slice(0, 19).replace(/[-:.]/g, "")}Z`,
-				end: `${new Date(timeRange.end).toISOString().slice(0, 19).replace(/[-:.]/g, "")}Z`
-			} } } : {} }
-		},
-		filters,
-		depth: "1",
-		headers: excludeHeaders(headers, headersToExclude),
-		fetchOptions,
-		fetch: fetchOverride
-	});
-	else calendarObjectResults = await calendarMultiGet({
-		url: calendar.url,
-		props: {
-			[`d:getetag`]: {},
-			[`c:calendar-data`]: { ...expand && timeRange ? { [`c:expand`]: { _attributes: {
-				start: `${new Date(timeRange.start).toISOString().slice(0, 19).replace(/[-:.]/g, "")}Z`,
-				end: `${new Date(timeRange.end).toISOString().slice(0, 19).replace(/[-:.]/g, "")}Z`
-			} } } : {} }
-		},
-		objectUrls: calendarObjectUrls,
-		depth: "1",
-		headers: excludeHeaders(headers, headersToExclude),
-		fetchOptions,
-		fetch: fetchOverride
-	});
+	if (calendarObjectUrls.length > 0) {
+		if (expand && !objectUrls) calendarObjectResults = initialResponses.filter((res) => {
+			const fullUrl = (res.href ?? "").startsWith("http") ? res.href : new URL(res.href ?? "", calendar.url).href;
+			return urlFilter(fullUrl ?? "");
+		});
+		else if (!useMultiGet) calendarObjectResults = await calendarQuery({
+			url: calendar.url,
+			props: {
+				[`d:getetag`]: {},
+				[`c:calendar-data`]: { ...expand && timeRange ? { [`c:expand`]: { _attributes: {
+					start: `${new Date(timeRange.start).toISOString().slice(0, 19).replace(/[-:.]/g, "")}Z`,
+					end: `${new Date(timeRange.end).toISOString().slice(0, 19).replace(/[-:.]/g, "")}Z`
+				} } } : {} }
+			},
+			filters,
+			depth: "1",
+			headers: excludeHeaders(headers, headersToExclude),
+			fetchOptions,
+			fetch: fetchOverride
+		});
+		else calendarObjectResults = await calendarMultiGet({
+			url: calendar.url,
+			props: {
+				[`d:getetag`]: {},
+				[`c:calendar-data`]: { ...expand && timeRange ? { [`c:expand`]: { _attributes: {
+					start: `${new Date(timeRange.start).toISOString().slice(0, 19).replace(/[-:.]/g, "")}Z`,
+					end: `${new Date(timeRange.end).toISOString().slice(0, 19).replace(/[-:.]/g, "")}Z`
+				} } } : {} }
+			},
+			objectUrls: calendarObjectUrls,
+			depth: "1",
+			headers: excludeHeaders(headers, headersToExclude),
+			fetchOptions,
+			fetch: fetchOverride
+		});
+	}
 	return calendarObjectResults.map((res) => ({
 		url: new URL(res.href ?? "", calendar.url).href,
 		etag: res.props?.getetag == null ? void 0 : String(res.props.getetag),
@@ -1168,15 +1179,16 @@ const syncCalendars = async (params) => {
 				calendar: collection
 			});
 		};
+		const collection = {
+			...remote,
+			ctag: local.ctag,
+			syncToken: local.syncToken,
+			objects: local.objects,
+			objectMultiGet: calendarMultiGet,
+			fetchObjects
+		};
 		const result = await smartCollectionSync({
-			collection: {
-				...remote,
-				ctag: local.ctag,
-				syncToken: local.syncToken,
-				objects: local.objects,
-				objectMultiGet: calendarMultiGet,
-				fetchObjects
-			},
+			collection,
 			detailedResult: false,
 			headers: excludeHeaders(headers, headersToExclude),
 			account,

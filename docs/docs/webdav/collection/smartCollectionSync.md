@@ -82,7 +82,9 @@ compare the provided list and the latest list to find out `created`, `updated`, 
 
 The sync rejects with a clear error if the callback required by the selected method is missing. This
 prevents advancing a sync token or treating all local objects as deleted without first retrieving the
-remote changes.
+remote changes. Failed sync REPORTs and failed multi-get responses also reject rather than returning
+a successful sync or advancing the token. Object-level 404 responses in a sync REPORT still represent
+deletions. A successful response with no changed objects retains the new server sync token.
 
 When using `smartCollectionSync`,
 
