@@ -12,7 +12,13 @@ import {
   SyncCalendarsDetailedResult,
 } from './types/functionsOverloads';
 import { DAVAccount, DAVCalendar, DAVCalendarObject } from './types/models';
-import { cleanupFalsy, excludeHeaders, getDAVAttribute, urlMatches } from './util/requestHelpers';
+import {
+  cleanupFalsy,
+  excludeHeaders,
+  getDAVAttribute,
+  urlMatches,
+  ensureTrailingSlash,
+} from './util/requestHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelpers';
 
 const debug = getLogger('tsdav:calendar');
@@ -297,7 +303,7 @@ export const fetchCalendars = async (params?: {
         return {
           description: typeof description === 'string' ? description : '',
           timezone: typeof timezone === 'string' ? timezone : '',
-          url: new URL(rs.href ?? '', account.rootUrl ?? '').href,
+          url: new URL(rs.href ?? '', ensureTrailingSlash(account.rootUrl ?? '')).href,
           ctag: rs.props?.getctag,
           calendarColor: rs.props?.calendarColor,
           displayName: rs.props?.displayname?._cdata ?? rs.props?.displayname,
@@ -432,7 +438,10 @@ export const fetchCalendarObjects = async (params: {
   }
 
   const calendarObjectUrls = (objectUrls ?? initialResponses.map((res) => res.href ?? ''))
-    .map((url) => (url.startsWith('http') || !url ? url : new URL(url, calendar.url).href)) // patch up to full url if url is not full
+    .filter((url): url is string => typeof url === 'string' && url.trim().length > 0)
+    .map((url) =>
+      url.startsWith('http') ? url : new URL(url, ensureTrailingSlash(calendar.url)).href,
+    ) // patch up to full url if url is not full
     .filter(urlFilter) // custom filter function on calendar objects
     .map((url) => {
       const parsedUrl = new URL(url);
@@ -446,7 +455,7 @@ export const fetchCalendarObjects = async (params: {
       calendarObjectResults = initialResponses.filter((res) => {
         const fullUrl = (res.href ?? '').startsWith('http')
           ? res.href
-          : new URL(res.href ?? '', calendar.url).href;
+          : new URL(res.href ?? '', ensureTrailingSlash(calendar.url)).href;
         return urlFilter(fullUrl ?? '');
       });
     } else if (!useMultiGet) {
@@ -479,6 +488,14 @@ export const fetchCalendarObjects = async (params: {
         fetchOptions,
         fetch: fetchOverride,
       });
+      if (objectUrls && objectUrls.length > 0) {
+        calendarObjectResults = calendarObjectResults.filter((res) => {
+          const fullUrl = (res.href ?? '').startsWith('http')
+            ? (res.href ?? '')
+            : new URL(res.href ?? '', ensureTrailingSlash(calendar.url)).href;
+          return calendarObjectUrls.some((target) => urlMatches(fullUrl, target, calendar.url));
+        });
+      }
     } else {
       calendarObjectResults = await calendarMultiGet({
         url: calendar.url,
@@ -513,7 +530,7 @@ export const fetchCalendarObjects = async (params: {
   }
 
   return calendarObjectResults.map((res) => ({
-    url: new URL(res.href ?? '', calendar.url).href,
+    url: new URL(res.href ?? '', ensureTrailingSlash(calendar.url)).href,
     etag: res.props?.getetag == null ? undefined : String(res.props.getetag),
     data: res.props?.calendarData?._cdata ?? res.props?.calendarData,
   }));
@@ -539,7 +556,7 @@ export const createCalendarObject = async (params: {
   } = params;
 
   return createObject({
-    url: new URL(filename, calendar.url).href,
+    url: new URL(filename, ensureTrailingSlash(calendar.url)).href,
     data: iCalString,
     headers: excludeHeaders(
       {

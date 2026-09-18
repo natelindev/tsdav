@@ -6,7 +6,12 @@ import { DAVNamespaceShort } from './consts';
 import { propfind } from './request';
 import { DAVAccount } from './types/models';
 import { fetch } from './util/fetch';
-import { excludeHeaders, mergeHeaders, urlMatches } from './util/requestHelpers';
+import {
+  excludeHeaders,
+  mergeHeaders,
+  urlMatches,
+  ensureTrailingSlash,
+} from './util/requestHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelpers';
 
 const debug = getLogger('tsdav:account');
@@ -108,6 +113,30 @@ export const serviceDiscovery = async (params: {
   return endpoint.href;
 };
 
+const extractHref = (raw: unknown): string | undefined => {
+  if (typeof raw === 'string' && raw.trim().length > 0) {
+    return raw.trim();
+  }
+  if (Array.isArray(raw)) {
+    for (const item of raw) {
+      const found = extractHref(item);
+      if (found) return found;
+    }
+    return undefined;
+  }
+  if (raw && typeof raw === 'object') {
+    if ('_cdata' in raw && typeof (raw as { _cdata: unknown })._cdata === 'string') {
+      const cdata = (raw as { _cdata: string })._cdata.trim();
+      if (cdata.length > 0) return cdata;
+    }
+    if ('_text' in raw && typeof (raw as { _text: unknown })._text === 'string') {
+      const text = (raw as { _text: string })._text.trim();
+      if (text.length > 0) return text;
+    }
+  }
+  return undefined;
+};
+
 export const fetchPrincipalUrl = async (params: {
   account: DAVAccount;
   headers?: Record<string, string>;
@@ -144,14 +173,14 @@ export const fetchPrincipalUrl = async (params: {
     throw new Error('cannot find principalUrl');
   }
 
-  const principalHref = response.props?.currentUserPrincipal?.href;
-  if (typeof principalHref !== 'string' || !principalHref.length) {
+  const principalHref = extractHref(response.props?.currentUserPrincipal?.href);
+  if (!principalHref) {
     debug('Fetch principal url failed: missing current-user-principal href');
     throw new Error('cannot find principalUrl');
   }
 
   debug(`Fetched principal url ${principalHref}`);
-  return new URL(principalHref, account.rootUrl).href;
+  return new URL(principalHref, ensureTrailingSlash(account.rootUrl)).href;
 };
 
 export const fetchHomeUrl = async (params: {
@@ -190,11 +219,12 @@ export const fetchHomeUrl = async (params: {
     throw new Error('cannot find homeUrl');
   }
 
-  const homeHref =
+  const homeHref = extractHref(
     account.accountType === 'caldav'
       ? matched.props?.calendarHomeSet?.href
-      : matched.props?.addressbookHomeSet?.href;
-  if (typeof homeHref !== 'string' || homeHref.length === 0) {
+      : matched.props?.addressbookHomeSet?.href,
+  );
+  if (!homeHref) {
     debug(
       `Fetch home url failed: server did not return a ${
         account.accountType === 'caldav' ? 'calendar-home-set' : 'addressbook-home-set'
@@ -203,7 +233,7 @@ export const fetchHomeUrl = async (params: {
     throw new Error('cannot find homeUrl');
   }
 
-  const result = new URL(homeHref, account.rootUrl).href;
+  const result = new URL(homeHref, ensureTrailingSlash(account.rootUrl)).href;
   debug(`Fetched home url ${result}`);
   return result;
 };

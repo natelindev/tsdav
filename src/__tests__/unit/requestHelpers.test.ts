@@ -2,6 +2,7 @@ import { describe, it, test, expect } from 'vitest';
 import {
   cleanupFalsy,
   conditionalParam,
+  ensureTrailingSlash,
   excludeHeaders,
   getDAVAttribute,
   urlContains,
@@ -154,5 +155,18 @@ describe('conditionalParam', () => {
     expect(conditionalParam('foo', null)).toEqual({});
     expect(conditionalParam('foo', undefined)).toEqual({});
     expect(conditionalParam('foo', false)).toEqual({});
+  });
+});
+
+describe('ensureTrailingSlash', () => {
+  it('should append a trailing slash if not present', () => {
+    expect(ensureTrailingSlash('https://example.com/cal')).toBe('https://example.com/cal/');
+    expect(ensureTrailingSlash('/cal/user')).toBe('/cal/user/');
+  });
+
+  it('should preserve existing trailing slash and trim whitespace', () => {
+    expect(ensureTrailingSlash('https://example.com/cal/')).toBe('https://example.com/cal/');
+    expect(ensureTrailingSlash('  https://example.com/cal/  ')).toBe('https://example.com/cal/');
+    expect(ensureTrailingSlash('  https://example.com/cal  ')).toBe('https://example.com/cal/');
   });
 });

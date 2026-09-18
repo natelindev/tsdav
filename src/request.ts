@@ -47,15 +47,34 @@ export const davRequest = async (params: {
   } = params;
   const requestFetch = fetchOverride ?? fetch;
   const { headers = {}, body, namespace, method, attributes } = init;
+  let processedBody = body;
+  if (attributes && typeof body === 'object' && !Array.isArray(body)) {
+    processedBody = Object.fromEntries(
+      Object.entries(body).map(([key, value]) => {
+        if (value && typeof value === 'object' && !Array.isArray(value)) {
+          const element = value as Record<string, unknown>;
+          return [
+            key,
+            {
+              ...element,
+              _attributes: {
+                ...attributes,
+                ...(element._attributes as Record<string, unknown> | undefined),
+              },
+            },
+          ];
+        }
+        return [key, value];
+      }),
+    );
+  }
+
   const xmlBody =
     convertIncoming && body != null
       ? convert.js2xml(
           {
             _declaration: { _attributes: { version: '1.0', encoding: 'utf-8' } },
-            // body is spread AFTER _attributes so a body-level `_attributes`
-            // set by the caller wins over the implicit `attributes` param.
-            _attributes: attributes,
-            ...body,
+            ...processedBody,
           },
           {
             compact: true,

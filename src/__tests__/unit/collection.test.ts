@@ -231,6 +231,7 @@ describe('makeCollection', () => {
     expect(mockedDavRequest.mock.calls[0][0].init.method).toBe('MKCOL');
     const body = mockedDavRequest.mock.calls[0][0].init.body as any;
     expect(body.mkcol.set.prop).toEqual({ 'd:displayname': 'New Collection' });
+    expect(body.mkcol._attributes).toHaveProperty('xmlns:d', 'DAV:');
     expect(result).toHaveLength(1);
   });
 

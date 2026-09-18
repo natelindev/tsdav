@@ -542,6 +542,29 @@ describe('davRequest', () => {
     expect(callArgs.credentials).toBe('include');
     expect(callArgs.headers['X-Extra']).toBe('yes');
   });
+
+  it('should propagate init.attributes to the root XML element', async () => {
+    const mockFetch = buildMockFetch({ text: '' });
+
+    await davRequest({
+      url: 'http://example.com/',
+      init: {
+        method: 'REPORT',
+        body: {
+          'custom-report': {
+            prop: {},
+          },
+        },
+        attributes: {
+          'xmlns:custom': 'http://example.com/ns',
+        },
+      },
+      fetch: mockFetch,
+    });
+
+    const callArgs = mockFetch.mock.calls[0][1];
+    expect(callArgs.body).toContain('xmlns:custom="http://example.com/ns"');
+  });
 });
 
 describe('propfind', () => {

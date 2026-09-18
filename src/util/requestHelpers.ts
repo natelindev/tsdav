@@ -7,6 +7,12 @@ const normalizeUrl = (url: string): string => {
   return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed;
 };
 
+/** Ensure a directory or collection URL ends with a trailing slash for relative resolution. */
+export const ensureTrailingSlash = (url: string): string => {
+  const trimmed = url.trim();
+  return trimmed.endsWith('/') ? trimmed : `${trimmed}/`;
+};
+
 /**
  * Strict URL equality after trimming whitespace and a single trailing slash.
  * Two URLs are equal if and only if their normalized forms are identical.

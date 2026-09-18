@@ -22,17 +22,24 @@ export function hasFields<T, K extends keyof T>(
   fields: K[],
 ): obj is RequireAndNotNullSome<T, K>;
 export function hasFields<T, K extends keyof T>(obj: T | Array<T>, fields: K[]): boolean {
+  if (!obj) {
+    return false;
+  }
   const inObj: { (obj: T | RequireAndNotNullSome<T, K>): boolean } = (object) =>
-    fields.every((f) => object[f]);
+    object != null && fields.every((f) => (object as any)[f]);
 
   if (Array.isArray(obj)) {
-    return obj.every((o) => inObj(o));
+    return obj.length > 0 && obj.every((o) => inObj(o));
   }
   return inObj(obj);
 }
 
-export const findMissingFieldNames = <T>(obj: T, fields: Array<keyof T>): string =>
-  fields.reduce(
+export const findMissingFieldNames = <T>(obj: T, fields: Array<keyof T>): string => {
+  if (!obj || typeof obj !== 'object') {
+    return fields.map((f) => f.toString()).join(',');
+  }
+  return fields.reduce(
     (prev, curr) => (obj[curr] ? prev : `${prev.length ? `${prev},` : ''}${curr.toString()}`),
     '',
   );
+};

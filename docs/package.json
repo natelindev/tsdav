@@ -56,14 +56,12 @@
     "typescript": "7.0.2"
   },
   "packageManager": "pnpm@10.34.4",
-  "pnpm": {
-    "overrides": {
-      "docusaurus-plugin-llms>minimatch": "9.0.7",
-      "docusaurus-plugin-llms>yaml": "2.8.3",
-      "qs@>=6.14.2 <6.16.0": "6.16.0",
-      "sockjs>uuid": "11.1.1",
-      "serialize-javascript@<7.0.5": "7.0.5",
-      "image-size": "npm:image-size-next@2.1.1"
-    }
+  "overrides": {
+    "docusaurus-plugin-llms>minimatch": "9.0.7",
+    "docusaurus-plugin-llms>yaml": "2.8.3",
+    "qs@>=6.14.2 <6.16.0": "6.16.0",
+    "sockjs>uuid": "11.1.1",
+    "serialize-javascript@<7.0.5": "7.0.5",
+    "image-size": "npm:image-size-next@2.1.1"
   }
 }
