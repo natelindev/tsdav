@@ -1,5 +1,5 @@
 import { addressBookMultiGet as rawAddressBookMultiGet, addressBookQuery as rawAddressBookQuery, createVCard as rawCreateVCard, deleteVCard as rawDeleteVCard, fetchAddressBooks as rawFetchAddressBooks, fetchVCards as rawFetchVCards, updateVCard as rawUpdateVCard } from './addressBook';
-import { calendarMultiGet as rawCalendarMultiGet, calendarQuery as rawCalendarQuery, createCalendarObject as rawCreateCalendarObject, deleteCalendarObject as rawDeleteCalendarObject, fetchCalendarObjects as rawFetchCalendarObjects, fetchCalendars as rawFetchCalendars, makeCalendar as rawMakeCalendar, updateCalendarObject as rawUpdateCalendarObject, fetchCalendarUserAddresses as rawFetchCalendarUserAddresses } from './calendar';
+import { calendarMultiGet as rawCalendarMultiGet, calendarQuery as rawCalendarQuery, createCalendarObject as rawCreateCalendarObject, deleteCalendarObject as rawDeleteCalendarObject, fetchCalendarObjects as rawFetchCalendarObjects, fetchCalendars as rawFetchCalendars, makeCalendar as rawMakeCalendar, updateCalendarObject as rawUpdateCalendarObject, fetchCalendarUserAddresses as rawFetchCalendarUserAddresses, freeBusyQuery as rawFreeBusyQuery } from './calendar';
 import { collectionQuery as rawCollectionQuery, isCollectionDirty as rawIsCollectionDirty, makeCollection as rawMakeCollection, supportedReportSet as rawSupportedReportSet, syncCollection as rawSyncCollection } from './collection';
 import { createObject as rawCreateObject, deleteObject as rawDeleteObject, propfind as rawPropfind, updateObject as rawUpdateObject } from './request';
 import { DAVRequest, DAVResponse } from './types/DAVTypes';
@@ -126,6 +126,18 @@ export declare const createDAVClient: (params: {
         fetchOptions?: RequestInit;
         fetch?: typeof fetch;
     }) => Promise<DAVResponse[]>;
+    freeBusyQuery: (params: {
+        url: string;
+        timeRange: {
+            start: string;
+            end: string;
+        };
+        depth?: import(".").DAVDepth;
+        headers?: Record<string, string>;
+        headersToExclude?: string[];
+        fetchOptions?: RequestInit;
+        fetch?: typeof fetch;
+    }) => Promise<DAVResponse>;
     syncCollection: (params: {
         url: string;
         props: import("xml-js").ElementCompact;
@@ -359,6 +371,7 @@ export declare class DAVClient {
     }): Promise<SmartCollectionSyncDetailedResult<T>>;
     calendarQuery(...params: Parameters<typeof rawCalendarQuery>): Promise<DAVResponse[]>;
     makeCalendar(...params: Parameters<typeof rawMakeCalendar>): Promise<DAVResponse[]>;
+    freeBusyQuery(...params: Parameters<typeof rawFreeBusyQuery>): Promise<DAVResponse>;
     calendarMultiGet(...params: Parameters<typeof rawCalendarMultiGet>): Promise<DAVResponse[]>;
     fetchCalendars(...params: Parameters<typeof rawFetchCalendars>): Promise<DAVCalendar[]>;
     fetchCalendarUserAddresses(...params: Parameters<typeof rawFetchCalendarUserAddresses>): Promise<string[]>;

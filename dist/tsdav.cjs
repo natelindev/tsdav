@@ -117,6 +117,7 @@ const nativeType = (value) => {
 var requestHelpers_exports = /* @__PURE__ */ __exportAll({
 	cleanupFalsy: () => cleanupFalsy,
 	conditionalParam: () => conditionalParam,
+	ensureTrailingSlash: () => ensureTrailingSlash,
 	excludeHeaders: () => excludeHeaders,
 	getDAVAttribute: () => getDAVAttribute,
 	mergeHeaders: () => mergeHeaders,
@@ -127,6 +128,14 @@ var requestHelpers_exports = /* @__PURE__ */ __exportAll({
 const normalizeUrl = (url) => {
 	const trimmed = url.trim();
 	return trimmed.endsWith("/") ? trimmed.slice(0, -1) : trimmed;
+};
+/** Ensure a directory or collection URL ends with a trailing slash for relative resolution. */
+const ensureTrailingSlash = (url) => {
+	const trimmed = url.trim();
+	const suffixIndex = trimmed.search(/[?#]/);
+	const pathname = suffixIndex === -1 ? trimmed : trimmed.slice(0, suffixIndex);
+	const suffix = suffixIndex === -1 ? "" : trimmed.slice(suffixIndex);
+	return `${pathname.endsWith("/") ? pathname : `${pathname}/`}${suffix}`;
 };
 /**
 * Strict URL equality after trimming whitespace and a single trailing slash.
@@ -233,13 +242,26 @@ const davRequest = async (params) => {
 	const { url, init, convertIncoming = true, parseOutgoing = true, fetchOptions = {}, fetch: fetchOverride } = params;
 	const requestFetch = fetchOverride ?? fetch;
 	const { headers = {}, body, namespace, method, attributes } = init;
+	let processedBody = body;
+	if (attributes && body != null && typeof body === "object" && !Array.isArray(body)) processedBody = Object.fromEntries(Object.entries(body).map(([key, value]) => {
+		if (value && typeof value === "object" && !Array.isArray(value)) {
+			const element = value;
+			return [key, {
+				...element,
+				_attributes: {
+					...attributes,
+					...element._attributes
+				}
+			}];
+		}
+		return [key, value];
+	}));
 	const xmlBody = convertIncoming && body != null ? xml_js.default.js2xml({
 		_declaration: { _attributes: {
 			version: "1.0",
 			encoding: "utf-8"
 		} },
-		_attributes: attributes,
-		...body
+		...processedBody
 	}, {
 		compact: true,
 		spaces: 2,
@@ -410,11 +432,15 @@ const deleteObject = async (params) => {
 //#endregion
 //#region src/util/typeHelpers.ts
 function hasFields(obj, fields) {
-	const inObj = (object) => fields.every((f) => object[f]);
-	if (Array.isArray(obj)) return obj.every((o) => inObj(o));
+	if (!obj) return false;
+	const inObj = (object) => object != null && fields.every((f) => object[f]);
+	if (Array.isArray(obj)) return obj.length > 0 && obj.every((o) => inObj(o));
 	return inObj(obj);
 }
-const findMissingFieldNames = (obj, fields) => fields.reduce((prev, curr) => obj[curr] ? prev : `${prev.length ? `${prev},` : ""}${curr.toString()}`, "");
+const findMissingFieldNames = (obj, fields) => {
+	if (!obj || typeof obj !== "object") return fields.map((f) => f.toString()).join(",");
+	return fields.reduce((prev, curr) => obj[curr] ? prev : `${prev.length ? `${prev},` : ""}${curr.toString()}`, "");
+};
 //#endregion
 //#region src/collection.ts
 var collection_exports = /* @__PURE__ */ __exportAll({
@@ -429,14 +455,14 @@ var collection_exports = /* @__PURE__ */ __exportAll({
 const debug$5 = (0, debug.default)("tsdav:collection");
 const resolveDAVHref = (href, baseUrl) => {
 	try {
-		return new URL(href, baseUrl).href;
+		return new URL(href, ensureTrailingSlash(baseUrl)).href;
 	} catch {
 		return href;
 	}
 };
 const hrefHasExtension = (href, extension, baseUrl) => {
 	try {
-		return new URL(href, baseUrl).pathname.toLowerCase().endsWith(extension);
+		return new URL(href, ensureTrailingSlash(baseUrl)).pathname.toLowerCase().endsWith(extension);
 	} catch {
 		return (href.split(/[?#]/, 1)[0] ?? "").toLowerCase().endsWith(extension);
 	}
@@ -476,7 +502,16 @@ const makeCollection = async (params) => {
 				...headers
 			}), headersToExclude),
 			namespace: "d",
-			body: props ? { mkcol: { set: { prop: props } } } : void 0
+			body: props ? { mkcol: {
+				_attributes: getDAVAttribute([
+					"DAV:",
+					"urn:ietf:params:xml:ns:caldav",
+					"urn:ietf:params:xml:ns:carddav",
+					"http://calendarserver.org/ns/",
+					"http://apple.com/ns/ical/"
+				]),
+				set: { prop: props }
+			} } : void 0
 		},
 		fetchOptions,
 		fetch: fetchOverride
@@ -748,7 +783,7 @@ const fetchAddressBooks = async (params) => {
 		debug$4(`Found address book named ${typeof displayName === "string" ? displayName : ""},
              props: ${JSON.stringify(rs.props)}`);
 		return {
-			url: new URL(rs.href ?? "", account.rootUrl ?? "").href,
+			url: new URL(rs.href ?? "", ensureTrailingSlash(account.rootUrl ?? "")).href,
 			ctag: rs.props?.getctag,
 			displayName: typeof displayName === "string" ? displayName : "",
 			resourcetype: Object.keys(rs.props?.resourcetype ?? {}),
@@ -779,7 +814,7 @@ const fetchVCards = async (params) => {
 		headers: excludeHeaders(headers, headersToExclude),
 		fetchOptions,
 		fetch: fetchOverride
-	})).map((res) => res.href ?? "")).map((url) => url.startsWith("http") || !url ? url : new URL(url, addressBook.url).href).filter((url) => url && !urlEquals(url, addressBook.url)).filter(urlFilter).map((url) => {
+	})).map((res) => res.href ?? "")).filter((url) => typeof url === "string" && url.trim().length > 0).map((url) => url.startsWith("http") ? url : new URL(url, ensureTrailingSlash(addressBook.url)).href).filter((url) => !urlEquals(url, addressBook.url)).filter(urlFilter).map((url) => {
 		const parsedUrl = new URL(url);
 		return `${parsedUrl.pathname}${parsedUrl.search}`;
 	});
@@ -810,7 +845,7 @@ const fetchVCards = async (params) => {
 		});
 	}
 	return vCardResults.map((res) => ({
-		url: new URL(res.href ?? "", addressBook.url).href,
+		url: new URL(res.href ?? "", ensureTrailingSlash(addressBook.url)).href,
 		etag: res.props?.getetag == null ? void 0 : String(res.props.getetag),
 		data: res.props?.addressData?._cdata ?? res.props?.addressData
 	}));
@@ -818,7 +853,7 @@ const fetchVCards = async (params) => {
 const createVCard = async (params) => {
 	const { addressBook, vCardString, filename, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
 	return createObject({
-		url: new URL(filename, addressBook.url).href,
+		url: new URL(filename, ensureTrailingSlash(addressBook.url)).href,
 		data: vCardString,
 		headers: excludeHeaders({
 			"content-type": "text/vcard; charset=utf-8",
@@ -1009,7 +1044,7 @@ const fetchCalendars = async (params) => {
 		return {
 			description: typeof description === "string" ? description : "",
 			timezone: typeof timezone === "string" ? timezone : "",
-			url: new URL(rs.href ?? "", account.rootUrl ?? "").href,
+			url: new URL(rs.href ?? "", ensureTrailingSlash(account.rootUrl ?? "")).href,
 			ctag: rs.props?.getctag,
 			calendarColor: rs.props?.calendarColor,
 			displayName: rs.props?.displayname?._cdata ?? rs.props?.displayname,
@@ -1063,32 +1098,37 @@ const fetchCalendarObjects = async (params) => {
 		fetchOptions,
 		fetch: fetchOverride
 	});
-	const calendarObjectUrls = (objectUrls ?? initialResponses.map((res) => res.href ?? "")).map((url) => url.startsWith("http") || !url ? url : new URL(url, calendar.url).href).filter(urlFilter).map((url) => {
+	const calendarObjectUrls = (objectUrls ?? initialResponses.map((res) => res.href ?? "")).filter((url) => typeof url === "string" && url.trim().length > 0).map((url) => url.startsWith("http") ? url : new URL(url, ensureTrailingSlash(calendar.url)).href).filter(urlFilter).map((url) => {
 		const parsedUrl = new URL(url);
 		return `${parsedUrl.pathname}${parsedUrl.search}`;
 	});
 	let calendarObjectResults = [];
 	if (calendarObjectUrls.length > 0) {
 		if (expand && !objectUrls) calendarObjectResults = initialResponses.filter((res) => {
-			const fullUrl = (res.href ?? "").startsWith("http") ? res.href : new URL(res.href ?? "", calendar.url).href;
+			const fullUrl = (res.href ?? "").startsWith("http") ? res.href : new URL(res.href ?? "", ensureTrailingSlash(calendar.url)).href;
 			return urlFilter(fullUrl ?? "");
 		});
-		else if (!useMultiGet) calendarObjectResults = await calendarQuery({
-			url: calendar.url,
-			props: {
-				[`d:getetag`]: {},
-				[`c:calendar-data`]: { ...expand && timeRange ? { [`c:expand`]: { _attributes: {
-					start: `${new Date(timeRange.start).toISOString().slice(0, 19).replace(/[-:.]/g, "")}Z`,
-					end: `${new Date(timeRange.end).toISOString().slice(0, 19).replace(/[-:.]/g, "")}Z`
-				} } } : {} }
-			},
-			filters,
-			depth: "1",
-			headers: excludeHeaders(headers, headersToExclude),
-			fetchOptions,
-			fetch: fetchOverride
-		});
-		else calendarObjectResults = await calendarMultiGet({
+		else if (!useMultiGet) {
+			calendarObjectResults = await calendarQuery({
+				url: calendar.url,
+				props: {
+					[`d:getetag`]: {},
+					[`c:calendar-data`]: { ...expand && timeRange ? { [`c:expand`]: { _attributes: {
+						start: `${new Date(timeRange.start).toISOString().slice(0, 19).replace(/[-:.]/g, "")}Z`,
+						end: `${new Date(timeRange.end).toISOString().slice(0, 19).replace(/[-:.]/g, "")}Z`
+					} } } : {} }
+				},
+				filters,
+				depth: "1",
+				headers: excludeHeaders(headers, headersToExclude),
+				fetchOptions,
+				fetch: fetchOverride
+			});
+			if (objectUrls && objectUrls.length > 0) calendarObjectResults = calendarObjectResults.filter((res) => {
+				const fullUrl = (res.href ?? "").startsWith("http") ? res.href ?? "" : new URL(res.href ?? "", ensureTrailingSlash(calendar.url)).href;
+				return calendarObjectUrls.some((target) => urlMatches(fullUrl, target, calendar.url));
+			});
+		} else calendarObjectResults = await calendarMultiGet({
 			url: calendar.url,
 			props: {
 				[`d:getetag`]: {},
@@ -1105,7 +1145,7 @@ const fetchCalendarObjects = async (params) => {
 		});
 	}
 	return calendarObjectResults.map((res) => ({
-		url: new URL(res.href ?? "", calendar.url).href,
+		url: new URL(res.href ?? "", ensureTrailingSlash(calendar.url)).href,
 		etag: res.props?.getetag == null ? void 0 : String(res.props.getetag),
 		data: res.props?.calendarData?._cdata ?? res.props?.calendarData
 	}));
@@ -1113,7 +1153,7 @@ const fetchCalendarObjects = async (params) => {
 const createCalendarObject = async (params) => {
 	const { calendar, iCalString, filename, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
 	return createObject({
-		url: new URL(filename, calendar.url).href,
+		url: new URL(filename, ensureTrailingSlash(calendar.url)).href,
 		data: iCalString,
 		headers: excludeHeaders({
 			"content-type": "text/calendar; charset=utf-8",
@@ -1316,6 +1356,26 @@ const serviceDiscovery = async (params) => {
 	}
 	return endpoint.href;
 };
+const extractHref = (raw) => {
+	if (typeof raw === "string" && raw.trim().length > 0) return raw.trim();
+	if (Array.isArray(raw)) {
+		for (const item of raw) {
+			const found = extractHref(item);
+			if (found) return found;
+		}
+		return;
+	}
+	if (raw && typeof raw === "object") {
+		if ("_cdata" in raw && typeof raw._cdata === "string") {
+			const cdata = raw._cdata.trim();
+			if (cdata.length > 0) return cdata;
+		}
+		if ("_text" in raw && typeof raw._text === "string") {
+			const text = raw._text.trim();
+			if (text.length > 0) return text;
+		}
+	}
+};
 const fetchPrincipalUrl = async (params) => {
 	const { account, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
 	const requiredFields = ["rootUrl"];
@@ -1334,13 +1394,13 @@ const fetchPrincipalUrl = async (params) => {
 		if (response?.status === 401) throw new Error(`Invalid credentials: PROPFIND ${account.rootUrl} returned 401 Unauthorized`);
 		throw new Error("cannot find principalUrl");
 	}
-	const principalHref = response.props?.currentUserPrincipal?.href;
-	if (typeof principalHref !== "string" || !principalHref.length) {
+	const principalHref = extractHref(response.props?.currentUserPrincipal?.href);
+	if (!principalHref) {
 		debug$2("Fetch principal url failed: missing current-user-principal href");
 		throw new Error("cannot find principalUrl");
 	}
 	debug$2(`Fetched principal url ${principalHref}`);
-	return new URL(principalHref, account.rootUrl).href;
+	return new URL(principalHref, ensureTrailingSlash(account.rootUrl)).href;
 };
 const fetchHomeUrl = async (params) => {
 	const { account, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
@@ -1360,12 +1420,12 @@ const fetchHomeUrl = async (params) => {
 		debug$2(`Fetch home url failed with status ${matched?.statusText} and error ${JSON.stringify(responses.map((r) => r.error))}`);
 		throw new Error("cannot find homeUrl");
 	}
-	const homeHref = account.accountType === "caldav" ? matched.props?.calendarHomeSet?.href : matched.props?.addressbookHomeSet?.href;
-	if (typeof homeHref !== "string" || homeHref.length === 0) {
+	const homeHref = extractHref(account.accountType === "caldav" ? matched.props?.calendarHomeSet?.href : matched.props?.addressbookHomeSet?.href);
+	if (!homeHref) {
 		debug$2(`Fetch home url failed: server did not return a ${account.accountType === "caldav" ? "calendar-home-set" : "addressbook-home-set"} href`);
 		throw new Error("cannot find homeUrl");
 	}
-	const result = new URL(homeHref, account.rootUrl).href;
+	const result = new URL(homeHref, ensureTrailingSlash(account.rootUrl)).href;
 	debug$2(`Fetched home url ${result}`);
 	return result;
 };
@@ -1726,6 +1786,7 @@ const createDAVClient = async (params) => {
 	const deleteCalendarObject$1 = defaultParam(deleteCalendarObject, commonDefaults);
 	const syncCalendars$1 = defaultParam(syncCalendars, commonDefaultsWithAccount);
 	const syncCalendarsDetailed$1 = defaultParam(syncCalendarsDetailed, commonDefaultsWithAccount);
+	const freeBusyQuery$1 = defaultParam(freeBusyQuery, commonDefaults);
 	const addressBookQuery$1 = defaultParam(addressBookQuery, commonDefaults);
 	const addressBookMultiGet$1 = defaultParam(addressBookMultiGet, commonDefaults);
 	return {
@@ -1741,6 +1802,7 @@ const createDAVClient = async (params) => {
 		makeCollection: makeCollection$1,
 		calendarMultiGet: calendarMultiGet$1,
 		makeCalendar: makeCalendar$1,
+		freeBusyQuery: freeBusyQuery$1,
 		syncCollection: syncCollection$1,
 		supportedReportSet: supportedReportSet$1,
 		isCollectionDirty: isCollectionDirty$1,
@@ -1938,6 +2000,13 @@ var DAVClient = class {
 			fetch: this.fetchOverride
 		})(params[0]);
 	}
+	async freeBusyQuery(...params) {
+		return defaultParam(freeBusyQuery, {
+			headers: this.authHeaders,
+			fetchOptions: this.fetchOptions,
+			fetch: this.fetchOverride
+		})(params[0]);
+	}
 	async calendarMultiGet(...params) {
 		return defaultParam(calendarMultiGet, {
 			headers: this.authHeaders,
@@ -2062,6 +2131,7 @@ var src_default = {
 	DAVNamespace,
 	DAVNamespaceShort,
 	DAVAttributeMap,
+	ICALObjects,
 	...client_exports,
 	...request_exports,
 	...collection_exports,
@@ -2076,6 +2146,7 @@ exports.DAVAttributeMap = DAVAttributeMap;
 exports.DAVClient = DAVClient;
 exports.DAVNamespace = DAVNamespace;
 exports.DAVNamespaceShort = DAVNamespaceShort;
+exports.ICALObjects = ICALObjects;
 exports.addressBookMultiGet = addressBookMultiGet;
 exports.addressBookQuery = addressBookQuery;
 exports.calendarMultiGet = calendarMultiGet;
@@ -2092,11 +2163,15 @@ exports.default = src_default;
 exports.deleteCalendarObject = deleteCalendarObject;
 exports.deleteObject = deleteObject;
 exports.deleteVCard = deleteVCard;
+exports.ensureTrailingSlash = ensureTrailingSlash;
+exports.excludeHeaders = excludeHeaders;
 exports.fetchAddressBooks = fetchAddressBooks;
 exports.fetchCalendarObjects = fetchCalendarObjects;
 exports.fetchCalendarUserAddresses = fetchCalendarUserAddresses;
 exports.fetchCalendars = fetchCalendars;
+exports.fetchHomeUrl = fetchHomeUrl;
 exports.fetchOauthTokens = fetchOauthTokens;
+exports.fetchPrincipalUrl = fetchPrincipalUrl;
 exports.fetchVCards = fetchVCards;
 exports.freeBusyQuery = freeBusyQuery;
 exports.getBasicAuthHeaders = getBasicAuthHeaders;
@@ -2105,8 +2180,10 @@ exports.getDAVAttribute = getDAVAttribute;
 exports.getOauthHeaders = getOauthHeaders;
 exports.isCollectionDirty = isCollectionDirty;
 exports.makeCalendar = makeCalendar;
+exports.mergeHeaders = mergeHeaders;
 exports.propfind = propfind;
 exports.refreshAccessToken = refreshAccessToken;
+exports.serviceDiscovery = serviceDiscovery;
 exports.smartCollectionSync = smartCollectionSync;
 exports.smartCollectionSyncDetailed = smartCollectionSyncDetailed;
 exports.supportedReportSet = supportedReportSet;
@@ -2118,3 +2195,4 @@ exports.updateObject = updateObject;
 exports.updateVCard = updateVCard;
 exports.urlContains = urlContains;
 exports.urlEquals = urlEquals;
+exports.urlMatches = urlMatches;

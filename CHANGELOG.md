@@ -1,3 +1,19 @@
+## v2.3.4
+
+##### bug fixes
+
+- preserve custom XML attributes and namespaces on request root elements, and declare DAV namespaces when creating collections
+- resolve child resource URLs correctly for collections without trailing slashes, including URLs with query strings or fragments
+- accept CDATA and multiple href values during account discovery, and skip empty object hrefs before URL resolution
+- filter calendar-query results to the requested object URLs when multi-get is disabled
+- preserve bodyless requests when XML attributes are supplied and guard type helpers against null or undefined inputs
+- restore reproducible root and documentation installs by moving pnpm overrides into workspace configuration and synchronizing lockfiles
+
+##### improvements
+
+- expose freeBusyQuery on both client APIs and export additional account, request, constant, and sync type helpers
+- correct the calendar object retrieval documentation and add regression coverage for public exports, XML attributes, and URL handling
+
 ## v2.3.3
 
 ##### bug fixes

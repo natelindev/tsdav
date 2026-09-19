@@ -1,5 +1,7 @@
 import { DAVNamespace } from '../consts';
 import type { NoUndefinedField } from './typeHelpers';
+/** Ensure a directory or collection URL ends with a trailing slash for relative resolution. */
+export declare const ensureTrailingSlash: (url: string) => string;
 /**
  * Strict URL equality after trimming whitespace and a single trailing slash.
  * Two URLs are equal if and only if their normalized forms are identical.

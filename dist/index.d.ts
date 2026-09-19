@@ -1,18 +1,20 @@
 import * as client from './client';
-import { DAVNamespace, DAVNamespaceShort } from './consts';
+import { DAVNamespace, DAVNamespaceShort, ICALObjects } from './consts';
 export type { DAVDepth, DAVMethods, DAVRequest, DAVResponse, DAVTokens } from './types/DAVTypes';
 export type { DAVAccount, DAVAddressBook, DAVCalendar, DAVCalendarObject, DAVCollection, DAVCredentials, DAVObject, DAVVCard, } from './types/models';
+export type { SmartCollectionSync, SmartCollectionSyncDetailed, SmartCollectionSyncDetailedResult, SyncCalendars, SyncCalendarsDetailed, SyncCalendarsDetailedResult, } from './types/functionsOverloads';
 export { DAVClient } from './client';
 export { createDAVClient } from './client';
-export { createAccount } from './account';
+export { createAccount, serviceDiscovery, fetchPrincipalUrl, fetchHomeUrl, } from './account';
 export { davRequest, propfind, createObject, updateObject, deleteObject } from './request';
 export { collectionQuery, supportedReportSet, isCollectionDirty, syncCollection, smartCollectionSync, smartCollectionSyncDetailed, } from './collection';
 export { calendarQuery, calendarMultiGet, makeCalendar, fetchCalendars, fetchCalendarUserAddresses, fetchCalendarObjects, createCalendarObject, updateCalendarObject, deleteCalendarObject, syncCalendars, syncCalendarsDetailed, freeBusyQuery, } from './calendar';
 export { addressBookQuery, addressBookMultiGet, fetchAddressBooks, fetchVCards, createVCard, updateVCard, deleteVCard, } from './addressBook';
 export { getBasicAuthHeaders, getBearerAuthHeaders, getOauthHeaders, fetchOauthTokens, refreshAccessToken, } from './util/authHelpers';
-export { urlContains, urlEquals, getDAVAttribute, cleanupFalsy } from './util/requestHelpers';
-export { DAVNamespace, DAVAttributeMap, DAVNamespaceShort } from './consts';
+export { urlContains, urlEquals, urlMatches, ensureTrailingSlash, getDAVAttribute, cleanupFalsy, excludeHeaders, mergeHeaders, } from './util/requestHelpers';
+export { DAVNamespace, DAVAttributeMap, DAVNamespaceShort, ICALObjects } from './consts';
 declare const _default: {
+    ensureTrailingSlash: (url: string) => string;
     urlEquals: (urlA?: string, urlB?: string) => boolean;
     urlContains: (urlA?: string, urlB?: string) => boolean;
     urlMatches: (urlA?: string, urlB?: string, baseUrl?: string) => boolean;
@@ -113,8 +115,8 @@ declare const _default: {
         fetchOptions?: RequestInit;
         fetch?: typeof fetch;
     }) => Promise<import(".").DAVResponse[]>;
-    smartCollectionSync: import("./types/functionsOverloads").SmartCollectionSync;
-    smartCollectionSyncDetailed: import("./types/functionsOverloads").SmartCollectionSyncDetailed;
+    smartCollectionSync: import(".").SmartCollectionSync;
+    smartCollectionSyncDetailed: import(".").SmartCollectionSyncDetailed;
     addressBookQuery: (params: {
         url: string;
         props: import("xml-js").ElementCompact;
@@ -263,8 +265,8 @@ declare const _default: {
         fetchOptions?: RequestInit;
         fetch?: typeof fetch;
     }) => Promise<Response>;
-    syncCalendars: import("./types/functionsOverloads").SyncCalendars;
-    syncCalendarsDetailed: import("./types/functionsOverloads").SyncCalendarsDetailed;
+    syncCalendars: import(".").SyncCalendars;
+    syncCalendarsDetailed: import(".").SyncCalendarsDetailed;
     freeBusyQuery: (params: {
         url: string;
         timeRange: {
@@ -442,6 +444,18 @@ declare const _default: {
             fetchOptions?: RequestInit;
             fetch?: typeof fetch;
         }) => Promise<import(".").DAVResponse[]>;
+        freeBusyQuery: (params: {
+            url: string;
+            timeRange: {
+                start: string;
+                end: string;
+            };
+            depth?: import(".").DAVDepth;
+            headers?: Record<string, string>;
+            headersToExclude?: string[];
+            fetchOptions?: RequestInit;
+            fetch?: typeof fetch;
+        }) => Promise<import(".").DAVResponse>;
         syncCollection: (params: {
             url: string;
             props: import("xml-js").ElementCompact;
@@ -469,8 +483,8 @@ declare const _default: {
             isDirty: boolean;
             newCtag: string;
         }>;
-        smartCollectionSync: import("./types/functionsOverloads").SmartCollectionSync;
-        smartCollectionSyncDetailed: import("./types/functionsOverloads").SmartCollectionSyncDetailed;
+        smartCollectionSync: import(".").SmartCollectionSync;
+        smartCollectionSyncDetailed: import(".").SmartCollectionSyncDetailed;
         fetchCalendars: (params?: {
             account?: import(".").DAVAccount;
             props?: import("xml-js").ElementCompact;
@@ -526,8 +540,8 @@ declare const _default: {
             fetchOptions?: RequestInit;
             fetch?: typeof fetch;
         }) => Promise<Response>;
-        syncCalendars: import("./types/functionsOverloads").SyncCalendars;
-        syncCalendarsDetailed: import("./types/functionsOverloads").SyncCalendarsDetailed;
+        syncCalendars: import(".").SyncCalendars;
+        syncCalendarsDetailed: import(".").SyncCalendarsDetailed;
         fetchAddressBooks: (params?: {
             account?: import(".").DAVAccount;
             props?: import("xml-js").ElementCompact;
@@ -590,5 +604,6 @@ declare const _default: {
         "http://apple.com/ns/ical/": string;
         "DAV:": string;
     };
+    ICALObjects: typeof ICALObjects;
 };
 export default _default;

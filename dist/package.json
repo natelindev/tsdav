@@ -1,6 +1,6 @@
 {
   "name": "tsdav",
-  "version": "2.3.3",
+  "version": "2.3.4",
   "description": "WebDAV, CALDAV, and CARDDAV client for Nodejs and the Browser",
   "keywords": [
     "dav",
@@ -82,10 +82,5 @@
   "packageManager": "pnpm@10.34.4",
   "engines": {
     "node": ">=18"
-  },
-  "pnpm": {
-    "overrides": {
-      "vite>postcss": "8.5.28"
-    }
   }
 }
