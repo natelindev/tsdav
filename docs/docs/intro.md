@@ -280,7 +280,7 @@ const calendarObjects = await client.fetchCalendarObjects({
 ```ts
 const calendarObjects = await client.fetchCalendarObjects({
   calendar: myCalendar,
-  calendarObjectUrls: urlArray,
+  objectUrls: urlArray,
 });
 ```
 

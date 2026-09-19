@@ -7,7 +7,13 @@ import { DAVNamespace, DAVNamespaceShort } from './consts';
 import { createObject, deleteObject, propfind, updateObject } from './request';
 import { DAVDepth, DAVResponse } from './types/DAVTypes';
 import { DAVAccount, DAVAddressBook, DAVVCard } from './types/models';
-import { cleanupFalsy, excludeHeaders, getDAVAttribute, urlEquals } from './util/requestHelpers';
+import {
+  cleanupFalsy,
+  excludeHeaders,
+  getDAVAttribute,
+  urlEquals,
+  ensureTrailingSlash,
+} from './util/requestHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelpers';
 
 const debug = getLogger('tsdav:addressBook');
@@ -141,7 +147,7 @@ export const fetchAddressBooks = async (params?: {
         debug(`Found address book named ${typeof displayName === 'string' ? displayName : ''},
              props: ${JSON.stringify(rs.props)}`);
         return {
-          url: new URL(rs.href ?? '', account.rootUrl ?? '').href,
+          url: new URL(rs.href ?? '', ensureTrailingSlash(account.rootUrl ?? '')).href,
           ctag: rs.props?.getctag,
           displayName: typeof displayName === 'string' ? displayName : '',
           resourcetype: Object.keys(rs.props?.resourcetype ?? {}),
@@ -208,8 +214,11 @@ export const fetchVCards = async (params: {
       })
     ).map((res) => res.href ?? '')
   )
-    .map((url) => (url.startsWith('http') || !url ? url : new URL(url, addressBook.url).href))
-    .filter((url) => url && !urlEquals(url, addressBook.url))
+    .filter((url): url is string => typeof url === 'string' && url.trim().length > 0)
+    .map((url) =>
+      url.startsWith('http') ? url : new URL(url, ensureTrailingSlash(addressBook.url)).href,
+    )
+    .filter((url) => !urlEquals(url, addressBook.url))
     .filter(urlFilter)
     .map((url) => {
       const parsedUrl = new URL(url);
@@ -247,7 +256,7 @@ export const fetchVCards = async (params: {
   }
 
   return vCardResults.map((res) => ({
-    url: new URL(res.href ?? '', addressBook.url).href,
+    url: new URL(res.href ?? '', ensureTrailingSlash(addressBook.url)).href,
     etag: res.props?.getetag == null ? undefined : String(res.props.getetag),
     data: res.props?.addressData?._cdata ?? res.props?.addressData,
   }));
@@ -272,7 +281,7 @@ export const createVCard = async (params: {
     fetch: fetchOverride,
   } = params;
   return createObject({
-    url: new URL(filename, addressBook.url).href,
+    url: new URL(filename, ensureTrailingSlash(addressBook.url)).href,
     data: vCardString,
     headers: excludeHeaders(
       {

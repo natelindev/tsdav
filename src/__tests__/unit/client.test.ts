@@ -852,3 +852,68 @@ describe('DAVClient empty sync response', () => {
     expect(await client.calendarQuery({ url: 'http://example.com/col/', props: {} })).toEqual([]);
   });
 });
+
+describe('client freeBusyQuery', () => {
+  it('should expose freeBusyQuery on DAVClient', async () => {
+    const mockFetch = buildMockFetch(
+      `<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+  <d:response>
+    <d:href>/cal/</d:href>
+    <d:propstat>
+      <d:prop><c:calendar-data>BEGIN:VCALENDAR...END:VCALENDAR</c:calendar-data></d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>`,
+      207,
+    );
+    const client = new DAVClient({
+      serverUrl: 'http://example.com/',
+      credentials: { username: 'u', password: 'p' },
+      fetch: mockFetch,
+    });
+    client.authHeaders = { authorization: 'Basic dTpw' };
+
+    const res = await client.freeBusyQuery({
+      url: 'http://example.com/cal/',
+      timeRange: { start: '2026-01-01T00:00:00Z', end: '2026-01-02T00:00:00Z' },
+    });
+
+    expect(res).toBeDefined();
+    expect(mockFetch).toHaveBeenCalled();
+    const lastCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
+    expect(lastCall[1].body).toContain('free-busy-query');
+  });
+
+  it('should expose freeBusyQuery on createDAVClient', async () => {
+    const mockFetch = buildMockFetch(
+      `<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+  <d:response>
+    <d:href>/cal/</d:href>
+    <d:propstat>
+      <d:prop><c:calendar-data>BEGIN:VCALENDAR...END:VCALENDAR</c:calendar-data></d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>`,
+      207,
+    );
+    const client = await createDAVClient({
+      serverUrl: 'http://example.com/',
+      credentials: { username: 'u', password: 'p' },
+      fetch: mockFetch,
+    });
+
+    const res = await client.freeBusyQuery({
+      url: 'http://example.com/cal/',
+      timeRange: { start: '2026-01-01T00:00:00Z', end: '2026-01-02T00:00:00Z' },
+    });
+
+    expect(res).toBeDefined();
+    expect(mockFetch).toHaveBeenCalled();
+    const lastCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
+    expect(lastCall[1].body).toContain('free-busy-query');
+  });
+});

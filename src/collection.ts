@@ -11,14 +11,20 @@ import {
   SmartCollectionSyncDetailedResult,
 } from './types/functionsOverloads';
 import { DAVAccount, DAVCollection, DAVObject } from './types/models';
-import { cleanupFalsy, excludeHeaders, getDAVAttribute, urlMatches } from './util/requestHelpers';
+import {
+  cleanupFalsy,
+  excludeHeaders,
+  getDAVAttribute,
+  urlMatches,
+  ensureTrailingSlash,
+} from './util/requestHelpers';
 import { findMissingFieldNames, hasFields, RequireAndNotNullSome } from './util/typeHelpers';
 
 const debug = getLogger('tsdav:collection');
 
 const resolveDAVHref = (href: string, baseUrl: string): string => {
   try {
-    return new URL(href, baseUrl).href;
+    return new URL(href, ensureTrailingSlash(baseUrl)).href;
   } catch {
     return href;
   }
@@ -26,7 +32,7 @@ const resolveDAVHref = (href: string, baseUrl: string): string => {
 
 const hrefHasExtension = (href: string, extension: string, baseUrl: string): boolean => {
   try {
-    return new URL(href, baseUrl).pathname.toLowerCase().endsWith(extension);
+    return new URL(href, ensureTrailingSlash(baseUrl)).pathname.toLowerCase().endsWith(extension);
   } catch {
     return (href.split(/[?#]/, 1)[0] ?? '').toLowerCase().endsWith(extension);
   }
@@ -138,6 +144,13 @@ export const makeCollection = async (params: {
       body: props
         ? {
             mkcol: {
+              _attributes: getDAVAttribute([
+                DAVNamespace.DAV,
+                DAVNamespace.CALDAV,
+                DAVNamespace.CARDDAV,
+                DAVNamespace.CALENDAR_SERVER,
+                DAVNamespace.CALDAV_APPLE,
+              ]),
               set: {
                 prop: props,
               },

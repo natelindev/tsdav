@@ -2,6 +2,7 @@ import { describe, it, test, expect } from 'vitest';
 import {
   cleanupFalsy,
   conditionalParam,
+  ensureTrailingSlash,
   excludeHeaders,
   getDAVAttribute,
   urlContains,
@@ -154,5 +155,31 @@ describe('conditionalParam', () => {
     expect(conditionalParam('foo', null)).toEqual({});
     expect(conditionalParam('foo', undefined)).toEqual({});
     expect(conditionalParam('foo', false)).toEqual({});
+  });
+});
+
+describe('ensureTrailingSlash', () => {
+  it.each([
+    ['https://example.com/cal?token=x', 'https://example.com/cal/?token=x'],
+    ['https://example.com/cal#section', 'https://example.com/cal/#section'],
+    ['https://example.com/cal?token=x/#section', 'https://example.com/cal/?token=x/#section'],
+    ['https://example.com/cal/?token=x', 'https://example.com/cal/?token=x'],
+    ['/cal?token=x', '/cal/?token=x'],
+  ])('should preserve URL suffixes when normalizing %s', (input, expected) => {
+    expect(ensureTrailingSlash(input)).toBe(expected);
+    expect(
+      new URL('event.ics', new URL(ensureTrailingSlash(input), 'https://example.com')).href,
+    ).toBe('https://example.com/cal/event.ics');
+  });
+
+  it('should append a trailing slash if not present', () => {
+    expect(ensureTrailingSlash('https://example.com/cal')).toBe('https://example.com/cal/');
+    expect(ensureTrailingSlash('/cal/user')).toBe('/cal/user/');
+  });
+
+  it('should preserve existing trailing slash and trim whitespace', () => {
+    expect(ensureTrailingSlash('https://example.com/cal/')).toBe('https://example.com/cal/');
+    expect(ensureTrailingSlash('  https://example.com/cal/  ')).toBe('https://example.com/cal/');
+    expect(ensureTrailingSlash('  https://example.com/cal  ')).toBe('https://example.com/cal/');
   });
 });

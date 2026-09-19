@@ -606,4 +606,40 @@ describe('fetchHomeUrl', () => {
       }),
     ).rejects.toThrow('cannot find homeUrl');
   });
+
+  it('should handle calendar-home-set with multiple hrefs by selecting the first', async () => {
+    const mockFetch = vi.fn().mockResolvedValue(
+      buildResponse({
+        status: 207,
+        body: `<?xml version="1.0" encoding="utf-8"?>
+<d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">
+  <d:response>
+    <d:href>/principals/user1/</d:href>
+    <d:propstat>
+      <d:prop>
+        <c:calendar-home-set>
+          <d:href>/calendars/user1/</d:href>
+          <d:href>/calendars/shared/</d:href>
+        </c:calendar-home-set>
+      </d:prop>
+      <d:status>HTTP/1.1 200 OK</d:status>
+    </d:propstat>
+  </d:response>
+</d:multistatus>`,
+        headers: { 'content-type': 'application/xml' },
+      }),
+    );
+
+    const result = await fetchHomeUrl({
+      account: {
+        serverUrl: 'https://example.com/',
+        rootUrl: 'https://example.com/',
+        principalUrl: 'https://example.com/principals/user1/',
+        accountType: 'caldav',
+      },
+      fetch: mockFetch,
+    });
+
+    expect(result).toBe('https://example.com/calendars/user1/');
+  });
 });

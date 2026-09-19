@@ -20,6 +20,7 @@ import {
   syncCalendarsDetailed as rawSyncCalendarsDetailed,
   updateCalendarObject as rawUpdateCalendarObject,
   fetchCalendarUserAddresses as rawFetchCalendarUserAddresses,
+  freeBusyQuery as rawFreeBusyQuery,
 } from './calendar';
 import {
   collectionQuery as rawCollectionQuery,
@@ -237,6 +238,8 @@ export const createDAVClient = async (params: {
     commonDefaultsWithAccount,
   ) as SyncCalendarsDetailed;
 
+  const freeBusyQuery = defaultParam(rawFreeBusyQuery, commonDefaults);
+
   // addressBook
   const addressBookQuery = defaultParam(rawAddressBookQuery, commonDefaults);
   const addressBookMultiGet = defaultParam(rawAddressBookMultiGet, commonDefaults);
@@ -260,6 +263,7 @@ export const createDAVClient = async (params: {
     makeCollection,
     calendarMultiGet,
     makeCalendar,
+    freeBusyQuery,
     syncCollection,
     supportedReportSet,
     isCollectionDirty,
@@ -573,6 +577,14 @@ export class DAVClient {
 
   async makeCalendar(...params: Parameters<typeof rawMakeCalendar>): Promise<DAVResponse[]> {
     return defaultParam(rawMakeCalendar, {
+      headers: this.authHeaders,
+      fetchOptions: this.fetchOptions,
+      fetch: this.fetchOverride,
+    })(params[0]);
+  }
+
+  async freeBusyQuery(...params: Parameters<typeof rawFreeBusyQuery>): Promise<DAVResponse> {
+    return defaultParam(rawFreeBusyQuery, {
       headers: this.authHeaders,
       fetchOptions: this.fetchOptions,
       fetch: this.fetchOverride,
