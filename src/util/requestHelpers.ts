@@ -10,7 +10,10 @@ const normalizeUrl = (url: string): string => {
 /** Ensure a directory or collection URL ends with a trailing slash for relative resolution. */
 export const ensureTrailingSlash = (url: string): string => {
   const trimmed = url.trim();
-  return trimmed.endsWith('/') ? trimmed : `${trimmed}/`;
+  const suffixIndex = trimmed.search(/[?#]/);
+  const pathname = suffixIndex === -1 ? trimmed : trimmed.slice(0, suffixIndex);
+  const suffix = suffixIndex === -1 ? '' : trimmed.slice(suffixIndex);
+  return `${pathname.endsWith('/') ? pathname : `${pathname}/`}${suffix}`;
 };
 
 /**

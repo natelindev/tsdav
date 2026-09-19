@@ -543,6 +543,20 @@ describe('davRequest', () => {
     expect(callArgs.headers['X-Extra']).toBe('yes');
   });
 
+  it.each([null, undefined])(
+    'should send a %s body with attributes without conversion',
+    async (body) => {
+      const mockFetch = buildMockFetch({ text: '' });
+      await davRequest({
+        url: 'http://example.com/',
+        init: { method: 'OPTIONS', body, attributes: { 'xmlns:d': 'DAV:' } },
+        fetch: mockFetch,
+      });
+      expect(mockFetch).toHaveBeenCalledOnce();
+      expect(mockFetch.mock.calls[0][1].body).toBe(body);
+    },
+  );
+
   it('should propagate init.attributes to the root XML element', async () => {
     const mockFetch = buildMockFetch({ text: '' });
 

@@ -82,8 +82,5 @@
   "packageManager": "pnpm@10.34.4",
   "engines": {
     "node": ">=18"
-  },
-  "overrides": {
-    "vite>postcss": "8.5.28"
   }
 }

@@ -48,7 +48,7 @@ export const davRequest = async (params: {
   const requestFetch = fetchOverride ?? fetch;
   const { headers = {}, body, namespace, method, attributes } = init;
   let processedBody = body;
-  if (attributes && typeof body === 'object' && !Array.isArray(body)) {
+  if (attributes && body != null && typeof body === 'object' && !Array.isArray(body)) {
     processedBody = Object.fromEntries(
       Object.entries(body).map(([key, value]) => {
         if (value && typeof value === 'object' && !Array.isArray(value)) {
