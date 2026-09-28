@@ -56,6 +56,39 @@ describe('DAVClient fetch override', () => {
   });
 });
 
+describe('client account discovery', () => {
+  it.each(['factory', 'class'])(
+    'resolves relative discovery redirects through the %s API',
+    async (api) => {
+      const mockFetch = vi.fn().mockResolvedValueOnce({
+        status: 301,
+        headers: new Map([['Location', '../dav/']]),
+      });
+      const options = {
+        serverUrl: 'https://example.com/calendars/user1/',
+        credentials: { username: 'test', password: 'password' },
+        fetch: mockFetch,
+      };
+      const client = api === 'factory' ? await createDAVClient(options) : new DAVClient(options);
+
+      const account = await client.createAccount({
+        account: {
+          accountType: 'caldav',
+          principalUrl: 'https://example.com/principals/user1/',
+          homeUrl: 'https://example.com/calendars/user1/',
+        },
+      });
+
+      expect(account.rootUrl).toBe('https://example.com/dav/');
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://example.com/.well-known/caldav',
+        expect.objectContaining({ method: 'PROPFIND', redirect: 'manual' }),
+      );
+    },
+  );
+});
+
 describe('createDAVClient auth methods', () => {
   const mockCredentials = {
     username: 'test',
