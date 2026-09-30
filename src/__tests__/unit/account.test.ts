@@ -139,6 +139,38 @@ describe('account discovery fallback', () => {
 });
 
 describe('serviceDiscovery', () => {
+  describe.each(['PROPFIND', 'GET'])('%s redirects', (method) => {
+    it.each([
+      ['caldav', '../dav/', 'https://example.com/dav/'],
+      ['carddav', 'dav/', 'https://example.com/.well-known/dav/'],
+      ['caldav', '?user=test', 'https://example.com/.well-known/caldav?user=test'],
+    ] as const)(
+      'resolves %s Location %s against the discovery URL',
+      async (accountType, location, expected) => {
+        const mockFetch = vi.fn();
+        if (method === 'GET') {
+          mockFetch.mockResolvedValueOnce({ status: 405, headers: new Map() });
+        }
+        mockFetch.mockResolvedValueOnce({
+          status: 301,
+          headers: new Map([['Location', location]]),
+        });
+
+        const url = await serviceDiscovery({
+          account: { serverUrl: 'https://example.com/calendars/user1/', accountType },
+          fetch: mockFetch,
+        });
+
+        expect(url).toBe(expected);
+        expect(mockFetch).toHaveBeenCalledTimes(method === 'GET' ? 2 : 1);
+        expect(mockFetch).toHaveBeenLastCalledWith(
+          `https://example.com/.well-known/${accountType}`,
+          expect.objectContaining({ method, redirect: 'manual' }),
+        );
+      },
+    );
+  });
+
   it('should follow redirect from PROPFIND', async () => {
     const mockFetch = vi.fn().mockResolvedValueOnce({
       status: 301,

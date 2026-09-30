@@ -49,7 +49,7 @@ export const serviceDiscovery = async (params: {
         // protocol; explicit ones must be honored verbatim (never downgrade
         // https → http, never silently upgrade either).
         const hasExplicitScheme = /^[a-z][a-z0-9+.-]*:/i.test(location);
-        const serviceURL = new URL(location, endpoint);
+        const serviceURL = new URL(location, uri);
 
         if (serviceURL.hostname === uri.hostname && uri.port && !serviceURL.port) {
           serviceURL.port = uri.port;
