@@ -37,8 +37,11 @@ jobs:
       - name: check types
         run: pnpm typecheck
 
-      # - name: lint
-      #   run: pnpm lint
+      - name: lint
+        run: pnpm lint
+
+      - name: build package for verification
+        run: pnpm build
 
       - name: test
         run: pnpm test
@@ -56,6 +59,12 @@ jobs:
           CREDENTIAL_NEXTCLOUD_USERNAME: ${{secrets.CREDENTIAL_NEXTCLOUD_USERNAME}}
           CREDENTIAL_NEXTCLOUD_PASSWORD: ${{secrets.CREDENTIAL_NEXTCLOUD_PASSWORD}}
           CREDENTIAL_NEXTCLOUD_SERVER_URL: ${{secrets.CREDENTIAL_NEXTCLOUD_SERVER_URL}}
+
+      - name: check public consumers and examples
+        run: |
+          pnpm test:consumer
+          pnpm test:examples
+          pnpm exec knip --dependencies --workspace .
 
       # Publish to npm with provenance statements
       # Requires NPM_TOKEN secret to be configured in repository secrets

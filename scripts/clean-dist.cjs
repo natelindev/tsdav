@@ -1,7 +1,4 @@
-const { readdirSync, rmSync } = require('node:fs');
+const { rmSync } = require('node:fs');
+const { join } = require('node:path');
 
-for (const entry of readdirSync(process.cwd())) {
-  if (entry.startsWith('dist')) {
-    rmSync(entry, { recursive: true, force: true });
-  }
-}
+rmSync(join(process.cwd(), 'dist'), { recursive: true, force: true });

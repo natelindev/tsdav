@@ -6,6 +6,7 @@ module.exports = function (context, options) {
     configureWebpack(config, isServer, utils) {
       return {
         resolve: {
+          alias: { 'xml-js': require.resolve('xml-js') },
           // alias: {
           //   path: require.resolve('path-browserify'),
           // },

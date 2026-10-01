@@ -11,16 +11,21 @@ It's very common to be used for cloud storage(limited support), as well as calen
 
 ### Cloud provider support status
 
-| Provider name | WEBDAV | CALDAV | CARDDAV |
-| ------------- | ------ | ------ | ------- |
-| Apple         | ✅     | ✅     | ✅      |
-| Google        | ✅     | ✅     | ✅      |
-| Fastmail      | ✅     | ✅     | ✅      |
-| Nextcloud     | ✅     | ✅     | ✅      |
-| Baikal        | ✅     | ✅     | ✅      |
-| ZOHO          | ✅     | ✅     | ✅      |
-| DAViCal       | ✅     | ✅     | ⛔️      |
-| Forward Email | ⛔️     | ✅     | ✅      |
+| Provider name | CalDAV | CardDAV |
+| ------------- | ------ | ------- |
+| Apple         | ✅     | ✅      |
+| Google        | ✅     | ✅      |
+| Fastmail      | ✅     | ✅      |
+| Nextcloud     | ✅     | ✅      |
+| Baikal        | ✅     | ✅      |
+| ZOHO          | ✅     | ✅      |
+| DAViCal       | ✅     | ⛔️      |
+| Forward Email | ✅     | ✅      |
+
+These entries describe calendar and contact interoperability. Support for individual WebDAV methods
+varies by server; they do not establish general file-storage or collection-management support.
+Google, for example, excludes `MKCOL`, `MKCALENDAR`, `COPY`, `MOVE`, `LOCK`, and `UNLOCK` from its
+[CalDAV implementation](https://developers.google.com/workspace/calendar/caldav/v2/guide).
 
 For more information on cloud providers, go to [cloud providers](./cloud%20providers.md) for more information.
 
@@ -42,7 +47,7 @@ Use the ESM bundle in modern browsers:
 
 ```html
 <script type="module">
-  import { createDAVClient } from 'https://unpkg.com/tsdav/dist/tsdav.mjs';
+  import { createDAVClient } from 'https://unpkg.com/tsdav/dist/tsdav.js';
 
   const client = await createDAVClient({
     serverUrl: 'https://caldav.icloud.com',

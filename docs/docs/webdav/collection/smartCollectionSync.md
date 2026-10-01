@@ -49,18 +49,21 @@ const { created, updated, deleted } = (
 - `fetch` custom fetch implementation
 
 :::info
-`objects` inside `collection` are not needed when using `smartCollectionSyncDetailed`.
+Provide the previously stored `collection.objects` to distinguish created from updated objects.
+Without that baseline, changed remote objects are classified as created. Basic sync also needs the
+baseline to identify deletions.
 :::
 
 ### Return Value
 
 `smartCollectionSync` returns:
 
-array of latest [DAVObject](../../types/DAVObject.md)
+the supplied collection with an `objects` array containing the latest [DAVObject](../../types/DAVObject.md)
+and the resulting `syncToken` or `ctag`.
 
 `smartCollectionSyncDetailed` returns:
 
-an object of
+the supplied collection with the resulting `syncToken` or `ctag` and
 
 - `objects`
   - `created` array of [DAVObject](../../types/DAVObject.md)

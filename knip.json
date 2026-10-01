@@ -1,0 +1,40 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": [
+        "src/index.ts!",
+        "src/**/*.test.ts",
+        "tests/**/*.ts",
+        "scripts/*.{cjs,mjs}"
+      ],
+      "project": [
+        "src/**/*.ts",
+        "tests/**/*.ts"
+      ],
+      "ignore": [
+        "src/__tests__/integration/**"
+      ],
+      "ignoreDependencies": []
+    },
+    "docs": {
+      "entry": [
+        "docusaurus.config.js",
+        "src/**/*.{ts,tsx}",
+        "tests/*.cjs",
+        "docusuarusWebpack5Plugin.js"
+      ],
+      "project": [
+        "src/**/*.{ts,tsx}",
+        "docs/**/*.mdx"
+      ],
+      "ignoreDependencies": [
+        "@types/react-router-dom",
+        "@docusaurus/module-type-aliases",
+        "@docusaurus/theme-classic",
+        "@docusaurus/router"
+      ],
+      "docusaurus": false
+    }
+  }
+}

@@ -7,12 +7,13 @@ sidebar_position: 10
 query free busy data on calendar
 
 :::caution
-a lot of caldav providers do not support this method like google, apple.
-use with caution.
+Support depends on the server. Check its supported reports and provider documentation before use.
 :::
 
 ```ts
-const freeBusyQuery = await freeBusyQuery({
+import { freeBusyQuery } from 'tsdav';
+
+const result = await freeBusyQuery({
   url: 'https://caldav.icloud.com/123456/calendars/A5639426-B73B-4F90-86AB-D70F7F603E75/',
   timeRange: {
     start: '2022-01-28T16:25:33.125Z',

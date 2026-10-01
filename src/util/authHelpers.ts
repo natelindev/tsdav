@@ -210,24 +210,17 @@ export const getOauthHeaders = async (
   debug('Fetching oauth headers');
   let tokens: DAVTokens = {};
   let didRefresh = false;
-  if (!credentials.refreshToken) {
-    // No refresh token, fetch new tokens
-    tokens = await fetchOauthTokens(credentials, fetchOptions, fetchOverride);
-    didRefresh = true;
-  } else if (
-    (credentials.refreshToken && !credentials.accessToken) ||
-    Date.now() > (credentials.expiration ?? 0)
+  if (
+    credentials.accessToken &&
+    ((credentials.expiration == null && !credentials.refreshToken) ||
+      (credentials.expiration != null && Date.now() < credentials.expiration))
   ) {
-    // have refresh token, but no accessToken, fetch access token only
-    // or have both, but accessToken was expired
-    tokens = await refreshAccessToken(credentials, fetchOptions, fetchOverride);
-    didRefresh = true;
+    tokens = { access_token: credentials.accessToken, refresh_token: credentials.refreshToken };
   } else {
-    // existing access token is still valid; reuse it
-    tokens = {
-      access_token: credentials.accessToken,
-      refresh_token: credentials.refreshToken,
-    };
+    tokens = credentials.refreshToken
+      ? await refreshAccessToken(credentials, fetchOptions, fetchOverride)
+      : await fetchOauthTokens(credentials, fetchOptions, fetchOverride);
+    didRefresh = true;
   }
 
   if (didRefresh) {
@@ -241,8 +234,9 @@ export const getOauthHeaders = async (
     if (tokens.refresh_token) {
       credentials.refreshToken = tokens.refresh_token;
     }
-    if (typeof tokens.expires_in === 'number') {
-      credentials.expiration = Date.now() + tokens.expires_in * 1000;
+    if (tokens.access_token) {
+      credentials.expiration =
+        typeof tokens.expires_in === 'number' ? Date.now() + tokens.expires_in * 1000 : undefined;
     }
     /* eslint-enable no-param-reassign */
   }

@@ -1,4 +1,4 @@
-/** @type {import('@docusaurus/types').DocusaurusConfig} */
+/** @type {import('@docusaurus/types').Config} */
 module.exports = {
   title: 'tsdav',
   tagline: 'webdav request made easy',
@@ -54,7 +54,7 @@ module.exports = {
   },
   presets: [
     [
-      '@docusaurus/preset-classic',
+      require.resolve('@docusaurus/preset-classic'),
       {
         docs: {
           path: 'docs',
@@ -63,7 +63,7 @@ module.exports = {
           lastVersion: 'current',
           versions: {
             current: {
-              label: '2.3.2',
+              label: require('../package.json').version,
             },
             '1.1.6': {
               label: '1.1.6',
@@ -81,11 +81,11 @@ module.exports = {
     ],
   ],
   plugins: [
-    '@cmfcmf/docusaurus-search-local',
+    require.resolve('@cmfcmf/docusaurus-search-local'),
     require.resolve('./docusuarusWebpack5Plugin'),
-    'docusaurus-markdown-source-plugin',
+    require.resolve('docusaurus-markdown-source-plugin'),
     [
-      'docusaurus-plugin-llms',
+      require.resolve('docusaurus-plugin-llms'),
       {
         generateLLMsTxt: true,
         generateLLMsFullTxt: true,

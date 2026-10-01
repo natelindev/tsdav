@@ -41,6 +41,10 @@ jobs:
         if: matrix.node-version >= 22
         run: pnpm lint
 
+      - name: Build package for entry tests
+        if: matrix.node-version >= 22
+        run: pnpm build
+
       - name: Run `test`
         if: matrix.node-version >= 22
         run: pnpm test
@@ -58,6 +62,13 @@ jobs:
           CREDENTIAL_NEXTCLOUD_USERNAME: ${{secrets.CREDENTIAL_NEXTCLOUD_USERNAME}}
           CREDENTIAL_NEXTCLOUD_PASSWORD: ${{secrets.CREDENTIAL_NEXTCLOUD_PASSWORD}}
           CREDENTIAL_NEXTCLOUD_SERVER_URL: ${{secrets.CREDENTIAL_NEXTCLOUD_SERVER_URL}}
+
+      - name: Check public consumers and examples
+        if: matrix.node-version >= 22
+        run: |
+          pnpm test:consumer
+          pnpm test:examples
+          pnpm exec knip --dependencies --workspace .
 
       - name: Build package for runtime smoke test
         if: matrix.node-version < 22
@@ -232,6 +243,12 @@ jobs:
           cache: 'pnpm'
           cache-dependency-path: docs/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
+      - name: Install shared-source verification tools
+        working-directory: .
+        run: pnpm install --frozen-lockfile
+      - name: Check docs dependencies
+        working-directory: .
+        run: pnpm exec knip --dependencies --workspace docs
       - run: pnpm test
-      - run: pnpm exec tsc --noEmit
+      - run: pnpm typecheck
       - run: pnpm build

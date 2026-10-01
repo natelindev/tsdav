@@ -37,6 +37,7 @@ const [result] = await davRequest({
 - `init` **required**, [DAVRequest](davRequest.md) Object
 - `convertIncoming` defaults to `true`, whether to convert the passed in init object request body, if `false`, davRequest would expect `init->body` is `xml` string, and would send it directly to target `url` without processing.
 - `parseOutgoing` defaults to `true`, whether to parse the return value in response body, if `false`, the response `raw` would be raw `xml` string returned from server.
+- `headersToExclude` case-insensitive header names to remove after merging defaults, request headers, and `fetchOptions.headers`
 - `fetchOptions` options to pass to underlying fetch function
 - `fetch` custom fetch implementation to override the runtime's native `fetch`
 
@@ -55,3 +56,7 @@ if request failed, response-> raw will be raw response text returned from server
 Multistatus responses without resource entries still return one result with the parsed `raw` payload,
 so callers can read collection metadata such as `raw.multistatus.syncToken`. Status codes are parsed
 even when the server omits the reason phrase.
+
+Successful unparsed response bodies are preserved in full. Parsed property failures remain available
+in `propStats`; `props` includes only successful properties, and an all-failed propstat response has
+`ok: false`. Malformed XML has `ok: false` and a `parseError`.

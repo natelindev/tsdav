@@ -8,7 +8,14 @@ import * as request from './request';
 import * as authHelpers from './util/authHelpers';
 import * as requestHelpers from './util/requestHelpers';
 
-export type { DAVDepth, DAVMethods, DAVRequest, DAVResponse, DAVTokens } from './types/DAVTypes';
+export type {
+  DAVDepth,
+  DAVMethods,
+  DAVPropStat,
+  DAVRequest,
+  DAVResponse,
+  DAVTokens,
+} from './types/DAVTypes';
 export type {
   DAVAccount,
   DAVAddressBook,
@@ -41,6 +48,7 @@ export { davRequest, propfind, createObject, updateObject, deleteObject } from '
 
 export {
   collectionQuery,
+  makeCollection,
   supportedReportSet,
   isCollectionDirty,
   syncCollection,

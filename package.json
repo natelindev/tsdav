@@ -1,6 +1,6 @@
 {
   "name": "tsdav",
-  "version": "2.3.4",
+  "version": "2.3.5",
   "description": "WebDAV, CALDAV, and CARDDAV client for Nodejs and the Browser",
   "keywords": [
     "dav",
@@ -61,7 +61,10 @@
     "test:unit": "vitest run src/__tests__/unit src/util/__tests__",
     "test:zoho": "vitest run src/__tests__/integration/zoho --no-file-parallelism",
     "typecheck": "tsc --noEmit",
-    "watch": "tsc --watch --outDir ./dist"
+    "watch": "tsc --watch --outDir ./dist",
+    "check:dependencies": "knip --dependencies",
+    "test:consumer": "tsc -p tests/consumer/tsconfig.json --noEmit",
+    "test:examples": "node scripts/check-doc-examples.cjs && vitest run tests/docs-examples.test.ts"
   },
   "dependencies": {
     "debug": "4.4.3",
@@ -72,10 +75,10 @@
     "@types/debug": "4.1.13",
     "@types/node": "26.4.1",
     "@vitest/coverage-v8": "5.0.0",
-    "cross-env": "10.1.0",
     "dotenv": "17.4.2",
+    "ical.js": "^2.2.1",
+    "knip": "^6.39.0",
     "rolldown": "1.2.7",
-    "sort-package-json": "4.0.0",
     "typescript": "7.0.2",
     "vitest": "^5.0.0"
   },

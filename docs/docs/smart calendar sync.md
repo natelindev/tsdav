@@ -4,263 +4,95 @@ sidebar_position: 8
 
 # Smart calendar sync
 
-To actually achieve two way syncing of calendar events between cloud provider and your service.
+Store each calendar's URL, ctag, sync token, supported reports, and object URLs, etags, and original
+calendar data. This example uses Basic authentication with a username and application password.
+Keep credentials in your application's protected credential storage. An incremental
+sync needs the previous object list to distinguish created and updated objects and retain unchanged
+objects.
 
-## preparation
-
-You need to
-
-#### create database structures to store the calendar info
-
-for databases, you need following structures:
-
-##### App calendar
-
-your app's calendar object type like:
+The following adapter keeps database operations explicit. Implement `CalendarStore` with your
+existing database; its transaction must commit all object changes and their tokens together.
 
 ```ts
-type AppCalendar = {
-  id: string;
-  userId: string;
-  timezone?: string;
-  name?: string;
-  description?: string;
-  email?: string;
-  createdAt: string;
-  updatedAt: string;
-};
-```
+import { DAVClient, DAVCalendar, DAVObject, DAVCredentials } from 'tsdav';
 
-this table is used for your app's display, daily use, etc, optional if you do not alredy have a table like this or you do not want one-to-many relations with your app calendar, you can skip creating this table.
+interface CalendarTransaction {
+  putCalendar(calendar: DAVCalendar): Promise<void>;
+  removeCalendar(url: string): Promise<void>;
+  putObject(calendarUrl: string, object: DAVObject): Promise<void>;
+  removeObject(calendarUrl: string, objectUrl: string): Promise<void>;
+}
 
-##### Caldav calendar
+interface CalendarStore {
+  readCalendars(): Promise<DAVCalendar[]>;
+  transaction(work: (tx: CalendarTransaction) => Promise<void>): Promise<void>;
+}
 
-you need to store caldav calendar information obtained from `fetchCalendars`
+export async function synchronizeCalendars(
+  serverUrl: string,
+  credentials: DAVCredentials,
+  store: CalendarStore,
+) {
+  const client = new DAVClient({
+    serverUrl,
+    credentials,
+    defaultAccountType: 'caldav',
+  });
+  await client.login();
+  const local = await store.readCalendars();
+  const remote = await client.fetchCalendars();
+  const byUrl = new Map(local.map((calendar) => [calendar.url, calendar]));
+  const remoteUrls = new Set(remote.map((calendar) => calendar.url));
 
-```typescript
-type CaldavCalendar = {
-  id: string;
-  userId: string;
-  timezone: string;
-  name: string;
-  source: string; // your caldav provider name
-  ctag: string; // obtained from remote
-  syncToken: string; // obtained from remote
-  url: string;
-  credentialId:
-  createAt: string;
-};
-```
+  const results = await Promise.all(remote.map(async (calendar) => {
+    const previous = byUrl.get(calendar.url);
+    return client.smartCollectionSyncDetailed({
+      collection: {
+        ...calendar,
+        ctag: previous?.ctag,
+        syncToken: previous?.syncToken,
+        objects: previous?.objects ?? [],
+        objectMultiGet: client.calendarMultiGet,
+        fetchObjects: async (params: Parameters<NonNullable<DAVCalendar['fetchObjects']>>[0]) => {
+          if (!params) throw new Error('A collection is required');
+          const { collection, ...options } = params;
+          return client.fetchCalendarObjects({
+            ...options,
+            calendar: collection,
+            filters: { 'comp-filter': { _attributes: { name: 'VCALENDAR' } } },
+            urlFilter: (url) => new URL(url, collection.url).href !== collection.url,
+          });
+        },
+      },
+    });
+  }));
 
-##### credentials
-
-save caldav calendar credentials in another table, encryption is recommended:
-
-```ts
-type CalendarCredential = {
-  account: string;
-  refreshToken?: string;
-  password?: string;
-  valid: boolean;
-  source: // your caldav provider name
+  await store.transaction(async (tx) => {
+    for (const calendar of local) {
+      if (!remoteUrls.has(calendar.url)) await tx.removeCalendar(calendar.url);
+    }
+    for (const result of results) {
+      const { objects, objectMultiGet, fetchObjects, ...metadata } = result;
+      for (const object of [...objects.created, ...objects.updated]) {
+        await tx.putObject(result.url, { ...object, url: new URL(object.url, result.url).href });
+      }
+      for (const object of objects.deleted) {
+        await tx.removeObject(result.url, new URL(object.url, result.url).href);
+      }
+      await tx.putCalendar(metadata);
+    }
+  });
 }
 ```
 
-##### caldav calendar objects
+Method selection uses the discovered reports: WebDAV sync retrieves changed objects through
+`objectMultiGet`; basic sync uses ctag and a complete collection query through `fetchObjects`.
+The client's multiget methods are bound and can be used as callbacks. Store the returned token,
+which represents the successfully fetched changes. If discovery, sync, fetching, or the database
+transaction fails, retain the previous tokens and retry from that state.
 
-you also need to store caldav calendar objects obtained from `fetchCalendarObjects`
-
-```ts
-export type CalendarObject = {
-  id: string;
-  calendarId: string; // foreign key reference the CaldavCalendar if needed
-  url: string;
-  etag: string;
-  start: string; // recommend to have this field for easy filtering/sorting
-  end: string; // recommend to have this field for easy filtering/sorting
-  data: string; // actual ics data
-};
-```
-
-to parse and obtain information from ics data, it's recommended to use a combination of
-
-https://github.com/natelindev/pretty-jcal and https://github.com/kewisch/ical.js
-
-for generating new ics data, it's recommended to use https://github.com/nwcell/ics.js/
-
-## Actual syncing
-
-First you need to have user go through authorization process and obtain valid `CalendarCredential`, the method differs for each caldav provider. You need to find and setup it yourself.
-
-after having obtained the credentials, you can begin the actual sync
-
-First you need to get all stored calendars for the user
-
-```ts
-const localCalendars = await this.db.getCalendarByUserIdAndSource(userId, source);
-```
-
-then you need to create caldav client using credentials
-
-```ts
-const client = new DAVClient({
-  serverUrl: 'https://caldav.icloud.com',
-  credentials: {
-    username: 'YOUR_APPLE_ID',
-    password: 'YOUR_APP_SPECIFIC_PASSWORD',
-  },
-  authMethod: 'Basic',
-  defaultAccountType: 'caldav',
-});
-```
-
-##### Remote to local
-
-you can use `syncCalendarsDetailed` function from the lib
-
-```ts
-const { created, updated, deleted } = await client.syncCalendarsDetailed({
-  oldCalendars: localCalendars.map((lc) => ({
-    displayName: lc.name,
-    syncToken: lc.syncToken,
-    ctag: lc.ctag,
-    url: lc.url,
-  })),
-});
-```
-
-make sure you send the `syncToken` and `ctag`, this way the remote will know your last sync and identify the calendar changes.
-
-now you have all calendar changes on remote. make actual changes to your database like:
-
-```ts
-await this.db.transaction(async (tx) => {
-  await Promise.all(
-    created.map(async (c) => {
-      // created
-      const calendarObjects = await client.fetchCalendarObjects({ calendar: c });
-
-      if (calendarObjects.length > 0) {
-        await Promise.all(
-          calendarObjects.map((co) => {
-            // parse start end time if needed
-            // const parsedObject = parse(co);
-            // const { start, end } = parsedObject;
-            return this.db.createCalendarObject(tx, {
-              ...co,
-              // start,
-              // end,
-              calendarId: c.id,
-            });
-          }),
-        );
-      }
-    }),
-  );
-
-  // deleted
-  if (deleted.length > 0) {
-    await this.db.deleteByUrls(
-      tx,
-      filteredDeleted.map((d) => d.url),
-    );
-  }
-
-  // updated
-  const localCalendarsToBeUpdated = await this.db.getByUrls(
-    tx,
-    updated.map((u) => u.url),
-  );
-
-  // find out and apply the change on calendar
-  await Promise.all(
-    localCalendarsToBeUpdated.map(async (lc) => {
-      const localObjects = await this.db.getCalendarById(tx, lc.id);
-      const {
-        created: createdObjects,
-        updated: updatedObjects,
-        deleted: deletedObjects,
-      } = (
-        await client.smartCollectionSyncDetailed({
-          collection: {
-            url: lc.url,
-            ctag: lc.ctag,
-            syncToken: lc.syncToken,
-            objects: localObjects,
-            objectMultiGet: client.calendarMultiGet,
-          },
-          method: 'webdav',
-        })
-      ).objects;
-
-      // apply changes to local calendar objects
-      // created objects
-      if (createdObjects.length > 0) {
-        await Promise.all(
-          createdObjects
-            .filter((co) => co.url.includes('.ics'))
-            .map((co) => {
-              // parse start end time if needed
-              // const parsedObject = parse(co);
-              // const { start, end } = parsedObject;
-
-              return this.db.createCalendarObject(tx, {
-                ...co,
-                // start,
-                // end,
-                url: URL.resolve(lc.url, co.url),
-                calendarId: lc.id,
-              });
-            }),
-        );
-      }
-
-      // deleted objects
-      if (deletedObjects.length > 0) {
-        await this.db.deleteCalendarObjectByUrls(
-          tx,
-          deletedObjects.map((d) => URL.resolve(lc.url, d.url)),
-        );
-      }
-
-      // updated objects
-      if (updatedObjects.length > 0) {
-        await Promise.all(
-          updatedObjects.map((uo) => {
-            // parse start end time if needed
-            // const parsedObject = parse(co);
-            // const { start, end } = parsedObject;
-
-            return this.db.updateCalendarObjectByUrl(tx, URL.resolve(lc.url, uo.url), {
-              etag: uo.etag,
-              data: uo.data,
-              start,
-              end,
-            });
-          }),
-        );
-      }
-    }),
-  );
-
-  // update the syncToken & ctag for the calendars to be updated
-  await Promise.all(
-    filteredUpdated.map((u) => {
-      const lcu = localCalendarToBeUpdated.find((uo) => uo.url === u.url);
-      if (!lcu) {
-        throw new ValidationError(`local calendar with url ${u.url} not found `);
-      }
-      return this.db.updateCalendarById(tx, lcu.id, {
-        syncToken: u.syncToken,
-        ctag: u.ctag,
-      });
-    }),
-  );
-});
-```
-
-##### Local to remote
-
-when going local to remote, it's rather easy
-
-just generate the ics data and then use `createCalendarObject` , `updateCalendarObject` and `deleteCalendarObject` directly on remote caldav calendars. Update your locally stored calendar objects in your database after remote operation success.
+For local changes, serialize a complete iCalendar resource and call `createCalendarObject`,
+`updateCalendarObject`, or `deleteCalendarObject`. These helpers return a Fetch `Response`; check
+`response.ok` before updating local state. A 412 response indicates a precondition conflict and
+requires fetching the current remote object before deciding how to reconcile it. Preserve recurrence,
+all-day dates, timezones, and exceptions when editing the data; see [feed import](./caldav/import-ical-feed.md).

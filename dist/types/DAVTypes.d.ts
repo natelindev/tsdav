@@ -19,6 +19,17 @@ export type DAVResponse = {
             value: any;
         } | any;
     };
+    propStats?: DAVPropStat[];
+    parseError?: string;
+};
+export type DAVPropStat = {
+    props: Record<string, any>;
+    namespaces?: Record<string, string>;
+    status: number;
+    statusText: string;
+    ok: boolean;
+    error?: Record<string, any>;
+    responsedescription?: string;
 };
 export type DAVRequest = {
     headers?: Record<string, string>;
