@@ -106,3 +106,5 @@ typings/
 .DS_Store
 .vercel
 .vscode/
+
+/tests/.examples-*/

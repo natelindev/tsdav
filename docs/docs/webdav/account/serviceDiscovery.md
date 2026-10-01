@@ -29,4 +29,16 @@ root url
 
 ### Behavior
 
-use `/.well-known/` request to follow redirects to find redirected url
+Requests `/.well-known/caldav` or `/.well-known/carddav` on the server's origin using
+`PROPFIND`, then tries `GET` if necessary. Relative `Location` headers resolve against
+that discovery request URL. For example, `Location: ../dav/` resolves to `/dav/`, even
+when `serverUrl` contains a nested calendar path.
+
+Path-relative redirects retain the request's origin and port. Absolute and
+protocol-relative redirects use their own host and port, including the protocol's
+default port when none is specified.
+
+Discovery controls the method, body, and manual redirect handling. A `body` supplied
+in `fetchOptions` is not sent with the `GET` fallback; other transport options and
+headers still apply. If neither request redirects, the function returns `serverUrl`
+as a normalized URL.

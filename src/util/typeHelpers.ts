@@ -43,3 +43,7 @@ export const findMissingFieldNames = <T>(obj: T, fields: Array<keyof T>): string
     '',
   );
 };
+
+export const hasOwn = (value: object, key: PropertyKey): boolean =>
+  // biome-ignore lint/suspicious/noPrototypeBuiltins: Keep ES2019 runtime compatibility.
+  Object.prototype.hasOwnProperty.call(value, key);

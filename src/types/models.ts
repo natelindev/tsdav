@@ -17,12 +17,14 @@ export type DAVCollection = {
     | ((params?: {
         collection: DAVCalendar;
         headers?: Record<string, string>;
+        headersToExclude?: string[];
         fetchOptions?: RequestInit;
         fetch?: typeof globalThis.fetch;
       }) => Promise<DAVCalendarObject[]>)
     | ((params?: {
         collection: DAVAddressBook;
         headers?: Record<string, string>;
+        headersToExclude?: string[];
         fetchOptions?: RequestInit;
         fetch?: typeof globalThis.fetch;
       }) => Promise<DAVVCard[]>);
@@ -34,6 +36,7 @@ export type DAVCollection = {
     timezone?: string;
     depth: DAVDepth;
     fetchOptions?: RequestInit;
+    headersToExclude?: string[];
     headers?: Record<string, string>;
     fetch?: typeof globalThis.fetch;
   }) => Promise<DAVResponse[]>;

@@ -6,30 +6,33 @@ import { Converter } from '../src/components/Converter.tsx';
 
 # Helper
 
-Helper to convert xml to expected js object to be consumed by tsdav
+Inspect normalized DAV responses or serialize compact XML request objects. The normalized response
+keys are for reading responses; request keys use the exact XML names and namespace prefixes.
+All object inputs use JSON.
 
 ### xml -> js
 
 <Converter
   variant="xml"
   content={`<?xml version="1.0" encoding="utf-8" ?>
-<C:calendar-query xmlns:D="DAV:"
-                  xmlns:C="urn:ietf:params:xml:ns:caldav">
-  <D:prop>
-    <C:calendar-data>
-      <C:expand start="20060103T000000Z"
-                end="20060105T000000Z"/>
-    </C:calendar-data>
-  </D:prop>
-  <C:filter>
-    <C:comp-filter name="VCALENDAR">
-      <C:comp-filter name="VEVENT">
-        <C:time-range start="20060103T000000Z"
-                      end="20060105T000000Z"/>
-      </C:comp-filter>
-    </C:comp-filter>
-  </C:filter>
-</C:calendar-query>`}
+<D:multistatus xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+  <D:response>
+    <D:href>/calendars/personal/event.ics</D:href>
+    <D:propstat>
+      <D:prop>
+        <D:getetag>"123"</D:getetag>
+        <C:calendar-data><![CDATA[BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:example
+DTSTART:20261001T090000Z
+END:VEVENT
+END:VCALENDAR]]></C:calendar-data>
+      </D:prop>
+      <D:status>HTTP/1.1 200 OK</D:status>
+    </D:propstat>
+  </D:response>
+</D:multistatus>`}
 />
 
 ### js -> xml
@@ -37,14 +40,14 @@ Helper to convert xml to expected js object to be consumed by tsdav
 <Converter
   variant="xml-reverse"
   content={{
-    calendarQuery: {
+    'C:calendar-query': {
       _attributes: {
         'xmlns:D': 'DAV:',
         'xmlns:C': 'urn:ietf:params:xml:ns:caldav',
       },
-      prop: {
-        calendarData: {
-          expand: {
+      'D:prop': {
+        'C:calendar-data': {
+          'C:expand': {
             _attributes: {
               start: '20060103T000000Z',
               end: '20060105T000000Z',
@@ -52,16 +55,16 @@ Helper to convert xml to expected js object to be consumed by tsdav
           },
         },
       },
-      filter: {
-        compFilter: {
+      'C:filter': {
+        'C:comp-filter': {
           _attributes: {
             name: 'VCALENDAR',
           },
-          compFilter: {
+          'C:comp-filter': {
             _attributes: {
               name: 'VEVENT',
             },
-            timeRange: {
+            'C:time-range': {
               _attributes: {
                 start: '20060103T000000Z',
                 end: '20060105T000000Z',

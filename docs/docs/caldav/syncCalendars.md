@@ -40,22 +40,25 @@ const { created, updated, deleted } = await syncCalendarsDetailed({
 - `fetchOptions` options to pass to underlying fetch function
 
 :::info
-`objects` inside `oldCalendars` are not needed when using `syncCalendarsDetailed`.
+Both functions sync objects in updated calendars. Include previously stored objects to retain
+unchanged objects during incremental WebDAV sync. Newly discovered calendars contain metadata only;
+fetch their objects separately.
 :::
 
 ### Return Value
 
 `syncCalendars` returns:
 
-array of [DAVCalendar](../types/DAVCalendar.md) with calendar objects.
+array of [DAVCalendar](../types/DAVCalendar.md). Updated calendars contain synced objects; unchanged
+calendars retain the supplied objects, and newly discovered calendars contain metadata only.
 
 `syncCalendarsDetailed` returns:
 
 an object of
 
 - `created` array of [DAVCalendar](../types/DAVCalendar.md) without calendar objects.
-- `updated` array of [DAVCalendar](../types/DAVCalendar.md) without calendar objects.
-- `deleted` array of [DAVCalendar](../types/DAVCalendar.md) without calendar objects.
+- `updated` array of [DAVCalendar](../types/DAVCalendar.md) with synced calendar objects.
+- `deleted` array of the previously supplied [DAVCalendar](../types/DAVCalendar.md).
 
 ### Behavior
 
@@ -71,4 +74,7 @@ return latest list of calendars with latest list of objects for `updated` calend
 
 When using `syncCalendarsDetailed`,
 
-return three list of separate calendars without objects for `created`, `updated`, and `deleted`.
+return separate lists for `created`, `updated`, and `deleted`, with the object behavior described above.
+
+Discovery and object-fetch failures reject before returning changes. Built-in sync queries all calendar
+components, including tasks and journals, and preserves the token returned by the sync REPORT.

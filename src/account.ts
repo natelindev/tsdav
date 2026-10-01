@@ -10,6 +10,7 @@ import {
   excludeHeaders,
   mergeHeaders,
   urlMatches,
+  urlEquals,
   ensureTrailingSlash,
 } from './util/requestHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelpers';
@@ -43,22 +44,8 @@ export const serviceDiscovery = async (params: {
       const location = response.headers.get('Location');
       if (typeof location === 'string' && location.length) {
         debug(`Service discovery redirected to ${location}`);
-        // Detect whether the Location header contained an explicit scheme
-        // (e.g. "https://other.example.com/..."). Schemeless redirects like
-        // "/.well-known/..." or "//host/path" must inherit the endpoint's
-        // protocol; explicit ones must be honored verbatim (never downgrade
-        // https → http, never silently upgrade either).
-        const hasExplicitScheme = /^[a-z][a-z0-9+.-]*:/i.test(location);
-        const serviceURL = new URL(location, uri);
-
-        if (serviceURL.hostname === uri.hostname && uri.port && !serviceURL.port) {
-          serviceURL.port = uri.port;
-        }
-
-        if (!hasExplicitScheme) {
-          serviceURL.protocol = endpoint.protocol ?? 'http';
-        }
-        return serviceURL.href;
+        // Relative Location values use the actual discovery request as their base.
+        return new URL(location, uri).href;
       }
     }
     return undefined;
@@ -98,6 +85,7 @@ export const serviceDiscovery = async (params: {
     const response = await requestFetch(uri.href, {
       ...fetchOptionsWithoutHeaders,
       method: 'GET',
+      body: undefined,
       headers: excludeHeaders(mergeHeaders(headers, fetchHeaders), headersToExclude),
       redirect: 'manual' as RequestRedirect,
     });
@@ -162,6 +150,7 @@ export const fetchPrincipalUrl = async (params: {
     },
     depth: '0',
     headers: excludeHeaders(headers, headersToExclude),
+    headersToExclude,
     fetchOptions,
     fetch: fetchOverride,
   });
@@ -207,6 +196,7 @@ export const fetchHomeUrl = async (params: {
         : { [`${DAVNamespaceShort.CARDDAV}:addressbook-home-set`]: {} },
     depth: '0',
     headers: excludeHeaders(headers, headersToExclude),
+    headersToExclude,
     fetchOptions,
     fetch: fetchOverride,
   });
@@ -262,6 +252,7 @@ export const createAccount = async (params: {
     (await serviceDiscovery({
       account,
       headers: excludeHeaders(headers, headersToExclude),
+      headersToExclude,
       fetchOptions,
       fetch: fetchOverride,
     }));
@@ -288,6 +279,7 @@ export const createAccount = async (params: {
             rootUrl,
           },
           headers: excludeHeaders(headers, headersToExclude),
+          headersToExclude,
           fetchOptions,
           fetch: fetchOverride,
         });
@@ -311,6 +303,7 @@ export const createAccount = async (params: {
     (await fetchPrincipalUrl({
       account: newAccount,
       headers: excludeHeaders(headers, headersToExclude),
+      headersToExclude,
       fetchOptions,
       fetch: fetchOverride,
     }));
@@ -319,6 +312,7 @@ export const createAccount = async (params: {
     (await fetchHomeUrl({
       account: newAccount,
       headers: excludeHeaders(headers, headersToExclude),
+      headersToExclude,
       fetchOptions,
       fetch: fetchOverride,
     }));
@@ -327,6 +321,7 @@ export const createAccount = async (params: {
     if (account.accountType === 'caldav') {
       newAccount.calendars = await fetchCalendars({
         headers: excludeHeaders(headers, headersToExclude),
+        headersToExclude,
         account: newAccount,
         fetchOptions,
         fetch: fetchOverride,
@@ -334,6 +329,7 @@ export const createAccount = async (params: {
     } else if (account.accountType === 'carddav') {
       newAccount.addressBooks = await fetchAddressBooks({
         headers: excludeHeaders(headers, headersToExclude),
+        headersToExclude,
         account: newAccount,
         fetchOptions,
         fetch: fetchOverride,
@@ -347,7 +343,10 @@ export const createAccount = async (params: {
           ...cal,
           objects: await fetchCalendarObjects({
             calendar: cal,
+            filters: { 'comp-filter': { _attributes: { name: 'VCALENDAR' } } },
+            urlFilter: (url) => !urlEquals(url, cal.url),
             headers: excludeHeaders(headers, headersToExclude),
+            headersToExclude,
             fetchOptions,
             fetch: fetchOverride,
           }),
@@ -360,6 +359,7 @@ export const createAccount = async (params: {
           objects: await fetchVCards({
             addressBook: addr,
             headers: excludeHeaders(headers, headersToExclude),
+            headersToExclude,
             fetchOptions,
             fetch: fetchOverride,
           }),

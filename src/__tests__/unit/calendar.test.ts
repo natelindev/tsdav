@@ -633,6 +633,7 @@ describe('syncCalendars', () => {
     _mockedSmartCollectionSync.mockImplementation(async (params: any) => ({
       ...params.collection,
       objects: [localObject],
+      ctag: 'new-ctag',
     }));
 
     const result = await syncCalendars({

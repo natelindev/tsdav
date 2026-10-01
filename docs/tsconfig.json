@@ -1,9 +1,18 @@
 {
   "extends": "@tsconfig/docusaurus/tsconfig.json",
-  "include": ["./src/"],
+  "include": [
+    "./src/"
+  ],
   "compilerOptions": {
     "baseUrl": null,
-    "paths": { "@site/*": ["./*"] },
+    "paths": {
+      "@site/*": [
+        "./*"
+      ],
+      "xml-js": [
+        "./node_modules/xml-js"
+      ]
+    },
     "strict": false
   }
 }

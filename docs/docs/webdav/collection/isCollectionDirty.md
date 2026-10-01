@@ -25,7 +25,7 @@ const { isDirty, newCtag } = await isCollectionDirty({
 ### Return Value
 
 - `isDirty` a boolean indicate if the collection is dirty
-- `newCtag` if collection is dirty, new ctag of the collection
+- `newCtag` the remote ctag, or `undefined` when the server does not provide one. An unavailable ctag means `isDirty: true` and basic sync fetches a complete snapshot.
 
 ### Behavior
 

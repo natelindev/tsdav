@@ -100,6 +100,13 @@ const result = await getOauthHeaders({
 }
 ```
 
+Both client APIs check OAuth expiry before each request and share one refresh for concurrent requests.
+The credentials object is updated with the access token, a rotated refresh token when supplied, and
+an expiration in milliseconds when `expires_in` is supplied. Persist those updated fields with your
+credential storage. A refresh failure rejects the client request before sending DAV traffic. A valid
+access token can be reused without a refresh token; an unknown expiry with an available refresh token
+triggers refresh when authentication is first resolved.
+
 ### defaultParam
 
 :::caution

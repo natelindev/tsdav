@@ -16,6 +16,7 @@ workflow, project guardrails, and verification guidance.
 
 - `serviceDiscovery`, `fetchPrincipalUrl`, and `fetchHomeUrl` locate account roots via `/.well-known/` redirects (`docs/docs/webdav/account`).
 - `createAccount` enriches a `DAVAccount` with discovered URLs plus calendars/address books when supplied credentials.
+- `src/util/xml.ts` normalizes XML after parsing with `xml-js`, preserving strings, CDATA order, and namespace collisions. `DAVResponse.propStats` retains individual property statuses and namespace maps.
 - `davRequest` is the low-level fetch wrapper shared by WebDAV, CalDAV, and CardDAV helpers (`docs/docs/webdav/davRequest.md`).
 - Object helpers map to HTTP verbs: `createObject`, `updateObject`, and `deleteObject` issue PUT/PATCH/DELETE with concurrency headers; `propfind` reads WebDAV metadata (`docs/docs/webdav`).
 
@@ -24,7 +25,7 @@ workflow, project guardrails, and verification guidance.
 - Enumerate calendars with `fetchCalendars`; filter or retrieve objects via `fetchCalendarObjects`, `calendarMultiGet`, and `calendarQuery` (`docs/docs/caldav`).
 - Write data with `createCalendarObject`, `updateCalendarObject`, and `deleteCalendarObject`; the helpers enforce proper `If-Match`/`If-None-Match` usage.
 - `syncCalendars` and `smartCollectionSync` surface server-side `sync-token`/`ctag` deltas for incremental syncs.
-- `smart calendar sync.md` documents end-to-end two-way sync: recommended database schema, handling created/updated/deleted objects, and when to fall back to multi-get.
+- `smart calendar sync.md` documents transactional remote-to-local sync with explicit storage adapters, complete component queries, and checked local-to-remote writes.
 
 ## CardDAV Workflow Highlights
 
@@ -33,7 +34,7 @@ workflow, project guardrails, and verification guidance.
 
 ## Helpers and Types
 
-- `docs/docs/helper.mdx` exposes the XML ⇄ JS converter to assemble ElementCompact request bodies without manual XML string building.
+- `docs/docs/helper.mdx` exposes a JSON/XML converter for compact request bodies and normalized response inspection. It uses the same XML normalization as the library.
 - Typed shapes such as `DAVAccount`, `DAVCalendar`, `DAVCalendarObject`, `DAVAddressBook`, `ElementCompact`, and credential tokens are documented in `docs/docs/types/`.
 - Most high-level functions accept `headers`, `headersToExclude`, and `fetchOptions` overrides—ensure custom auth headers align with provider requirements.
 - You can override the underlying `fetch` implementation for custom transports (Electron, KaiOS, Workers); see `docs/docs/intro.md` and `docs/docs/cloud providers.md`.
@@ -45,7 +46,7 @@ workflow, project guardrails, and verification guidance.
 
 ## Field Tips for Agents
 
-- Always normalize calendar object URLs using `URL.resolve` when combining parent collection URLs with relative paths (see smart sync example).
+- Always normalize calendar object URLs using `new URL(href, collectionUrl).href` when combining parent collection URLs with relative paths (see smart sync example).
 - When overriding CalDAV/CardDAV `props`, keep required fields (`supported-calendar-component-set`, `resourcetype`) to prevent server errors.
 - Reuse helper predicates (`urlFilter`, `useMultiGet`) for providers that emit non-`.ics` or non-`.vcf` keys.
 - Integration tests (`pnpm test:<provider>`) hit live services—guard credentials via environment variables and skip in CI unless configured.
