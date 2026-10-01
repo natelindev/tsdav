@@ -6,6 +6,7 @@ export declare const davRequest: (params: {
     init: DAVRequest;
     convertIncoming?: boolean;
     parseOutgoing?: boolean;
+    headersToExclude?: string[];
     fetchOptions?: RequestInit;
     fetch?: typeof fetch;
 }) => Promise<DAVResponse[]>;

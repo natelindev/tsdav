@@ -1,3 +1,29 @@
+## v2.3.5
+
+##### bug fixes
+
+- resolve relative discovery redirects against the request URL; thanks to [@bensynapse](https://github.com/bensynapse) for [#281](https://github.com/natelindev/tsdav/pull/281)
+- preserve redirect origins and explicit ports, and remove request bodies from discovery's GET fallback
+- preserve opaque DAV XML values as strings, mixed text/CDATA ordering, namespaces, and property status details while retaining `xml-js`
+- preserve complete successful raw responses, including large free/busy payloads
+- reject failed or incomplete discovery, object retrieval, and sync responses before calculating deletions or advancing sync state
+- include tasks, journals, and extensionless resources in collection synchronization, preserve REPORT sync tokens, and retain unchanged local objects
+- refresh expired OAuth credentials before requests through both client APIs, deduplicate concurrent refreshes, and stop DAV requests when refresh fails
+- apply header exclusions after merging all request headers and respect CardDAV object URL filters when multi-get is disabled
+- require a time range when expanding calendar recurrences, correct client sync return types, and bind multi-get callbacks to the client
+- restrict package cleanup to the `dist` directory
+
+##### improvements
+
+- export `makeCollection` and the `DAVPropStat` type, and replace repeated sync URL scans with indexed comparisons
+- correct browser, synchronization, iCalendar import, authentication, and response documentation; preserve recurrence exceptions, timezones, all-day events, and escaping in the feed-import example
+- replace executable input in the docs XML converter with JSON parsing and share the library's XML normalizer
+- derive the documentation version from the package and verify executable examples, public consumer types, dependency usage, and fresh package artifacts in CI and release checks
+
+##### security
+
+- remove unused direct dependencies and constrain vulnerable documentation transitive dependencies to fixed versions; root and documentation dependency audits report no known vulnerabilities at release verification
+
 ## v2.3.4
 
 ##### bug fixes

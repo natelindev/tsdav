@@ -14,3 +14,4 @@ export type RequireAtLeastOne<T, Keys extends keyof T = keyof T> = Pick<T, Exclu
 export declare function hasFields<T, K extends keyof T>(obj: Array<T | RequireAndNotNullSome<T, K>>, fields: K[]): obj is Array<RequireAndNotNullSome<T, K>>;
 export declare function hasFields<T, K extends keyof T>(obj: T | RequireAndNotNullSome<T, K>, fields: K[]): obj is RequireAndNotNullSome<T, K>;
 export declare const findMissingFieldNames: <T>(obj: T, fields: Array<keyof T>) => string;
+export declare const hasOwn: (value: object, key: PropertyKey) => boolean;

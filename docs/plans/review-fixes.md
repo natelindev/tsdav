@@ -93,3 +93,10 @@ browsers, Bun, Deno, and Workers. Do not run live provider tests.
   live provider verification was not run.
 - Stage 7 authorized: preparing the 2.3.5 release with contributor credit, final
   artifacts, and CI verification before publication.
+- Stage 7 candidate prepared: version bumped to 2.3.5, artifacts regenerated, and
+  `@bensynapse` credited for PR #281 in the changelog and prepared release notes.
+- Final candidate verification passed: 347 unit tests, 44 documentation tests,
+  3 executable example tests, root/docs type checks and builds, lint, dependency
+  usage, both audits, packed-file inspection, and packed CJS/ESM request checks.
+- Release PR checks, merge, final main CI, and publication will be recorded in the
+  GitHub release and its workflow runs.

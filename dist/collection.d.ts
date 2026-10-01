@@ -37,7 +37,7 @@ export declare const isCollectionDirty: (params: {
     fetch?: typeof fetch;
 }) => Promise<{
     isDirty: boolean;
-    newCtag: string;
+    newCtag: string | undefined;
 }>;
 /**
  * This is for webdav sync-collection only
