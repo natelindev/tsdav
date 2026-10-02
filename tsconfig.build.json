@@ -4,5 +4,5 @@
     "sourceMap": false,
     "rootDir": "./src"
   },
-  "exclude": ["node_modules", "**/*.test.ts", "**/__test__/**", "**/__mocks__/**"]
+  "exclude": ["node_modules", "**/*.test.ts", "**/__test__/**", "**/__tests__/**", "**/__mocks__/**"]
 }
