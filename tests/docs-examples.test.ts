@@ -76,7 +76,7 @@ describe('executable documentation', () => {
   });
 
   it('imports all-day recurrence and exceptions together, preserves text, and checks HTTP failures', async () => {
-    const { importExternalFeed } = await example('docs/docs/caldav/import-ical-feed.md');
+    const { importExternalFeed } = await example('docs/src/content/docs/caldav/import-ical-feed.md');
     const feed = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
@@ -143,7 +143,7 @@ describe('executable documentation', () => {
   });
 
   it('runs the sync guide through login and commits changes and tokens together', async () => {
-    const { synchronizeCalendars } = await example('docs/docs/smart calendar sync.md');
+    const { synchronizeCalendars } = await example('docs/src/content/docs/smart-calendar-sync.md');
     const xml = (body: string) =>
       new Response(
         `<d:multistatus xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/">${body}</d:multistatus>`,

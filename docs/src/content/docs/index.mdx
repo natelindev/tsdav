@@ -1,0 +1,147 @@
+---
+title: tsdav Documentation
+description: Complete tsdav documentation — Your universal WebDAV, CalDAV, and CardDAV client library for TypeScript and JavaScript.
+template: splash
+hero:
+  tagline: Lightweight, RFC-compliant TypeScript client with zero Node-only dependencies. Runs seamlessly in Node.js, Browsers, Cloudflare Workers, Bun, and Deno.
+  image:
+    file: ../../assets/logo.svg
+  actions:
+    - text: Quick Start
+      link: /intro/
+      icon: right-arrow
+      variant: primary
+    - text: CalDAV Guide
+      link: /caldav/fetchcalendars/
+      icon: open-book
+      variant: secondary
+    - text: View on GitHub
+      link: https://github.com/natelindev/tsdav
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid, Tabs, TabItem, Code } from '@astrojs/starlight/components';
+
+export const exampleSnippet = `import { createDAVClient } from 'tsdav';
+
+const client = await createDAVClient({
+  serverUrl: 'https://caldav.icloud.com',
+  credentials: {
+    username: 'YOUR_APPLE_ID',
+    password: 'YOUR_APP_SPECIFIC_PASSWORD',
+  },
+  authMethod: 'Basic',
+  defaultAccountType: 'caldav',
+});
+
+// Discover all remote calendars
+const calendars = await client.fetchCalendars();
+console.log(\`Found \${calendars.length} calendars:\`, calendars.map((c) => c.displayName));
+
+// Fetch all calendar events
+const events = await client.fetchCalendarObjects({
+  calendar: calendars[0],
+});
+console.log(\`Fetched \${events.length} calendar events.\`);`;
+
+<div class="badge-pill">
+  <span>✨</span>
+  <span>tsdav v2.3.5 is live • Zero Node-only globals • Universal Portable Client</span>
+</div>
+
+## Quick Start Guides
+
+Get started quickly with comprehensive guides and API references:
+
+<CardGrid>
+  <Card title="Quick Start" icon="rocket">
+    Learn how to install, configure authentication (Basic, OAuth), and initialize your first DAV client in less than 60 seconds.
+    <br />
+    [**Get Started →**](/intro/)
+  </Card>
+
+  <Card title="CalDAV APIs" icon="calendar">
+    Discover calendar collections, query events by time range, handle recurring events, and manage attendees.
+    <br />
+    [**Explore CalDAV →**](/caldav/fetchcalendars/)
+  </Card>
+
+  <Card title="CardDAV APIs" icon="open-book">
+    Connect to remote address books, retrieve and parse vCards, and perform atomic contact updates.
+    <br />
+    [**Explore CardDAV →**](/carddav/fetchaddressbooks/)
+  </Card>
+
+  <Card title="Smart Calendar Sync" icon="random">
+    Production-ready architectural guide for bi-directional remote-to-local sync with CTAGs and delta tokens.
+    <br />
+    [**Read Sync Guide →**](/smart-calendar-sync/)
+  </Card>
+
+  <Card title="Cloud Providers" icon="laptop">
+    Setup instructions and quirk workarounds for Apple iCloud, Google Calendar, Fastmail, Nextcloud, and Zoho.
+    <br />
+    [**View Providers →**](/cloud-providers/)
+  </Card>
+
+  <Card title="Interactive Converter" icon="setting">
+    Real-time playground to convert and inspect WebDAV XML request bodies and normalized response structures.
+    <br />
+    [**Open Playground →**](/helper/)
+  </Card>
+</CardGrid>
+
+---
+
+## Quick Installation
+
+Install `tsdav` using your preferred package manager:
+
+<Tabs>
+  <TabItem label="pnpm">
+    <Code code="pnpm add tsdav" lang="bash" />
+  </TabItem>
+  <TabItem label="npm">
+    <Code code="npm install tsdav" lang="bash" />
+  </TabItem>
+  <TabItem label="yarn">
+    <Code code="yarn add tsdav" lang="bash" />
+  </TabItem>
+  <TabItem label="bun">
+    <Code code="bun add tsdav" lang="bash" />
+  </TabItem>
+  <TabItem label="deno">
+    <Code code="import { createDAVClient } from 'npm:tsdav';" lang="ts" />
+  </TabItem>
+</Tabs>
+
+---
+
+## 30-Second Example
+
+Connecting to Apple iCloud CalDAV:
+
+<Code code={exampleSnippet} lang="ts" title="example.ts" />
+
+---
+
+## Key Features
+
+<CardGrid>
+  <Card title="Universal Portability" icon="puzzle">
+    Designed with zero Node-only globals (`fs`, `net`, `stream`). Works out of the box in browsers, Node.js, Cloudflare Workers, Electron, Bun, and Deno.
+  </Card>
+
+  <Card title="Delta Sync & CTAGs" icon="forward-slash">
+    Native support for RFC 6578 sync-collection reports and WebDAV `getctag` headers for instant, low-bandwidth delta updates.
+  </Card>
+
+  <Card title="Real Provider Quirks Handled" icon="approve-check">
+    Pre-configured normalization routines for Google's UID renames, Apple's custom namespaces, and Nextcloud's deletion quirks.
+  </Card>
+
+  <Card title="AI-Ready Documentation" icon="open-book">
+    Provides structured [`/llms.txt`](/llms/) and plain-text feeds optimized for ingestion by Cursor, Claude, and custom LLM workflows.
+  </Card>
+</CardGrid>

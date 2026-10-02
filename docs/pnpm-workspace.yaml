@@ -1,15 +1,10 @@
 packages:
   - .
 
-overrides:
-  serialize-javascript: 7.0.6
-  'uuid@<11.1.1': 11.1.1
-  docusaurus-plugin-llms>minimatch: "9.0.7"
-  docusaurus-plugin-llms>yaml: "2.8.3"
-  qs@>=6.14.2 <6.16.0: "6.16.0"
-  sockjs>uuid: "11.1.1"
-  serialize-javascript@<7.0.5: "7.0.5"
-  image-size: "npm:image-size-next@2.1.1"
-  'brace-expansion@1': '1.1.21'
-  'brace-expansion@5': '5.0.12'
-  'fast-uri@<3.1.8': '3.1.8'
+allowBuilds:
+  esbuild: true
+  sharp: true
+  '@pagefind/darwin-arm64': true
+
+patchedDependencies:
+  '@astrojs/starlight@0.32.6': patches/@astrojs__starlight@0.32.6.patch

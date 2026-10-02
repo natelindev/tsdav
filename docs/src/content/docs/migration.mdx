@@ -1,0 +1,20 @@
+---
+title: Migration Guide (v1 to v2)
+description: Transitioning from tsdav 1.1.x to 2.x
+---
+
+import { Converter } from '../../components/Converter';
+
+### Upgrading from 1.1.x to 2.x
+
+`tsdav` v2 unified the CalDAV and CardDAV clients and modernized the request and response shapes.
+
+#### Interactive Prop & Filter Migration Tool
+
+Use the interactive converter below to automatically transition your v1 props and filter definitions to modern compact formats:
+
+<Converter
+  client:load
+  variant="prop"
+  content={[{ name: 'calendar-description', namespace: 'urn:ietf:params:xml:ns:caldav' }]}
+/>

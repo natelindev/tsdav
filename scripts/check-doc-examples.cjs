@@ -4,7 +4,10 @@ const { execFileSync } = require('node:child_process');
 
 const root = resolve(__dirname, '..');
 const directory = mkdtempSync(join(root, 'tests', '.examples-'));
-const pages = ['docs/docs/smart calendar sync.md', 'docs/docs/caldav/import-ical-feed.md'];
+const pages = [
+  'docs/src/content/docs/smart-calendar-sync.md',
+  'docs/src/content/docs/caldav/import-ical-feed.md',
+];
 try {
   const sources = pages.map((page, index) => {
     const markdown = readFileSync(join(root, page), 'utf8');

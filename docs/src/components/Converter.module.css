@@ -1,36 +1,188 @@
-.converter {
+.converterCard {
+  margin: 1.5rem 0;
+  border-radius: 12px;
+  border: 1px solid var(--sl-color-gray-5, #262c36);
+  background: var(--sl-color-gray-6, #111620);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.converterCard:hover {
+  border-color: var(--sl-color-accent, #5698ee);
+  box-shadow: 0 6px 24px rgba(86, 152, 238, 0.12);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: var(--sl-color-gray-7, #0c1017);
+  border-bottom: 1px solid var(--sl-color-gray-5, #262c36);
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 3px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tab {
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.35rem 0.85rem;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--sl-color-gray-3, #94a3b8);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.tab:hover:not(.tabActive) {
+  color: var(--sl-color-gray-1, #e2e8f0);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tabActive {
+  background: rgba(86, 152, 238, 0.15) !important;
+  color: #93c5fd !important;
+  border-color: rgba(86, 152, 238, 0.35) !important;
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.copyBtn {
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.4rem 0.85rem;
+  border-radius: 6px;
+  border: 1px solid var(--sl-color-gray-5, #262c36);
+  background: var(--sl-color-gray-6, #161e2e);
+  color: var(--sl-color-gray-2, #cbd5e1);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.copyBtn:hover:not(:disabled) {
+  background: var(--sl-color-accent-low, #0f2238);
+  border-color: var(--sl-color-accent, #5698ee);
+  color: #93c5fd;
+}
+
+.copyBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--sl-color-gray-5, #262c36);
+}
+
+@media (max-width: 768px) {
+  .body {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel {
+  background: var(--sl-color-gray-6, #0f141c);
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
-  width: 100%;
-  margin-block: 1.5rem;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sl-color-gray-3, #94a3b8);
+}
+
+.badge {
+  font-size: 0.65rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
+  background: rgba(148, 163, 184, 0.15);
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.badgeSuccess {
+  font-size: 0.65rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
+  background: rgba(86, 152, 238, 0.15);
+  color: #93c5fd;
+  font-weight: 600;
 }
 
 .textarea {
   width: 100%;
-  min-height: 16rem;
-  padding: 1rem;
-  border: 1px solid var(--ifm-color-emphasis-300);
-  border-radius: 0.5rem;
-  background: var(--ifm-background-surface-color);
-  color: var(--ifm-font-color-base);
-  resize: vertical;
-  font-family: var(--ifm-font-family-monospace);
-  font-size: 0.9rem;
+  min-height: 220px;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.825rem;
   line-height: 1.5;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #090d13;
+  color: #e2e8f0;
+  resize: vertical;
+  box-sizing: border-box;
+  outline: none;
 }
 
-.textarea:focus-visible {
-  outline: 2px solid var(--ifm-color-primary);
-  outline-offset: 3px;
+.textarea:focus {
+  border-color: var(--sl-color-accent, #5698ee);
 }
 
-.title {
+.textareaOutput {
+  background: #070a0e;
+  color: #a5f3fc;
+}
+
+.errorBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(239, 68, 68, 0.12);
+  border-top: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  font-size: 0.825rem;
+}
+
+.errorIcon {
   font-size: 1rem;
-  font-weight: 600;
-}
-
-.error {
-  color: var(--ifm-color-danger);
-  margin: 0;
 }

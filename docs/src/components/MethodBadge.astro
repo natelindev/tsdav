@@ -1,0 +1,44 @@
+---
+interface Props {
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PROPFIND' | 'REPORT' | 'MKCALENDAR' | 'MKCOL';
+}
+
+const { method } = Astro.props;
+
+const styles: Record<string, { bg: string; text: string; border: string }> = {
+  GET: { bg: 'rgba(56, 189, 248, 0.15)', text: '#38bdf8', border: 'rgba(56, 189, 248, 0.3)' },
+  POST: { bg: 'rgba(74, 222, 128, 0.15)', text: '#4ade80', border: 'rgba(74, 222, 128, 0.3)' },
+  PUT: { bg: 'rgba(251, 146, 60, 0.15)', text: '#fb923c', border: 'rgba(251, 146, 60, 0.3)' },
+  DELETE: { bg: 'rgba(248, 113, 113, 0.15)', text: '#f87171', border: 'rgba(248, 113, 113, 0.3)' },
+  PROPFIND: { bg: 'rgba(168, 85, 247, 0.15)', text: '#c084fc', border: 'rgba(168, 85, 247, 0.3)' },
+  REPORT: { bg: 'rgba(234, 179, 8, 0.15)', text: '#facc15', border: 'rgba(234, 179, 8, 0.3)' },
+  MKCALENDAR: { bg: 'rgba(20, 184, 166, 0.15)', text: '#2dd4bf', border: 'rgba(20, 184, 166, 0.3)' },
+  MKCOL: { bg: 'rgba(20, 184, 166, 0.15)', text: '#2dd4bf', border: 'rgba(20, 184, 166, 0.3)' },
+};
+
+const current = styles[method] || styles.GET;
+---
+
+<span
+  class="method-badge"
+  style={`background: ${current.bg}; color: ${current.text}; border-color: ${current.border};`}
+>
+  {method}
+</span>
+
+<style>
+  .method-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 0.15rem 0.5rem;
+    border-radius: 6px;
+    border: 1px solid;
+    vertical-align: middle;
+    margin-right: 0.5rem;
+  }
+</style>

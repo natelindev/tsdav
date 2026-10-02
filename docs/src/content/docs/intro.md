@@ -1,0 +1,315 @@
+---
+title: 'Intro'
+sidebar_position: 1
+---
+
+# Intro
+
+[WEBDAV](https://tools.ietf.org/html/rfc4918), `Web Distributed Authoring and Versioning`, is an extension of the HTTP to allow handling distributed authoring, versioning of various resources.
+
+It's very common to be used for cloud storage(limited support), as well as calendar, contacts information syncing.
+
+### Cloud provider support status
+
+| Provider name | CalDAV | CardDAV |
+| ------------- | ------ | ------- |
+| Apple         | ✅     | ✅      |
+| Google        | ✅     | ✅      |
+| Fastmail      | ✅     | ✅      |
+| Nextcloud     | ✅     | ✅      |
+| Baikal        | ✅     | ✅      |
+| ZOHO          | ✅     | ✅      |
+| DAViCal       | ✅     | ⛔️      |
+| Forward Email | ✅     | ✅      |
+
+These entries describe calendar and contact interoperability. Support for individual WebDAV methods
+varies by server; they do not establish general file-storage or collection-management support.
+Google, for example, excludes `MKCOL`, `MKCALENDAR`, `COPY`, `MOVE`, `LOCK`, and `UNLOCK` from its
+[CalDAV implementation](https://developers.google.com/workspace/calendar/caldav/v2/guide).
+
+For more information on cloud providers, go to [cloud providers](./cloud%20providers.md) for more information.
+
+### Install
+
+```bash
+yarn add tsdav
+```
+
+or
+
+```bash
+npm install tsdav
+```
+
+### Browser usage
+
+Use the ESM bundle in modern browsers:
+
+```html
+<script type="module">
+  import { createDAVClient } from 'https://unpkg.com/tsdav/dist/tsdav.js';
+
+  const client = await createDAVClient({
+    serverUrl: 'https://caldav.icloud.com',
+    credentials: {
+      username: 'YOUR_APPLE_ID',
+      password: 'YOUR_APP_SPECIFIC_PASSWORD',
+    },
+    authMethod: 'Basic',
+    defaultAccountType: 'caldav',
+  });
+
+  const calendars = await client.fetchCalendars();
+  console.log(calendars);
+</script>
+```
+
+Browser requests to CalDAV/CardDAV endpoints are often blocked by CORS. Prefer running
+tsdav in a server environment, proxying requests through your backend, or using a [custom transport](#custom-transport-electroncors).
+
+### Bun
+
+`tsdav` runs under [Bun](https://bun.sh) without any additional configuration.
+Install and import as you would under Node.js:
+
+```bash
+bun add tsdav
+```
+
+```ts
+import { createDAVClient } from 'tsdav';
+```
+
+Bun's built-in `fetch` is used automatically.
+
+### Deno
+
+`tsdav` is consumable under [Deno](https://deno.com) via the `npm:` specifier
+in Deno 2.x and later:
+
+```ts
+import { createDAVClient } from 'npm:tsdav';
+
+const client = await createDAVClient({
+  serverUrl: 'https://caldav.icloud.com',
+  credentials: {
+    username: Deno.env.get('APPLE_ID')!,
+    password: Deno.env.get('APPLE_APP_PASSWORD')!,
+  },
+  authMethod: 'Basic',
+  defaultAccountType: 'caldav',
+});
+```
+
+Run with at minimum `--allow-net` (for CalDAV/CardDAV servers) and
+`--allow-env` (if you read credentials from the environment). Deno's native
+`fetch` is used automatically.
+
+### Cloudflare Workers
+
+`tsdav` is compatible with Cloudflare Workers. It automatically detects and uses the native `fetch` provided by the Workers runtime.
+
+Example (using standard Worker syntax):
+
+```ts
+import { createDAVClient } from 'tsdav';
+
+export default {
+  async fetch(request, env) {
+    const client = await createDAVClient({
+      serverUrl: 'https://caldav.icloud.com',
+      credentials: {
+        username: env.APPLE_ID,
+        password: env.APPLE_PASSWORD,
+      },
+      authMethod: 'Basic',
+      defaultAccountType: 'caldav',
+    });
+
+    const calendars = await client.fetchCalendars();
+    return new Response(JSON.stringify(calendars), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  },
+};
+```
+
+### Custom Transport (Electron/CORS)
+
+If you are using `tsdav` in an environment like an Electron renderer process where `fetch` is restricted by CORS (especially for providers like iCloud or Gmail), you can provide a custom `fetch` implementation to route requests through a proxy or Electron's main process.
+
+```ts
+const client = await createDAVClient({
+  serverUrl: 'https://caldav.icloud.com',
+  credentials: { ... },
+  authMethod: 'Basic',
+  // Custom fetch override
+  fetch: async (url, options) => {
+    // Implement your own transport here, e.g., IPC to main process
+    const response = await window.electronAPI.makeRequest(url, options);
+    return response;
+  },
+});
+```
+
+The custom `fetch` should follow the standard Fetch API interface. This is also supported in the `DAVClient` constructor and most high-level functions.
+
+### Basic usage
+
+#### Import the dependency
+
+```ts
+import { createDAVClient } from 'tsdav';
+```
+
+or
+
+```ts
+import tsdav from 'tsdav';
+```
+
+#### Create Client
+
+By creating a client, you can now use all tsdav methods without supplying authentication header or accounts.
+
+However, you can always pass in custom header or account to override the default for each request.
+
+For Google
+
+```ts
+const client = await createDAVClient({
+  serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
+  credentials: {
+    tokenUrl: 'https://accounts.google.com/o/oauth2/token',
+    username: 'YOUR_EMAIL_ADDRESS',
+    refreshToken: 'YOUR_REFRESH_TOKEN_WITH_CALDAV_PERMISSION',
+    clientId: 'YOUR_CLIENT_ID',
+    clientSecret: 'YOUR_CLIENT_SECRET',
+  },
+  authMethod: 'Oauth',
+  defaultAccountType: 'caldav',
+});
+```
+
+or
+
+```ts
+const client = await createDAVClient({
+  serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
+  credentials: {
+    authorizationCode: 'AUTH_CODE_OBTAINED_FROM_OAUTH_CALLBACK',
+    tokenUrl: 'https://accounts.google.com/o/oauth2/token',
+    clientId: 'YOUR_CLIENT_ID',
+    clientSecret: 'YOUR_CLIENT_SECRET',
+  },
+  authMethod: 'Oauth',
+  defaultAccountType: 'caldav',
+});
+```
+
+For Apple
+
+```ts
+const client = await createDAVClient({
+  serverUrl: 'https://caldav.icloud.com',
+  credentials: {
+    username: 'YOUR_APPLE_ID',
+    password: 'YOUR_APP_SPECIFIC_PASSWORD',
+  },
+  authMethod: 'Basic',
+  defaultAccountType: 'caldav',
+});
+```
+
+Need help generating app-specific passwords? See the
+[Apple app-specific password guide](https://support.apple.com/en-us/HT204397).
+
+After `v1.1.0`, you have a new way of creating clients.
+
+:::info
+
+You need to call `client.login()` with this method before using the functions
+
+:::
+
+For Google
+
+```ts
+const client = new DAVClient({
+  serverUrl: 'https://apidata.googleusercontent.com/caldav/v2/',
+  credentials: {
+    tokenUrl: 'https://accounts.google.com/o/oauth2/token',
+    username: 'YOUR_EMAIL_ADDRESS',
+    refreshToken: 'YOUR_REFRESH_TOKEN_WITH_CALDAV_PERMISSION',
+    clientId: 'YOUR_CLIENT_ID',
+    clientSecret: 'YOUR_CLIENT_SECRET',
+  },
+  authMethod: 'Oauth',
+  defaultAccountType: 'caldav',
+});
+```
+
+For Apple
+
+```ts
+const client = new DAVClient({
+  serverUrl: 'https://caldav.icloud.com',
+  credentials: {
+    username: 'YOUR_APPLE_ID',
+    password: 'YOUR_APP_SPECIFIC_PASSWORD',
+  },
+  authMethod: 'Basic',
+  defaultAccountType: 'caldav',
+});
+```
+
+#### Get calendars
+
+If you are using the class-based `DAVClient`, call `await client.login()` once before
+fetching calendars or other resources.
+
+```ts
+const calendars = await client.fetchCalendars();
+```
+
+#### Get calendar objects on calendars
+
+```ts
+const calendarObjects = await client.fetchCalendarObjects({
+  calendar: myCalendar,
+});
+```
+
+#### Get specific calendar objects on calendar using urls
+
+```ts
+const calendarObjects = await client.fetchCalendarObjects({
+  calendar: myCalendar,
+  objectUrls: urlArray,
+});
+```
+
+##### Get calendars changes from remote
+
+```ts
+const { created, updated, deleted } = await client.syncCalendarsDetailed({
+  oldCalendars: myCalendars,
+});
+```
+
+#### Get calendar object changes on a calendar from remote
+
+```ts
+const { created, updated, deleted } = (
+  await client.smartCollectionSyncDetailed({
+    collection: {
+      url: localCalendar.url,
+      ctag: localCalendar.ctag,
+      syncToken: localCalendar.syncToken,
+      objects: localCalendarObjects,
+      objectMultiGet: client.calendarMultiGet,
+    },
+    method: 'webdav',
+  })
+).objects;
+```

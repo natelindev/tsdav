@@ -2,55 +2,28 @@
   "name": "docs",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "build": "docusaurus build",
-    "clear": "docusaurus clear",
-    "deploy": "docusaurus deploy",
-    "dev": "docusaurus start",
-    "docusaurus": "docusaurus",
-    "serve": "docusaurus serve",
-    "start": "docusaurus start",
-    "swizzle": "docusaurus swizzle",
-    "write-heading-ids": "docusaurus write-heading-ids",
-    "write-translations": "docusaurus write-translations",
-    "test": "node --test tests/*.test.cjs",
-    "typecheck": "tsc --noEmit"
-  },
-  "browserslist": {
-    "production": [
-      ">0.5%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/*.test.cjs"
   },
   "dependencies": {
-    "@cmfcmf/docusaurus-search-local": "2.0.1",
-    "@docusaurus/core": "3.10.2",
-    "@docusaurus/preset-classic": "3.10.2",
-    "@mdx-js/react": "3.1.1",
-    "buffer": "6.0.3",
-    "docusaurus-markdown-source-plugin": "^2.2.5",
-    "prism-react-renderer": "2.4.1",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "stream-browserify": "3.0.0",
+    "@astrojs/mdx": "^4.3.14",
+    "@astrojs/react": "^4.4.1",
+    "@astrojs/starlight": "^0.32.0",
+    "astro": "^5.4.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "xml-js": "1.6.11"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "3.10.2",
-    "@docusaurus/theme-classic": "3.10.2",
-    "@docusaurus/types": "3.10.2",
-    "@tsconfig/docusaurus": "2.0.9",
-    "@types/node": "26.4.1",
-    "@types/react": "19.2.18",
-    "@types/react-router-dom": "5.3.3",
-    "docusaurus-plugin-llms": "^0.6.0",
-    "typescript": "7.0.2"
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.8.0"
   },
   "packageManager": "pnpm@10.34.4"
 }

@@ -35,7 +35,7 @@ type ShallowMergeDupKeyArray<A, B> = {
         : never;
 };
 export const mergeObjectDupKeyArray = <A, B>(objA: A, objB: B): ShallowMergeDupKeyArray<A, B> => {
-  return (Object.entries(objA) as Array<[keyof A | keyof B, unknown]>).reduce(
+  return (Object.entries(objA as Record<string, unknown>) as Array<[keyof A | keyof B, unknown]>).reduce(
     (
       merged: ShallowMergeDupKeyArray<A, B>,
       [currKey, currValue],

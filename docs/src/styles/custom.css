@@ -1,0 +1,345 @@
+/* tsdav Blue Theme inspired by tsdav logo and modern doc designs */
+
+:root {
+  --sl-font-system: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --sl-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* tsdav Cyan/Blue Brand Palette per logo (#3EDBF0 -> #77ACF1) */
+  --sl-color-accent-low: #0f2238;
+  --sl-color-accent: #5698ee;
+  --sl-color-accent-high: #93c5fd;
+
+  --sl-color-white: #f8fafc;
+  --sl-color-gray-1: #e2e8f0;
+  --sl-color-gray-2: #cbd5e1;
+  --sl-color-gray-3: #94a3b8;
+  --sl-color-gray-4: #64748b;
+  --sl-color-gray-5: #1e293b;
+  --sl-color-gray-6: #0f172a;
+  --sl-color-black: #090d16;
+
+  /* Expressive code copy tooltip brand override */
+  --ec-frm-tooltipSuccessBg: #2563eb;
+  --ec-frm-tooltipSuccessFg: #ffffff;
+}
+
+:root[data-theme='light'] {
+  --sl-color-accent-low: #e0f2fe;
+  --sl-color-accent: #0284c7;
+  --sl-color-accent-high: #0369a1;
+
+  --sl-color-white: #090d16;
+  --sl-color-gray-1: #1e293b;
+  --sl-color-gray-2: #334155;
+  --sl-color-gray-3: #64748b;
+  --sl-color-gray-4: #94a3b8;
+  --sl-color-gray-5: #e2e8f0;
+  --sl-color-gray-6: #f8fafc;
+  --sl-color-black: #ffffff;
+
+  --ec-frm-tooltipSuccessBg: #2563eb;
+  --ec-frm-tooltipSuccessFg: #ffffff;
+}
+
+/* Header & Navbar styling */
+header.header {
+  backdrop-filter: blur(12px);
+  background-color: rgba(9, 13, 22, 0.85);
+  border-bottom: 1px solid rgba(86, 152, 238, 0.12);
+}
+
+:root[data-theme='light'] header.header {
+  background-color: rgba(255, 255, 255, 0.85);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Sidebar styling */
+.sidebar-pane {
+  background-color: var(--sl-color-black);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sidebar-content a {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+}
+
+.sidebar-content a[aria-current='page'] {
+  background-color: rgba(86, 152, 238, 0.12) !important;
+  color: #93c5fd !important;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+/* Sidebar method badges: positioned on the LEFT, Suno-inspired distinct colors */
+.sidebar-content a .sl-badge {
+  order: -1 !important;
+  margin-inline-end: 0 !important;
+  font-family: var(--sl-font-mono) !important;
+  font-size: 0.625rem !important;
+  font-weight: 700 !important;
+  padding: 0.12rem 0.45rem !important;
+  border-radius: 4px !important;
+  letter-spacing: 0.04em !important;
+  line-height: 1.2 !important;
+  flex-shrink: 0 !important;
+  border: 1px solid transparent !important;
+  transition: opacity 0.15s ease, filter 0.15s ease;
+}
+
+/* Method badge color schemes: Dark mode */
+.sidebar-pane .sl-badge.method-propfind {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #34d399 !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+.sidebar-pane .sl-badge.method-report {
+  background: rgba(139, 92, 246, 0.15) !important;
+  color: #c084fc !important;
+  border: 1px solid rgba(139, 92, 246, 0.3) !important;
+}
+
+.sidebar-pane .sl-badge.method-put {
+  background: rgba(59, 130, 246, 0.15) !important;
+  color: #60a5fa !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+}
+
+.sidebar-pane .sl-badge.method-delete {
+  background: rgba(244, 63, 94, 0.15) !important;
+  color: #fb7185 !important;
+  border: 1px solid rgba(244, 63, 94, 0.3) !important;
+}
+
+.sidebar-pane .sl-badge.method-mkcol {
+  background: rgba(245, 158, 11, 0.15) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+}
+
+/* Method badge color schemes: Light mode */
+:root[data-theme='light'] .sidebar-pane .sl-badge.method-propfind {
+  background: rgba(16, 185, 129, 0.12) !important;
+  color: #047857 !important;
+  border: 1px solid rgba(16, 185, 129, 0.25) !important;
+}
+
+:root[data-theme='light'] .sidebar-pane .sl-badge.method-report {
+  background: rgba(139, 92, 246, 0.12) !important;
+  color: #6d28d9 !important;
+  border: 1px solid rgba(139, 92, 246, 0.25) !important;
+}
+
+:root[data-theme='light'] .sidebar-pane .sl-badge.method-put {
+  background: rgba(59, 130, 246, 0.12) !important;
+  color: #1d4ed8 !important;
+  border: 1px solid rgba(59, 130, 246, 0.25) !important;
+}
+
+:root[data-theme='light'] .sidebar-pane .sl-badge.method-delete {
+  background: rgba(244, 63, 94, 0.12) !important;
+  color: #be123c !important;
+  border: 1px solid rgba(244, 63, 94, 0.25) !important;
+}
+
+:root[data-theme='light'] .sidebar-pane .sl-badge.method-mkcol {
+  background: rgba(245, 158, 11, 0.12) !important;
+  color: #b45309 !important;
+  border: 1px solid rgba(245, 158, 11, 0.25) !important;
+}
+
+/* Card Grid styling - tsdav Blue Edition */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+  margin: 1.5rem 0;
+}
+
+.card {
+  position: relative;
+  background: linear-gradient(180deg, rgba(86, 152, 238, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%), var(--sl-color-gray-6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 1.5rem;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(86, 152, 238, 0.4);
+  box-shadow: 0 12px 30px -10px rgba(86, 152, 238, 0.2), 0 0 0 1px rgba(86, 152, 238, 0.2);
+}
+
+.card .title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--sl-color-white);
+  margin-bottom: 0.5rem;
+}
+
+/* Overriding rainbow card icons to consistent tsdav blue theme */
+.card:nth-child(n) {
+  --sl-card-border: rgba(86, 152, 238, 0.25) !important;
+  --sl-card-bg: rgba(86, 152, 238, 0.08) !important;
+}
+
+.card:nth-child(n) .icon {
+  border: 1px solid rgba(86, 152, 238, 0.3) !important;
+  background-color: rgba(86, 152, 238, 0.1) !important;
+  color: #77acf1 !important;
+  border-radius: 8px !important;
+  padding: 0.35rem !important;
+  box-shadow: 0 2px 8px rgba(86, 152, 238, 0.15) !important;
+}
+
+:root[data-theme='light'] .card:nth-child(n) {
+  --sl-card-border: rgba(2, 132, 199, 0.25) !important;
+  --sl-card-bg: rgba(2, 132, 199, 0.08) !important;
+}
+
+:root[data-theme='light'] .card:nth-child(n) .icon {
+  border: 1px solid rgba(2, 132, 199, 0.3) !important;
+  background-color: rgba(2, 132, 199, 0.08) !important;
+  color: #0284c7 !important;
+}
+
+/* Hero Section enhancement */
+.hero {
+  padding-block: 3rem 4rem;
+}
+
+.hero .tagline {
+  font-size: 1.25rem;
+  line-height: 1.6;
+  max-width: 44rem;
+  color: var(--sl-color-gray-2);
+}
+
+/* Primary Hero button with tsdav blue gradient */
+.hero .actions a.primary {
+  background: linear-gradient(135deg, #3edbf0 0%, #5698ee 100%) !important;
+  color: #041226 !important;
+  font-weight: 700 !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(86, 152, 238, 0.35);
+  transition: all 0.2s ease;
+}
+
+.hero .actions a.primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(62, 219, 240, 0.45);
+}
+
+.badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  background: rgba(86, 152, 238, 0.1);
+  border: 1px solid rgba(86, 152, 238, 0.3);
+  color: #93c5fd;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+}
+
+/* Professional Table styling across all docs */
+.sl-markdown-content table:not(:where(.not-content *)) {
+  display: table !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(86, 152, 238, 0.2) !important;
+  background: rgba(15, 23, 42, 0.4) !important;
+  margin: 1.5rem 0 !important;
+}
+
+.sl-markdown-content :is(th, td):not(:where(.not-content *)) {
+  padding: 0.85rem 1.25rem !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  vertical-align: middle !important;
+}
+
+.sl-markdown-content th:not(:where(.not-content *)) {
+  background-color: rgba(86, 152, 238, 0.08) !important;
+  color: #93c5fd !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  letter-spacing: 0.02em !important;
+}
+
+.sl-markdown-content tr:last-child td:not(:where(.not-content *)) {
+  border-bottom: none !important;
+}
+
+.sl-markdown-content tbody tr:hover td:not(:where(.not-content *)) {
+  background-color: rgba(86, 152, 238, 0.04) !important;
+}
+
+/* Center checkmarks and status indicators in columns */
+.sl-markdown-content th:not(:first-child),
+.sl-markdown-content td:not(:first-child) {
+  text-align: center !important;
+}
+
+/* Expressive code frame styling */
+.expressive-code .frame {
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.expressive-code .header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Expressive Code copy tooltip blue brand override (no green) */
+.expressive-code .copy .feedback {
+  --tooltip-bg: #2563eb !important;
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4) !important;
+}
+
+.expressive-code .copy .feedback::after {
+  border-inline-start-color: #2563eb !important;
+}
+
+/* Starlight Tabs styling */
+starlight-tabs [role='tablist'] {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  gap: 0.5rem !important;
+  padding-bottom: 0 !important;
+}
+
+starlight-tabs .tab > [role='tab'] {
+  border-bottom: 2px solid transparent !important;
+  color: var(--sl-color-gray-3) !important;
+  padding: 0.6rem 1rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  border-radius: 0 !important;
+  transition: all 0.15s ease !important;
+}
+
+starlight-tabs .tab > [role='tab']:hover {
+  color: var(--sl-color-gray-1) !important;
+}
+
+starlight-tabs .tab [role='tab'][aria-selected='true'] {
+  color: #93c5fd !important;
+  border-bottom-color: #5698ee !important;
+  font-weight: 600 !important;
+}

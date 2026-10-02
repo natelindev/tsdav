@@ -1,6 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "cleanUrls": false,
+  "cleanUrls": true,
+  "buildCommand": "pnpm build",
+  "outputDirectory": "dist",
   "installCommand": "pnpm install --frozen-lockfile",
   "headers": [
     {
@@ -25,7 +27,7 @@
       ]
     },
     {
-      "source": "/docs/(.*)/img/(.*)",
+      "source": "/(.*)/img/(.*)",
       "headers": [
         {
           "key": "X-Robots-Tag",
@@ -39,11 +41,9 @@
     }
   ],
   "redirects": [
-    { "source": "/", "destination": "/docs/", "permanent": true },
-    { "source": "/docs/intro", "destination": "/docs/", "permanent": true }
-  ],
-  "rewrites": [
-    { "source": "/docs/:path(.*)\\.md", "destination": "/:path.md" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/docs", "destination": "/", "permanent": true },
+    { "source": "/docs/", "destination": "/", "permanent": true },
+    { "source": "/docs/intro", "destination": "/intro/", "permanent": true },
+    { "source": "/docs/:path*", "destination": "/:path*", "permanent": true }
   ]
 }
