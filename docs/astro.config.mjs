@@ -3,11 +3,23 @@ import { defineConfig, passthroughImageService } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import react from '@astrojs/react';
 
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 // https://astro.build/config
 export default defineConfig({
   site: 'https://tsdav.vercel.app',
   image: {
     service: passthroughImageService(),
+  },
+  vite: {
+    resolve: {
+      alias: {
+        'xml-js': path.resolve(__dirname, 'node_modules/xml-js'),
+      },
+    },
   },
   integrations: [
     starlight({
