@@ -6,42 +6,42 @@ workflow, project guardrails, and verification guidance.
 
 ## Project Snapshot
 
-- `tsdav` is a TypeScript WebDAV client that wraps CalDAV and CardDAV workflows for browsers and Node.js (`docs/docs/intro.md`).
+- `tsdav` is a TypeScript WebDAV client that wraps CalDAV and CardDAV workflows for browsers and Node.js (`docs/src/content/docs/intro.md`).
 - Core entry points are `createDAVClient` and `DAVClient`; for the class-based API you must call `client.login()` before issuing DAV requests.
-- Source lives in `src/`, generated bundles ship from `dist/`, while human-readable references are kept under `docs/docs/`.
+- Source lives in `src/`, generated bundles ship from `dist/`, while human-readable references are kept under `docs/src/content/docs/`.
 - Install dependencies with `pnpm install`; build with `pnpm build`. Vitest integration targets expect provider credentials (`package.json` scripts).
 - Debug HTTP traffic by setting `DEBUG=tsdav:*` (`README.md`).
 
 ## WebDAV Building Blocks
 
-- `serviceDiscovery`, `fetchPrincipalUrl`, and `fetchHomeUrl` locate account roots via `/.well-known/` redirects (`docs/docs/webdav/account`).
+- `serviceDiscovery`, `fetchPrincipalUrl`, and `fetchHomeUrl` locate account roots via `/.well-known/` redirects (`docs/src/content/docs/webdav/account`).
 - `createAccount` enriches a `DAVAccount` with discovered URLs plus calendars/address books when supplied credentials.
 - `src/util/xml.ts` normalizes XML after parsing with `xml-js`, preserving strings, CDATA order, and namespace collisions. `DAVResponse.propStats` retains individual property statuses and namespace maps.
-- `davRequest` is the low-level fetch wrapper shared by WebDAV, CalDAV, and CardDAV helpers (`docs/docs/webdav/davRequest.md`).
-- Object helpers map to HTTP verbs: `createObject`, `updateObject`, and `deleteObject` issue PUT/PATCH/DELETE with concurrency headers; `propfind` reads WebDAV metadata (`docs/docs/webdav`).
+- `davRequest` is the low-level fetch wrapper shared by WebDAV, CalDAV, and CardDAV helpers (`docs/src/content/docs/webdav/davrequest.md`).
+- Object helpers map to HTTP verbs: `createObject`, `updateObject`, and `deleteObject` issue PUT/PATCH/DELETE with concurrency headers; `propfind` reads WebDAV metadata (`docs/src/content/docs/webdav`).
 
 ## CalDAV Workflow Highlights
 
-- Enumerate calendars with `fetchCalendars`; filter or retrieve objects via `fetchCalendarObjects`, `calendarMultiGet`, and `calendarQuery` (`docs/docs/caldav`).
+- Enumerate calendars with `fetchCalendars`; filter or retrieve objects via `fetchCalendarObjects`, `calendarMultiGet`, and `calendarQuery` (`docs/src/content/docs/caldav`).
 - Write data with `createCalendarObject`, `updateCalendarObject`, and `deleteCalendarObject`; the helpers enforce proper `If-Match`/`If-None-Match` usage.
 - `syncCalendars` and `smartCollectionSync` surface server-side `sync-token`/`ctag` deltas for incremental syncs.
-- `smart calendar sync.md` documents transactional remote-to-local sync with explicit storage adapters, complete component queries, and checked local-to-remote writes.
+- `smart-calendar-sync.md` documents transactional remote-to-local sync with explicit storage adapters, complete component queries, and checked local-to-remote writes.
 
 ## CardDAV Workflow Highlights
 
-- `fetchAddressBooks` discovers address books; `fetchVCards`, `addressBookMultiGet`, and `addressBookQuery` return contact payloads (`docs/docs/carddav`).
+- `fetchAddressBooks` discovers address books; `fetchVCards`, `addressBookMultiGet`, and `addressBookQuery` return contact payloads (`docs/src/content/docs/carddav`).
 - CRUD mirrors CalDAV: `createVCard`, `updateVCard`, and `deleteVCard` manage `.vcf` resources while honoring provider-specific UID behavior.
 
 ## Helpers and Types
 
-- `docs/docs/helper.mdx` exposes a JSON/XML converter for compact request bodies and normalized response inspection. It uses the same XML normalization as the library.
-- Typed shapes such as `DAVAccount`, `DAVCalendar`, `DAVCalendarObject`, `DAVAddressBook`, `ElementCompact`, and credential tokens are documented in `docs/docs/types/`.
+- `docs/src/content/docs/helper.mdx` exposes a JSON/XML converter for compact request bodies and normalized response inspection. It uses the same XML normalization as the library.
+- Typed shapes such as `DAVAccount`, `DAVCalendar`, `DAVCalendarObject`, `DAVAddressBook`, `ElementCompact`, and credential tokens are documented in `docs/src/content/docs/types/`.
 - Most high-level functions accept `headers`, `headersToExclude`, and `fetchOptions` overrides—ensure custom auth headers align with provider requirements.
-- You can override the underlying `fetch` implementation for custom transports (Electron, KaiOS, Workers); see `docs/docs/intro.md` and `docs/docs/cloud providers.md`.
+- You can override the underlying `fetch` implementation for custom transports (Electron, KaiOS, Workers); see `docs/src/content/docs/intro.md` and `docs/src/content/docs/cloud-providers.md`.
 
 ## Cloud Provider Notes
 
-- Credential setup differs across providers (Apple app-specific passwords, Google OAuth refresh tokens, Fastmail app passwords) (`docs/docs/cloud providers.md`).
+- Credential setup differs across providers (Apple app-specific passwords, Google OAuth refresh tokens, Fastmail app passwords) (`docs/src/content/docs/cloud-providers.md`).
 - Expect quirks such as Google renaming objects to UID-based filenames, Zoho preventing duplicate UIDs, and Nextcloud renaming on delete; design agents to normalize URLs before diffing.
 
 ## Field Tips for Agents

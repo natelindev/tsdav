@@ -37,8 +37,8 @@ Guidance for AI coding agents working in this repository. The architecture overv
 - `src/__tests__/unit/` and `src/util/__tests__/` are the default test targets.
 - `src/__tests__/integration/<provider>/` contains provider tests that may use
   environment credentials or recorded/mocked network behavior.
-- `docs/docs/` is the maintained documentation source. `docs/build/`,
-  `docs/.docusaurus/`, and `dist/` are generated outputs.
+- `docs/src/content/docs/` is the maintained documentation source. `docs/dist/`,
+  `docs/.astro/`, and `dist/` are generated outputs.
 
 ## Setup And Commands
 
@@ -80,7 +80,7 @@ Guidance for AI coding agents working in this repository. The architecture overv
 - When overriding CalDAV/CardDAV props, keep required fields such as
   `resourcetype` and `supported-calendar-component-set`.
 - Preserve known provider quirks documented in
-  `docs/agent-architecture-overview.md` and `docs/docs/cloud providers.md`.
+  `docs/agent-architecture-overview.md` and `docs/src/content/docs/cloud-providers.md`.
 
 ## Tests And Credentials
 
