@@ -675,3 +675,30 @@ describe('fetchHomeUrl', () => {
     expect(result).toBe('https://example.com/calendars/user1/');
   });
 });
+
+describe('createAccount credentials errors', () => {
+  it('reports a 401 even when a later root candidate fails differently', async () => {
+    const mockFetch = vi.fn(async (url: string) => {
+      if (url.includes('/.well-known/')) {
+        return buildResponse({ status: 302, headers: { Location: '/dav.php/' }, url });
+      }
+      // The server root serves an HTML page, as Baikal does.
+      if (url === 'https://example.com/') {
+        return buildResponse({
+          status: 200,
+          body: '<html></html>',
+          headers: { 'content-type': 'text/html' },
+          url,
+        });
+      }
+      return buildResponse({ status: 401, statusText: 'Unauthorized', url });
+    });
+
+    await expect(
+      createAccount({
+        account: { serverUrl: 'https://example.com/dav.php', accountType: 'caldav' },
+        fetch: mockFetch,
+      }),
+    ).rejects.toThrow('Invalid credentials');
+  });
+});

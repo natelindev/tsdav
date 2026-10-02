@@ -88,6 +88,7 @@ export {
   fetchOauthTokens,
   refreshAccessToken,
 } from './util/authHelpers';
+export { DigestUnsupportedError } from './util/digestAuth';
 export {
   urlContains,
   urlEquals,

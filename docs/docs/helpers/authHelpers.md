@@ -126,21 +126,30 @@ const fn2 = defaultParam(fn1, { b: 10 });
 
 ### digest auth and custom auth
 
-for digest auth, you need to handle the auth process yourself, pass the final digest string like
+for digest auth (RFC 7616), pass `username` and `password` with `authMethod: 'Digest'`.
+tsdav answers the server's `WWW-Authenticate` challenge itself and computes a fresh
+`Authorization` header for every request (MD5, MD5-sess, SHA-256 and SHA-256-sess with
+`qop=auth`, or the RFC 2069 form when the server sends no `qop`).
+Digest needs the WebCrypto API (`globalThis.crypto`): Node.js >= 19, browsers, Bun or Deno.
+On Node.js 18 a Digest request fails with a `DigestUnsupportedError` that says so.
+While Digest is in use, tsdav follows redirects itself, since every hop needs its own
+`Authorization` header. The returned `Response` then reports `redirected: false`; compare
+`response.url` with the request URL if you need to know.
 
-```
-username="Mufasa",
-realm="testrealm@host.com",
-nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093",
-uri="/dir/index.html",
-qop=auth,
-nc=00000001,
-cnonce="0a4f113b",
-response="6629fae49393a05397450978507c4ef1",
-opaque="5ccc069c403ebaf9f0171e9517f40e41
+```ts
+const client = await createDAVClient({
+  serverUrl: 'https://baikal.example.com/dav.php',
+  credentials: { username: 'user', password: 'password' },
+  authMethod: 'Digest',
+  defaultAccountType: 'caldav',
+});
 ```
 
-as `digestString` param in DAVCredentials
+with `authMethod: 'Basic'`, a client switches to Digest on its own when the server answers
+`401` with a Digest challenge and no Basic challenge, so servers such as Baikal that only
+accept Digest work either way. A client never falls back from Digest to Basic.
+
+a `digestString` in DAVCredentials (a precomputed header value) is still sent as-is when given.
 
 for custom auth, you can pass additional data via `customData` prop to DAVCredentials,
 you can pass in your custom auth function as `authFunction` param and will have DAVCredentials available to it.
