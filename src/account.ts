@@ -286,7 +286,14 @@ export const createAccount = async (params: {
 
         return { rootUrl, principalUrl };
       } catch (err) {
-        return findPrincipalUrl(rootUrls, index + 1, err as Error);
+        // A 401 on one candidate explains why the others failed better than
+        // their own errors (e.g. an HTML page at the server root), so keep it.
+        const isCredentialsError = lastPrincipalError?.message.startsWith('Invalid credentials');
+        return findPrincipalUrl(
+          rootUrls,
+          index + 1,
+          isCredentialsError ? lastPrincipalError : (err as Error),
+        );
       }
     };
 
