@@ -5,6 +5,7 @@ import { fetchCalendarObjects, fetchCalendars } from './calendar';
 import { DAVNamespaceShort } from './consts';
 import { propfind } from './request';
 import { DAVAccount } from './types/models';
+import { DigestUnsupportedError } from './util/digestAuth';
 import { fetch } from './util/fetch';
 import {
   excludeHeaders,
@@ -76,6 +77,9 @@ export const serviceDiscovery = async (params: {
       return redirectUrl;
     }
   } catch (err) {
+    // Only a failed request means "no .well-known here"; an auth layer that
+    // cannot run on this runtime fails the same way on every other URL.
+    if (err instanceof DigestUnsupportedError) throw err;
     debug(`Service discovery PROPFIND failed: ${(err as Error).stack}`);
   }
 
@@ -95,6 +99,7 @@ export const serviceDiscovery = async (params: {
       return redirectUrl;
     }
   } catch (err) {
+    if (err instanceof DigestUnsupportedError) throw err;
     debug(`Service discovery GET failed: ${(err as Error).stack}`);
   }
 
@@ -286,6 +291,8 @@ export const createAccount = async (params: {
 
         return { rootUrl, principalUrl };
       } catch (err) {
+        // Trying the next candidate cannot help, and its error would replace this one.
+        if (err instanceof DigestUnsupportedError) throw err;
         // A 401 on one candidate explains why the others failed better than
         // their own errors (e.g. an HTML page at the server root), so keep it.
         const isCredentialsError = lastPrincipalError?.message.startsWith('Invalid credentials');

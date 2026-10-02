@@ -145,6 +145,10 @@ const client = await createDAVClient({
 });
 ```
 
+with `authMethod: 'Basic'`, a client switches to Digest on its own when the server answers
+`401` with a Digest challenge and no Basic challenge, so servers such as Baikal that only
+accept Digest work either way. A client never falls back from Digest to Basic.
+
 a `digestString` in DAVCredentials (a precomputed header value) is still sent as-is when given.
 
 for custom auth, you can pass additional data via `customData` prop to DAVCredentials,

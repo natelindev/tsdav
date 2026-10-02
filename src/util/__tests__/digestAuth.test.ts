@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   buildDigestAuthorization,
+  createDigestAuthState,
   createDigestFetch,
   parseAuthenticateHeader,
   selectDigestChallenge,
@@ -72,6 +73,12 @@ describe('selectDigestChallenge', () => {
     ).toBeUndefined();
     expect(selectDigestChallenge('Basic realm="r"')).toBeUndefined();
     expect(selectDigestChallenge(null)).toBeUndefined();
+  });
+
+  it('defers to Basic when asked to and the server accepts Basic', () => {
+    const header = 'Basic realm="r", Digest realm="r", nonce="n"';
+    expect(selectDigestChallenge(header, { unlessBasic: true })).toBeUndefined();
+    expect(selectDigestChallenge(header)?.nonce).toBe('n');
   });
 
   it('reads the stale flag', () => {
@@ -492,5 +499,136 @@ describe('createDigestFetch', () => {
     } finally {
       vi.unstubAllGlobals();
     }
+  });
+
+  it('keeps a Basic client on Basic without WebCrypto', async () => {
+    vi.stubGlobal('crypto', undefined);
+    try {
+      const responses = [
+        new Response('', {
+          status: 401,
+          headers: { 'www-authenticate': 'Digest realm="r", nonce="n", qop="auth"' },
+        }),
+        multistatus(),
+      ];
+      const server = vi.fn(async () => responses.shift() as Response);
+      const state = createDigestAuthState(false);
+      const digestFetch = createDigestFetch({ credentials, fetch: server, state });
+
+      await expect(digestFetch(url)).rejects.toThrow('requires the WebCrypto API');
+      expect(state.active).toBe(false);
+      expect((await digestFetch(url)).status).toBe(207);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  describe('starting from Basic auth', () => {
+    const basicInit = () => ({ method: 'PROPFIND', headers: { authorization: 'Basic abc' } });
+
+    it('switches to Digest when the server only offers Digest', async () => {
+      const server = createDigestServer({ ...credentials, handle: multistatus });
+      const state = createDigestAuthState(false);
+      const digestFetch = createDigestFetch({ credentials, fetch: server.fetch, state });
+      const response = await digestFetch(url, basicInit());
+      await digestFetch(url, basicInit());
+
+      expect(response.status).toBe(207);
+      expect(state.active).toBe(true);
+      expect(server.fetch).toHaveBeenCalledTimes(3);
+      expect(server.authorizationOf(0)).toBe('Basic abc');
+      expect(server.authorizationOf(1)).toMatch(/^Digest .*nc=00000001/);
+      expect(server.authorizationOf(2)).toMatch(/^Digest .*nc=00000002/);
+    });
+
+    it('answers the challenge only once when the password is wrong', async () => {
+      const server = createDigestServer({ ...credentials, handle: multistatus });
+      const response = await createDigestFetch({
+        credentials: { ...credentials, password: 'wrong' },
+        fetch: server.fetch,
+        state: createDigestAuthState(false),
+      })(url, basicInit());
+
+      expect(response.status).toBe(401);
+      expect(server.fetch).toHaveBeenCalledTimes(2);
+    });
+
+    it('stays on Basic when the server also offers Basic', async () => {
+      const server = createDigestServer({ ...credentials, offerBasic: true, handle: multistatus });
+      const state = createDigestAuthState(false);
+      const response = await createDigestFetch({ credentials, fetch: server.fetch, state })(
+        url,
+        basicInit(),
+      );
+
+      expect(response.status).toBe(401);
+      expect(state.active).toBe(false);
+      expect(server.fetch).toHaveBeenCalledTimes(1);
+    });
+
+    it('passes requests through untouched when Basic succeeds', async () => {
+      const basicServer = vi.fn(async () => multistatus());
+      const init = basicInit();
+      const response = await createDigestFetch({
+        credentials,
+        fetch: basicServer,
+        state: createDigestAuthState(false),
+      })(url, init);
+
+      expect(response.status).toBe(207);
+      expect(basicServer).toHaveBeenCalledTimes(1);
+      expect(basicServer).toHaveBeenCalledWith(url, init);
+    });
+
+    it('ignores a Digest challenge from another origin that fetch was redirected to', async () => {
+      const challenged = new Response('', {
+        status: 401,
+        headers: { 'www-authenticate': 'Digest realm="other", nonce="n", qop="auth"' },
+      });
+      Object.defineProperty(challenged, 'url', { value: 'http://other.test/x' });
+      const server = vi.fn(async () => challenged);
+      const state = createDigestAuthState(false);
+      const response = await createDigestFetch({ credentials, fetch: server, state })(
+        url,
+        basicInit(),
+      );
+
+      expect(response.status).toBe(401);
+      expect(state.active).toBe(false);
+      expect(server).toHaveBeenCalledTimes(1);
+    });
+
+    it('copes with a fetch that reports a relative response url', async () => {
+      const server = createDigestServer({ ...credentials, handle: multistatus });
+      const relativeUrl = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const response = await server.fetch(input, init);
+        Object.defineProperty(response, 'url', { value: '/dav.php/calendars/digestuser/' });
+        return response;
+      });
+      const digestFetch = createDigestFetch({
+        credentials,
+        fetch: relativeUrl,
+        state: createDigestAuthState(false),
+      });
+
+      expect((await digestFetch(url, basicInit())).status).toBe(207);
+      expect((await digestFetch(url, basicInit())).status).toBe(207);
+      expect(server.fetch).toHaveBeenCalledTimes(3);
+    });
+
+    it('leaves redirects to fetch while Basic is in use', async () => {
+      const basicServer = vi.fn(
+        async () => new Response(null, { status: 301, headers: { location: '/elsewhere' } }),
+      );
+      const init = basicInit();
+      await createDigestFetch({
+        credentials,
+        fetch: basicServer,
+        state: createDigestAuthState(false),
+      })(url, init);
+
+      expect(basicServer).toHaveBeenCalledTimes(1);
+      expect(basicServer).toHaveBeenCalledWith(url, init);
+    });
   });
 });

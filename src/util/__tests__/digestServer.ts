@@ -20,10 +20,11 @@ export const createDigestServer = (options: {
   username: string;
   password: string;
   realm?: string;
+  offerBasic?: boolean;
   isPublic?: (path: string) => boolean;
   handle: (method: string, path: string, body: unknown) => Response;
 }) => {
-  const { username, password, realm = 'BaikalDAV' } = options;
+  const { username, password, realm = 'BaikalDAV', offerBasic = false } = options;
   let nonceCount = 1;
   let nonce = 'nonce-1';
   const usedCounts = new Set<string>();
@@ -32,7 +33,12 @@ export const createDigestServer = (options: {
     const digest = `Digest realm="${realm}",qop="auth",nonce="${nonce}",opaque="opaque-1"${
       stale ? ',stale=true' : ''
     }`;
-    return new Response('', { status: 401, headers: { 'www-authenticate': digest } });
+    return new Response('', {
+      status: 401,
+      headers: {
+        'www-authenticate': offerBasic ? `Basic realm="${realm}", ${digest}` : digest,
+      },
+    });
   };
 
   const fetch = vi.fn(async (input: RequestInfo | URL, init: RequestInit = {}) => {
