@@ -54,6 +54,7 @@ describe('tsdav public exports', () => {
     expect(typeof tsdav.getOauthHeaders).toBe('function');
     expect(typeof tsdav.fetchOauthTokens).toBe('function');
     expect(typeof tsdav.refreshAccessToken).toBe('function');
+    expect(typeof tsdav.DigestUnsupportedError).toBe('function');
 
     expect(typeof tsdav.urlContains).toBe('function');
     expect(typeof tsdav.urlEquals).toBe('function');

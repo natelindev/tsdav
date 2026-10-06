@@ -59,6 +59,11 @@ export type DAVCredentials = {
   accessToken?: string;
   refreshToken?: string;
   expiration?: number;
+  /**
+   * A precomputed Digest `Authorization` value, sent as-is. Prefer `username`
+   * and `password` with `authMethod: 'Digest'`, which answers the server's
+   * challenge per request.
+   */
   digestString?: string;
   customData?: Record<string, unknown>; // for custom login
 };
