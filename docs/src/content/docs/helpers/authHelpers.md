@@ -128,35 +128,94 @@ const fn1 = (params: { a?: number; b?: number }) => {
 const fn2 = defaultParam(fn1, { b: 10 });
 ```
 
-### digest auth and custom auth
+### Digest authentication
 
-for digest auth (RFC 7616), pass `username` and `password` with `authMethod: 'Digest'`.
-tsdav answers the server's `WWW-Authenticate` challenge itself and computes a fresh
-`Authorization` header for every request (MD5, MD5-sess, SHA-256 and SHA-256-sess with
-`qop=auth`, or the RFC 2069 form when the server sends no `qop`).
-Digest needs the WebCrypto API (`globalThis.crypto`): Node.js >= 19, browsers, Bun or Deno.
-On Node.js 18 a Digest request fails with a `DigestUnsupportedError` that says so.
-While Digest is in use, tsdav follows redirects itself, since every hop needs its own
-`Authorization` header. The returned `Response` then reports `redirected: false`; compare
-`response.url` with the request URL if you need to know.
+Pass `username` and `password` with `authMethod: 'Digest'`. Both `createDAVClient` and
+`DAVClient` answer the server's `WWW-Authenticate` challenge and compute authorization
+for each request, including discovery, object writes, and per-call `fetch` overrides.
 
 ```ts
+import { createDAVClient } from 'tsdav';
+
 const client = await createDAVClient({
-  serverUrl: 'https://baikal.example.com/dav.php',
+  serverUrl: 'https://baikal.example.com/dav.php/',
   credentials: { username: 'user', password: 'password' },
   authMethod: 'Digest',
   defaultAccountType: 'caldav',
 });
 ```
 
-with `authMethod: 'Basic'`, a client switches to Digest on its own when the server answers
-`401` with a Digest challenge and no Basic challenge, so servers such as Baikal that only
-accept Digest work either way. A client never falls back from Digest to Basic.
+Supported algorithms are MD5, MD5-sess, SHA-256, and SHA-256-sess with `qop=auth`.
+MD5 and SHA-256 also support the older form without `qop`. SHA-256 is preferred when
+the runtime can compute it. Nonce counts increase per session, session keys persist for
+`-sess` algorithms, and an expired nonce gets one retry. A 401 on that retry is returned
+to the caller. Challenges without `domain` cover the origin; a supplied `domain` limits
+preemptive authorization to those URL prefixes. Separate realms retain separate sessions.
 
-a `digestString` in DAVCredentials (a precomputed header value) is still sent as-is when given.
+The default `authMethod: 'Basic'` switches to Digest when a 401 from the same origin
+offers Digest without Basic and WebCrypto is available. Without WebCrypto it retains
+the original 401 behavior. A client using Digest does not fall back to Basic.
 
-for custom auth, you can pass additional data via `customData` prop to DAVCredentials,
-you can pass in your custom auth function as `authFunction` param and will have DAVCredentials available to it.
+#### Runtime requirements
+
+Digest requires `globalThis.crypto.getRandomValues`; SHA-256 also needs `crypto.subtle`.
+These are available by default in Node.js >=19, Bun, Deno, Workers, and secure browser
+contexts. On a browser's insecure HTTP origin, MD5 can work with `getRandomValues`,
+but SHA-256 requires a secure context. Explicit Digest authentication throws
+`DigestUnsupportedError` if the required crypto API is unavailable.
+
+Node.js 18 remains supported. To enable Digest there, supply its built-in WebCrypto
+before making client requests:
+
+```ts
+import { webcrypto } from 'node:crypto';
+
+if (!globalThis.crypto) {
+  Object.defineProperty(globalThis, 'crypto', { value: webcrypto, configurable: true });
+}
+```
+
+#### Redirects and browser use
+
+Use canonical server and collection URLs, including any required trailing slash.
+When fetch exposes redirect statuses and `Location`, tsdav signs each same-origin hop,
+preserves fetch's method/body conversion rules, and strips authorization when a chain
+leaves the original origin. It does not answer challenges on that foreign origin.
+`redirect: 'manual'` and `'error'` remain under the caller's control. Responses from
+redirects followed manually can report `redirected: false`; compare `response.url` with
+the requested URL instead.
+
+Browsers return `opaqueredirect` for manual redirects and hide both their target and
+status. For GET/HEAD, tsdav follows an unsigned request to resolve the final URL and
+answers a same-origin challenge there. Other methods, including PROPFIND, REPORT, PUT,
+and DELETE, throw a descriptive `TypeError` instead of replaying a request whose redirect
+semantics are unknown. Use the final DAV URLs or a custom transport that exposes redirects
+for those methods. An authenticated redirect that cannot be resolved without credentials
+also needs the final URL. Cross-origin servers must allow CORS and expose
+`WWW-Authenticate` to the browser.
+
+While handling Digest, tsdav defaults fetch's `credentials` to `'omit'` to prevent the
+browser's built-in HTTP authentication dialog from intercepting the challenge. Explicit
+`fetchOptions.credentials` values are preserved; set `'include'` or `'same-origin'` if
+your server also requires cookies. A browser client using Basic with automatic Digest
+negotiation can set `fetchOptions: { credentials: 'omit' }` for the initial challenge too.
+
+#### Overrides and limitations
+
+A supplied `credentials.digestString` is still sent as-is with `authMethod: 'Digest'`,
+even when username/password are present. This legacy option leaves challenge handling
+to you. Explicit `Authorization` headers in request headers or `fetchOptions.headers`
+also bypass automatic negotiation, and `headersToExclude: ['Authorization']` disables it.
+
+`qop=auth-int`, SHA-512-256, username hashing (`userhash`), and `-sess` without `qop`
+are not implemented. Credentials are hashed as UTF-8. `Authentication-Info`/`nextnonce`
+is not processed; nonce rotation is handled by the next 401. Stream request bodies are
+not retried. Use HTTPS to protect authentication and calendar/contact data in transit.
+
+### Custom authentication
+
+Pass an `authFunction` to return your request headers. It receives `DAVCredentials`,
+including any additional values you supply in `customData`.
 
 ### getBearerAuthHeaders
 

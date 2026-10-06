@@ -97,7 +97,10 @@ const resolveAuthHeaders = async (
   }
 };
 
-const digestStates = new WeakMap<DAVClient, DigestAuthState>();
+const digestStates = new WeakMap<
+  DAVClient,
+  { state: DigestAuthState; authMethod: string; username?: string; password?: string }
+>();
 
 /**
  * The `fetch` used for a client's DAV requests. With `authMethod: 'Digest'`
@@ -110,20 +113,37 @@ const authFetch = (
   client: DAVClient,
   fetchOverride = client.fetchOverride,
   headersToExclude?: string[],
+  requestHeaders: HeadersInit | undefined = client.fetchOptions?.headers,
 ): typeof globalThis.fetch | undefined => {
   const digest = client.authMethod === 'Digest' && client.credentials.digestString == null;
   if (
     (!digest && client.authMethod !== 'Basic') ||
+    new Headers(requestHeaders).has('authorization') ||
     headersToExclude?.some((header) => header.toLowerCase() === 'authorization')
   ) {
     return fetchOverride;
   }
-  let state = digestStates.get(client);
-  if (!state) {
-    state = createDigestAuthState(digest);
-    digestStates.set(client, state);
+  let entry = digestStates.get(client);
+  const { username, password } = client.credentials;
+  if (
+    !entry ||
+    entry.authMethod !== client.authMethod ||
+    entry.username !== username ||
+    entry.password !== password
+  ) {
+    entry = {
+      state: createDigestAuthState(digest),
+      authMethod: client.authMethod,
+      username,
+      password,
+    };
+    digestStates.set(client, entry);
   }
-  return createDigestFetch({ credentials: client.credentials, fetch: fetchOverride, state });
+  return createDigestFetch({
+    credentials: client.credentials,
+    fetch: fetchOverride,
+    state: entry.state,
+  });
 };
 
 export const createDAVClient = async (params: ConstructorParameters<typeof DAVClient>[0]) => {
@@ -254,6 +274,8 @@ export class DAVClient {
 
   private async requestDefaults(params?: {
     headersToExclude?: string[];
+    headers?: Record<string, string>;
+    init?: { headers?: Record<string, string> };
     fetchOptions?: RequestInit;
     fetch?: typeof globalThis.fetch;
   }) {
@@ -267,7 +289,16 @@ export class DAVClient {
       headers: this.authHeaders,
       account: this.account,
       fetchOptions: this.fetchOptions,
-      fetch: authFetch(this, params?.fetch, params?.headersToExclude),
+      fetch: authFetch(
+        this,
+        params?.fetch,
+        params?.headersToExclude,
+        mergeHeaders(
+          params?.headers,
+          params?.init?.headers,
+          (params?.fetchOptions ?? this.fetchOptions)?.headers,
+        ),
+      ),
     };
   }
 
@@ -312,7 +343,7 @@ export class DAVClient {
     fetchOptions?: RequestInit;
     fetch?: typeof globalThis.fetch;
   }): Promise<DAVResponse[]> {
-    const { init, fetchOptions, fetch: fetchOverride2, ...rest } = params0;
+    const { init, fetchOptions, ...rest } = params0;
     const { headers, ...restInit } = init;
     const defaults = await this.requestDefaults(params0);
     return rawDavRequest({
@@ -322,7 +353,7 @@ export class DAVClient {
         headers: mergeHeaders(defaults.headers, headers),
       },
       fetchOptions: fetchOptions ?? this.fetchOptions,
-      fetch: authFetch(this, fetchOverride2, params0.headersToExclude),
+      fetch: defaults.fetch,
     });
   }
 
@@ -351,15 +382,8 @@ export class DAVClient {
     fetchOptions?: RequestInit;
     fetch?: typeof globalThis.fetch;
   }): Promise<DAVAccount> {
-    const {
-      account,
-      headers,
-      headersToExclude,
-      loadCollections,
-      loadObjects,
-      fetchOptions,
-      fetch,
-    } = params0;
+    const { account, headers, headersToExclude, loadCollections, loadObjects, fetchOptions } =
+      params0;
     const defaults = await this.requestDefaults(params0);
     // The `Optional<DAVAccount, 'serverUrl'>` type already enforces
     // `accountType` at the type level. Still, guard at runtime so plain-JS
@@ -382,7 +406,7 @@ export class DAVClient {
       loadCollections,
       loadObjects,
       fetchOptions: fetchOptions ?? this.fetchOptions,
-      fetch: authFetch(this, fetch, headersToExclude),
+      fetch: defaults.fetch,
     });
   }
 

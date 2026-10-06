@@ -1,3 +1,25 @@
+## v2.4.0
+
+##### features
+
+- implement HTTP Digest challenge/response authentication for `DAVClient` and `createDAVClient`, including discovery, object writes, stale nonces, and custom fetch transports; thanks to [@PhilflowIO](https://github.com/PhilflowIO) for reporting [#283](https://github.com/natelindev/tsdav/issues/283) and contributing [#284](https://github.com/natelindev/tsdav/pull/284)
+- support MD5, MD5-sess, SHA-256, and SHA-256-sess with `qop=auth`, plus MD5/SHA-256 without `qop`, while preserving precomputed `digestString` headers
+- negotiate Digest for Basic clients when a same-origin server offers only Digest and the runtime supports the required crypto APIs
+
+##### bug fixes
+
+- retain session keys and client nonces for session algorithms, isolate realms, and honor Digest protection-space URL prefixes
+- sign the final URI for recoverable browser GET/HEAD redirects and stop other opaque browser redirects without replaying writes; use canonical DAV URLs for PROPFIND, REPORT, PUT, and DELETE in browsers
+- keep browser-managed HTTP authentication from intercepting Digest challenges by default, while preserving explicit cookie credential options
+- preserve explicit authorization headers and header exclusions, reset cached sessions after credential changes, and keep Basic's original 401 behavior when WebCrypto is unavailable
+- report invalid discovery credentials even when later root candidates return unrelated HTML responses
+
+##### verification and documentation
+
+- document runtime requirements, Node.js 18 WebCrypto setup, Baikal configuration, browser/CORS behavior, supported algorithms, and current limitations
+- add regression coverage, local HTTP checks for Node.js/Bun/Deno, and Chromium checks in CI and release verification, including session algorithms, nonce counts, redirects, wrong passwords, and authorization scope
+- migrate documentation to Astro and Starlight while preserving the library's maintained API examples
+
 ## v2.3.5
 
 ##### bug fixes

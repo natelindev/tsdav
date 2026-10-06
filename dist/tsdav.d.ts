@@ -11,6 +11,7 @@ export { collectionQuery, makeCollection, supportedReportSet, isCollectionDirty,
 export { calendarQuery, calendarMultiGet, makeCalendar, fetchCalendars, fetchCalendarUserAddresses, fetchCalendarObjects, createCalendarObject, updateCalendarObject, deleteCalendarObject, syncCalendars, syncCalendarsDetailed, freeBusyQuery, } from './calendar';
 export { addressBookQuery, addressBookMultiGet, fetchAddressBooks, fetchVCards, createVCard, updateVCard, deleteVCard, } from './addressBook';
 export { getBasicAuthHeaders, getBearerAuthHeaders, getOauthHeaders, fetchOauthTokens, refreshAccessToken, } from './util/authHelpers';
+export { DigestUnsupportedError } from './util/digestAuth';
 export { urlContains, urlEquals, urlMatches, ensureTrailingSlash, getDAVAttribute, cleanupFalsy, excludeHeaders, mergeHeaders, } from './util/requestHelpers';
 export { DAVNamespace, DAVAttributeMap, DAVNamespaceShort, ICALObjects } from './consts';
 declare const _default: {

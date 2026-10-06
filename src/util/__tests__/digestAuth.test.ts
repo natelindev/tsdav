@@ -56,6 +56,7 @@ describe('parseAuthenticateHeader', () => {
 describe('selectDigestChallenge', () => {
   it('defaults to MD5 and prefers SHA-256 when both are offered', () => {
     expect(selectDigestChallenge('Digest realm="r", nonce="n"')?.algorithm).toBe('MD5');
+    expect(selectDigestChallenge('Digest realm="", nonce="n"')?.realm).toBe('');
     expect(
       selectDigestChallenge(
         'Digest realm="r", nonce="n", algorithm=MD5, Digest realm="r", nonce="n", algorithm=SHA-256',
@@ -515,7 +516,7 @@ describe('createDigestFetch', () => {
       const state = createDigestAuthState(false);
       const digestFetch = createDigestFetch({ credentials, fetch: server, state });
 
-      await expect(digestFetch(url)).rejects.toThrow('requires the WebCrypto API');
+      expect((await digestFetch(url)).status).toBe(401);
       expect(state.active).toBe(false);
       expect((await digestFetch(url)).status).toBe(207);
     } finally {

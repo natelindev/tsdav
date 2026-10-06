@@ -21,8 +21,8 @@ export type DAVCredentials = {
 
 refer to [this page](https://developers.google.com/identity/protocols/oauth2) for more on what these fields mean
 
-- `username` basic auth username
-- `password` basic auth password
+- `username` Basic or Digest auth username
+- `password` Basic or Digest auth password
 - `clientId` oauth client id
 - `clientSecret` oauth client secret
 - `authorizationCode` oauth callback auth code
@@ -33,3 +33,6 @@ refer to [this page](https://developers.google.com/identity/protocols/oauth2) fo
 - `expiration` oauth access token expiration time
 - `digestString` a precomputed digest string, sent as-is with `authMethod: 'Digest'`. Prefer `username` and `password`, which let tsdav answer the server's challenge
 - `customData` custom data used for custom auth, can be anything
+
+See [authentication helpers](../helpers/authHelpers.md#digest-authentication) for Digest
+configuration, runtime requirements, redirects, and supported algorithms.

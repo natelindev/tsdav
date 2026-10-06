@@ -67,6 +67,11 @@ Use the ESM bundle in modern browsers:
 Browser requests to CalDAV/CardDAV endpoints are often blocked by CORS. Prefer running
 tsdav in a server environment, proxying requests through your backend, or using a [custom transport](#custom-transport-electroncors).
 
+For servers that require HTTP Digest, pass `authMethod: 'Digest'` and username/password.
+Browser DAV requests need canonical URLs to avoid opaque redirects; see
+[Digest authentication](./helpers/authHelpers.md#digest-authentication) for configuration
+and runtime requirements.
+
 ### Bun
 
 `tsdav` runs under [Bun](https://bun.sh) without any additional configuration.

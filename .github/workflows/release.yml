@@ -64,7 +64,13 @@ jobs:
         run: |
           pnpm test:consumer
           pnpm test:examples
+          pnpm test:runtime:digest
           pnpm exec knip --dependencies --workspace .
+
+      - name: Verify Digest in Chromium
+        run: |
+          pnpm exec playwright install --with-deps chromium
+          pnpm test:browser:digest
 
       # Publish to npm with provenance statements
       # Requires NPM_TOKEN secret to be configured in repository secrets

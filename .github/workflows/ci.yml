@@ -68,6 +68,7 @@ jobs:
         run: |
           pnpm test:consumer
           pnpm test:examples
+          pnpm test:runtime:digest
           pnpm exec knip --dependencies --workspace .
 
       - name: Build package for runtime smoke test
@@ -92,6 +93,10 @@ jobs:
           npm install "$(find /tmp/tsdav-runtime -maxdepth 1 -name 'tsdav-*.tgz' -print -quit)" --no-audit --no-fund
           node -e "const mod = require('tsdav'); if (typeof mod.DAVClient !== 'function') process.exit(1)"
           node --input-type=module -e "import { DAVClient } from 'tsdav'; if (typeof DAVClient !== 'function') process.exit(1)"
+
+      - name: Test Digest over HTTP on runtime Node.js
+        if: matrix.node-version < 22
+        run: pnpm test:runtime:digest
 
   bun-smoke-test:
     runs-on: ubuntu-latest
@@ -145,6 +150,9 @@ jobs:
           EOF
           bun .tsdav-bun-cjs.cjs | tee /tmp/bun-cjs.out
           grep -q '^bun-cjs-ok$' /tmp/bun-cjs.out
+
+      - name: Test Digest over HTTP under Bun
+        run: bun tests/digest-runtime.mjs
 
   deno-smoke-test:
     runs-on: ubuntu-latest
@@ -228,6 +236,23 @@ jobs:
           EOF
           deno run --allow-read --allow-env smoke.ts | tee /tmp/deno.out
           grep -q '^deno-ok$' /tmp/deno.out
+
+      - name: Test Digest over HTTP under Deno
+        run: deno run --allow-read --allow-env --allow-net=127.0.0.1 tests/digest-runtime.mjs
+
+  digest-browser-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:browser:digest
 
   docs-check:
     runs-on: ubuntu-latest

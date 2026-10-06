@@ -24,6 +24,7 @@ export type DigestChallenge = {
   realm: string;
   nonce: string;
   opaque?: string;
+  domain?: string;
   /** `auth` when the server offers it, undefined for RFC 2069 servers without qop */
   qop?: 'auth';
   algorithm: DigestAlgorithm;
@@ -36,7 +37,14 @@ export type DigestChallenge = {
  */
 export type DigestAuthState = {
   active: boolean;
-  challenges: Map<string, { challenge: DigestChallenge; nc: number }>;
+  challenges: Map<string, DigestSession[]>;
+};
+
+type DigestSession = {
+  challenge: DigestChallenge;
+  scopes: string[];
+  nc: number;
+  cnonce: string;
 };
 
 const TOKEN = /[!#$%&'*+.^_`|~0-9A-Za-z-]+/y;
@@ -96,7 +104,7 @@ const SUPPORTED_ALGORITHMS: DigestAlgorithm[] = ['SHA-256', 'SHA-256-SESS', 'MD5
 
 const toDigestChallenge = (params: Record<string, string>): DigestChallenge | undefined => {
   const algorithm = (params.algorithm ?? 'MD5').toUpperCase() as DigestAlgorithm;
-  if (!params.realm || !params.nonce || !SUPPORTED_ALGORITHMS.includes(algorithm)) {
+  if (params.realm == null || !params.nonce || !SUPPORTED_ALGORITHMS.includes(algorithm)) {
     return undefined;
   }
   const qopOptions = params.qop?.split(',').map((qop) => qop.trim().toLowerCase());
@@ -112,6 +120,7 @@ const toDigestChallenge = (params: Record<string, string>): DigestChallenge | un
     realm: params.realm,
     nonce: params.nonce,
     opaque: params.opaque,
+    domain: params.domain,
     qop: qopOptions ? 'auth' : undefined,
     algorithm,
     stale: params.stale?.toLowerCase() === 'true',
@@ -125,7 +134,10 @@ const toDigestChallenge = (params: Record<string, string>): DigestChallenge | un
  */
 export const selectDigestChallenge = (
   header: string | null | undefined,
-  { unlessBasic = false }: { unlessBasic?: boolean } = {},
+  {
+    unlessBasic = false,
+    allowSHA256 = true,
+  }: { unlessBasic?: boolean; allowSHA256?: boolean } = {},
 ): DigestChallenge | undefined => {
   const challenges = parseAuthenticateHeader(header ?? '');
   if (unlessBasic && challenges.some(({ scheme }) => scheme === 'basic')) {
@@ -135,6 +147,7 @@ export const selectDigestChallenge = (
     .filter(({ scheme }) => scheme === 'digest')
     .map(({ params }) => toDigestChallenge(params))
     .filter((challenge): challenge is DigestChallenge => challenge != null)
+    .filter((challenge) => allowSHA256 || !challenge.algorithm.startsWith('SHA'))
     .sort(
       (a, b) =>
         SUPPORTED_ALGORITHMS.indexOf(a.algorithm) - SUPPORTED_ALGORITHMS.indexOf(b.algorithm),
@@ -153,7 +166,8 @@ export class DigestUnsupportedError extends Error {
   constructor() {
     super(
       'tsdav: Digest authentication requires the WebCrypto API (globalThis.crypto), ' +
-        'available in Node.js >= 19, browsers, Bun and Deno.',
+        'available in Node.js >= 19, browsers, Bun and Deno. ' +
+        'On Node.js 18, assign webcrypto from node:crypto to globalThis.crypto.',
     );
     this.name = 'DigestUnsupportedError';
   }
@@ -280,6 +294,24 @@ const withoutAuthorization = (init: RequestInit): RequestInit => {
   return { ...init, headers };
 };
 
+const protectionScopes = (challenge: DigestChallenge, url: URL): string[] => {
+  if (!challenge.domain?.trim()) return [`${url.origin}/`];
+  return challenge.domain
+    .trim()
+    .split(/\s+/)
+    .flatMap((scope) => {
+      try {
+        // Relative domain values must be path-absolute (RFC 7616 §3.3).
+        if (!scope.startsWith('/') && !/^[a-z][a-z\d+.-]*:/i.test(scope)) return [];
+        const target = new URL(scope, `${url.origin}/`);
+        target.hash = '';
+        return target.origin === url.origin ? [target.href] : [];
+      } catch {
+        return [];
+      }
+    });
+};
+
 export const createDigestAuthState = (active = true): DigestAuthState => ({
   active,
   challenges: new Map(),
@@ -315,12 +347,14 @@ export const createDigestFetch = (params: {
 
   const authorize = async (
     init: RequestInit,
-    origin: string,
+    url: URL,
     method: string,
     uri: string,
   ): Promise<RequestInit> => {
-    const entry = state.challenges.get(origin);
-    if (!entry) return init;
+    const entry = state.challenges
+      .get(url.origin)
+      ?.find((session) => session.scopes.some((scope) => url.href.startsWith(scope)));
+    if (!entry) return withoutAuthorization(init);
     // Take the counter before any await, so parallel requests never share one.
     entry.nc += 1;
     const { challenge, nc } = entry;
@@ -331,7 +365,7 @@ export const createDigestFetch = (params: {
       method,
       uri,
       nc,
-      cnonce: createCnonce(),
+      cnonce: challenge.algorithm.endsWith('-SESS') ? entry.cnonce : createCnonce(),
     });
     const headers = new Headers(init.headers);
     headers.set('authorization', authorization);
@@ -339,27 +373,50 @@ export const createDigestFetch = (params: {
   };
 
   // Store the Digest challenge of a 401 from `origin`; false if there is none to answer.
-  const acceptChallenge = (response: Response, origin: string): boolean => {
-    const challenge = selectDigestChallenge(response.headers.get('www-authenticate'), {
+  const acceptChallenge = (response: Response, url: URL): boolean => {
+    const header = response.headers.get('www-authenticate');
+    const options = {
       unlessBasic: !state.active,
-    });
+    };
+    const challenge =
+      (!globalThis.crypto?.subtle &&
+        selectDigestChallenge(header, { ...options, allowSHA256: false })) ||
+      selectDigestChallenge(header, options);
     if (!challenge) {
       return false;
     }
     // Fail on a missing WebCrypto before the client is switched to Digest.
-    getCrypto(challenge.algorithm);
+    try {
+      getCrypto(challenge.algorithm);
+    } catch (err) {
+      // Automatic negotiation must not change Basic's behavior on older runtimes.
+      if (!state.active && err instanceof DigestUnsupportedError) return false;
+      throw err;
+    }
     if (!state.active) {
       debug('Server only offers Digest authentication, switching from Basic');
       state.active = true;
     }
-    debug(`Digest challenge received for ${origin}${challenge.stale ? ' (stale nonce)' : ''}`);
+    debug(`Digest challenge received for ${url.origin}${challenge.stale ? ' (stale nonce)' : ''}`);
     // Parallel requests can be challenged with the same nonce; its counter
     // carries on, since a repeated nc is rejected as a replay.
-    const known = state.challenges.get(origin);
-    state.challenges.set(origin, {
-      challenge,
-      nc: known?.challenge.nonce === challenge.nonce ? known.nc : 0,
-    });
+    const sessions = state.challenges.get(url.origin) ?? [];
+    const scopes = protectionScopes(challenge, url);
+    const known = sessions.find(
+      (session) =>
+        session.challenge.realm === challenge.realm &&
+        session.challenge.algorithm === challenge.algorithm &&
+        session.challenge.nonce === challenge.nonce,
+    );
+    state.challenges.set(url.origin, [
+      {
+        challenge,
+        scopes,
+        nc: known?.nc ?? 0,
+        cnonce: known?.cnonce ?? createCnonce(),
+      },
+      ...sessions.filter((session) => session.challenge.realm !== challenge.realm),
+    ]);
     return true;
   };
 
@@ -374,22 +431,25 @@ export const createDigestFetch = (params: {
     const method = (init.method ?? 'GET').toUpperCase();
     const uri = `${url.pathname}${url.search}`;
 
-    const response = await requestFetch(input, await authorize(init, url.origin, method, uri));
+    const response = await requestFetch(input, await authorize(init, url, method, uri));
     if (
       response.status !== 401 ||
       !retry ||
       !isReplayable(init.body) ||
-      !acceptChallenge(response, url.origin)
+      !acceptChallenge(response, url)
     ) {
       return response;
     }
     await response.body?.cancel().catch(() => undefined);
-    return requestFetch(input, await authorize(init, url.origin, method, uri));
+    return requestFetch(input, await authorize(init, url, method, uri));
   };
 
   return async (input, init = {}) => {
     const url = toURL(input);
     if (!url) return requestFetch(input, init);
+    // Digest is handled here, not by the browser's HTTP-auth dialog/cache.
+    // Explicit cookie credentials remain under the caller's control.
+    if (state.active) init = { ...init, credentials: init.credentials ?? 'omit' };
     // Set when the Basic request below was answered with the switch to Digest.
     let challenged = false;
     if (!state.active) {
@@ -401,12 +461,25 @@ export const createDigestFetch = (params: {
         !isReplayable(init.body) ||
         // A custom fetch may report no URL or a relative one; assume no redirect then.
         (toURL(response.url ?? '') ?? url).origin !== url.origin ||
-        !acceptChallenge(response, url.origin)
+        !acceptChallenge(response, toURL(response.url) ?? url)
       ) {
         return response;
       }
       await response.body?.cancel().catch(() => undefined);
       challenged = true;
+      init = { ...init, credentials: init.credentials ?? 'omit' };
+      // Native fetch may have followed a same-origin redirect before negotiation.
+      const finalUrl = toURL(response.url) ?? url;
+      if (finalUrl.href !== url.href) {
+        const method = (init.method ?? 'GET').toUpperCase();
+        if (method !== 'GET' && method !== 'HEAD') {
+          throw new TypeError(
+            'tsdav: Digest negotiation after an automatic redirect requires the final DAV URL. ' +
+              'Set serverUrl and collection URLs to their canonical locations.',
+          );
+        }
+        return request(finalUrl.href, { ...init, redirect: 'error' }, finalUrl, false);
+      }
     }
     if ((init.redirect ?? 'follow') !== 'follow' || !isReplayable(init.body)) {
       return request(input, init, url, !challenged);
@@ -422,8 +495,27 @@ export const createDigestFetch = (params: {
         : await request(target, targetInit, targetUrl, !challenged);
       challenged = false;
       if (response.type === 'opaqueredirect') {
-        // Browsers hide the redirect target from 'manual'; let fetch follow it.
-        return request(input, init, url, true);
+        // A browser hides both Location and the redirect status. Replaying a write
+        // can duplicate it, and a 303 may have changed its method. Only GET/HEAD
+        // can be resolved safely without forwarding a URI-bound authorization.
+        const method = (targetInit.method ?? 'GET').toUpperCase();
+        if (method !== 'GET' && method !== 'HEAD') {
+          throw new TypeError(
+            'tsdav: Digest authentication cannot safely follow an opaque browser redirect ' +
+              'for this method. Use the final DAV URL, including its trailing slash.',
+          );
+        }
+        const resolved = await requestFetch(target, {
+          ...withoutAuthorization(targetInit),
+          redirect: 'follow',
+        });
+        const finalUrl = toURL(resolved.url);
+        if (!finalUrl || finalUrl.origin !== url.origin || leftOrigin || resolved.status !== 401) {
+          return resolved;
+        }
+        if (!acceptChallenge(resolved, finalUrl)) return resolved;
+        await resolved.body?.cancel().catch(() => undefined);
+        return request(finalUrl.href, { ...targetInit, redirect: 'error' }, finalUrl, false);
       }
       const location = response.headers.get('location');
       if (!REDIRECT_STATUSES.includes(response.status) || !location) {

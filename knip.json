@@ -5,12 +5,12 @@
       "entry": [
         "src/index.ts!",
         "src/**/*.test.ts",
-        "tests/**/*.ts",
+        "tests/**/*.{ts,mjs}",
         "scripts/*.{cjs,mjs}"
       ],
       "project": [
         "src/**/*.ts",
-        "tests/**/*.ts"
+        "tests/**/*.{ts,mjs}"
       ],
       "ignore": [
         "src/__tests__/integration/**"

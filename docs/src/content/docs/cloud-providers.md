@@ -42,6 +42,14 @@ Other cloud providers not listed are not currently tested, in theory any cloud w
 
 Please follow [official guide](https://help.zoho.com/portal/en/kb/calendar/syncing-other-calendars/articles/setting-up-caldav-sync-in-zoho-calendar#Configuring_CalDAV_sync_between_Zoho_Calendar_and_your_device)
 
+##### Baikal
+
+For a Baikal installation that requires HTTP Digest, use `authMethod: 'Digest'` with
+your username and password. Set `serverUrl` to the canonical DAV endpoint, for example
+`https://calendar.example.com/baikal/dav.php/`. The same authentication works for CalDAV
+and CardDAV. See [Digest authentication](./helpers/authHelpers.md#digest-authentication)
+for Node.js 18 setup and browser redirect requirements.
+
 ##### Forward Email
 
 Please follow [offical guide](https://forwardemail.net/en/faq#do-you-support-calendars-caldav)
