@@ -9,7 +9,7 @@ on:
 
 jobs:
   automated-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     strategy:
       matrix:
@@ -99,7 +99,7 @@ jobs:
         run: pnpm test:runtime:digest
 
   bun-smoke-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -155,7 +155,7 @@ jobs:
         run: bun tests/digest-runtime.mjs
 
   deno-smoke-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
@@ -241,7 +241,7 @@ jobs:
         run: deno run --allow-read --allow-env --allow-net=127.0.0.1 tests/digest-runtime.mjs
 
   digest-browser-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -255,7 +255,7 @@ jobs:
       - run: pnpm test:browser:digest
 
   docs-check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: docs
