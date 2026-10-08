@@ -1,5 +1,6 @@
 ---
 title: 'DAVVCard'
+description: "TypeScript type definition for DAVVCard representing a parsed CardDAV vCard contact."
 ---
 
 ```ts

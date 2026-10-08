@@ -1,6 +1,7 @@
 ---
 title: 'Importing iCal feeds'
 sidebar_position: 15
+description: "Import and parse remote or local iCalendar (.ics) feeds into CalDAV objects."
 ---
 
 # Importing iCal feeds

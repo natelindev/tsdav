@@ -1,6 +1,7 @@
 ---
 title: 'Intro'
 sidebar_position: 1
+description: "Getting started with tsdav: universal WebDAV, CalDAV, and CardDAV client library for TypeScript and JavaScript."
 ---
 
 # Intro

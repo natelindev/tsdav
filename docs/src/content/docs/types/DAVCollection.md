@@ -1,5 +1,6 @@
 ---
 title: 'DAVCollection'
+description: "TypeScript type definition for DAVCollection representing a generic WebDAV collection."
 ---
 
 ```ts

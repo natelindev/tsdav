@@ -1,5 +1,6 @@
 ---
 title: 'AuthHelpers'
+description: "Authentication utility functions for Basic, Bearer, and Digest credentials."
 ---
 
 # AuthHelpers

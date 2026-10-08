@@ -1,6 +1,7 @@
 ---
 title: 'collectionQuery'
 sidebar_position: 1
+description: "Query collection child resources and properties."
 ---
 
 ## `collectionQuery`

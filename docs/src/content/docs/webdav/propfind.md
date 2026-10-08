@@ -1,6 +1,7 @@
 ---
 title: 'propfind'
 sidebar_position: 2
+description: "Query WebDAV resource properties and collections using HTTP PROPFIND."
 ---
 
 ## `propfind`

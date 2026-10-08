@@ -1,6 +1,7 @@
 ---
 title: 'supportedReportSet'
 sidebar_position: 4
+description: "Query supported report types (sync-collection, calendar-query) on a collection."
 ---
 
 ## `supportedReportSet`

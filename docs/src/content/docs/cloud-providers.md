@@ -1,6 +1,7 @@
 ---
 title: 'Cloud providers'
 sidebar_position: 7
+description: "Setup guides and provider quirks for Apple iCloud, Google Calendar, Fastmail, Nextcloud, and Zoho."
 ---
 
 # Cloud providers

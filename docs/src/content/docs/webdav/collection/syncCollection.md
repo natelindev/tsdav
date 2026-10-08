@@ -1,6 +1,7 @@
 ---
 title: 'syncCollection'
 sidebar_position: 5
+description: "Perform RFC 6578 sync-collection REPORT to retrieve incremental changes."
 ---
 
 ## `syncCollection`

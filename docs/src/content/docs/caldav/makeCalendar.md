@@ -1,6 +1,7 @@
 ---
 title: 'makeCalendar'
 sidebar_position: 5
+description: "Create a new CalDAV calendar collection on the server using MKCALENDAR."
 ---
 
 ## `makeCalendar`

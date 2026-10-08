@@ -1,6 +1,7 @@
 ---
 title: 'calendarMultiGet'
 sidebar_position: 2
+description: "Retrieve specific calendar objects in bulk using RFC 4791 calendar-multiget REPORT."
 ---
 
 ## `calendarMultiGet`

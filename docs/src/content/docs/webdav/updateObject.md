@@ -1,6 +1,7 @@
 ---
 title: 'updateObject'
 sidebar_position: 4
+description: "Update an existing resource object on a WebDAV server."
 ---
 
 ## `updateObject`

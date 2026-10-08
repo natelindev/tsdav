@@ -1,6 +1,7 @@
 ---
 title: 'freeBusyQuery'
 sidebar_position: 10
+description: "Perform free-busy scheduling queries against CalDAV collections using RFC 4791."
 ---
 
 ## `freeBusyQuery`

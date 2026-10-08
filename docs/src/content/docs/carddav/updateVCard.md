@@ -1,6 +1,7 @@
 ---
 title: 'updateVCard'
 sidebar_position: 6
+description: "Update an existing contact vCard in CardDAV with ETag optimistic locking."
 ---
 
 ## `updateVCard`

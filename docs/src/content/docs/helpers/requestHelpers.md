@@ -1,5 +1,6 @@
 ---
 title: 'RequestHelpers'
+description: "XML payload builders, prop filters, and header helpers for WebDAV requests."
 ---
 
 # RequestHelpers

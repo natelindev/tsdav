@@ -1,5 +1,6 @@
 ---
 title: 'DAVCalendar'
+description: "TypeScript type definition for DAVCalendar representing a CalDAV calendar collection."
 ---
 
 ```ts

@@ -1,6 +1,7 @@
 ---
 title: 'davRequest'
 sidebar_position: 1
+description: "Execute low-level WebDAV HTTP requests with multi-status XML parsing and headers."
 ---
 
 ## `davRequest`

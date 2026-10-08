@@ -1,6 +1,7 @@
 ---
 title: 'updateCalendarObject'
 sidebar_position: 9
+description: "Update an existing calendar object in CalDAV with optimistic concurrency using ETag."
 ---
 
 ## `updateCalendarObject`

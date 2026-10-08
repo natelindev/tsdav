@@ -1,6 +1,7 @@
 ---
 title: 'fetchCalendars'
 sidebar_position: 3
+description: "Discover and fetch remote CalDAV calendar collections for a user principal."
 ---
 
 ## `fetchCalendars`

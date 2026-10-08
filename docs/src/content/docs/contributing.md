@@ -1,6 +1,7 @@
 ---
 title: 'Contributing'
 sidebar_position: 8
+description: "Contribution guide, local setup, build commands, and testing workflow for the tsdav library and documentation."
 ---
 
 # Contributing

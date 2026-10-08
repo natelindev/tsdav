@@ -1,6 +1,7 @@
 ---
 title: 'isCollectionDirty'
 sidebar_position: 3
+description: "Check whether a collection has modified objects using CTAG or sync-token."
 ---
 
 ## `isCollectionDirty`

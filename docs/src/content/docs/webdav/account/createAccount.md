@@ -1,6 +1,7 @@
 ---
 title: 'createAccount'
 sidebar_position: 1
+description: "Initialize and discover a WebDAV, CalDAV, or CardDAV account structure."
 ---
 
 ## `createAccount`

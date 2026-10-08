@@ -1,6 +1,7 @@
 ---
 title: 'deleteCalendarObject'
 sidebar_position: 10
+description: "Delete a calendar object from a CalDAV collection by object URL and ETag."
 ---
 
 ## `deleteCalendarObject`

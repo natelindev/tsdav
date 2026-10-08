@@ -1,6 +1,7 @@
 ---
 title: 'addressBookMultiGet'
 sidebar_position: 2
+description: "Fetch multiple contact vCards in a single RFC 6352 addressbook-multiget REPORT."
 ---
 
 ## `addressBookMultiGet`

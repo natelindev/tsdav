@@ -1,6 +1,7 @@
 ---
 title: 'createObject'
 sidebar_position: 3
+description: "Upload or create an arbitrary resource object on a WebDAV server."
 ---
 
 ## `createObject`

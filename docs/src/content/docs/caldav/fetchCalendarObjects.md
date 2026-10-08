@@ -1,6 +1,7 @@
 ---
 title: 'fetchCalendarObjects'
 sidebar_position: 7
+description: "Fetch calendar objects and events (VEVENT, VTODO) within a CalDAV collection."
 ---
 
 ## `fetchCalendarObjects`

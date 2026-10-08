@@ -1,5 +1,6 @@
 ---
 title: 'DAVDepth'
+description: "TypeScript type definition for DAVDepth header values ('0', '1', 'infinity')."
 ---
 
 ```ts

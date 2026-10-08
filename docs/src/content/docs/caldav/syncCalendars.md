@@ -1,6 +1,7 @@
 ---
 title: 'syncCalendars'
 sidebar_position: 4
+description: "Discover and synchronize CalDAV collections and changes with CTAG and sync-token."
 ---
 
 ## `syncCalendars` and `syncCalendarsDetailed`

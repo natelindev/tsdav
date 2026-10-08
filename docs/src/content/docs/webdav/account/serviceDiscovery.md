@@ -1,6 +1,7 @@
 ---
 title: 'serviceDiscovery'
 sidebar_position: 2
+description: "Discover CalDAV, CardDAV, and WebDAV endpoints via .well-known DNS/HTTP."
 ---
 
 ## `serviceDiscovery`

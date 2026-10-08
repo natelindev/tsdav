@@ -1,5 +1,6 @@
 ---
 title: 'DAVAccount'
+description: "TypeScript type definition for DAVAccount representing a discovered WebDAV account."
 ---
 
 ```ts

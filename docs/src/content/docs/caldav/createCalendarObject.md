@@ -1,6 +1,7 @@
 ---
 title: 'createCalendarObject'
 sidebar_position: 8
+description: "Create a new iCalendar event or task in a CalDAV calendar collection via HTTP PUT."
 ---
 
 ## `createCalendarObject`

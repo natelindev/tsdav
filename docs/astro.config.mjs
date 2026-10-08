@@ -34,6 +34,69 @@ export default defineConfig({
             sizes: 'any',
           },
         },
+        {
+          tag: 'link',
+          attrs: {
+            rel: 'alternate',
+            type: 'text/plain',
+            href: '/llms.txt',
+            title: 'LLM Documentation (llms.txt)',
+          },
+        },
+        {
+          tag: 'link',
+          attrs: {
+            rel: 'alternate',
+            type: 'text/plain',
+            href: '/llms-full.txt',
+            title: 'Complete LLM Context (llms-full.txt)',
+          },
+        },
+        {
+          tag: 'meta',
+          attrs: {
+            property: 'og:image',
+            content: 'https://tsdav.vercel.app/og.png',
+          },
+        },
+        {
+          tag: 'meta',
+          attrs: {
+            property: 'og:image:width',
+            content: '1200',
+          },
+        },
+        {
+          tag: 'meta',
+          attrs: {
+            property: 'og:image:height',
+            content: '630',
+          },
+        },
+        {
+          tag: 'meta',
+          attrs: {
+            name: 'twitter:image',
+            content: 'https://tsdav.vercel.app/og.png',
+          },
+        },
+        {
+          tag: 'script',
+          attrs: {
+            type: 'application/ld+json',
+          },
+          content: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'SoftwareSourceCode',
+            name: 'tsdav',
+            description:
+              'Universal WebDAV, CalDAV, and CardDAV client library for TypeScript and JavaScript with zero Node-only globals.',
+            codeRepository: 'https://github.com/natelindev/tsdav',
+            programmingLanguage: 'TypeScript',
+            license: 'https://opensource.org/licenses/MIT',
+            runtimePlatform: ['Node.js', 'Browser', 'Cloudflare Workers', 'Deno', 'Bun', 'Electron'],
+          }),
+        },
       ],
       logo: {
         src: './src/assets/logo.svg',

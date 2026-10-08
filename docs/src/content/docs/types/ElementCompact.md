@@ -1,5 +1,6 @@
 ---
 title: 'ElementCompact'
+description: "TypeScript type definition for xml-js ElementCompact XML representation."
 ---
 
 ```ts

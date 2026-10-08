@@ -1,5 +1,6 @@
 ---
 title: 'Constants'
+description: "DAV namespaces, XML tags, HTTP headers, and common CalDAV/CardDAV constants."
 ---
 
 # Constants

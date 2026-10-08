@@ -1,6 +1,7 @@
 ---
 title: 'makeCollection'
 sidebar_position: 2
+description: "Create a new WebDAV collection folder using HTTP MKCOL."
 ---
 
 ## `makeCollection`

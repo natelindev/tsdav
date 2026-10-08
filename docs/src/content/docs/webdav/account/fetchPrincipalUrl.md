@@ -1,6 +1,7 @@
 ---
 title: 'fetchPrincipalUrl'
 sidebar_position: 3
+description: "Discover current user principal URL using DAV:current-user-principal."
 ---
 
 ## `fetchPrincipalUrl`

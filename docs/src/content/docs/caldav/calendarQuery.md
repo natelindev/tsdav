@@ -1,6 +1,7 @@
 ---
 title: 'calendarQuery'
 sidebar_position: 1
+description: "Query CalDAV calendar events using RFC 4791 calendar-query REPORT with time-range filters."
 ---
 
 ## `calendarQuery`

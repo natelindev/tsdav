@@ -1,5 +1,6 @@
 ---
 title: 'DAVRequest'
+description: "TypeScript type definition for low-level WebDAV HTTP request options."
 ---
 
 ```ts

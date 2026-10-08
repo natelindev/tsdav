@@ -1,6 +1,7 @@
 ---
 title: 'fetchAddressBooks'
 sidebar_position: 3
+description: "Discover remote CardDAV address book collections for a user principal."
 ---
 
 ## `fetchAddressBooks`

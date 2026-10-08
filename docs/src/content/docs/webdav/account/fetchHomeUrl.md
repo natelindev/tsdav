@@ -1,6 +1,7 @@
 ---
 title: 'fetchHomeUrl'
 sidebar_position: 4
+description: "Fetch calendar-home-set or addressbook-home-set URLs for a principal."
 ---
 
 ## `fetchHomeUrl`

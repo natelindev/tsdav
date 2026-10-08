@@ -1,5 +1,6 @@
 ---
 title: 'DAVResponse'
+description: "TypeScript type definition for parsed WebDAV multi-status HTTP response."
 ---
 
 ```ts

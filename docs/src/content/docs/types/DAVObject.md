@@ -1,5 +1,6 @@
 ---
 title: 'DAVObject'
+description: "TypeScript type definition for DAVObject representing a remote WebDAV resource."
 ---
 
 ```ts

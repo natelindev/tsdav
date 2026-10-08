@@ -1,6 +1,7 @@
 ---
 title: 'smartCollectionSync'
 sidebar_position: 6
+description: "High-level sync abstraction automating initial crawl and incremental delta sync."
 ---
 
 ## `smartCollectionSync` and `smartCollectionSyncDetailed`

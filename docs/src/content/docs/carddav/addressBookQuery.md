@@ -1,6 +1,7 @@
 ---
 title: 'addressBookQuery'
 sidebar_position: 1
+description: "Search and filter CardDAV contacts using RFC 6352 addressbook-query REPORT."
 ---
 
 ## `addressBookQuery`

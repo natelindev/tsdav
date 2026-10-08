@@ -1,5 +1,6 @@
 ---
 title: 'DAVTokens'
+description: "TypeScript type definition for OAuth token refresh and access credentials."
 ---
 
 ```ts

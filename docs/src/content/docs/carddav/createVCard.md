@@ -1,6 +1,7 @@
 ---
 title: 'createVCard'
 sidebar_position: 5
+description: "Create a new contact vCard in a CardDAV collection via HTTP PUT."
 ---
 
 ## `createVCard`

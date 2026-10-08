@@ -1,6 +1,7 @@
 ---
 title: 'Smart calendar sync'
 sidebar_position: 8
+description: "Production architecture and best practices for bi-directional calendar sync with CTAGs and RFC 6578 sync tokens."
 ---
 
 # Smart calendar sync

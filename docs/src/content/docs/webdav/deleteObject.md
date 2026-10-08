@@ -1,6 +1,7 @@
 ---
 title: 'deleteObject'
 sidebar_position: 5
+description: "Delete a file or resource object from a WebDAV server."
 ---
 
 ## `deleteObject`

@@ -1,5 +1,6 @@
 ---
 title: 'DAVCredentials'
+description: "TypeScript type definition for credentials supporting Basic, Bearer (OAuth), and Digest auth."
 ---
 
 ```ts

@@ -1,6 +1,7 @@
 ---
 title: 'deleteVCard'
 sidebar_position: 7
+description: "Delete a contact vCard from a CardDAV address book collection."
 ---
 
 ## `deleteVCard`

@@ -1,6 +1,7 @@
 ---
 title: 'fetchCalendarUserAddresses'
 sidebar_position: 4
+description: "Fetch CalDAV user calendar addresses (mailto URIs) from the user principal."
 ---
 
 ## `fetchCalendarUserAddresses`

@@ -1,6 +1,7 @@
 ---
 title: 'fetchVCards'
 sidebar_position: 4
+description: "Fetch contact cards (vCards) from a CardDAV address book collection."
 ---
 
 ## `fetchVCards`
