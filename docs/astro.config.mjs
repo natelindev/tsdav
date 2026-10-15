@@ -101,9 +101,7 @@ export default defineConfig({
       logo: {
         src: './src/assets/logo.svg',
       },
-      social: {
-        github: 'https://github.com/natelindev/tsdav',
-      },
+      social: [{ icon: 'github', label: 'GitHub', href: 'https://github.com/natelindev/tsdav' }],
       customCss: ['./src/styles/custom.css'],
       components: {
         PageTitle: './src/components/PageTitle.astro',
@@ -180,7 +178,7 @@ export default defineConfig({
         },
         {
           label: 'Type Reference',
-          autogenerate: { directory: 'types' },
+          items: [{ autogenerate: { directory: 'types' } }],
         },
         {
           label: 'Helpers & Tools',

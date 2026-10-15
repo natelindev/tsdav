@@ -1,3 +1,19 @@
+## v2.5.0
+
+##### bug fixes
+
+- treat the `filename` of `createCalendarObject` and `createVCard` as one path segment inside the collection: names such as `urn:uuid:….ics` no longer parse as URL schemes, and `?`, `#`, `\`, stray `%`, and whitespace are percent-encoded while existing percent-escapes are kept; names containing `/`, or equal to `.` or `..`, now throw instead of writing outside the collection
+- resynchronize from an empty token when a server rejects an expired sync token (`DAV:valid-sync-token`) instead of failing the sync, and report local objects missing from an initial WebDAV sync as deleted
+- match DAV hrefs that differ only in percent-encoding (such as `a@b.ics` and `a%40b.ics`), so object fetches no longer fail as incomplete and principal URLs with email addresses still match
+- refresh OAuth access tokens a minute before they expire, and accept `expires_in` sent as a numeric string instead of refreshing on every request
+
+##### tooling
+
+- move development to pnpm 12, Vite 8 (via Vitest 5.0.4), and current patch releases of Biome, Rolldown, Knip, and Playwright; drop `dotenv` and the pinned build-tool overrides
+- update GitHub Actions, add Node.js 26 to CI, and remove the unused npm token from the trusted-publishing release workflow
+- type-check library sources without Node.js globals, so runtime-specific APIs cannot slip into shared code
+- upgrade the documentation site to Astro 7 and Starlight 0.42 with pnpm 12
+
 ## v2.4.0
 
 ##### features

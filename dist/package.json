@@ -1,6 +1,6 @@
 {
   "name": "tsdav",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "WebDAV, CALDAV, and CARDDAV client for Nodejs and the Browser",
   "keywords": [
     "dav",
@@ -73,19 +73,18 @@
     "xml-js": "1.6.11"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.12",
+    "@biomejs/biome": "2.5.15",
     "@types/debug": "4.1.13",
-    "@types/node": "26.4.1",
-    "@vitest/coverage-v8": "5.0.0",
-    "dotenv": "17.4.2",
-    "ical.js": "^2.2.1",
-    "knip": "^6.39.0",
-    "playwright": "1.63.0",
-    "rolldown": "1.2.7",
+    "@types/node": "26.6.5",
+    "@vitest/coverage-v8": "5.0.4",
+    "ical.js": "2.2.1",
+    "knip": "6.41.0",
+    "playwright": "1.64.0",
+    "rolldown": "1.2.14",
     "typescript": "7.0.2",
-    "vitest": "^5.0.0"
+    "vitest": "5.0.4"
   },
-  "packageManager": "pnpm@10.34.4",
+  "packageManager": "pnpm@12.11.2",
   "engines": {
     "node": ">=18"
   }

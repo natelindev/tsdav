@@ -23,7 +23,7 @@ const result = await createCalendarObject({
 ### Arguments
 
 - `calendar` **required**, the [DAVCalendar](../types/DAVCalendar.md) which the client wish to create object on.
-- `filename` **required**, file name of the new calendar object, should end in `.ics`
+- `filename` **required**, file name of the new calendar object, should end in `.ics`. It is one path segment inside the calendar: `?`, `#`, `\`, a `%` that does not start a percent-escape, and whitespace are percent-encoded, while existing percent-escapes are kept. Names containing `/`, or equal to `.` or `..`, are rejected.
 - `iCalString` **required**, calendar file data
 - `headers` request headers
 - `headersToExclude` array of keys of the headers you want to exclude

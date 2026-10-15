@@ -13,19 +13,19 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18, 20, 22, 24]
+        node-version: [18, 20, 22, 24, 26]
 
     environment:
       name: Production
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Use test/build Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version < 22 && 22 || matrix.node-version }}
           cache: 'pnpm'
@@ -80,7 +80,7 @@ jobs:
 
       - name: Use runtime Node.js
         if: matrix.node-version < 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
 
@@ -96,18 +96,18 @@ jobs:
 
       - name: Test Digest over HTTP on runtime Node.js
         if: matrix.node-version < 22
-        run: pnpm test:runtime:digest
+        run: node tests/digest-runtime.mjs
 
   bun-smoke-test:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Use Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: 'pnpm'
@@ -157,13 +157,13 @@ jobs:
   deno-smoke-test:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Use Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: 'pnpm'
@@ -243,9 +243,9 @@ jobs:
   digest-browser-test:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: 'pnpm'
@@ -260,9 +260,9 @@ jobs:
       run:
         working-directory: docs
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: 'pnpm'

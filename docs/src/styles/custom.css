@@ -150,20 +150,15 @@ header.header {
   border: 1px solid rgba(245, 158, 11, 0.25) !important;
 }
 
-/* Card Grid styling - tsdav Blue Edition */
+/* Card Grid styling - tsdav Blue Edition. Columns and gaps come from Starlight's CardGrid. */
 .card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.25rem;
-  margin: 1.5rem 0;
+  margin-bottom: 1.5rem;
 }
 
 .card {
   position: relative;
-  background: linear-gradient(180deg, rgba(86, 152, 238, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%), var(--sl-color-gray-6);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background-image: linear-gradient(180deg, rgba(86, 152, 238, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
   border-radius: 14px;
-  padding: 1.5rem;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
 }
@@ -330,8 +325,15 @@ starlight-tabs .tab > [role='tab'] {
   padding: 0.6rem 1rem !important;
   font-size: 0.875rem !important;
   font-weight: 500 !important;
+  line-height: var(--sl-line-height) !important;
+  /* The custom border is the underline; Starlight 0.37+ would add a box-shadow one. */
+  box-shadow: none !important;
   border-radius: 0 !important;
   transition: all 0.15s ease !important;
+}
+
+starlight-tabs .tab {
+  margin-bottom: -2px;
 }
 
 starlight-tabs .tab > [role='tab']:hover {

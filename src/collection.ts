@@ -349,22 +349,40 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
   debug(`smart collection sync with type ${account.accountType} and method ${syncMethod}`);
 
   if (syncMethod === 'webdav') {
-    const result = await syncCollection({
-      url: collection.url,
-      props: {
-        [`${DAVNamespaceShort.DAV}:getetag`]: {},
-        [`${
-          account.accountType === 'caldav' ? DAVNamespaceShort.CALDAV : DAVNamespaceShort.CARDDAV
-        }:${account.accountType === 'caldav' ? 'calendar-data' : 'address-data'}`]: {},
-        [`${DAVNamespaceShort.DAV}:displayname`]: {},
-      },
-      syncLevel: 1,
-      syncToken: collection.syncToken,
-      headers: excludeHeaders(headers, headersToExclude),
-      headersToExclude,
-      fetchOptions,
-      fetch: fetchOverride,
-    });
+    const requestSync = (syncToken?: string) =>
+      syncCollection({
+        url: collection.url,
+        props: {
+          [`${DAVNamespaceShort.DAV}:getetag`]: {},
+          [`${
+            account.accountType === 'caldav' ? DAVNamespaceShort.CALDAV : DAVNamespaceShort.CARDDAV
+          }:${account.accountType === 'caldav' ? 'calendar-data' : 'address-data'}`]: {},
+          [`${DAVNamespaceShort.DAV}:displayname`]: {},
+        },
+        syncLevel: 1,
+        syncToken,
+        headers: excludeHeaders(headers, headersToExclude),
+        headersToExclude,
+        fetchOptions,
+        fetch: fetchOverride,
+      });
+    let syncToken = collection.syncToken;
+    let result = await requestSync(syncToken);
+    // RFC 6578 §3.2: a server that no longer accepts a sync token fails the
+    // DAV:valid-sync-token precondition, and the client must resynchronize
+    // from an empty token, which lists every member.
+    if (
+      syncToken &&
+      result.length === 1 &&
+      result[0].status >= 400 &&
+      result[0].status < 500 &&
+      typeof result[0].raw === 'string' &&
+      result[0].raw.includes('valid-sync-token')
+    ) {
+      debug('sync token rejected by server, starting a full sync');
+      syncToken = undefined;
+      result = await requestSync(syncToken);
+    }
 
     const isObjectResponse = (r: DAVResponse): r is RequireAndNotNullSome<DAVResponse, 'href'> => {
       return (
@@ -452,11 +470,12 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
       url: resolveDAVHref(url, collection.url),
       etag: '',
     }));
+    // An initial sync lists every member, so local objects it omits were deleted.
     const { created, updated, deleted, unchanged } = diffDAVObjects(
       localObjects,
       remoteObjects,
       collection.url,
-      true,
+      Boolean(syncToken),
       deletedObjects,
     );
 

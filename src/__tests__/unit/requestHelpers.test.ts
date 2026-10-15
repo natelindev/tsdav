@@ -183,3 +183,11 @@ describe('ensureTrailingSlash', () => {
     expect(ensureTrailingSlash('  https://example.com/cal  ')).toBe('https://example.com/cal/');
   });
 });
+
+test('urlMatches should ignore percent-encoding differences in path segments', () => {
+  const baseUrl = 'https://example.com/';
+
+  expect(urlMatches('/principals/a@b.com/', '/principals/a%40b.com/', baseUrl)).toBe(true);
+  expect(urlMatches('/cal/a%2fb.ics', '/cal/a%2Fb.ics', baseUrl)).toBe(true);
+  expect(urlMatches('/cal/a%2Fb.ics', '/cal/a/b.ics', baseUrl)).toBe(false);
+});

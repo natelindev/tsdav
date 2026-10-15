@@ -338,7 +338,7 @@ describe('review regressions', () => {
       const credentials: DAVCredentials = {
         accessToken: 'old',
         refreshToken: 'refresh',
-        expiration: Date.now() + 60000,
+        expiration: Date.now() + 3_600_000,
         clientId: 'id',
         clientSecret: 'secret',
         tokenUrl: 'https://example.com/token',
@@ -369,8 +369,13 @@ describe('review regressions', () => {
   it('reuses an access token without a refresh token and blocks DAV after refresh failure', async () => {
     const fetch = vi.fn();
     expect(
-      (await getOauthHeaders({ accessToken: 'valid', expiration: Date.now() + 60000 }, {}, fetch))
-        .headers.authorization,
+      (
+        await getOauthHeaders(
+          { accessToken: 'valid', expiration: Date.now() + 3_600_000 },
+          {},
+          fetch,
+        )
+      ).headers.authorization,
     ).toBe('Bearer valid');
     expect(fetch).not.toHaveBeenCalled();
     const failing = vi.fn().mockResolvedValue(new Response('', { status: 401 }));
@@ -429,6 +434,24 @@ describe('review regressions', () => {
     await expect(
       syncCalendarsDetailed({ oldCalendars: [calendar], account, fetch: transport(body) }),
     ).rejects.toThrow('resourcetype returned 403');
+  });
+
+  it('matches object hrefs that differ only in percent-encoding', async () => {
+    const objects = await fetchCalendarObjects({
+      calendar,
+      objectUrls: ['https://example.com/cal/work/a@b.ics'],
+      fetch: transport(
+        xml(
+          member(
+            '/cal/work/a%40b.ics',
+            '<d:getetag>"1"</d:getetag><c:calendar-data>A</c:calendar-data>',
+          ),
+        ),
+      ),
+    });
+    expect(objects).toEqual([
+      { url: 'https://example.com/cal/work/a%40b.ics', etag: '"1"', data: 'A' },
+    ]);
   });
 
   it('rejects incomplete calendar and contact snapshots', async () => {

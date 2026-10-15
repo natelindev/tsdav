@@ -12,18 +12,17 @@
     "test": "node --test tests/*.test.cjs"
   },
   "dependencies": {
-    "@astrojs/mdx": "^4.3.14",
-    "@astrojs/react": "^4.4.1",
-    "@astrojs/starlight": "^0.32.0",
-    "astro": "^5.4.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "@astrojs/react": "^7.0.1",
+    "@astrojs/starlight": "^0.42.6",
+    "astro": "^7.3.8",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "xml-js": "1.6.11"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "typescript": "^5.8.0"
+    "typescript": "^7.0.2"
   },
-  "packageManager": "pnpm@10.34.4"
+  "packageManager": "pnpm@12.11.2"
 }

@@ -414,6 +414,43 @@ describe('DAVClient login', () => {
 
     expect((client as any).authHeaders.authorization).toBe('Bearer oa-token');
   });
+
+  it('should refresh a cached Oauth token that expires within the next minute', async () => {
+    const mockFetch = vi.fn(async (url: string) =>
+      url === 'http://example.com/token'
+        ? new Response(JSON.stringify({ access_token: 'fresh-token', expires_in: 3600 }), {
+            headers: { 'content-type': 'application/json' },
+          })
+        : new Response('<d:multistatus xmlns:d="DAV:"/>', {
+            status: 207,
+            headers: { 'content-type': 'application/xml' },
+          }),
+    );
+    const client = new DAVClient({
+      serverUrl: 'http://example.com',
+      credentials: {
+        accessToken: 'expiring-token',
+        refreshToken: 'ref',
+        expiration: Date.now() + 30_000,
+        clientId: 'cid',
+        clientSecret: 'csecret',
+        tokenUrl: 'http://example.com/token',
+      },
+      authMethod: 'Oauth',
+      fetch: mockFetch,
+    });
+    (client as any).authHeaders = { authorization: 'Bearer expiring-token' };
+
+    await client.propfind({ url: 'http://example.com/cal/', props: { 'd:getetag': {} } });
+
+    expect(mockFetch.mock.calls.map(([url]) => url)).toEqual([
+      'http://example.com/token',
+      'http://example.com/cal/',
+    ]);
+    expect(new Headers(mockFetch.mock.calls[1][1]?.headers).get('authorization')).toBe(
+      'Bearer fresh-token',
+    );
+  });
 });
 
 describe('DAVClient method delegation', () => {
