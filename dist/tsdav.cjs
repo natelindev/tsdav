@@ -267,6 +267,29 @@ const mergeDAVProps = (propStats) => {
 	return props;
 };
 //#endregion
+//#region src/util/percentEncoding.ts
+/**
+* Encode every path segment the same way, so hrefs that differ only in
+* percent-encoding (`a@b` and `a%40b`, `%2f` and `%2F`) compare equal.
+* Only for comparisons: servers may expect the original form in requests.
+*/
+const normalizePercentEncoding = (href) => {
+	let url;
+	try {
+		url = new URL(href);
+	} catch {
+		return href;
+	}
+	url.pathname = url.pathname.split("/").map((segment) => {
+		try {
+			return encodeURIComponent(decodeURIComponent(segment));
+		} catch {
+			return segment;
+		}
+	}).join("/");
+	return url.href;
+};
+//#endregion
 //#region src/util/requestHelpers.ts
 var requestHelpers_exports = /* @__PURE__ */ __exportAll({
 	cleanupFalsy: () => cleanupFalsy,
@@ -325,7 +348,7 @@ const urlContains = (urlA, urlB) => {
 const urlMatches = (urlA, urlB, baseUrl) => {
 	if (!urlA || !urlB || !baseUrl) return urlEquals(urlA, urlB);
 	try {
-		return urlEquals(new URL(urlA, baseUrl).href, new URL(urlB, baseUrl).href);
+		return urlEquals(normalizePercentEncoding(new URL(urlA, baseUrl).href), normalizePercentEncoding(new URL(urlB, baseUrl).href));
 	} catch {
 		return urlEquals(urlA, urlB);
 	}
@@ -569,7 +592,7 @@ const deleteObject = async (params) => {
 const getDAVUrlKey = (url, baseUrl) => {
 	let resolved;
 	try {
-		resolved = new URL(url, ensureTrailingSlash(baseUrl)).href;
+		resolved = normalizePercentEncoding(new URL(url, ensureTrailingSlash(baseUrl)).href);
 	} catch {
 		resolved = url.trim();
 	}
@@ -780,7 +803,7 @@ const smartCollectionSync = async (params) => {
 	const syncMethod = method ?? (collection.reports?.includes("syncCollection") ? "webdav" : "basic");
 	debug$6(`smart collection sync with type ${account.accountType} and method ${syncMethod}`);
 	if (syncMethod === "webdav") {
-		const result = await syncCollection({
+		const requestSync = (syncToken) => syncCollection({
 			url: collection.url,
 			props: {
 				[`d:getetag`]: {},
@@ -788,12 +811,19 @@ const smartCollectionSync = async (params) => {
 				[`d:displayname`]: {}
 			},
 			syncLevel: 1,
-			syncToken: collection.syncToken,
+			syncToken,
 			headers: excludeHeaders(headers, headersToExclude),
 			headersToExclude,
 			fetchOptions,
 			fetch: fetchOverride
 		});
+		let syncToken = collection.syncToken;
+		let result = await requestSync(syncToken);
+		if (syncToken && result.length === 1 && result[0].status >= 400 && result[0].status < 500 && typeof result[0].raw === "string" && result[0].raw.includes("valid-sync-token")) {
+			debug$6("sync token rejected by server, starting a full sync");
+			syncToken = void 0;
+			result = await requestSync(syncToken);
+		}
 		const isObjectResponse = (r) => {
 			return typeof r.href === "string" && getDAVUrlKey(r.href, collection.url) !== getDAVUrlKey(collection.url, collection.url) && !r.props?.resourcetype?.collection;
 		};
@@ -832,7 +862,7 @@ const smartCollectionSync = async (params) => {
 			url: resolveDAVHref(url, collection.url),
 			etag: ""
 		}));
-		const { created, updated, deleted, unchanged } = diffDAVObjects(localObjects, remoteObjects, collection.url, true, deletedObjects);
+		const { created, updated, deleted, unchanged } = diffDAVObjects(localObjects, remoteObjects, collection.url, Boolean(syncToken), deletedObjects);
 		return {
 			...collection,
 			objects: detailedResult ? {
@@ -900,6 +930,21 @@ const smartCollectionSyncDetailed = async (params) => smartCollectionSync({
 	...params,
 	detailedResult: true
 });
+//#endregion
+//#region src/util/objectUrl.ts
+/**
+* Resolve a new object's URL from its collection URL and file name.
+*
+* The file name is one path segment, not a relative URL: `?`, `#`, `\`, a
+* stray `%`, and whitespace or control characters are percent-encoded, and the
+* `./` prefix keeps a name like `urn:uuid:1.ics` from parsing as a URL scheme.
+* Valid percent-escapes are kept, so already-encoded names are not encoded twice.
+*/
+const getObjectUrl = (collectionUrl, filename) => {
+	if (!filename || filename.includes("/") || /^(?:\.|%2e){1,2}$/i.test(filename)) throw new Error(`Invalid object filename "${filename}": expected a single path segment`);
+	const segment = filename.replace(/%(?![\da-f]{2})|[?#\\\x00-\x20\x7f]/gi, (char) => `%${char.charCodeAt(0).toString(16).toUpperCase().padStart(2, "0")}`);
+	return new URL(`./${segment}`, ensureTrailingSlash(collectionUrl)).href;
+};
 //#endregion
 //#region src/addressBook.ts
 var addressBook_exports = /* @__PURE__ */ __exportAll({
@@ -1055,7 +1100,7 @@ const fetchVCards = async (params) => {
 const createVCard = async (params) => {
 	const { addressBook, vCardString, filename, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
 	return createObject({
-		url: new URL(filename, ensureTrailingSlash(addressBook.url)).href,
+		url: getObjectUrl(addressBook.url, filename),
 		data: vCardString,
 		headers: excludeHeaders({
 			"content-type": "text/vcard; charset=utf-8",
@@ -1375,7 +1420,7 @@ const fetchCalendarObjects = async (params) => {
 const createCalendarObject = async (params) => {
 	const { calendar, iCalString, filename, headers, headersToExclude, fetchOptions = {}, fetch: fetchOverride } = params;
 	return createObject({
-		url: new URL(filename, ensureTrailingSlash(calendar.url)).href,
+		url: getObjectUrl(calendar.url, filename),
 		data: iCalString,
 		headers: excludeHeaders({
 			"content-type": "text/calendar; charset=utf-8",
@@ -2196,6 +2241,16 @@ const createAccount = async (params) => {
 	return newAccount;
 };
 //#endregion
+//#region src/util/tokenExpiry.ts
+const EXPIRY_MARGIN_MS = 6e4;
+/** Whether a token expiring at `expiration` (ms since epoch) can still be sent. */
+const isTokenUnexpired = (expiration) => Date.now() < expiration - EXPIRY_MARGIN_MS;
+/** Expiration timestamp for an OAuth `expires_in`, which some providers send as a string. */
+const getTokenExpiration = (expiresIn) => {
+	const seconds = typeof expiresIn === "string" && expiresIn.trim() !== "" ? Number(expiresIn) : expiresIn;
+	return typeof seconds === "number" && Number.isFinite(seconds) && seconds > 0 ? Date.now() + seconds * 1e3 : void 0;
+};
+//#endregion
 //#region src/util/authHelpers.ts
 var authHelpers_exports = /* @__PURE__ */ __exportAll({
 	defaultParam: () => defaultParam,
@@ -2338,7 +2393,7 @@ const getOauthHeaders = async (credentials, fetchOptions, fetchOverride) => {
 	debug$1("Fetching oauth headers");
 	let tokens = {};
 	let didRefresh = false;
-	if (credentials.accessToken && (credentials.expiration == null && !credentials.refreshToken || credentials.expiration != null && Date.now() < credentials.expiration)) tokens = {
+	if (credentials.accessToken && (credentials.expiration == null && !credentials.refreshToken || credentials.expiration != null && isTokenUnexpired(credentials.expiration))) tokens = {
 		access_token: credentials.accessToken,
 		refresh_token: credentials.refreshToken
 	};
@@ -2349,7 +2404,7 @@ const getOauthHeaders = async (credentials, fetchOptions, fetchOverride) => {
 	if (didRefresh) {
 		if (tokens.access_token) credentials.accessToken = tokens.access_token;
 		if (tokens.refresh_token) credentials.refreshToken = tokens.refresh_token;
-		if (tokens.access_token) credentials.expiration = typeof tokens.expires_in === "number" ? Date.now() + tokens.expires_in * 1e3 : void 0;
+		if (tokens.access_token) credentials.expiration = getTokenExpiration(tokens.expires_in);
 	}
 	debug$1("Oauth tokens obtained");
 	return {
@@ -2472,7 +2527,7 @@ var DAVClient = class {
 	}
 	async authenticate(force = false, fetchOptions = this.fetchOptions, fetchOverride = this.fetchOverride) {
 		if (!force && this.authMethod !== "Oauth") return;
-		if (!force && this.authHeaders && this.credentials.accessToken && (this.credentials.expiration == null || Date.now() < this.credentials.expiration)) {
+		if (!force && this.authHeaders && this.credentials.accessToken && (this.credentials.expiration == null || isTokenUnexpired(this.credentials.expiration))) {
 			this.authHeaders = { authorization: `Bearer ${this.credentials.accessToken}` };
 			return;
 		}
