@@ -1,5 +1,6 @@
 import { DAVAttributeMap, DAVNamespace } from '../consts';
 
+import { normalizePercentEncoding } from './percentEncoding';
 import type { NoUndefinedField } from './typeHelpers';
 
 const normalizeUrl = (url: string): string => {
@@ -64,7 +65,10 @@ export const urlMatches = (urlA?: string, urlB?: string, baseUrl?: string): bool
   }
 
   try {
-    return urlEquals(new URL(urlA, baseUrl).href, new URL(urlB, baseUrl).href);
+    return urlEquals(
+      normalizePercentEncoding(new URL(urlA, baseUrl).href),
+      normalizePercentEncoding(new URL(urlB, baseUrl).href),
+    );
   } catch {
     return urlEquals(urlA, urlB);
   }

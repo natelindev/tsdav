@@ -1,11 +1,12 @@
 import { DAVObject } from '../types/models';
+import { normalizePercentEncoding } from './percentEncoding';
 import { ensureTrailingSlash } from './requestHelpers';
 
 /** Stable keys for linear-time DAV resource comparisons. */
 export const getDAVUrlKey = (url: string, baseUrl: string): string => {
   let resolved: string;
   try {
-    resolved = new URL(url, ensureTrailingSlash(baseUrl)).href;
+    resolved = normalizePercentEncoding(new URL(url, ensureTrailingSlash(baseUrl)).href);
   } catch {
     resolved = url.trim();
   }
