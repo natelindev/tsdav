@@ -85,8 +85,8 @@ Guidance for AI coding agents working in this repository. The architecture overv
 ## Tests And Credentials
 
 - Unit tests must not require real provider credentials.
-- Integration tests load `.env` via `dotenv/config`; start from `.env.example`
-  when credentials are needed.
+- Integration tests load `.env` via `process.loadEnvFile` in `vitest.config.ts`;
+  start from `.env.example` when credentials are needed.
 - Use existing `MOCK_FETCH` and `RECORD_NETWORK_REQUESTS` conventions when
   working with provider tests. Do not record or commit secrets.
 - If credentials are missing, state that integration verification was skipped

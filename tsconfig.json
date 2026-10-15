@@ -8,6 +8,8 @@
     "resolveJsonModule": true,
     "moduleResolution": "bundler",
     "lib": ["ES2019", "dom", "DOM.Iterable"],
+    // Shared source must stay runtime-neutral, so Node.js globals are not ambient.
+    "types": [],
     "module": "preserve",
     "target": "ES2018",
     "declaration": true,

@@ -1,13 +1,12 @@
-import { readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { defineConfig } from 'vitest/config';
 
+// Integration tests read provider credentials from `.env`; variables already
+// set in the environment take precedence.
+if (existsSync('.env')) process.loadEnvFile('.env');
+
 export default defineConfig({
-  esbuild: {
-    // Tests importing docs helpers must not require the separate docs toolchain.
-    tsconfigRaw: readFileSync(new URL('./tsconfig.json', import.meta.url), 'utf8'),
-  },
   test: {
-    setupFiles: ['dotenv/config'],
     testTimeout: 120000,
     include: ['src/**/*.test.ts', 'src/util/__tests__/**/*.test.ts', 'tests/**/*.test.ts'],
     exclude: ['node_modules', 'dist'],

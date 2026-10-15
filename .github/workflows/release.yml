@@ -20,16 +20,18 @@ jobs:
       name: Production
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: use node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-version }}
           registry-url: 'https://registry.npmjs.org'
+          # Publishing jobs must not restore a shared cache.
+          package-manager-cache: false
 
       - name: install dependencies
         run: pnpm i --frozen-lockfile
@@ -72,10 +74,8 @@ jobs:
           pnpm exec playwright install --with-deps chromium
           pnpm test:browser:digest
 
-      # Publish to npm with provenance statements
-      # Requires NPM_TOKEN secret to be configured in repository secrets
-      # or in the Production environment secrets
+      # Publish through npm trusted publishing (OIDC, npm >= 11.5.1), which also
+      # attaches provenance. Requires a trusted publisher on npmjs.com that
+      # matches this repository, `release.yml`, and the Production environment.
       - name: publish package
-        run: npm publish --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish
