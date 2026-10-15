@@ -7,4 +7,4 @@ allowBuilds:
   '@pagefind/darwin-arm64': true
 
 patchedDependencies:
-  '@astrojs/starlight@0.32.6': patches/@astrojs__starlight@0.32.6.patch
+  '@astrojs/starlight@0.42.6': patches/@astrojs__starlight@0.42.6.patch

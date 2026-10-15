@@ -28,7 +28,6 @@
         "src/content/docs/**/*.{md,mdx}"
       ],
       "ignoreDependencies": [
-        "@astrojs/mdx",
         "npm"
       ]
     }
