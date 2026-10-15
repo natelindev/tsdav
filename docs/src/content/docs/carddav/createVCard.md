@@ -22,7 +22,7 @@ const result = await createVCard({
 ### Arguments
 
 - `addressBook` **required**, [DAVAddressBook](../types/DAVAddressBook.md)
-- `filename` **required**, file name of the new vcard, should end in `.vcf`
+- `filename` **required**, file name of the new vcard, should end in `.vcf`. It is one path segment inside the address book: `?`, `#`, `\`, a `%` that does not start a percent-escape, and whitespace are percent-encoded, while existing percent-escapes are kept. Names containing `/`, or equal to `.` or `..`, are rejected.
 - `vCardString` **required**, vcard file data
 - `headers` request headers
 - `headersToExclude` array of keys of the headers you want to exclude

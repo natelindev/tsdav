@@ -19,6 +19,7 @@ import {
   urlMatches,
   ensureTrailingSlash,
 } from './util/requestHelpers';
+import { getObjectUrl } from './util/objectUrl';
 import { getDAVUrlKey } from './util/syncHelpers';
 import { assertDAVDiscovery, assertDAVObjectResponses, getDAVText } from './util/responseHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelpers';
@@ -580,7 +581,7 @@ export const createCalendarObject = async (params: {
   } = params;
 
   return createObject({
-    url: new URL(filename, ensureTrailingSlash(calendar.url)).href,
+    url: getObjectUrl(calendar.url, filename),
     data: iCalString,
     headers: excludeHeaders(
       {

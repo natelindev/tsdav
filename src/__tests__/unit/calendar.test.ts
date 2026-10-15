@@ -511,6 +511,28 @@ describe('createCalendarObject', () => {
     expect(callArgs.headers?.['content-type']).toBe('text/calendar; charset=utf-8');
     expect(callArgs.headers?.['If-None-Match']).toBe('*');
   });
+
+  it('should keep a UID-based filename inside the calendar', async () => {
+    mockedCreateObject.mockResolvedValue({ ok: true, status: 201 } as any);
+
+    await createCalendarObject({
+      calendar: { url: 'http://example.com/cal/' },
+      iCalString: 'BEGIN:VCALENDAR\nEND:VCALENDAR',
+      filename: 'urn:uuid:42#1.ics',
+    });
+
+    expect(mockedCreateObject.mock.calls[0][0].url).toBe(
+      'http://example.com/cal/urn:uuid:42%231.ics',
+    );
+    await expect(
+      createCalendarObject({
+        calendar: { url: 'http://example.com/cal/' },
+        iCalString: 'BEGIN:VCALENDAR\nEND:VCALENDAR',
+        filename: '../other.ics',
+      }),
+    ).rejects.toThrow('Invalid object filename');
+    expect(mockedCreateObject).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('updateCalendarObject', () => {

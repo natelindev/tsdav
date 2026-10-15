@@ -14,6 +14,7 @@ import {
   urlEquals,
   ensureTrailingSlash,
 } from './util/requestHelpers';
+import { getObjectUrl } from './util/objectUrl';
 import { getDAVUrlKey } from './util/syncHelpers';
 import { assertDAVDiscovery, assertDAVObjectResponses, getDAVText } from './util/responseHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelpers';
@@ -306,7 +307,7 @@ export const createVCard = async (params: {
     fetch: fetchOverride,
   } = params;
   return createObject({
-    url: new URL(filename, ensureTrailingSlash(addressBook.url)).href,
+    url: getObjectUrl(addressBook.url, filename),
     data: vCardString,
     headers: excludeHeaders(
       {

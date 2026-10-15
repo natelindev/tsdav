@@ -395,6 +395,27 @@ describe('createVCard', () => {
     expect(args.headers?.['content-type']).toBe('text/vcard; charset=utf-8');
     expect(args.headers?.['If-None-Match']).toBe('*');
   });
+
+  it('should keep a filename with URL syntax inside the address book', async () => {
+    mockedCreateObject.mockResolvedValue({ ok: true, status: 201 } as any);
+
+    await createVCard({
+      addressBook: { url: 'http://example.com/addr/' },
+      vCardString: 'BEGIN:VCARD\nFN:Test\nEND:VCARD',
+      filename: 'urn:uuid:7?v=2.vcf',
+    });
+
+    expect(mockedCreateObject.mock.calls[0][0].url).toBe(
+      'http://example.com/addr/urn:uuid:7%3Fv=2.vcf',
+    );
+    await expect(
+      createVCard({
+        addressBook: { url: 'http://example.com/addr/' },
+        vCardString: 'BEGIN:VCARD\nFN:Test\nEND:VCARD',
+        filename: '/root.vcf',
+      }),
+    ).rejects.toThrow('Invalid object filename');
+  });
 });
 
 describe('updateVCard', () => {
