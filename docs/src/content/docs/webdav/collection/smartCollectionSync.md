@@ -91,6 +91,11 @@ remote changes. Failed sync REPORTs and failed multi-get responses also reject r
 a successful sync or advancing the token. Object-level 404 responses in a sync REPORT still represent
 deletions. A successful response with no changed objects retains the new server sync token.
 
+Without a `collection.syncToken`, the WebDAV sync is an initial sync that lists every object, so local
+objects missing from it are reported as `deleted`. When the server rejects the stored sync token
+(the `DAV:valid-sync-token` precondition, for example after the token expires), the sync is repeated once
+from an empty token and returns a fresh token, as RFC 6578 requires.
+
 When using `smartCollectionSync`,
 
 fetch the latest list of [DAVObject](../../types/DAVObject.md) from changed collection using [rfc6578 webdav sync](https://datatracker.ietf.org/doc/html/rfc6578) and `objectMultiGet`

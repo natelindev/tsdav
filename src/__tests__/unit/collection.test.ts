@@ -860,6 +860,7 @@ describe('smartCollectionSync', () => {
       collection: {
         url: 'http://example.com/col/',
         reports: ['syncCollection'],
+        syncToken: 'token1',
         objects: [
           { url: 'http://example.com/col/unchanged.ics', etag: '"same"' },
           { url: 'http://example.com/col/changed.ics', etag: '"old"' },
@@ -886,6 +887,127 @@ describe('smartCollectionSync', () => {
       'http://example.com/col/changed.ics',
     ]);
     expect(result.objects?.[1].etag).toBe('"new"');
+  });
+
+  const syncTokenOf = (call: number) =>
+    mockedDavRequest.mock.calls[call][0].init.body['sync-collection']['sync-token'];
+
+  it('should resync from an empty token when the server rejects the sync token', async () => {
+    mockedDavRequest
+      .mockResolvedValueOnce([
+        {
+          href: 'http://example.com/col/',
+          ok: false,
+          status: 403,
+          statusText: 'Forbidden',
+          raw: '<?xml version="1.0"?><d:error xmlns:d="DAV:"><d:valid-sync-token/></d:error>',
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          href: '/col/kept.ics',
+          ok: true,
+          status: 200,
+          statusText: 'OK',
+          raw: { multistatus: { syncToken: 'fresh-token' } },
+        },
+      ]);
+
+    const result = await smartCollectionSyncDetailed({
+      collection: {
+        url: 'http://example.com/col/',
+        reports: ['syncCollection'],
+        syncToken: 'expired-token',
+        objects: [
+          { url: 'http://example.com/col/kept.ics', etag: '"same"' },
+          { url: 'http://example.com/col/removed.ics', etag: '"gone"' },
+        ],
+        objectMultiGet: vi.fn().mockResolvedValue([
+          {
+            href: '/col/kept.ics',
+            ok: true,
+            status: 200,
+            statusText: 'OK',
+            props: { getetag: '"same"', calendarData: 'data' },
+          },
+        ]),
+      },
+      account: {
+        serverUrl: 'https://example.com/',
+        accountType: 'caldav',
+        homeUrl: 'https://example.com/col/',
+      },
+    });
+
+    expect(mockedDavRequest).toHaveBeenCalledTimes(2);
+    expect(syncTokenOf(0)).toBe('expired-token');
+    expect(syncTokenOf(1)).toBeUndefined();
+    expect(result.syncToken).toBe('fresh-token');
+    expect(result.objects.created).toEqual([]);
+    expect(result.objects.updated).toEqual([]);
+    expect(result.objects.deleted.map((object) => object.url)).toEqual([
+      'http://example.com/col/removed.ics',
+    ]);
+  });
+
+  it('should not retry a sync rejected for another reason', async () => {
+    mockedDavRequest.mockResolvedValue([
+      {
+        href: 'http://example.com/col/',
+        ok: false,
+        status: 403,
+        statusText: 'Forbidden',
+        raw: '<?xml version="1.0"?><d:error xmlns:d="DAV:"><d:need-privileges/></d:error>',
+      },
+    ]);
+
+    await expect(
+      smartCollectionSync({
+        collection: {
+          url: 'http://example.com/col/',
+          reports: ['syncCollection'],
+          syncToken: 'token1',
+          objects: [],
+        },
+        account: {
+          serverUrl: 'https://example.com/',
+          accountType: 'caldav',
+          homeUrl: 'https://example.com/col/',
+        },
+      }),
+    ).rejects.toThrow('Collection sync failed: 403 Forbidden');
+    expect(mockedDavRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it('should treat local objects missing from an initial webdav sync as deleted', async () => {
+    mockedDavRequest.mockResolvedValue([
+      {
+        href: 'http://example.com/col/',
+        ok: true,
+        status: 207,
+        statusText: 'Multi-Status',
+        raw: { multistatus: { syncToken: 'first-token' } },
+      },
+    ]);
+
+    const result = await smartCollectionSyncDetailed({
+      collection: {
+        url: 'http://example.com/col/',
+        reports: ['syncCollection'],
+        objects: [{ url: 'http://example.com/col/stale.ics', etag: '"stale"' }],
+      },
+      account: {
+        serverUrl: 'https://example.com/',
+        accountType: 'caldav',
+        homeUrl: 'https://example.com/col/',
+      },
+    });
+
+    expect(syncTokenOf(0)).toBeUndefined();
+    expect(result.syncToken).toBe('first-token');
+    expect(result.objects.deleted.map((object) => object.url)).toEqual([
+      'http://example.com/col/stale.ics',
+    ]);
   });
 
   it('should detect deleted objects in basic mode', async () => {
