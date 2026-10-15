@@ -5,6 +5,7 @@ import { DAVCredentials } from '../types/models';
 import { fetch } from './fetch';
 import { mergeHeaders } from './requestHelpers';
 import { findMissingFieldNames, hasFields } from './typeHelpers';
+import { getTokenExpiration, isTokenUnexpired } from './tokenExpiry';
 
 const debug = getLogger('tsdav:authHelper');
 const BASE64_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -213,7 +214,7 @@ export const getOauthHeaders = async (
   if (
     credentials.accessToken &&
     ((credentials.expiration == null && !credentials.refreshToken) ||
-      (credentials.expiration != null && Date.now() < credentials.expiration))
+      (credentials.expiration != null && isTokenUnexpired(credentials.expiration)))
   ) {
     tokens = { access_token: credentials.accessToken, refresh_token: credentials.refreshToken };
   } else {
@@ -235,8 +236,7 @@ export const getOauthHeaders = async (
       credentials.refreshToken = tokens.refresh_token;
     }
     if (tokens.access_token) {
-      credentials.expiration =
-        typeof tokens.expires_in === 'number' ? Date.now() + tokens.expires_in * 1000 : undefined;
+      credentials.expiration = getTokenExpiration(tokens.expires_in);
     }
     /* eslint-enable no-param-reassign */
   }

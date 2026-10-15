@@ -63,6 +63,7 @@ import {
 import { createDigestAuthState, createDigestFetch, DigestAuthState } from './util/digestAuth';
 import { Optional } from './util/typeHelpers';
 import { mergeHeaders } from './util/requestHelpers';
+import { isTokenUnexpired } from './util/tokenExpiry';
 
 const resolveAuthHeaders = async (
   client: DAVClient,
@@ -255,7 +256,7 @@ export class DAVClient {
       !force &&
       this.authHeaders &&
       this.credentials.accessToken &&
-      (this.credentials.expiration == null || Date.now() < this.credentials.expiration)
+      (this.credentials.expiration == null || isTokenUnexpired(this.credentials.expiration))
     ) {
       this.authHeaders = { authorization: `Bearer ${this.credentials.accessToken}` };
       return;

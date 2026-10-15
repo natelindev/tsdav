@@ -331,4 +331,52 @@ describe('getOauthHeaders', () => {
       refresh_token: 'ref-token',
     });
   });
+
+  it('should refresh a token that expires within the next minute', async () => {
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ access_token: 'refreshed-token', expires_in: 3600 }),
+    });
+
+    const result = await getOauthHeaders(
+      {
+        refreshToken: 'ref-token',
+        accessToken: 'expiring-token',
+        expiration: Date.now() + 30_000,
+        clientId: 'cid',
+        clientSecret: 'csecret',
+        tokenUrl: 'http://example.com/token',
+      },
+      undefined,
+      mockFetch as any,
+    );
+
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(result.headers.authorization).toBe('Bearer refreshed-token');
+  });
+
+  it.each([
+    ['a number', 3600, 3600_000],
+    ['a numeric string', '3600', 3600_000],
+    ['an invalid string', 'soon', undefined],
+    ['zero', 0, undefined],
+  ])('should derive the expiration from expires_in given as %s', async (_, expiresIn, offset) => {
+    const now = 1_800_000_000_000;
+    vi.spyOn(Date, 'now').mockReturnValue(now);
+    const credentials = {
+      refreshToken: 'ref-token',
+      clientId: 'cid',
+      clientSecret: 'csecret',
+      tokenUrl: 'http://example.com/token',
+    } as Record<string, unknown>;
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({ access_token: 'new-token', expires_in: expiresIn }),
+    });
+
+    await getOauthHeaders(credentials, undefined, mockFetch as any);
+
+    expect(credentials.expiration).toBe(offset == null ? undefined : now + offset);
+    vi.restoreAllMocks();
+  });
 });
