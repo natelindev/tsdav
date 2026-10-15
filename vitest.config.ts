@@ -6,6 +6,9 @@ import { defineConfig } from 'vitest/config';
 if (existsSync('.env')) process.loadEnvFile('.env');
 
 export default defineConfig({
+  // Tests import docs helpers; without this, Vite would resolve docs/tsconfig.json,
+  // which needs the separate docs toolchain installed.
+  tsconfig: './tsconfig.json',
   test: {
     testTimeout: 120000,
     include: ['src/**/*.test.ts', 'src/util/__tests__/**/*.test.ts', 'tests/**/*.test.ts'],
