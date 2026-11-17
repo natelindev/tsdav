@@ -213,7 +213,9 @@ const parseDAVXML = (xml) => {
 		const key = normalizedKey(element.name ?? "", normalized.namespace);
 		Object.defineProperty(result, key, {
 			value: normalized.value,
-			enumerable: true
+			enumerable: true,
+			configurable: true,
+			writable: true
 		});
 	}
 	return result;
@@ -408,7 +410,7 @@ const davRequest = async (params) => {
 		}
 		return [key, value];
 	}));
-	const xmlBody = convertIncoming && body != null ? convert.js2xml({
+	const xmlBody = convertIncoming && body != null ? typeof body === "string" ? body : convert.js2xml({
 		_declaration: { _attributes: {
 			version: "1.0",
 			encoding: "utf-8"
@@ -794,7 +796,12 @@ const smartCollectionSync = async (params) => {
 		});
 		let syncToken = collection.syncToken;
 		let result = await requestSync(syncToken);
-		if (syncToken && result.length === 1 && result[0].status >= 400 && result[0].status < 500 && typeof result[0].raw === "string" && result[0].raw.includes("valid-sync-token")) {
+		const hasValidSyncTokenError = (response) => {
+			if (typeof response.raw === "string") return response.raw.includes("valid-sync-token");
+			if (hasOwn(response.error ?? {}, "validSyncToken")) return true;
+			return Boolean(response.propStats?.some((stat) => hasOwn(stat.error ?? {}, "validSyncToken")));
+		};
+		if (syncToken && result.length === 1 && result[0].status >= 400 && result[0].status < 500 && hasValidSyncTokenError(result[0])) {
 			debug$5("sync token rejected by server, starting a full sync");
 			syncToken = void 0;
 			result = await requestSync(syncToken);
@@ -1029,7 +1036,7 @@ const fetchVCards = async (params) => {
 		headersToExclude,
 		fetchOptions,
 		fetch: fetchOverride
-	})).map((res) => res.href ?? "")).filter((url) => typeof url === "string" && url.trim().length > 0).map((url) => url.startsWith("http") ? url : new URL(url, ensureTrailingSlash(addressBook.url)).href).filter((url) => !urlEquals(url, addressBook.url)).filter(urlFilter).map((url) => {
+	})).map((res) => res.href ?? "")).filter((url) => typeof url === "string" && url.trim().length > 0).map((url) => url.startsWith("http") ? url : new URL(url, ensureTrailingSlash(addressBook.url)).href).filter((url) => getDAVUrlKey(url, addressBook.url) !== getDAVUrlKey(addressBook.url, addressBook.url)).filter(urlFilter).map((url) => {
 		const parsedUrl = new URL(url);
 		return `${parsedUrl.pathname}${parsedUrl.search}`;
 	});
@@ -1344,8 +1351,9 @@ const fetchCalendarObjects = async (params) => {
 	let calendarObjectResults = [];
 	if (calendarObjectUrls.length > 0) {
 		if (expand && !objectUrls) calendarObjectResults = initialResponses.filter((res) => {
-			const fullUrl = (res.href ?? "").startsWith("http") ? res.href : new URL(res.href ?? "", ensureTrailingSlash(calendar.url)).href;
-			return urlFilter(fullUrl ?? "");
+			if (typeof res.href !== "string" || res.href.trim().length === 0) return false;
+			const fullUrl = res.href.startsWith("http") ? res.href : new URL(res.href, ensureTrailingSlash(calendar.url)).href;
+			return urlFilter(fullUrl);
 		});
 		else if (!useMultiGet) {
 			calendarObjectResults = await calendarQuery({
@@ -2195,7 +2203,7 @@ const createAccount = async (params) => {
 			objects: await fetchCalendarObjects({
 				calendar: cal,
 				filters: { "comp-filter": { _attributes: { name: "VCALENDAR" } } },
-				urlFilter: (url) => !urlEquals(url, cal.url),
+				urlFilter: (url) => getDAVUrlKey(url, cal.url) !== getDAVUrlKey(cal.url, cal.url),
 				headers: excludeHeaders(headers, headersToExclude),
 				headersToExclude,
 				fetchOptions,
@@ -2291,11 +2299,21 @@ const defaultParam = (fn, params) => (...args) => {
 		...overrides
 	};
 	if (params.headers || overrides?.headers) mergedParams.headers = mergeHeaders(params.headers, overrides?.headers);
+	if (params.fetchOptions || overrides?.fetchOptions) {
+		const baseOptions = params.fetchOptions;
+		const overrideOptions = overrides?.fetchOptions;
+		const mergedFetchOptions = {
+			...baseOptions,
+			...overrideOptions
+		};
+		if (baseOptions?.headers || overrideOptions?.headers) mergedFetchOptions.headers = mergeHeaders(baseOptions?.headers, overrideOptions?.headers);
+		mergedParams.fetchOptions = mergedFetchOptions;
+	}
 	return fn(mergedParams);
 };
 const getBasicAuthHeaders = (credentials) => {
 	debug(`Basic auth token generated for user "${credentials.username ?? ""}"`);
-	return { authorization: `Basic ${encodeBase64(`${credentials.username}:${credentials.password}`)}` };
+	return { authorization: `Basic ${encodeBase64(`${credentials.username ?? ""}:${credentials.password ?? ""}`)}` };
 };
 const getBearerAuthHeaders = (credentials) => {
 	return { authorization: `Bearer ${credentials.accessToken}` };
@@ -2393,6 +2411,16 @@ var client_exports = /* @__PURE__ */ __exportAll({
 	DAVClient: () => DAVClient,
 	createDAVClient: () => createDAVClient
 });
+const mergeFetchOptions = (base, override) => {
+	if (!override) return base ?? {};
+	if (!base) return override;
+	const merged = {
+		...base,
+		...override
+	};
+	if (base.headers || override.headers) merged.headers = mergeHeaders(base.headers, override.headers);
+	return merged;
+};
 const resolveAuthHeaders = async (client, fetchOptions = client.fetchOptions, fetchOverride = client.fetchOverride) => {
 	switch (client.authMethod) {
 		case "Basic": return getBasicAuthHeaders(client.credentials);
@@ -2501,7 +2529,13 @@ var DAVClient = class {
 		this.addressBookMultiGet = this.addressBookMultiGet.bind(this);
 	}
 	async authenticate(force = false, fetchOptions = this.fetchOptions, fetchOverride = this.fetchOverride) {
-		if (!force && this.authMethod !== "Oauth") return;
+		if (!force && this.authMethod !== "Oauth") {
+			if (this.authHeaders) return;
+			if (this.authMethod === "Basic" && this.credentials.username == null && this.credentials.password == null || this.authMethod === "Bearer" && this.credentials.accessToken == null || this.authMethod === "Custom" && !this.authFunction || this.authMethod === "Digest") return;
+			if (this.authMethod !== "Basic" && this.authMethod !== "Bearer" && this.authMethod !== "Custom") return;
+			this.authHeaders = await resolveAuthHeaders(this, fetchOptions, fetchOverride);
+			return;
+		}
 		if (!force && this.authHeaders && this.credentials.accessToken && (this.credentials.expiration == null || isTokenUnexpired(this.credentials.expiration))) {
 			this.authHeaders = { authorization: `Bearer ${this.credentials.accessToken}` };
 			return;
@@ -2518,13 +2552,14 @@ var DAVClient = class {
 		}
 	}
 	async requestDefaults(params) {
-		await this.authenticate(false, params?.fetchOptions ?? this.fetchOptions, params?.fetch ?? this.fetchOverride);
+		const mergedFetchOptions = mergeFetchOptions(this.fetchOptions, params?.fetchOptions);
+		await this.authenticate(false, mergedFetchOptions, params?.fetch ?? this.fetchOverride);
 		return {
 			url: this.serverUrl,
 			headers: this.authHeaders,
 			account: this.account,
-			fetchOptions: this.fetchOptions,
-			fetch: authFetch(this, params?.fetch, params?.headersToExclude, mergeHeaders(params?.headers, params?.init?.headers, (params?.fetchOptions ?? this.fetchOptions)?.headers))
+			fetchOptions: mergedFetchOptions,
+			fetch: authFetch(this, params?.fetch, params?.headersToExclude, mergeHeaders(params?.headers, params?.init?.headers, mergedFetchOptions.headers))
 		};
 	}
 	async invoke(fn, params) {
@@ -2551,7 +2586,7 @@ var DAVClient = class {
 		}) : void 0;
 	}
 	async davRequest(params0) {
-		const { init, fetchOptions, ...rest } = params0;
+		const { init, fetchOptions: _fetchOptions, ...rest } = params0;
 		const { headers, ...restInit } = init;
 		const defaults = await this.requestDefaults(params0);
 		return davRequest({
@@ -2560,7 +2595,7 @@ var DAVClient = class {
 				...restInit,
 				headers: mergeHeaders(defaults.headers, headers)
 			},
-			fetchOptions: fetchOptions ?? this.fetchOptions,
+			fetchOptions: defaults.fetchOptions,
 			fetch: defaults.fetch
 		});
 	}
@@ -2577,7 +2612,7 @@ var DAVClient = class {
 		return this.invoke(propfind, params[0]);
 	}
 	async createAccount(params0) {
-		const { account, headers, headersToExclude, loadCollections, loadObjects, fetchOptions } = params0;
+		const { account, headers, headersToExclude, loadCollections, loadObjects } = params0;
 		const defaults = await this.requestDefaults(params0);
 		const accountType = account.accountType ?? this.accountType;
 		if (!accountType) throw new Error("createAccount requires an accountType; pass one via `account.accountType` or configure `defaultAccountType` on the DAVClient.");
@@ -2592,7 +2627,7 @@ var DAVClient = class {
 			headersToExclude,
 			loadCollections,
 			loadObjects,
-			fetchOptions: fetchOptions ?? this.fetchOptions,
+			fetchOptions: defaults.fetchOptions,
 			fetch: defaults.fetch
 		});
 	}

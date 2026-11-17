@@ -1,3 +1,16 @@
+## v2.5.1
+
+##### bug fixes
+
+- normalize collection self-entry URLs with `getDAVUrlKey` in `createAccount` and `fetchVCards` so percent-encoding differences (such as `@` vs `%40`) do not leak collection URLs into object requests ([#286](https://github.com/natelindev/tsdav/pull/286))
+- skip empty or whitespace-only `href` responses in `fetchCalendarObjects` when `expand` is enabled with permissive `urlFilter`
+- define top-level properties in `parseDAVXML` as `configurable` and `writable` so strict-mode consumers can mutate or delete parsed properties
+- lazily resolve `authHeaders` on `DAVClient` for `Basic`, `Bearer`, and `Custom` authentication without requiring `login()`, and default missing `Basic` credentials to empty strings instead of `undefined:undefined`
+- merge client/default `fetchOptions` (including `headers`) with per-call `fetchOptions` in `DAVClient` and `defaultParam` instead of overwriting base options
+- trigger RFC 6578 `valid-sync-token` full-sync fallback for parsed 207 Multi-Status `<error><valid-sync-token/></error>` responses as well as raw XML 4xx responses
+- pass string `body` values through `davRequest` unchanged when `convertIncoming` is `true` instead of spreading character indices into XML elements
+- fix `mergeObjectDupKeyArray` in the docs filter converter to preserve 3+ sibling filters as a flat ordered array, and resolve `src/content/docs` cleanly in `llms-full.txt`
+
 ## v2.5.0
 
 ##### bug fixes
