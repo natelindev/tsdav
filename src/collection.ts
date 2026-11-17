@@ -371,13 +371,24 @@ export const smartCollectionSync: SmartCollectionSync = async <T extends DAVColl
     // RFC 6578 §3.2: a server that no longer accepts a sync token fails the
     // DAV:valid-sync-token precondition, and the client must resynchronize
     // from an empty token, which lists every member.
+    const hasValidSyncTokenError = (response: DAVResponse): boolean => {
+      if (typeof response.raw === 'string') {
+        return response.raw.includes('valid-sync-token');
+      }
+      if (hasOwn(response.error ?? {}, 'validSyncToken')) {
+        return true;
+      }
+      return Boolean(
+        response.propStats?.some((stat) => hasOwn(stat.error ?? {}, 'validSyncToken')),
+      );
+    };
+
     if (
       syncToken &&
       result.length === 1 &&
       result[0].status >= 400 &&
       result[0].status < 500 &&
-      typeof result[0].raw === 'string' &&
-      result[0].raw.includes('valid-sync-token')
+      hasValidSyncTokenError(result[0])
     ) {
       debug('sync token rejected by server, starting a full sync');
       syncToken = undefined;

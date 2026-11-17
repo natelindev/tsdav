@@ -1,9 +1,15 @@
 import type { APIRoute } from 'astro';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 export const GET: APIRoute = async () => {
-  const docsDir = path.resolve(process.cwd(), 'src/content/docs');
+  const candidates = [
+    path.resolve(process.cwd(), 'src/content/docs'),
+    path.resolve(process.cwd(), 'docs/src/content/docs'),
+    path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../content/docs'),
+  ];
+  const docsDir = candidates.find((dir) => fs.existsSync(dir)) ?? candidates[0];
 
   function getAllFiles(dir: string): string[] {
     let results: string[] = [];

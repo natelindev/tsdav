@@ -11,9 +11,9 @@ import {
   excludeHeaders,
   mergeHeaders,
   urlMatches,
-  urlEquals,
   ensureTrailingSlash,
 } from './util/requestHelpers';
+import { getDAVUrlKey } from './util/syncHelpers';
 import { findMissingFieldNames, hasFields } from './util/typeHelpers';
 
 const debug = getLogger('tsdav:account');
@@ -358,7 +358,7 @@ export const createAccount = async (params: {
           objects: await fetchCalendarObjects({
             calendar: cal,
             filters: { 'comp-filter': { _attributes: { name: 'VCALENDAR' } } },
-            urlFilter: (url) => !urlEquals(url, cal.url),
+            urlFilter: (url) => getDAVUrlKey(url, cal.url) !== getDAVUrlKey(cal.url, cal.url),
             headers: excludeHeaders(headers, headersToExclude),
             headersToExclude,
             fetchOptions,

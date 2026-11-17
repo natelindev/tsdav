@@ -11,7 +11,6 @@ import {
   cleanupFalsy,
   excludeHeaders,
   getDAVAttribute,
-  urlEquals,
   ensureTrailingSlash,
 } from './util/requestHelpers';
 import { getObjectUrl } from './util/objectUrl';
@@ -231,7 +230,10 @@ export const fetchVCards = async (params: {
     .map((url) =>
       url.startsWith('http') ? url : new URL(url, ensureTrailingSlash(addressBook.url)).href,
     )
-    .filter((url) => !urlEquals(url, addressBook.url))
+    .filter(
+      (url) =>
+        getDAVUrlKey(url, addressBook.url) !== getDAVUrlKey(addressBook.url, addressBook.url),
+    )
     .filter(urlFilter)
     .map((url) => {
       const parsedUrl = new URL(url);

@@ -65,6 +65,19 @@ import { Optional } from './util/typeHelpers';
 import { mergeHeaders } from './util/requestHelpers';
 import { isTokenUnexpired } from './util/tokenExpiry';
 
+const mergeFetchOptions = (base?: RequestInit, override?: RequestInit): RequestInit => {
+  if (!override) return base ?? {};
+  if (!base) return override;
+  const merged: RequestInit = {
+    ...base,
+    ...override,
+  };
+  if (base.headers || override.headers) {
+    merged.headers = mergeHeaders(base.headers, override.headers);
+  }
+  return merged;
+};
+
 const resolveAuthHeaders = async (
   client: DAVClient,
   fetchOptions = client.fetchOptions,
@@ -251,7 +264,28 @@ export class DAVClient {
     fetchOptions = this.fetchOptions,
     fetchOverride = this.fetchOverride,
   ): Promise<void> {
-    if (!force && this.authMethod !== 'Oauth') return;
+    if (!force && this.authMethod !== 'Oauth') {
+      if (this.authHeaders) return;
+      if (
+        (this.authMethod === 'Basic' &&
+          this.credentials.username == null &&
+          this.credentials.password == null) ||
+        (this.authMethod === 'Bearer' && this.credentials.accessToken == null) ||
+        (this.authMethod === 'Custom' && !this.authFunction) ||
+        this.authMethod === 'Digest'
+      ) {
+        return;
+      }
+      if (
+        this.authMethod !== 'Basic' &&
+        this.authMethod !== 'Bearer' &&
+        this.authMethod !== 'Custom'
+      ) {
+        return;
+      }
+      this.authHeaders = await resolveAuthHeaders(this, fetchOptions, fetchOverride);
+      return;
+    }
     if (
       !force &&
       this.authHeaders &&
@@ -280,25 +314,18 @@ export class DAVClient {
     fetchOptions?: RequestInit;
     fetch?: typeof globalThis.fetch;
   }) {
-    await this.authenticate(
-      false,
-      params?.fetchOptions ?? this.fetchOptions,
-      params?.fetch ?? this.fetchOverride,
-    );
+    const mergedFetchOptions = mergeFetchOptions(this.fetchOptions, params?.fetchOptions);
+    await this.authenticate(false, mergedFetchOptions, params?.fetch ?? this.fetchOverride);
     return {
       url: this.serverUrl,
       headers: this.authHeaders,
       account: this.account,
-      fetchOptions: this.fetchOptions,
+      fetchOptions: mergedFetchOptions,
       fetch: authFetch(
         this,
         params?.fetch,
         params?.headersToExclude,
-        mergeHeaders(
-          params?.headers,
-          params?.init?.headers,
-          (params?.fetchOptions ?? this.fetchOptions)?.headers,
-        ),
+        mergeHeaders(params?.headers, params?.init?.headers, mergedFetchOptions.headers),
       ),
     };
   }
@@ -344,7 +371,7 @@ export class DAVClient {
     fetchOptions?: RequestInit;
     fetch?: typeof globalThis.fetch;
   }): Promise<DAVResponse[]> {
-    const { init, fetchOptions, ...rest } = params0;
+    const { init, fetchOptions: _fetchOptions, ...rest } = params0;
     const { headers, ...restInit } = init;
     const defaults = await this.requestDefaults(params0);
     return rawDavRequest({
@@ -353,7 +380,7 @@ export class DAVClient {
         ...restInit,
         headers: mergeHeaders(defaults.headers, headers),
       },
-      fetchOptions: fetchOptions ?? this.fetchOptions,
+      fetchOptions: defaults.fetchOptions,
       fetch: defaults.fetch,
     });
   }
@@ -383,8 +410,7 @@ export class DAVClient {
     fetchOptions?: RequestInit;
     fetch?: typeof globalThis.fetch;
   }): Promise<DAVAccount> {
-    const { account, headers, headersToExclude, loadCollections, loadObjects, fetchOptions } =
-      params0;
+    const { account, headers, headersToExclude, loadCollections, loadObjects } = params0;
     const defaults = await this.requestDefaults(params0);
     // The `Optional<DAVAccount, 'serverUrl'>` type already enforces
     // `accountType` at the type level. Still, guard at runtime so plain-JS
@@ -406,7 +432,7 @@ export class DAVClient {
       headersToExclude,
       loadCollections,
       loadObjects,
-      fetchOptions: fetchOptions ?? this.fetchOptions,
+      fetchOptions: defaults.fetchOptions,
       fetch: defaults.fetch,
     });
   }

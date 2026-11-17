@@ -73,6 +73,27 @@ describe('executable documentation', () => {
     ).toContain('<d:displayname>123</d:displayname>');
     expect(() => convertInput('prop', '(() => { globalThis.executed = true; })()')).toThrow();
     expect((globalThis as any).executed).toBeUndefined();
+    const convertedFilters = JSON.parse(
+      convertInput(
+        'filter',
+        JSON.stringify([
+          {
+            type: 'c:comp-filter',
+            attributes: { name: 'VCALENDAR' },
+            children: [
+              { type: 'c:comp-filter', attributes: { name: 'VEVENT' } },
+              { type: 'c:comp-filter', attributes: { name: 'VTODO' } },
+              { type: 'c:comp-filter', attributes: { name: 'VJOURNAL' } },
+            ],
+          },
+        ]),
+      ),
+    );
+    expect(convertedFilters[0]['c:comp-filter']['c:comp-filter']).toEqual([
+      { _attributes: { name: 'VEVENT' } },
+      { _attributes: { name: 'VTODO' } },
+      { _attributes: { name: 'VJOURNAL' } },
+    ]);
   });
 
   it('imports all-day recurrence and exceptions together, preserves text, and checks HTTP failures', async () => {

@@ -471,10 +471,13 @@ export const fetchCalendarObjects = async (params: {
   if (calendarObjectUrls.length > 0) {
     if (expand && !objectUrls) {
       calendarObjectResults = initialResponses.filter((res) => {
-        const fullUrl = (res.href ?? '').startsWith('http')
+        if (typeof res.href !== 'string' || res.href.trim().length === 0) {
+          return false;
+        }
+        const fullUrl = res.href.startsWith('http')
           ? res.href
-          : new URL(res.href ?? '', ensureTrailingSlash(calendar.url)).href;
-        return urlFilter(fullUrl ?? '');
+          : new URL(res.href, ensureTrailingSlash(calendar.url)).href;
+        return urlFilter(fullUrl);
       });
     } else if (!useMultiGet) {
       calendarObjectResults = await calendarQuery({
