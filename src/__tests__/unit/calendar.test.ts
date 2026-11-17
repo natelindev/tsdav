@@ -78,6 +78,48 @@ describe('fetchCalendarObjects', () => {
     );
   });
 
+  it('should skip empty or whitespace href responses during expand with permissive urlFilter', async () => {
+    mockedCollectionQuery.mockResolvedValue([
+      {
+        href: '   ',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        raw: '<xml/>',
+        props: {
+          getetag: '"skip"',
+          calendarData: 'SKIP',
+        },
+      },
+      {
+        href: '/cal/event.ics',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        raw: '<xml/>',
+        props: {
+          getetag: '"ok"',
+          calendarData: 'KEEP',
+        },
+      },
+    ]);
+
+    const objects = await fetchCalendarObjects({
+      calendar: { url: 'http://example.com/cal/' },
+      timeRange: { start: '2022-01-01T00:00:00Z', end: '2022-01-02T00:00:00Z' },
+      expand: true,
+      urlFilter: () => true,
+    });
+
+    expect(objects).toEqual([
+      {
+        url: 'http://example.com/cal/event.ics',
+        etag: '"ok"',
+        data: 'KEEP',
+      },
+    ]);
+  });
+
   it('should still perform two queries if expand is false (minimal first query)', async () => {
     // First call: calendarQuery for hrefs
     mockedCollectionQuery.mockResolvedValueOnce([

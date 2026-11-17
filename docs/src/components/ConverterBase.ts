@@ -34,28 +34,26 @@ type ShallowMergeDupKeyArray<A, B> = {
         ? B[key]
         : never;
 };
-export const mergeObjectDupKeyArray = <A, B>(objA: A, objB: B): ShallowMergeDupKeyArray<A, B> => {
-  return (Object.entries(objA as Record<string, unknown>) as Array<[keyof A | keyof B, unknown]>).reduce(
-    (
-      merged: ShallowMergeDupKeyArray<A, B>,
-      [currKey, currValue],
-    ): ShallowMergeDupKeyArray<A, B> => {
-      if (merged[currKey] && Array.isArray(merged[currKey])) {
-        // is array
-        return {
-          ...merged,
-          [currKey]: [...(merged[currKey] as unknown as unknown[]), currValue],
-        };
-      }
-      if (merged[currKey] && !Array.isArray(merged[currKey])) {
-        // not array
-        return { ...merged, [currKey]: [merged[currKey], currValue] };
-      }
-      // not exist
-      return { ...merged, [currKey]: currValue };
-    },
-    objB as ShallowMergeDupKeyArray<A, B>,
-  );
+export const mergeObjectDupKeyArray = <
+  A extends Record<string, any>,
+  B extends Record<string, any>,
+>(
+  objA: A,
+  objB: B,
+): ShallowMergeDupKeyArray<A, B> => {
+  const merged: Record<string, any> = { ...objA };
+  for (const [currKey, currValue] of Object.entries(objB)) {
+    if (Object.prototype.hasOwnProperty.call(merged, currKey)) {
+      const existing = merged[currKey];
+      const nextValues = Array.isArray(currValue) ? currValue : [currValue];
+      merged[currKey] = Array.isArray(existing)
+        ? [...existing, ...nextValues]
+        : [existing, ...nextValues];
+    } else {
+      merged[currKey] = currValue;
+    }
+  }
+  return merged as ShallowMergeDupKeyArray<A, B>;
 };
 
 export const formatProps = (props?: DAVProp[]): { [key: string]: any } | undefined =>
@@ -69,7 +67,9 @@ export const formatProps = (props?: DAVProp[]): { [key: string]: any } | undefin
     return { ...prev, [`${curr.name}`]: curr.value ?? {} };
   }, {});
 
-export const formatFilters = (filters?: DAVFilter[]): { [key: string]: any } | undefined =>
+export const formatFilters = (
+  filters?: DAVFilter[],
+): Array<{ [key: string]: any }> | undefined =>
   filters?.map((f) => ({
     [f.type]: {
       _attributes: f.attributes,

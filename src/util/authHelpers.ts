@@ -76,6 +76,7 @@ export const defaultParam =
     const overrides = args[0] as Record<string, unknown> | undefined;
     const mergedParams = { ...params, ...overrides } as Parameters<F>[0] & {
       headers?: HeadersInit;
+      fetchOptions?: RequestInit;
     };
 
     if ((params as { headers?: HeadersInit }).headers || overrides?.headers) {
@@ -83,6 +84,19 @@ export const defaultParam =
         (params as { headers?: HeadersInit }).headers,
         overrides?.headers as HeadersInit | undefined,
       );
+    }
+
+    if ((params as { fetchOptions?: RequestInit }).fetchOptions || overrides?.fetchOptions) {
+      const baseOptions = (params as { fetchOptions?: RequestInit }).fetchOptions;
+      const overrideOptions = overrides?.fetchOptions as RequestInit | undefined;
+      const mergedFetchOptions: RequestInit = {
+        ...baseOptions,
+        ...overrideOptions,
+      };
+      if (baseOptions?.headers || overrideOptions?.headers) {
+        mergedFetchOptions.headers = mergeHeaders(baseOptions?.headers, overrideOptions?.headers);
+      }
+      mergedParams.fetchOptions = mergedFetchOptions;
     }
 
     return fn(mergedParams);
@@ -93,7 +107,7 @@ export const getBasicAuthHeaders = (credentials: DAVCredentials): { authorizatio
   // credentials to stdout / log aggregators.
   debug(`Basic auth token generated for user "${credentials.username ?? ''}"`);
   return {
-    authorization: `Basic ${encodeBase64(`${credentials.username}:${credentials.password}`)}`,
+    authorization: `Basic ${encodeBase64(`${credentials.username ?? ''}:${credentials.password ?? ''}`)}`,
   };
 };
 

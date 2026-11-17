@@ -78,23 +78,25 @@ export const davRequest = async (params: {
 
   const xmlBody =
     convertIncoming && body != null
-      ? convert.js2xml(
-          {
-            _declaration: { _attributes: { version: '1.0', encoding: 'utf-8' } },
-            ...processedBody,
-          },
-          {
-            compact: true,
-            spaces: 2,
-            elementNameFn: (name) => {
-              // add namespace to all keys without namespace
-              if (namespace && !/^.+:.+/.test(name)) {
-                return `${namespace}:${name}`;
-              }
-              return name;
+      ? typeof body === 'string'
+        ? body
+        : convert.js2xml(
+            {
+              _declaration: { _attributes: { version: '1.0', encoding: 'utf-8' } },
+              ...processedBody,
             },
-          },
-        )
+            {
+              compact: true,
+              spaces: 2,
+              elementNameFn: (name) => {
+                // add namespace to all keys without namespace
+                if (namespace && !/^.+:.+/.test(name)) {
+                  return `${namespace}:${name}`;
+                }
+                return name;
+              },
+            },
+          )
       : body;
 
   const fetchOptionsWithoutHeaders = {

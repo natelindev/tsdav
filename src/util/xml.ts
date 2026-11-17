@@ -145,6 +145,8 @@ export const parseDAVXML = (xml: string): ElementCompact => {
     Object.defineProperty(result, key, {
       value: normalized.value,
       enumerable: true,
+      configurable: true,
+      writable: true,
     });
   }
   return result;
