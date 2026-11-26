@@ -40,4 +40,5 @@ array of [DAVVCard](../types/DAVVCard.md)
 
 ### Behavior
 
-a mix of [addressBookMultiGet](addressBookMultiGet.md) and [addressBookQuery](addressBookQuery.md), you can specify objectUrls here.
+Unless `objectUrls` are given, lists the vcards of the address book with a `PROPFIND` (Depth 1), skipping the collection itself and sub-collections, then fetches them with [addressBookMultiGet](addressBookMultiGet.md) (or [addressBookQuery](addressBookQuery.md) when `useMultiGet` is false).
+The listing does not use an `addressbook-query`, because some servers (such as OX App Suite, used by mailbox.org) answer its default `FN` prop-filter with an empty result.
