@@ -32,8 +32,8 @@ describe('fetchVCards', () => {
   });
 
   it('should handle Radicale responses with valid href', async () => {
-    // Initial addressBookQuery returns URLs
-    mockedCollectionQuery.mockResolvedValueOnce([
+    // PROPFIND listing returns URLs
+    mockedPropfind.mockResolvedValueOnce([
       {
         href: '/user/addr/card1.vcf',
         ok: true,
@@ -67,12 +67,13 @@ describe('fetchVCards', () => {
 
     expect(vcards).toHaveLength(1);
     expect(vcards[0].url).toContain('card1.vcf');
-    expect(mockedCollectionQuery).toHaveBeenCalledTimes(2);
+    expect(mockedPropfind).toHaveBeenCalledTimes(1);
+    expect(mockedCollectionQuery).toHaveBeenCalledTimes(1);
   });
 
-  it('should filter out the address book collection itself if returned in query', async () => {
-    // Initial addressBookQuery returns URLs including the collection
-    mockedCollectionQuery.mockResolvedValueOnce([
+  it('should filter out the address book collection itself if returned in the listing', async () => {
+    // PROPFIND listing returns URLs including the collection
+    mockedPropfind.mockResolvedValueOnce([
       {
         href: '/user/addr/',
         ok: true,
@@ -119,7 +120,7 @@ describe('fetchVCards', () => {
     expect(vcards[0].url).not.toBe('http://example.com/user/addr/');
 
     // Check that multi-get was called ONLY with the vcard URL, not the collection URL
-    const multiGetCall = mockedCollectionQuery.mock.calls[1][0];
+    const multiGetCall = mockedCollectionQuery.mock.calls[0][0];
     const hrefs = multiGetCall.body['addressbook-multiget']['d:href'];
     expect(hrefs).toEqual(['/user/addr/card1.vcf']);
   });
@@ -137,7 +138,7 @@ describe('fetchVCards', () => {
   });
 
   it('should use addressBookQuery when useMultiGet is false', async () => {
-    mockedCollectionQuery.mockResolvedValueOnce([
+    mockedPropfind.mockResolvedValueOnce([
       {
         href: '/user/addr/card1.vcf',
         ok: true,
@@ -168,7 +169,7 @@ describe('fetchVCards', () => {
   });
 
   it('should return empty when no vcard URLs match', async () => {
-    mockedCollectionQuery.mockResolvedValueOnce([]);
+    mockedPropfind.mockResolvedValueOnce([]);
 
     const result = await fetchVCards({
       addressBook: { url: 'http://example.com/user/addr/' },
@@ -199,7 +200,7 @@ describe('fetchVCards', () => {
   });
 
   it('should use _cdata when present in addressData', async () => {
-    mockedCollectionQuery.mockResolvedValueOnce([
+    mockedPropfind.mockResolvedValueOnce([
       {
         href: '/user/addr/card1.vcf',
         ok: true,
@@ -244,6 +245,103 @@ describe('fetchVCards', () => {
     });
 
     expect(result[0].etag).toBeUndefined();
+  });
+
+  it('should list vcards with PROPFIND depth 1 and skip collections', async () => {
+    mockedPropfind.mockResolvedValueOnce([
+      {
+        href: '/user/addr/',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        props: { resourcetype: { collection: {}, addressbook: {} } },
+      },
+      {
+        href: '/user/addr/sub/',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        props: { resourcetype: { collection: {} } },
+      },
+      {
+        href: '/user/addr/card1.vcf',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        props: { getetag: '"1"', resourcetype: {} },
+      },
+    ]);
+    mockedCollectionQuery.mockResolvedValueOnce([
+      {
+        href: '/user/addr/card1.vcf',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        props: { getetag: '"1"', addressData: 'BEGIN:VCARD\nEND:VCARD' },
+      },
+    ]);
+
+    const result = await fetchVCards({
+      addressBook: { url: 'http://example.com/user/addr/' },
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0].url).toBe('http://example.com/user/addr/card1.vcf');
+    expect(mockedPropfind).toHaveBeenCalledTimes(1);
+    expect(mockedPropfind.mock.calls[0][0]).toMatchObject({
+      url: 'http://example.com/user/addr/',
+      depth: '1',
+      props: { 'd:getetag': {}, 'd:resourcetype': {} },
+    });
+    expect(mockedCollectionQuery.mock.calls[0][0].body['addressbook-multiget']['d:href']).toEqual([
+      '/user/addr/card1.vcf',
+    ]);
+  });
+
+  it('should not send an addressbook-query to list vcards', async () => {
+    // OX App Suite (mailbox.org) answers the default FN prop-filter query with an empty multistatus
+    mockedPropfind.mockResolvedValueOnce([
+      {
+        href: '/user/addr/card1.vcf',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        props: { getetag: '"1"' },
+      },
+    ]);
+    mockedCollectionQuery.mockResolvedValueOnce([
+      {
+        href: '/user/addr/card1.vcf',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        props: { getetag: '"1"', addressData: 'BEGIN:VCARD\nEND:VCARD' },
+      },
+    ]);
+
+    await fetchVCards({ addressBook: { url: 'http://example.com/user/addr/' } });
+
+    expect(mockedCollectionQuery).toHaveBeenCalledTimes(1);
+    expect(mockedCollectionQuery.mock.calls[0][0].body).not.toHaveProperty('addressbook-query');
+  });
+
+  it('should not list the address book when objectUrls are given', async () => {
+    mockedCollectionQuery.mockResolvedValueOnce([
+      {
+        href: '/user/addr/card1.vcf',
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        props: { getetag: '"1"', addressData: 'BEGIN:VCARD\nEND:VCARD' },
+      },
+    ]);
+
+    await fetchVCards({
+      addressBook: { url: 'http://example.com/user/addr/' },
+      objectUrls: ['/user/addr/card1.vcf'],
+    });
+
+    expect(mockedPropfind).not.toHaveBeenCalled();
   });
 });
 
